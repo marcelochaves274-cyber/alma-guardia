@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
+import { usePathname } from 'next/navigation';
 
 interface AppSettingsContextType {
   appName: string;
@@ -28,6 +29,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const firestore = useFirestore();
   const { user, isLoading: isUserLoading } = useUser();
+  const pathname = usePathname();
 
   const getSettingsDocRef = (userId: string) => {
     return doc(firestore!, 'users', userId, 'settings', 'appDetails');
@@ -35,8 +37,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const fetchAppSettings = async () => {
-      if (isUserLoading) return;
-      if (!firestore || !user) {
+      if (isUserLoading || !user || !firestore) {
         setIsLoading(false);
         return;
       };
@@ -84,7 +85,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setLogoUrlState(url);
   };
 
-  const value = {
+  const contextValue = {
     appName,
     setAppName,
     logoUrl,
@@ -92,7 +93,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     isLoading: isLoading || isUserLoading,
   };
   
-  if (isLoading || isUserLoading && !user) {
+  // While authenticating, if we are not on the login page, show a loader.
+  // This prevents the main app from flashing while we wait for user data.
+  if (isUserLoading && pathname !== '/login') {
      return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -101,7 +104,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AppSettingsContext.Provider value={value}>
+    <AppSettingsContext.Provider value={contextValue}>
       {children}
     </AppSettingsContext.Provider>
   );
