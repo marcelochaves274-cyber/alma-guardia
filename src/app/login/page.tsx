@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useFirebaseApp } from '@/firebase';
@@ -56,6 +57,28 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setGoogleLoading] = useState(false);
+  const [isRedirectLoading, setRedirectLoading] = useState(true);
+
+  useEffect(() => {
+    if (!firebaseApp) return;
+    const auth = getAuth(firebaseApp);
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          router.push('/');
+        }
+      })
+      .catch((error) => {
+        toast({
+          variant: 'destructive',
+          title: 'Erro com Login do Google',
+          description: error.message,
+        });
+      })
+      .finally(() => {
+        setRedirectLoading(false);
+      });
+  }, [firebaseApp, router, toast]);
 
   const handleAuth = async (authAction: 'login' | 'register') => {
     if (!firebaseApp) return;
@@ -84,19 +107,18 @@ export default function LoginPage() {
     setGoogleLoading(true);
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      router.push('/');
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro com Login do Google',
-        description: error.message,
-      });
-    } finally {
-      setGoogleLoading(false);
-    }
+    await signInWithRedirect(auth, provider);
   };
+  
+  if (isRedirectLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  const anyLoading = isLoading || isGoogleLoading || isRedirectLoading;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -119,7 +141,7 @@ export default function LoginPage() {
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading || isGoogleLoading}
+              disabled={anyLoading}
             />
           </div>
           <div className="space-y-2">
@@ -129,7 +151,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading || isGoogleLoading}
+              disabled={anyLoading}
             />
           </div>
         </CardContent>
@@ -137,7 +159,7 @@ export default function LoginPage() {
           <div className="flex w-full gap-2">
             <Button
               onClick={() => handleAuth('login')}
-              disabled={isLoading || isGoogleLoading || !email || !password}
+              disabled={anyLoading || !email || !password}
               className="w-full"
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -146,7 +168,7 @@ export default function LoginPage() {
             <Button
               variant="secondary"
               onClick={() => handleAuth('register')}
-              disabled={isLoading || isGoogleLoading || !email || !password}
+              disabled={anyLoading || !email || !password}
               className="w-full"
             >
               Criar Conta
@@ -166,7 +188,7 @@ export default function LoginPage() {
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignIn}
-            disabled={isLoading || isGoogleLoading}
+            disabled={anyLoading}
           >
             {isGoogleLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
