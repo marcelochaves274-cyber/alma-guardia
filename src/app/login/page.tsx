@@ -56,8 +56,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setGoogleLoading] = useState(false);
-  const [isRedirectLoading, setRedirectLoading] = useState(true);
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
   useEffect(() => {
     if (!firebaseApp) return;
@@ -65,8 +64,11 @@ export default function LoginPage() {
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
-          // User successfully signed in.
+          // User successfully signed in via redirect.
           router.push('/');
+        } else {
+          // No redirect result, so this is a normal page load.
+          setIsProcessingRedirect(false);
         }
       })
       .catch((error) => {
@@ -76,10 +78,7 @@ export default function LoginPage() {
           title: 'Erro com Login do Google',
           description: error.message,
         });
-      })
-      .finally(() => {
-        // In either case, the redirect check is complete.
-        setRedirectLoading(false);
+        setIsProcessingRedirect(false);
       });
   }, [firebaseApp, router, toast]);
 
@@ -107,7 +106,8 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     if (!firebaseApp) return;
-    setGoogleLoading(true); // Set loading state to give user feedback
+    // Set a global loading state, as the page will redirect.
+    setIsLoading(true); 
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
     // The page will now redirect to Google's sign-in page.
@@ -115,15 +115,14 @@ export default function LoginPage() {
     await signInWithRedirect(auth, provider);
   };
   
-  if (isRedirectLoading) {
+  // Show a global loader while checking for the redirect result.
+  if (isProcessingRedirect) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
-
-  const anyLoading = isLoading || isGoogleLoading;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -146,7 +145,7 @@ export default function LoginPage() {
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={anyLoading}
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -156,7 +155,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={anyLoading}
+              disabled={isLoading}
             />
           </div>
         </CardContent>
@@ -164,16 +163,16 @@ export default function LoginPage() {
           <div className="flex w-full gap-2">
             <Button
               onClick={() => handleAuth('login')}
-              disabled={anyLoading || !email || !password}
+              disabled={isLoading || !email || !password}
               className="w-full"
             >
-              {isLoading && !isGoogleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Entrar
             </Button>
             <Button
               variant="secondary"
               onClick={() => handleAuth('register')}
-              disabled={anyLoading || !email || !password}
+              disabled={isLoading || !email || !password}
               className="w-full"
             >
               Criar Conta
@@ -193,9 +192,9 @@ export default function LoginPage() {
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignIn}
-            disabled={anyLoading}
+            disabled={isLoading}
           >
-            {isGoogleLoading ? (
+            {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <GoogleIcon className="mr-2 h-4 w-4" />
