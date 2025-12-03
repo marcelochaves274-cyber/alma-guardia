@@ -64,10 +64,7 @@ export function SidebarNav() {
             {openSubMenus['settings'] && state === 'expanded' && (
               <SidebarMenuSub>
                 <SidebarMenuSubItem>
-                  <SidebarMenuSubButton>Perfil</SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton>Notificações</SidebarMenuSubButton>
+                  <SidebarMenuSubButton>Configurações gerais</SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
             )}
