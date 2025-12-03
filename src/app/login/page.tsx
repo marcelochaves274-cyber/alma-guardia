@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -64,11 +63,9 @@ export default function LoginPage() {
     if (!firebaseApp) return;
     const auth = getAuth(firebaseApp);
     
-    // This effect runs on page load to check for a redirect result
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
-          // User successfully signed in via redirect.
           toast({
             title: 'Login com Google bem-sucedido!',
             description: `Bem-vindo, ${result.user.displayName}!`,
@@ -77,7 +74,6 @@ export default function LoginPage() {
         }
       })
       .catch((error) => {
-        // Handle errors from the redirect.
         toast({
           variant: 'destructive',
           title: 'Erro com Login do Google',
@@ -85,8 +81,6 @@ export default function LoginPage() {
         });
       })
       .finally(() => {
-        // Whether there was a result or not, we are done processing.
-        // This stops the initial page load spinner.
         setIsProcessingRedirect(false);
       });
   }, [firebaseApp, router, toast]);
@@ -114,13 +108,13 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!firebaseApp) return;
+    if (!firebaseApp || isEmailAuthLoading) return;
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       auth_domain: firebaseConfig.authDomain
     });
-    // This will navigate away from the page. No need to set loading state here.
+    // signInWithRedirect will navigate away, no need for loading state here
     await signInWithRedirect(auth, provider);
   };
   
