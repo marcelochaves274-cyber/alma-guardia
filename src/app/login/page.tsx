@@ -6,7 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithRedirect,
+  signInWithPopup,
   getRedirectResult,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -78,11 +78,14 @@ export default function LoginPage() {
         }
       })
       .catch((error) => {
-        toast({
-          variant: 'destructive',
-          title: 'Erro com Login do Google',
-          description: error.message,
-        });
+        // Ignora o erro se a operação for interrompida pelo usuário, o que é comum
+        if (error.code !== 'auth/cancelled-popup-request') {
+            toast({
+              variant: 'destructive',
+              title: 'Erro com Login do Google',
+              description: error.message,
+            });
+        }
       })
       .finally(() => {
         setIsProcessingRedirect(false);
@@ -121,14 +124,21 @@ export default function LoginPage() {
       auth_domain: firebaseConfig.authDomain,
     });
     try {
-      await signInWithRedirect(auth, provider);
-      // A navegação acontece aqui, então o estado de loading não precisa ser resetado.
-    } catch(error: any) {
+      const result = await signInWithPopup(auth, provider);
        toast({
-        variant: 'destructive',
-        title: 'Erro com Login do Google',
-        description: error.message,
+        title: 'Login com Google bem-sucedido!',
+        description: `Bem-vindo, ${result.user.displayName}!`,
       });
+      router.push('/');
+    } catch(error: any) {
+       if (error.code !== 'auth/cancelled-popup-request') {
+          toast({
+            variant: 'destructive',
+            title: 'Erro com Login do Google',
+            description: error.message,
+          });
+       }
+    } finally {
       setIsGoogleAuthLoading(false);
     }
   };
@@ -185,7 +195,7 @@ export default function LoginPage() {
               disabled={isAnyAuthLoading || !email || !password}
               className="w-full"
             >
-              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEmailAuthLoading && !isGoogleAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Entrar
             </Button>
             <Button
@@ -194,7 +204,7 @@ export default function LoginPage() {
               disabled={isAnyAuthLoading || !email || !password}
               className="w-full"
             >
-              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEmailAuthLoading && !isGoogleAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Criar Conta
             </Button>
           </div>
