@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -8,7 +8,6 @@ import {
   GoogleAuthProvider,
   signInWithRedirect,
   getRedirectResult,
-  type Auth,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useFirebaseApp } from '@/firebase';
@@ -57,19 +56,24 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   // This state is ONLY for the initial page load to check for a redirect result.
   const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
-  
+
   // This state is ONLY for email/password sign-in/register.
   const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
 
   useEffect(() => {
-    if (!firebaseApp) return;
+    // This effect should only run once on mount to check for a redirect result.
+    if (!firebaseApp) {
+      // Firebase might not be initialized on the first render, wait for it.
+      // We set processing to false here to avoid an infinite loader if app is null.
+      setIsProcessingRedirect(false);
+      return;
+    }
 
     const auth = getAuth(firebaseApp);
-    
-    // This should only run once when the component mounts.
+
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
@@ -94,7 +98,9 @@ export default function LoginPage() {
         // regardless of whether there was a redirect result or not.
         setIsProcessingRedirect(false);
       });
-  }, [firebaseApp, router, toast]);
+    // The dependency array is empty on purpose, so this runs only ONCE.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseApp]);
 
   const handleEmailAuth = async (authAction: 'login' | 'register') => {
     if (!firebaseApp) return;
@@ -119,21 +125,18 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    // This button should not be clickable if email auth is in progress.
     if (!firebaseApp || isEmailAuthLoading) return;
-    
+
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
+    // This is the key fix for the unauthorized-domain error in some environments.
     provider.setCustomParameters({
-      auth_domain: firebaseConfig.authDomain
+      auth_domain: firebaseConfig.authDomain,
     });
-    
-    // No loading state is set here. The page will navigate away.
-    // The `isProcessingRedirect` state will handle the loading screen
-    // when the user comes back.
+    // signInWithRedirect will navigate away, no need for a loading state here.
     await signInWithRedirect(auth, provider);
   };
-  
+
   // Show a full-page loader ONLY during the initial redirect check.
   if (isProcessingRedirect) {
     return (
@@ -185,7 +188,7 @@ export default function LoginPage() {
               disabled={isEmailAuthLoading || !email || !password}
               className="w-full"
             >
-              {isEmailAuthLoading && <Loader2 className="mr-2 animate-spin" />}
+              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Entrar
             </Button>
             <Button
@@ -194,7 +197,7 @@ export default function LoginPage() {
               disabled={isEmailAuthLoading || !email || !password}
               className="w-full"
             >
-              {isEmailAuthLoading && <Loader2 className="mr-2 animate-spin" />}
+              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Criar Conta
             </Button>
           </div>

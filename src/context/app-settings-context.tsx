@@ -32,28 +32,36 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const getSettingsDocRef = (userId: string) => {
-    return doc(firestore!, 'users', userId, 'settings', 'appDetails');
+    // This check is important because firestore can be null initially.
+    if (!firestore) return null;
+    return doc(firestore, 'users', userId, 'settings', 'appDetails');
   };
 
   useEffect(() => {
     const fetchAppSettings = async () => {
+      // Don't fetch settings if the user isn't loaded, or isn't logged in, or firestore is not available
       if (isUserLoading || !user || !firestore) {
-        setIsLoading(false);
+        // If we are not on a loading state and there is no user, we can safely assume we are done.
+        if (!isUserLoading && !user) {
+           setIsLoading(false);
+        }
         return;
       };
       
       setIsLoading(true);
       try {
         const settingsDocRef = getSettingsDocRef(user.uid);
-        const docSnap = await getDoc(settingsDocRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setAppNameState(data.name || 'SGS Genius');
-          setLogoUrlState(data.logoUrl || '');
-        } else {
-          // If no settings exist, use default values
-          setAppNameState('SGS Genius');
-          setLogoUrlState('');
+        if (settingsDocRef) {
+          const docSnap = await getDoc(settingsDocRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setAppNameState(data.name || 'SGS Genius');
+            setLogoUrlState(data.logoUrl || '');
+          } else {
+            // If no settings exist, use default values
+            setAppNameState('SGS Genius');
+            setLogoUrlState('');
+          }
         }
       } catch (error) {
         console.error('Error fetching app settings from Firestore:', error);
@@ -71,6 +79,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       throw new Error('Usuário não autenticado.');
     }
     const settingsDocRef = getSettingsDocRef(user.uid);
+    if (!settingsDocRef) return;
     await setDoc(settingsDocRef, { name: name }, { merge: true });
     setAppNameState(name);
   };
@@ -81,6 +90,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       throw new Error('Usuário não autenticado.');
     }
     const settingsDocRef = getSettingsDocRef(user.uid);
+    if (!settingsDocRef) return;
     await setDoc(settingsDocRef, { logoUrl: url }, { merge: true });
     setLogoUrlState(url);
   };
@@ -93,8 +103,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     isLoading: isLoading || isUserLoading,
   };
   
-  // While authenticating, if we are not on the login page, show a loader.
-  // This prevents the main app from flashing while we wait for user data.
+  // While user status is loading, AND we are not on the login page, show a loader.
+  // This prevents the main app from flashing while we wait for the auth check.
+  // If we ARE on the login page, we want to show it immediately.
   if (isUserLoading && pathname !== '/login') {
      return (
       <div className="flex h-screen w-full items-center justify-center">
