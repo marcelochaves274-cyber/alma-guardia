@@ -64,20 +64,20 @@ export default function LoginPage() {
     if (!firebaseApp) return;
     const auth = getAuth(firebaseApp);
     
-    // Este efeito é executado no carregamento da página para verificar um resultado de redirecionamento
+    // This effect runs on page load to check for a redirect result
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
-          // O usuário fez login com sucesso através do redirecionamento.
+          // User successfully signed in via redirect.
           toast({
             title: 'Login com Google bem-sucedido!',
             description: `Bem-vindo, ${result.user.displayName}!`,
           });
-          // O observador de estado de autenticação em useUser irá lidar com o redirecionamento para '/'
+          router.push('/');
         }
       })
       .catch((error) => {
-        // Lida com erros do redirecionamento.
+        // Handle errors from the redirect.
         toast({
           variant: 'destructive',
           title: 'Erro com Login do Google',
@@ -85,8 +85,8 @@ export default function LoginPage() {
         });
       })
       .finally(() => {
-        // Haja ou não um resultado, terminamos o processamento.
-        // Isso para o spinner de carregamento inicial da página.
+        // Whether there was a result or not, we are done processing.
+        // This stops the initial page load spinner.
         setIsProcessingRedirect(false);
       });
   }, [firebaseApp, router, toast]);
@@ -120,7 +120,7 @@ export default function LoginPage() {
     provider.setCustomParameters({
       auth_domain: firebaseConfig.authDomain
     });
-    // Isso navegará para fora da página. Não é necessário definir o estado de carregamento aqui.
+    // This will navigate away from the page. No need to set loading state here.
     await signInWithRedirect(auth, provider);
   };
   
