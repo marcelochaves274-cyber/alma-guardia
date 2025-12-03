@@ -56,27 +56,31 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
   const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
   const [isGoogleAuthLoading, setIsGoogleAuthLoading] = useState(false);
 
   useEffect(() => {
     if (!firebaseApp) return;
     const auth = getAuth(firebaseApp);
-    // When the page loads, we are potentially in a redirect from Google.
-    // We set a loading state to show a spinner while we process the result.
-    setIsGoogleAuthLoading(true); 
+    
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
-          // User just signed in via redirect and we have the result.
+          // User just signed in via redirect.
+          // The main user observer will redirect to '/' soon.
+          // We can just stop the loading indicator here.
+          toast({
+            title: 'Login com Google bem-sucedido!',
+            description: `Bem-vindo, ${result.user.displayName}!`,
+          });
+          // Redirect is handled by main auth observer, but we can push to be faster
           router.push('/');
-        } else {
-          // No redirect result, so the user is not coming from Google login.
-          // Page is ready to be shown.
-          setIsLoading(false);
-          setIsGoogleAuthLoading(false);
         }
+        // This will be called on initial page load AND after redirect.
+        // In both cases, we are done processing the redirect result.
+        setIsProcessingRedirect(false);
+        setIsGoogleAuthLoading(false);
       })
       .catch((error) => {
         toast({
@@ -84,7 +88,7 @@ export default function LoginPage() {
           title: 'Erro com Login do Google',
           description: error.message,
         });
-        setIsLoading(false);
+        setIsProcessingRedirect(false);
         setIsGoogleAuthLoading(false);
       });
   }, [firebaseApp, router, toast]);
@@ -113,18 +117,17 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     if (!firebaseApp) return;
-    setIsGoogleAuthLoading(true);
+    setIsGoogleAuthLoading(true); // Show spinner on Google button
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       auth_domain: firebaseConfig.authDomain
     });
     // The page will redirect away. The useEffect hook will handle the result on the next page load.
-    // No need to set loading to false here.
     await signInWithRedirect(auth, provider);
   };
   
-  if (isLoading) {
+  if (isProcessingRedirect) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
