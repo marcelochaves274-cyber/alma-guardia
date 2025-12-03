@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -8,6 +8,7 @@ import {
   GoogleAuthProvider,
   signInWithRedirect,
   getRedirectResult,
+  type Auth,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useFirebaseApp } from '@/firebase';
@@ -56,16 +57,23 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  // This state is ONLY for the initial page load to check for a redirect result.
   const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
+  
+  // This state is ONLY for email/password sign-in/register.
   const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
 
   useEffect(() => {
     if (!firebaseApp) return;
+
     const auth = getAuth(firebaseApp);
     
+    // This should only run once when the component mounts.
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
+          // User successfully signed in with Google redirect.
           toast({
             title: 'Login com Google bem-sucedido!',
             description: `Bem-vindo, ${result.user.displayName}!`,
@@ -74,6 +82,7 @@ export default function LoginPage() {
         }
       })
       .catch((error) => {
+        // Handle errors from the redirect result.
         toast({
           variant: 'destructive',
           title: 'Erro com Login do Google',
@@ -81,6 +90,8 @@ export default function LoginPage() {
         });
       })
       .finally(() => {
+        // This is crucial: stop the initial loading state
+        // regardless of whether there was a redirect result or not.
         setIsProcessingRedirect(false);
       });
   }, [firebaseApp, router, toast]);
@@ -108,16 +119,22 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    // This button should not be clickable if email auth is in progress.
     if (!firebaseApp || isEmailAuthLoading) return;
+    
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       auth_domain: firebaseConfig.authDomain
     });
-    // signInWithRedirect will navigate away, no need for loading state here
+    
+    // No loading state is set here. The page will navigate away.
+    // The `isProcessingRedirect` state will handle the loading screen
+    // when the user comes back.
     await signInWithRedirect(auth, provider);
   };
   
+  // Show a full-page loader ONLY during the initial redirect check.
   if (isProcessingRedirect) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
