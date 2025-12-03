@@ -78,7 +78,6 @@ export default function LoginPage() {
         }
       })
       .catch((error) => {
-        // Ignora o erro se a operação for interrompida pelo usuário, o que é comum
         if (error.code !== 'auth/cancelled-popup-request') {
             toast({
               variant: 'destructive',
@@ -90,8 +89,7 @@ export default function LoginPage() {
       .finally(() => {
         setIsProcessingRedirect(false);
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firebaseApp]);
+  }, [firebaseApp, router, toast]);
 
   const handleEmailAuth = async (authAction: 'login' | 'register') => {
     if (!firebaseApp) return;
@@ -195,7 +193,7 @@ export default function LoginPage() {
               disabled={isAnyAuthLoading || !email || !password}
               className="w-full"
             >
-              {isEmailAuthLoading && !isGoogleAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Entrar
             </Button>
             <Button
@@ -204,7 +202,7 @@ export default function LoginPage() {
               disabled={isAnyAuthLoading || !email || !password}
               className="w-full"
             >
-              {isEmailAuthLoading && !isGoogleAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Criar Conta
             </Button>
           </div>
