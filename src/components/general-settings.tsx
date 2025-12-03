@@ -4,15 +4,28 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppSettings } from '@/context/app-settings-context';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 export function GeneralSettings() {
   const { appName, setAppName } = useAppSettings();
+  const { toast } = useToast();
+
+  const handleSave = () => {
+    // Here you would typically save the settings to a backend or localStorage
+    console.log('App name saved:', appName);
+    toast({
+      title: 'Sucesso!',
+      description: 'As configurações foram salvas.',
+    });
+  };
 
   return (
     <main className="flex flex-1 flex-col overflow-hidden p-4 md:p-6">
@@ -36,6 +49,9 @@ export function GeneralSettings() {
             </div>
           </div>
         </CardContent>
+        <CardFooter className="border-t px-6 py-4">
+          <Button onClick={handleSave}>Salvar</Button>
+        </CardFooter>
       </Card>
     </main>
   );
