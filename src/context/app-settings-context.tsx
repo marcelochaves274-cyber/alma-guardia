@@ -1,37 +1,59 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 
 interface AppSettingsContextType {
   appName: string;
-  setAppName: (name: string) => void;
+  setAppName: (name: string) => Promise<void>;
+  isLoading: boolean;
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined);
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [appName, setAppNameState] = useState('SGS Genius');
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const firestore = useFirestore();
 
   useEffect(() => {
-    const storedAppName = localStorage.getItem('appName');
-    if (storedAppName) {
-      setAppNameState(storedAppName);
-    }
-    setIsInitialized(true);
-  }, []);
+    const fetchAppName = async () => {
+      if (!firestore) return;
+      setIsLoading(true);
+      try {
+        const settingsDocRef = doc(firestore, 'settings', 'appDetails');
+        const docSnap = await getDoc(settingsDocRef);
+        if (docSnap.exists() && docSnap.data().name) {
+          setAppNameState(docSnap.data().name);
+        }
+      } catch (error) {
+        console.error("Error fetching app name from Firestore:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const setAppName = (name: string) => {
-    localStorage.setItem('appName', name);
+    fetchAppName();
+  }, [firestore]);
+
+  const setAppName = async (name: string) => {
+    if (!firestore) {
+      console.error("Firestore is not initialized");
+      return;
+    }
+    const settingsDocRef = doc(firestore, 'settings', 'appDetails');
+    await setDoc(settingsDocRef, { name: name });
     setAppNameState(name);
   };
 
   const value = {
     appName,
     setAppName,
+    isLoading
   };
   
-  if (!isInitialized) {
+  if (isLoading) {
     return null; // ou um componente de loading
   }
 
