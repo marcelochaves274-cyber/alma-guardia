@@ -6,10 +6,15 @@ import { useAppSettings } from '@/context/app-settings-context';
 export function Header() {
   const { appName } = useAppSettings();
   return (
-    <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-background px-4 md:px-6">
-      <SidebarTrigger className="md:hidden" />
-      <SgsGeniusLogo className="h-6 w-6 text-primary" />
-      <h1 className="font-headline text-xl font-semibold">{appName}</h1>
+    <header className="flex h-16 shrink-0 items-center border-b bg-background px-4 md:px-6">
+      <div className="flex w-1/3 justify-start">
+        <SidebarTrigger className="md:hidden" />
+      </div>
+      <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <h1 className="font-headline text-lg font-semibold">Sistema de Gestão de Segurança</h1>
+          <p className="text-sm text-muted-foreground">{appName}</p>
+      </div>
+      <div className="flex w-1/3 justify-end" />
     </header>
   );
 }
