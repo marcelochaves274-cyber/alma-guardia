@@ -65,10 +65,12 @@ export default function LoginPage() {
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
+          // User successfully signed in.
           router.push('/');
         }
       })
       .catch((error) => {
+        // Handle Errors here.
         toast({
           variant: 'destructive',
           title: 'Erro com Login do Google',
@@ -76,6 +78,7 @@ export default function LoginPage() {
         });
       })
       .finally(() => {
+        // In either case, the redirect check is complete.
         setRedirectLoading(false);
       });
   }, [firebaseApp, router, toast]);
@@ -104,9 +107,11 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     if (!firebaseApp) return;
-    setGoogleLoading(true);
+    setGoogleLoading(true); // Set loading state to give user feedback
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
+    // The page will now redirect to Google's sign-in page.
+    // After sign-in, the user will be redirected back and the useEffect above will handle the result.
     await signInWithRedirect(auth, provider);
   };
   
@@ -118,7 +123,7 @@ export default function LoginPage() {
     );
   }
 
-  const anyLoading = isLoading || isGoogleLoading || isRedirectLoading;
+  const anyLoading = isLoading || isGoogleLoading;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -162,7 +167,7 @@ export default function LoginPage() {
               disabled={anyLoading || !email || !password}
               className="w-full"
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading && !isGoogleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Entrar
             </Button>
             <Button
