@@ -8,6 +8,7 @@ import {
   GoogleAuthProvider,
   signInWithRedirect,
   getRedirectResult,
+  signInWithPopup,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useFirebaseApp } from '@/firebase';
@@ -68,7 +69,6 @@ export default function LoginPage() {
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
-          // User is signed in.
           router.push('/');
         }
       })
@@ -83,9 +83,7 @@ export default function LoginPage() {
       .finally(() => {
         setIsProcessingRedirect(false);
       });
-  // The empty dependency array is crucial here to ensure this runs only once.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firebaseApp, router]);
+  }, [firebaseApp, router, toast]);
 
   const handleEmailAuth = async (authAction: 'login' | 'register') => {
     if (!firebaseApp) return;
@@ -110,13 +108,13 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!firebaseApp || isEmailAuthLoading) return;
+    if (!firebaseApp) return;
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       auth_domain: firebaseConfig.authDomain,
     });
-    // signInWithRedirect will navigate away, no need for loading state here
+    // Using redirect as it's more robust in iframe/sandboxed environments
     await signInWithRedirect(auth, provider);
   };
   
@@ -197,7 +195,7 @@ export default function LoginPage() {
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignIn}
-            disabled={isEmailAuthLoading}
+            disabled={isEmailAuthLoading || isProcessingRedirect}
           >
             <GoogleIcon className="mr-2 h-4 w-4" />
             Google
