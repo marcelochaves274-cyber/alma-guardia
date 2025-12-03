@@ -35,10 +35,12 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const fetchAppSettings = async () => {
+      if (isUserLoading) return;
       if (!firestore || !user) {
-        if (!isUserLoading) setIsLoading(false);
+        setIsLoading(false);
         return;
       };
+      
       setIsLoading(true);
       try {
         const settingsDocRef = getSettingsDocRef(user.uid);
@@ -90,10 +92,13 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     isLoading: isLoading || isUserLoading,
   };
   
-  if (isLoading || isUserLoading) {
-    return null; // Don't render app until settings and user are loaded
+  if (isLoading || isUserLoading && !user) {
+     return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
   }
-
 
   return (
     <AppSettingsContext.Provider value={value}>

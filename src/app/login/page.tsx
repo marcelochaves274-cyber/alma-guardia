@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { firebaseConfig } from '@/firebase/config';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -55,8 +56,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!firebaseApp) return;
@@ -64,21 +64,18 @@ export default function LoginPage() {
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
-          // User successfully signed in via redirect.
           router.push('/');
         } else {
-          // No redirect result, so this is a normal page load.
-          setIsProcessingRedirect(false);
+          setIsLoading(false);
         }
       })
       .catch((error) => {
-        // Handle Errors here.
         toast({
           variant: 'destructive',
           title: 'Erro com Login do Google',
           description: error.message,
         });
-        setIsProcessingRedirect(false);
+        setIsLoading(false);
       });
   }, [firebaseApp, router, toast]);
 
@@ -99,24 +96,22 @@ export default function LoginPage() {
         title: 'Erro de Autenticação',
         description: error.message,
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     if (!firebaseApp) return;
-    // Set a global loading state, as the page will redirect.
     setIsLoading(true); 
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
-    // The page will now redirect to Google's sign-in page.
-    // After sign-in, the user will be redirected back and the useEffect above will handle the result.
+    provider.setCustomParameters({
+      auth_domain: firebaseConfig.authDomain
+    });
     await signInWithRedirect(auth, provider);
   };
   
-  // Show a global loader while checking for the redirect result.
-  if (isProcessingRedirect) {
+  if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -166,7 +161,6 @@ export default function LoginPage() {
               disabled={isLoading || !email || !password}
               className="w-full"
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Entrar
             </Button>
             <Button
@@ -194,11 +188,7 @@ export default function LoginPage() {
             onClick={handleGoogleSignIn}
             disabled={isLoading}
           >
-            {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <GoogleIcon className="mr-2 h-4 w-4" />
-            )}
+            <GoogleIcon className="mr-2 h-4 w-4" />
             Google
           </Button>
         </CardFooter>
