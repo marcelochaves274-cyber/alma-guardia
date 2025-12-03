@@ -6,7 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
   getRedirectResult,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -56,9 +56,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
   const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
-  const [isGoogleAuthLoading, setIsGoogleAuthLoading] = useState(false);
   const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
   useEffect(() => {
@@ -70,26 +68,24 @@ export default function LoginPage() {
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
-          toast({
-            title: 'Login com Google bem-sucedido!',
-            description: `Bem-vindo, ${result.user.displayName}!`,
-          });
+          // User is signed in.
           router.push('/');
         }
       })
       .catch((error) => {
-        if (error.code !== 'auth/cancelled-popup-request') {
-            toast({
-              variant: 'destructive',
-              title: 'Erro com Login do Google',
-              description: error.message,
-            });
-        }
+        console.error("Google redirect result error:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Erro com Login do Google',
+          description: error.message,
+        });
       })
       .finally(() => {
         setIsProcessingRedirect(false);
       });
-  }, [firebaseApp, router, toast]);
+  // The empty dependency array is crucial here to ensure this runs only once.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseApp, router]);
 
   const handleEmailAuth = async (authAction: 'login' | 'register') => {
     if (!firebaseApp) return;
@@ -114,33 +110,16 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!firebaseApp) return;
-    setIsGoogleAuthLoading(true);
+    if (!firebaseApp || isEmailAuthLoading) return;
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       auth_domain: firebaseConfig.authDomain,
     });
-    try {
-      const result = await signInWithPopup(auth, provider);
-       toast({
-        title: 'Login com Google bem-sucedido!',
-        description: `Bem-vindo, ${result.user.displayName}!`,
-      });
-      router.push('/');
-    } catch(error: any) {
-       if (error.code !== 'auth/cancelled-popup-request') {
-          toast({
-            variant: 'destructive',
-            title: 'Erro com Login do Google',
-            description: error.message,
-          });
-       }
-    } finally {
-      setIsGoogleAuthLoading(false);
-    }
+    // signInWithRedirect will navigate away, no need for loading state here
+    await signInWithRedirect(auth, provider);
   };
-
+  
   if (isProcessingRedirect) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -148,8 +127,6 @@ export default function LoginPage() {
       </div>
     );
   }
-
-  const isAnyAuthLoading = isEmailAuthLoading || isGoogleAuthLoading;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -172,7 +149,7 @@ export default function LoginPage() {
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isAnyAuthLoading}
+              disabled={isEmailAuthLoading}
             />
           </div>
           <div className="space-y-2">
@@ -182,7 +159,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={isAnyAuthLoading}
+              disabled={isEmailAuthLoading}
             />
           </div>
         </CardContent>
@@ -190,7 +167,7 @@ export default function LoginPage() {
           <div className="flex w-full gap-2">
             <Button
               onClick={() => handleEmailAuth('login')}
-              disabled={isAnyAuthLoading || !email || !password}
+              disabled={isEmailAuthLoading || !email || !password}
               className="w-full"
             >
               {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -199,7 +176,7 @@ export default function LoginPage() {
             <Button
               variant="secondary"
               onClick={() => handleEmailAuth('register')}
-              disabled={isAnyAuthLoading || !email || !password}
+              disabled={isEmailAuthLoading || !email || !password}
               className="w-full"
             >
               {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -220,13 +197,9 @@ export default function LoginPage() {
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignIn}
-            disabled={isAnyAuthLoading}
+            disabled={isEmailAuthLoading}
           >
-            {isGoogleAuthLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <GoogleIcon className="mr-2 h-4 w-4" />
-            )}
+            <GoogleIcon className="mr-2 h-4 w-4" />
             Google
           </Button>
         </CardFooter>
