@@ -8,16 +8,23 @@ import {
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
-  SidebarMenuSubItem,
   useSidebar,
+  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { ListTodo, Settings, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from './icons';
 
-export function SidebarNav() {
+type SidebarNavProps = {
+    activePage: string;
+    setActivePage: (page: string) => void;
+};
+
+export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
   const { state } = useSidebar();
-  const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({});
+  const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({
+    settings: true,
+  });
 
   const toggleSubMenu = (name: string) => {
     setOpenSubMenus((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -37,7 +44,8 @@ export function SidebarNav() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              isActive
+              isActive={activePage === 'reminders'}
+              onClick={() => setActivePage('reminders')}
               tooltip={{
                 children: 'Lembretes',
               }}
@@ -64,7 +72,12 @@ export function SidebarNav() {
             {openSubMenus['settings'] && state === 'expanded' && (
               <SidebarMenuSub>
                 <SidebarMenuSubItem>
-                  <SidebarMenuSubButton>Configurações gerais</SidebarMenuSubButton>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'general-settings'}
+                    onClick={() => setActivePage('general-settings')}
+                  >
+                    Configurações gerais
+                  </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
             )}
