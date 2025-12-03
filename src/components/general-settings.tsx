@@ -17,26 +17,31 @@ import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export function GeneralSettings() {
-  const { appName, setAppName, isLoading: isAppLoading } = useAppSettings();
+  const { appName, setAppName, logoUrl, setLogoUrl, isLoading: isAppLoading } = useAppSettings();
   const [localAppName, setLocalAppName] = useState('');
+  const [localLogoUrl, setLocalLogoUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     setLocalAppName(appName);
-  }, [appName]);
+    setLocalLogoUrl(logoUrl);
+  }, [appName, logoUrl]);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await setAppName(localAppName);
+      await Promise.all([
+        setAppName(localAppName),
+        setLogoUrl(localLogoUrl)
+      ]);
+      
       toast({
         title: 'Sucesso!',
         description: 'As configurações foram salvas.',
       });
-      setLocalAppName('');
     } catch (error) {
-      console.error("Failed to save app name:", error);
+      console.error("Failed to save app settings:", error);
       toast({
         variant: 'destructive',
         title: 'Erro!',
@@ -67,6 +72,16 @@ export function GeneralSettings() {
                 value={localAppName}
                 onChange={(e) => setLocalAppName(e.target.value)}
                 placeholder="Digite o nome da sua empresa ou usuário"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="logo-url">URL da Logo</Label>
+              <Input
+                id="logo-url"
+                value={localLogoUrl}
+                onChange={(e) => setLocalLogoUrl(e.target.value)}
+                placeholder="https://example.com/logo.png"
                 disabled={isLoading}
               />
             </div>

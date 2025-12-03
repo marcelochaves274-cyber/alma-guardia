@@ -7,6 +7,8 @@ import { useFirestore } from '@/firebase';
 interface AppSettingsContextType {
   appName: string;
   setAppName: (name: string) => Promise<void>;
+  logoUrl: string;
+  setLogoUrl: (url: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -14,27 +16,34 @@ const AppSettingsContext = createContext<AppSettingsContextType | undefined>(und
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [appName, setAppNameState] = useState('SGS Genius');
+  const [logoUrl, setLogoUrlState] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const firestore = useFirestore();
 
   useEffect(() => {
-    const fetchAppName = async () => {
+    const fetchAppSettings = async () => {
       if (!firestore) return;
       setIsLoading(true);
       try {
         const settingsDocRef = doc(firestore, 'settings', 'appDetails');
         const docSnap = await getDoc(settingsDocRef);
-        if (docSnap.exists() && docSnap.data().name) {
-          setAppNameState(docSnap.data().name);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.name) {
+            setAppNameState(data.name);
+          }
+          if (data.logoUrl) {
+            setLogoUrlState(data.logoUrl);
+          }
         }
       } catch (error) {
-        console.error("Error fetching app name from Firestore:", error);
+        console.error("Error fetching app settings from Firestore:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAppName();
+    fetchAppSettings();
   }, [firestore]);
 
   const setAppName = async (name: string) => {
@@ -43,18 +52,31 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       return;
     }
     const settingsDocRef = doc(firestore, 'settings', 'appDetails');
-    await setDoc(settingsDocRef, { name: name });
+    await setDoc(settingsDocRef, { name: name }, { merge: true });
     setAppNameState(name);
+  };
+  
+  const setLogoUrl = async (url: string) => {
+    if (!firestore) {
+      console.error("Firestore is not initialized");
+      return;
+    }
+    const settingsDocRef = doc(firestore, 'settings', 'appDetails');
+    await setDoc(settingsDocRef, { logoUrl: url }, { merge: true });
+    setLogoUrlState(url);
   };
 
   const value = {
     appName,
     setAppName,
+    logoUrl,
+    setLogoUrl,
     isLoading
   };
   
+  // Não renderiza o app até que as configurações sejam carregadas para evitar piscar
   if (isLoading) {
-    return null; // ou um componente de loading
+    return null; // ou um componente de loading em tela cheia
   }
 
   return (

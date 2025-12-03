@@ -14,6 +14,8 @@ import {
 import { ListTodo, Settings, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from './icons';
+import { useAppSettings } from '@/context/app-settings-context';
+import Image from 'next/image';
 
 type SidebarNavProps = {
     activePage: string;
@@ -22,6 +24,7 @@ type SidebarNavProps = {
 
 export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
   const { state } = useSidebar();
+  const { logoUrl, isLoading } = useAppSettings();
   const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({
     settings: true,
   });
@@ -34,7 +37,17 @@ export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
     <>
       <SidebarHeader>
         <div className="flex items-center gap-2">
-          <SgsGeniusLogo className="h-6 w-6 text-primary" />
+          {logoUrl && !isLoading ? (
+             <Image 
+                src={logoUrl} 
+                alt="Logo da empresa"
+                width={24}
+                height={24}
+                className="rounded-sm object-contain"
+              />
+          ) : (
+            <SgsGeniusLogo className="h-6 w-6 text-primary" />
+          )}
           {state === 'expanded' && (
             <h2 className="text-lg font-semibold">SGS Genius</h2>
           )}
