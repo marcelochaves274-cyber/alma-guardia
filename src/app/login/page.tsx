@@ -106,13 +106,12 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     if (!firebaseApp) return;
-    setIsAuthLoading(true);
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       auth_domain: firebaseConfig.authDomain
     });
-    // The page will redirect away, so we don't need to set loading to false here.
+    // The page will redirect away, so we don't need to manage loading state here.
     // The useEffect hook will handle the result on the next page load.
     await signInWithRedirect(auth, provider);
   };
