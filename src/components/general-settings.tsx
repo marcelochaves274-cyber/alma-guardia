@@ -13,18 +13,25 @@ import { Label } from '@/components/ui/label';
 import { useAppSettings } from '@/context/app-settings-context';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
 
 export function GeneralSettings() {
   const { appName, setAppName } = useAppSettings();
+  const [localAppName, setLocalAppName] = useState(appName);
   const { toast } = useToast();
 
+  useEffect(() => {
+    setLocalAppName(appName);
+  }, [appName]);
+
   const handleSave = () => {
-    // Here you would typically save the settings to a backend or localStorage
-    console.log('App name saved:', appName);
+    setAppName(localAppName);
+    console.log('App name saved:', localAppName);
     toast({
       title: 'Sucesso!',
       description: 'As configurações foram salvas.',
     });
+    setLocalAppName(''); // Limpa o campo de texto
   };
 
   return (
@@ -42,8 +49,8 @@ export function GeneralSettings() {
               <Label htmlFor="app-name">Nome da Empresa/Usuário</Label>
               <Input
                 id="app-name"
-                value={appName}
-                onChange={(e) => setAppName(e.target.value)}
+                value={localAppName}
+                onChange={(e) => setLocalAppName(e.target.value)}
                 placeholder="Digite o nome da sua empresa ou usuário"
               />
             </div>
