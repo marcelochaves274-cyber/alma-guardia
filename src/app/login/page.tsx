@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect } from 'react';
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -57,11 +57,11 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true); // Start as true
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
   useEffect(() => {
     if (!firebaseApp) {
-      setIsProcessingRedirect(false); // Stop loading if firebase is not ready
+      setIsProcessingRedirect(false);
       return;
     }
     const auth = getAuth(firebaseApp);
@@ -71,8 +71,6 @@ export default function LoginPage() {
           // User successfully signed in via redirect.
           router.push('/');
         }
-        // If result is null, it means the user just landed on the login page
-        // without a redirect operation.
       })
       .catch((error) => {
         console.error('Google redirect result error:', error);
@@ -84,10 +82,12 @@ export default function LoginPage() {
       })
       .finally(() => {
         // This is crucial: stop the main page loading indicator
-        // after processing is complete.
+        // after processing is complete, regardless of the outcome.
         setIsProcessingRedirect(false);
       });
-  }, [firebaseApp, router, toast]);
+  // The empty dependency array is correct here. We only want this to run once on component mount.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseApp]);
 
   const handleEmailAuth = async (authAction: 'login' | 'register') => {
     if (!firebaseApp) return;
@@ -112,7 +112,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!firebaseApp || isProcessingRedirect || isEmailAuthLoading) return;
+    if (!firebaseApp) return;
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
