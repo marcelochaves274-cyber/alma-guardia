@@ -13,8 +13,9 @@ import { Label } from '@/components/ui/label';
 import { useAppSettings } from '@/context/app-settings-context';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Loader2, Upload, X } from 'lucide-react';
+import Image from 'next/image';
 
 export function GeneralSettings() {
   const { appName, setAppName, logoUrl, setLogoUrl, isLoading: isAppLoading } = useAppSettings();
@@ -22,6 +23,7 @@ export function GeneralSettings() {
   const [localLogoUrl, setLocalLogoUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setLocalAppName(appName);
@@ -52,6 +54,17 @@ export function GeneralSettings() {
     }
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLocalLogoUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const isLoading = isAppLoading || isSaving;
 
   return (
@@ -76,14 +89,52 @@ export function GeneralSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="logo-url">URL da Logo</Label>
-              <Input
-                id="logo-url"
-                value={localLogoUrl}
-                onChange={(e) => setLocalLogoUrl(e.target.value)}
-                placeholder="https://example.com/logo.png"
-                disabled={isLoading}
-              />
+              <Label htmlFor="logo-url">Logo da Empresa</Label>
+              <div className="flex items-center gap-4">
+                <div className='relative w-24 h-24 border rounded-md flex items-center justify-center bg-muted/50'>
+                  {localLogoUrl ? (
+                    <>
+                      <Image src={localLogoUrl} alt="Prévia da logo" fill className='object-contain rounded-md p-2' />
+                       <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-0 right-0 h-6 w-6 bg-red-500/80 text-white hover:bg-red-600"
+                        onClick={() => setLocalLogoUrl('')}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <span className='text-xs text-muted-foreground text-center'>Prévia</span>
+                  )}
+                </div>
+                <div className='flex-1'>
+                  <Input
+                    id="logo-url"
+                    value={localLogoUrl}
+                    onChange={(e) => setLocalLogoUrl(e.target.value)}
+                    placeholder="Cole uma URL ou faça upload"
+                    disabled={isLoading}
+                  />
+                   <Button 
+                    variant="outline"
+                    className='mt-2'
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading}
+                  >
+                     <Upload className="mr-2 h-4 w-4" />
+                     Fazer Upload
+                   </Button>
+                   <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept="image/png, image/jpeg, image/gif, image/svg+xml"
+                  />
+                </div>
+              </div>
+               <p className='text-xs text-muted-foreground mt-2'>Faça o upload ou cole a URL da sua logo. A imagem será salva em formato de texto.</p>
             </div>
           </div>
         </CardContent>

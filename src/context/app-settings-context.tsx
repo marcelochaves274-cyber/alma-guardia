@@ -1,8 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 
 interface AppSettingsContextType {
   appName: string;
@@ -12,56 +18,66 @@ interface AppSettingsContextType {
   isLoading: boolean;
 }
 
-const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined);
+const AppSettingsContext = createContext<AppSettingsContextType | undefined>(
+  undefined
+);
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [appName, setAppNameState] = useState('SGS Genius');
   const [logoUrl, setLogoUrlState] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const firestore = useFirestore();
+  const { user, isLoading: isUserLoading } = useUser();
+
+  const getSettingsDocRef = (userId: string) => {
+    return doc(firestore!, 'users', userId, 'settings', 'appDetails');
+  };
 
   useEffect(() => {
     const fetchAppSettings = async () => {
-      if (!firestore) return;
+      if (!firestore || !user) {
+        if (!isUserLoading) setIsLoading(false);
+        return;
+      };
       setIsLoading(true);
       try {
-        const settingsDocRef = doc(firestore, 'settings', 'appDetails');
+        const settingsDocRef = getSettingsDocRef(user.uid);
         const docSnap = await getDoc(settingsDocRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          if (data.name) {
-            setAppNameState(data.name);
-          }
-          if (data.logoUrl) {
-            setLogoUrlState(data.logoUrl);
-          }
+          setAppNameState(data.name || 'SGS Genius');
+          setLogoUrlState(data.logoUrl || '');
+        } else {
+          // If no settings exist, use default values
+          setAppNameState('SGS Genius');
+          setLogoUrlState('');
         }
       } catch (error) {
-        console.error("Error fetching app settings from Firestore:", error);
+        console.error('Error fetching app settings from Firestore:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchAppSettings();
-  }, [firestore]);
+  }, [firestore, user, isUserLoading]);
 
   const setAppName = async (name: string) => {
-    if (!firestore) {
-      console.error("Firestore is not initialized");
-      return;
+    if (!firestore || !user) {
+      console.error('Firestore not initialized or user not logged in');
+      throw new Error('Usuário não autenticado.');
     }
-    const settingsDocRef = doc(firestore, 'settings', 'appDetails');
+    const settingsDocRef = getSettingsDocRef(user.uid);
     await setDoc(settingsDocRef, { name: name }, { merge: true });
     setAppNameState(name);
   };
-  
+
   const setLogoUrl = async (url: string) => {
-    if (!firestore) {
-      console.error("Firestore is not initialized");
-      return;
+    if (!firestore || !user) {
+      console.error('Firestore not initialized or user not logged in');
+      throw new Error('Usuário não autenticado.');
     }
-    const settingsDocRef = doc(firestore, 'settings', 'appDetails');
+    const settingsDocRef = getSettingsDocRef(user.uid);
     await setDoc(settingsDocRef, { logoUrl: url }, { merge: true });
     setLogoUrlState(url);
   };
@@ -71,13 +87,13 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setAppName,
     logoUrl,
     setLogoUrl,
-    isLoading
+    isLoading: isLoading || isUserLoading,
   };
   
-  // Não renderiza o app até que as configurações sejam carregadas para evitar piscar
-  if (isLoading) {
-    return null; // ou um componente de loading em tela cheia
+  if (isLoading || isUserLoading) {
+    return null; // Don't render app until settings and user are loaded
   }
+
 
   return (
     <AppSettingsContext.Provider value={value}>
@@ -89,7 +105,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
 export function useAppSettings() {
   const context = useContext(AppSettingsContext);
   if (context === undefined) {
-    throw new Error('useAppSettings must be used within an AppSettingsProvider');
+    throw new Error(
+      'useAppSettings must be used within an AppSettingsProvider'
+    );
   }
   return context;
 }

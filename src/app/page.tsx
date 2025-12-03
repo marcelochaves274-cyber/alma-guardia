@@ -7,9 +7,29 @@ import { Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { useState } from 'react';
 import { GeneralSettings } from '@/components/general-settings';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
+  const { user, isLoading } = useUser();
+  const router = useRouter();
   const [activePage, setActivePage] = useState('reminders');
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
 
   const renderContent = () => {
     switch (activePage) {

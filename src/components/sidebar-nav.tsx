@@ -16,6 +16,7 @@ import { useState } from 'react';
 import { SgsGeniusLogo } from './icons';
 import { useAppSettings } from '@/context/app-settings-context';
 import Image from 'next/image';
+import { Skeleton } from './ui/skeleton';
 
 type SidebarNavProps = {
     activePage: string;
@@ -37,7 +38,9 @@ export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
     <>
       <SidebarHeader>
         <div className="flex items-center gap-2">
-          {logoUrl && !isLoading ? (
+          {isLoading ? (
+            <Skeleton className='h-6 w-6 rounded-sm' />
+          ) : logoUrl ? (
              <Image 
                 src={logoUrl} 
                 alt="Logo da empresa"
