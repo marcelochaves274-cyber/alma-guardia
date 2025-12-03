@@ -38,39 +38,37 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const fetchAppSettings = async () => {
-      // Don't fetch settings if the user isn't loaded, or isn't logged in, or firestore is not available
-      if (isUserLoading || !user || !firestore) {
-        // If we are not on a loading state and there is no user, we can safely assume we are done.
-        if (!isUserLoading && !user) {
-           setIsLoading(false);
-        }
-        return;
-      };
-      
-      setIsLoading(true);
-      try {
-        const settingsDocRef = getSettingsDocRef(user.uid);
-        if (settingsDocRef) {
-          const docSnap = await getDoc(settingsDocRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setAppNameState(data.name || 'SGS Genius');
-            setLogoUrlState(data.logoUrl || '');
-          } else {
-            // If no settings exist, use default values
-            setAppNameState('SGS Genius');
-            setLogoUrlState('');
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching app settings from Firestore:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    // If the user is not logged in and we're not on the login page, isUserLoading will handle the loader/redirect.
+    // If we are on the login page, we can stop loading early.
+    if (!isUserLoading && !user) {
+      setIsLoading(false);
+      return;
+    }
 
-    fetchAppSettings();
+    if (user && firestore) {
+      const fetchAppSettings = async () => {
+        setIsLoading(true);
+        try {
+          const settingsDocRef = getSettingsDocRef(user.uid);
+          if (settingsDocRef) {
+            const docSnap = await getDoc(settingsDocRef);
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              setAppNameState(data.name || 'SGS Genius');
+              setLogoUrlState(data.logoUrl || '');
+            } else {
+              setAppNameState('SGS Genius');
+              setLogoUrlState('');
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching app settings from Firestore:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchAppSettings();
+    }
   }, [firestore, user, isUserLoading]);
 
   const setAppName = async (name: string) => {
@@ -103,9 +101,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     isLoading: isLoading || isUserLoading,
   };
   
-  // While user status is loading, AND we are not on the login page, show a loader.
-  // This prevents the main app from flashing while we wait for the auth check.
-  // If we ARE on the login page, we want to show it immediately.
+  // This loader handles the initial auth check on protected pages.
   if (isUserLoading && pathname !== '/login') {
      return (
       <div className="flex h-screen w-full items-center justify-center">
