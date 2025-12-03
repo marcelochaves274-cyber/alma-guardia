@@ -57,19 +57,25 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
+  const [isGoogleAuthLoading, setIsGoogleAuthLoading] = useState(false);
 
   useEffect(() => {
     if (!firebaseApp) return;
     const auth = getAuth(firebaseApp);
+    // When the page loads, we are potentially in a redirect from Google.
+    // We set a loading state to show a spinner while we process the result.
+    setIsGoogleAuthLoading(true); 
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
-          // User just signed in via redirect.
+          // User just signed in via redirect and we have the result.
           router.push('/');
         } else {
-          // No user signed in, page is ready to be shown.
+          // No redirect result, so the user is not coming from Google login.
+          // Page is ready to be shown.
           setIsLoading(false);
+          setIsGoogleAuthLoading(false);
         }
       })
       .catch((error) => {
@@ -79,12 +85,13 @@ export default function LoginPage() {
           description: error.message,
         });
         setIsLoading(false);
+        setIsGoogleAuthLoading(false);
       });
   }, [firebaseApp, router, toast]);
 
   const handleAuth = async (authAction: 'login' | 'register') => {
     if (!firebaseApp) return;
-    setIsAuthLoading(true);
+    setIsEmailAuthLoading(true);
     const auth = getAuth(firebaseApp);
     try {
       if (authAction === 'login') {
@@ -100,19 +107,20 @@ export default function LoginPage() {
         description: error.message,
       });
     } finally {
-      setIsAuthLoading(false);
+      setIsEmailAuthLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     if (!firebaseApp) return;
+    setIsGoogleAuthLoading(true);
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       auth_domain: firebaseConfig.authDomain
     });
-    // The page will redirect away, so we don't need to manage loading state here.
-    // The useEffect hook will handle the result on the next page load.
+    // The page will redirect away. The useEffect hook will handle the result on the next page load.
+    // No need to set loading to false here.
     await signInWithRedirect(auth, provider);
   };
   
@@ -123,6 +131,8 @@ export default function LoginPage() {
       </div>
     );
   }
+
+  const isAnyAuthLoading = isEmailAuthLoading || isGoogleAuthLoading;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -145,7 +155,7 @@ export default function LoginPage() {
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isAuthLoading}
+              disabled={isAnyAuthLoading}
             />
           </div>
           <div className="space-y-2">
@@ -155,7 +165,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={isAuthLoading}
+              disabled={isAnyAuthLoading}
             />
           </div>
         </CardContent>
@@ -163,19 +173,19 @@ export default function LoginPage() {
           <div className="flex w-full gap-2">
             <Button
               onClick={() => handleAuth('login')}
-              disabled={isAuthLoading || !email || !password}
+              disabled={isAnyAuthLoading || !email || !password}
               className="w-full"
             >
-              {isAuthLoading && <Loader2 className="animate-spin" />}
+              {isEmailAuthLoading && <Loader2 className="animate-spin" />}
               Entrar
             </Button>
             <Button
               variant="secondary"
               onClick={() => handleAuth('register')}
-              disabled={isAuthLoading || !email || !password}
+              disabled={isAnyAuthLoading || !email || !password}
               className="w-full"
             >
-              {isAuthLoading && <Loader2 className="animate-spin" />}
+              {isEmailAuthLoading && <Loader2 className="animate-spin" />}
               Criar Conta
             </Button>
           </div>
@@ -193,10 +203,9 @@ export default function LoginPage() {
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignIn}
-            disabled={isAuthLoading}
+            disabled={isAnyAuthLoading}
           >
-            {isAuthLoading && <Loader2 className="animate-spin" />}
-            {!isAuthLoading && <GoogleIcon className="mr-2 h-4 w-4" />}
+            {isGoogleAuthLoading ? <Loader2 className="animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
             Google
           </Button>
         </CardFooter>
