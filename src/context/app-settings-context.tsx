@@ -29,6 +29,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
+    let isMounted = true;
+    
     if (isUserLoading) {
       // Don't do anything until the user's auth state is resolved.
       // isLoading will remain true.
@@ -43,8 +45,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
 
     // At this point, we have a user and firestore, so we can fetch the data.
     const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
-    let isMounted = true;
-
+    
     getDoc(settingsDocRef)
       .then((docSnap) => {
         if (isMounted && docSnap.exists()) {
@@ -72,7 +73,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       isMounted = false;
     }
 
-  }, [firestore, user, isUserLoading, toast]);
+  }, [firestore, user, isUserLoading]);
 
   const setAppName = async (name: string) => {
     if (!firestore || !user) {
