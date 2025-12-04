@@ -50,8 +50,13 @@ export function GeneralSettings() {
           }
         });
     } else if (!isUserLoading) {
-      // Handle case where there's no user or firestore
-      setIsLoading(false);
+      // Handle case where there's no user or firestore yet
+      // We will keep loading until firestore is available.
+      if (!firestore) {
+         // Firestore is not ready, keep loading
+      } else {
+         setIsLoading(false);
+      }
     }
     
     return () => { isMounted = false };
@@ -87,7 +92,7 @@ export function GeneralSettings() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isUserLoading) {
     return (
        <main className="flex flex-1 flex-col overflow-hidden p-4 md:p-6">
           <Card>
@@ -109,7 +114,7 @@ export function GeneralSettings() {
   }
 
   return (
-    <main className="flex flex-1 flex-col overflow-hidden p-4 md:p-6">
+    <main className="flex w-full max-w-2xl flex-col overflow-hidden">
       <Card>
         <CardHeader>
           <CardTitle>Configurações Gerais</CardTitle>
