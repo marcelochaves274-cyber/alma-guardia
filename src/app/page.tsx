@@ -56,14 +56,12 @@ export default function Home() {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       <Header />
-      <div className="flex flex-1 overflow-y-auto">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar>
           <SidebarNav activePage={activePage} setActivePage={setActivePage} />
         </Sidebar>
-        <SidebarInset>
-          <div className="w-full p-4 md:p-6">
-            {renderContent()}
-          </div>
+        <SidebarInset className="p-4 md:p-6">
+          {renderContent()}
         </SidebarInset>
       </div>
     </div>
