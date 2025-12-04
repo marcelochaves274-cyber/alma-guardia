@@ -35,10 +35,13 @@ export function GeneralSettings() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await Promise.all([
-        setAppName(localAppName),
-        setLogoUrl(localLogoUrl)
-      ]);
+      // Only update if the values have changed
+      if (localAppName !== appName) {
+        await setAppName(localAppName);
+      }
+      if (localLogoUrl !== logoUrl) {
+        await setLogoUrl(localLogoUrl);
+      }
       
       toast({
         title: 'Sucesso!',
@@ -67,7 +70,7 @@ export function GeneralSettings() {
     }
   };
 
-  const isLoading = isAppLoading || isSaving;
+  const isFormDisabled = isAppLoading || isSaving;
 
   return (
     <main className="flex flex-1 flex-col overflow-hidden p-4 md:p-6">
@@ -87,14 +90,14 @@ export function GeneralSettings() {
                 value={localAppName}
                 onChange={(e) => setLocalAppName(e.target.value)}
                 placeholder="Digite o nome da sua empresa ou usuário"
-                disabled={isLoading}
+                disabled={isFormDisabled}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="logo-upload">Logo da Empresa</Label>
               <div className="flex items-center gap-4">
                 <div className='relative w-24 h-24 border rounded-md flex items-center justify-center bg-muted/50'>
-                  {isLoading ? (
+                  {isAppLoading ? (
                      <Loader2 className="h-6 w-6 animate-spin" />
                   ) : localLogoUrl ? (
                     <>
@@ -104,7 +107,7 @@ export function GeneralSettings() {
                         size="icon"
                         className="absolute top-0 right-0 h-6 w-6 bg-red-500/80 text-white hover:bg-red-600"
                         onClick={() => setLocalLogoUrl('')}
-                        disabled={isLoading}
+                        disabled={isFormDisabled}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -117,7 +120,7 @@ export function GeneralSettings() {
                    <Button 
                     variant="outline"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isLoading}
+                    disabled={isFormDisabled}
                   >
                      <Upload className="mr-2 h-4 w-4" />
                      Fazer Upload da Logo
@@ -137,7 +140,7 @@ export function GeneralSettings() {
           </div>
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleSave} disabled={isLoading}>
+          <Button onClick={handleSave} disabled={isFormDisabled}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salvar
           </Button>
