@@ -77,7 +77,7 @@ export function GeneralSettings() {
     }
   };
 
-  const isFormDisabled = isSaving || isAppLoading;
+  const isFormDisabled = isSaving;
 
   return (
     <main className="flex flex-1 flex-col overflow-hidden p-4 md:p-6">
@@ -89,65 +89,76 @@ export function GeneralSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="app-name">Nome da Empresa/Usuário</Label>
-              <Input
-                id="app-name"
-                value={localAppName}
-                onChange={(e) => setLocalAppName(e.target.value)}
-                placeholder="Digite o nome da sua empresa ou usuário"
-                disabled={isFormDisabled}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="logo-upload">Logo da Empresa</Label>
-              <div className="flex items-center gap-4">
-                <div className='relative w-24 h-24 border rounded-md flex items-center justify-center bg-muted/50'>
-                  {isAppLoading ? (
-                     <Loader2 className="h-6 w-6 animate-spin" />
-                  ) : localLogoUrl ? (
-                    <>
-                      <Image src={localLogoUrl} alt="Prévia da logo" fill className='object-contain rounded-md p-2' />
-                       <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-0 right-0 h-6 w-6 bg-red-500/80 text-white hover:bg-red-600"
-                        onClick={() => setLocalLogoUrl('')}
-                        disabled={isFormDisabled}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </>
-                  ) : (
-                    <span className='text-xs text-muted-foreground text-center'>Prévia</span>
-                  )}
+          {isAppLoading ? (
+            <div className="space-y-4">
+               <div className="space-y-2">
+                 <Label htmlFor="app-name">Nome da Empresa/Usuário</Label>
+                 <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+               </div>
+                <div className="space-y-2">
+                  <Label>Logo da Empresa</Label>
+                   <div className="h-24 w-full animate-pulse rounded-md bg-muted" />
                 </div>
-                <div className='flex-1'>
-                   <Button 
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isFormDisabled}
-                  >
-                     <Upload className="mr-2 h-4 w-4" />
-                     Fazer Upload da Logo
-                   </Button>
-                   <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    className="hidden"
-                    accept="image/png, image/jpeg, image/gif, image/svg+xml"
-                    id="logo-upload"
-                  />
-                   <p className='text-xs text-muted-foreground mt-2'>Faça o upload da sua logo. A imagem será salva em formato de texto.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="app-name">Nome da Empresa/Usuário</Label>
+                <Input
+                  id="app-name"
+                  value={localAppName}
+                  onChange={(e) => setLocalAppName(e.target.value)}
+                  placeholder="Digite o nome da sua empresa ou usuário"
+                  disabled={isFormDisabled}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="logo-upload">Logo da Empresa</Label>
+                <div className="flex items-center gap-4">
+                  <div className='relative w-24 h-24 border rounded-md flex items-center justify-center bg-muted/50'>
+                    {localLogoUrl ? (
+                      <>
+                        <Image src={localLogoUrl} alt="Prévia da logo" fill className='object-contain rounded-md p-2' />
+                         <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-0 right-0 h-6 w-6 bg-red-500/80 text-white hover:bg-red-600"
+                          onClick={() => setLocalLogoUrl('')}
+                          disabled={isFormDisabled}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <span className='text-xs text-muted-foreground text-center'>Prévia</span>
+                    )}
+                  </div>
+                  <div className='flex-1'>
+                     <Button 
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isFormDisabled}
+                    >
+                       <Upload className="mr-2 h-4 w-4" />
+                       Fazer Upload da Logo
+                     </Button>
+                     <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      className="hidden"
+                      accept="image/png, image/jpeg, image/gif, image/svg+xml"
+                      id="logo-upload"
+                    />
+                     <p className='text-xs text-muted-foreground mt-2'>Faça o upload da sua logo. A imagem será salva em formato de texto.</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleSave} disabled={isFormDisabled}>
+          <Button onClick={handleSave} disabled={isFormDisabled || isAppLoading}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salvar
           </Button>
