@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -32,7 +33,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
-  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -42,7 +43,7 @@ export default function LoginPage() {
 
   const handleEmailAuth = async (authAction: 'login' | 'register') => {
     if (!firebaseApp) return;
-    setIsAuthLoading(true);
+    setIsEmailAuthLoading(true);
     const auth = getAuth(firebaseApp);
     try {
       if (authAction === 'login') {
@@ -58,7 +59,7 @@ export default function LoginPage() {
         description: error.message,
       });
     } finally {
-        setIsAuthLoading(false);
+        setIsEmailAuthLoading(false);
     }
   };
   
@@ -72,7 +73,6 @@ export default function LoginPage() {
     );
   }
 
-  // If user is loaded and exists, we shouldn't show the login page
   if (user) {
     return null;
   }
@@ -98,7 +98,7 @@ export default function LoginPage() {
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isAuthLoading}
+              disabled={isEmailAuthLoading}
             />
           </div>
           <div className="space-y-2">
@@ -108,7 +108,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={isAuthLoading}
+              disabled={isEmailAuthLoading}
             />
           </div>
         </CardContent>
@@ -116,19 +116,19 @@ export default function LoginPage() {
           <div className="flex w-full gap-2">
             <Button
               onClick={() => handleEmailAuth('login')}
-              disabled={isAuthLoading || !email || !password}
+              disabled={isEmailAuthLoading || !email || !password}
               className="w-full"
             >
-              {isAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Entrar
             </Button>
             <Button
               variant="secondary"
               onClick={() => handleEmailAuth('register')}
-              disabled={isAuthLoading || !email || !password}
+              disabled={isEmailAuthLoading || !email || !password}
               className="w-full"
             >
-              {isAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Criar Conta
             </Button>
           </div>
