@@ -113,15 +113,15 @@ export default function LoginPage() {
 
   if (isUserLoading || (!isUserLoading && user)) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-sm border-none bg-card/80 shadow-2xl backdrop-blur-sm">
         <CardHeader className="text-center">
           <div className="mb-4 flex justify-center">
             <SgsGeniusLogo className="h-12 w-12 text-primary" />
