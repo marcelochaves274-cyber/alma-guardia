@@ -26,9 +26,11 @@ export function GeneralSettings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setLocalAppName(appName);
-    setLocalLogoUrl(logoUrl);
-  }, [appName, logoUrl]);
+    if (!isAppLoading) {
+      setLocalAppName(appName);
+      setLocalLogoUrl(logoUrl);
+    }
+  }, [appName, logoUrl, isAppLoading]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -89,10 +91,12 @@ export function GeneralSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="logo-url">Logo da Empresa</Label>
+              <Label htmlFor="logo-upload">Logo da Empresa</Label>
               <div className="flex items-center gap-4">
                 <div className='relative w-24 h-24 border rounded-md flex items-center justify-center bg-muted/50'>
-                  {localLogoUrl ? (
+                  {isLoading ? (
+                     <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : localLogoUrl ? (
                     <>
                       <Image src={localLogoUrl} alt="Prévia da logo" fill className='object-contain rounded-md p-2' />
                        <Button
@@ -100,6 +104,7 @@ export function GeneralSettings() {
                         size="icon"
                         className="absolute top-0 right-0 h-6 w-6 bg-red-500/80 text-white hover:bg-red-600"
                         onClick={() => setLocalLogoUrl('')}
+                        disabled={isLoading}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -109,21 +114,13 @@ export function GeneralSettings() {
                   )}
                 </div>
                 <div className='flex-1'>
-                  <Input
-                    id="logo-url"
-                    value={localLogoUrl}
-                    onChange={(e) => setLocalLogoUrl(e.target.value)}
-                    placeholder="Cole uma URL ou faça upload"
-                    disabled={isLoading}
-                  />
                    <Button 
                     variant="outline"
-                    className='mt-2'
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isLoading}
                   >
                      <Upload className="mr-2 h-4 w-4" />
-                     Fazer Upload
+                     Fazer Upload da Logo
                    </Button>
                    <input
                     type="file"
@@ -131,10 +128,11 @@ export function GeneralSettings() {
                     onChange={handleFileChange}
                     className="hidden"
                     accept="image/png, image/jpeg, image/gif, image/svg+xml"
+                    id="logo-upload"
                   />
+                   <p className='text-xs text-muted-foreground mt-2'>Faça o upload da sua logo. A imagem será salva em formato de texto.</p>
                 </div>
               </div>
-               <p className='text-xs text-muted-foreground mt-2'>Faça o upload ou cole a URL da sua logo. A imagem será salva em formato de texto.</p>
             </div>
           </div>
         </CardContent>
