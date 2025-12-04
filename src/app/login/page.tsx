@@ -131,13 +131,13 @@ export default function LoginPage() {
           title: 'Login cancelado',
           description: 'A janela de login do Google foi fechada.',
         });
-      } else if (error.code === 'auth/popup-blocked') {
+      } else if (error.code === 'auth/popup-blocked' || error.code === 'auth/unauthorized-domain') {
         toast({
-          variant: 'destructive',
+          variant: 'default',
           title: 'Pop-up bloqueado',
-          description: 'O seu navegador bloqueou o pop-up de login. Por favor, habilite os pop-ups para este site e tente novamente.',
+          description: 'O pop-up foi bloqueado. Tentando redirecionar...',
         });
-        // Fallback to redirect method if popup is blocked
+        // Fallback to redirect method if popup is blocked or domain is unauthorized
         await signInWithRedirect(auth, provider);
       }
       else {
