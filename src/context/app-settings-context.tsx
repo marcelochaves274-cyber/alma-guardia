@@ -9,7 +9,6 @@ import React, {
 } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
-import { usePathname } from 'next/navigation';
 
 interface AppSettingsContextType {
   appName: string;
@@ -29,25 +28,17 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const firestore = useFirestore();
   const { user, isLoading: isUserLoading } = useUser();
-  const pathname = usePathname();
 
   const getSettingsDocRef = (userId: string) => {
-    // This check is important because firestore can be null initially.
     if (!firestore) return null;
     return doc(firestore, 'users', userId, 'settings', 'appDetails');
   };
 
   useEffect(() => {
-    // If the user is not logged in and we're not on the login page, isUserLoading will handle the loader/redirect.
-    // If we are on the login page, we can stop loading early.
-    if (!isUserLoading && !user) {
-      setIsLoading(false);
-      return;
-    }
-
+    // Only fetch settings if we have a user and firestore instance.
     if (user && firestore) {
+      setIsLoading(true);
       const fetchAppSettings = async () => {
-        setIsLoading(true);
         try {
           const settingsDocRef = getSettingsDocRef(user.uid);
           if (settingsDocRef) {
@@ -57,6 +48,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
               setAppNameState(data.name || 'SGS Genius');
               setLogoUrlState(data.logoUrl || '');
             } else {
+              // If no settings exist, use default values.
               setAppNameState('SGS Genius');
               setLogoUrlState('');
             }
@@ -68,6 +60,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         }
       };
       fetchAppSettings();
+    } else if (!isUserLoading) {
+        // If there's no user and we're not loading the user, stop loading settings.
+        setIsLoading(false);
     }
   }, [firestore, user, isUserLoading]);
 
@@ -98,17 +93,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setAppName,
     logoUrl,
     setLogoUrl,
-    isLoading: isLoading || isUserLoading,
+    isLoading: isLoading, // This now only reflects settings loading
   };
-  
-  // This loader handles the initial auth check on protected pages.
-  if (isUserLoading && pathname !== '/login') {
-     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
 
   return (
     <AppSettingsContext.Provider value={contextValue}>

@@ -17,11 +17,13 @@ export default function Home() {
   const [activePage, setActivePage] = useState('reminders');
 
   useEffect(() => {
+    // If auth state is not loading and there's no user, redirect to login
     if (!isLoading && !user) {
       router.push('/login');
     }
   }, [user, isLoading, router]);
 
+  // Primary loading indicator for the initial auth check.
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -30,9 +32,9 @@ export default function Home() {
     );
   }
 
+  // If loading is finished and there's still no user, we'll be redirected,
+  // so rendering null prevents a flash of content.
   if (!user) {
-    // This case should ideally be handled by the redirect in useEffect,
-    // but it's a good fallback to prevent rendering the page content without a user.
     return null;
   }
 
