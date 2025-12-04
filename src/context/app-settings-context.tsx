@@ -30,19 +30,16 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const { user, isLoading: isUserLoading } = useUser();
 
   useEffect(() => {
-    // We can only fetch settings if the user loading is finished.
     if (isUserLoading) {
       setIsLoading(true);
       return;
     }
 
-    // If there's no user, we are done loading.
     if (!user || !firestore) {
       setIsLoading(false);
       return;
     }
     
-    // There is a user, let's fetch the settings.
     setIsLoading(true);
     const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
     
@@ -88,7 +85,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setAppName,
     logoUrl,
     setLogoUrl,
-    isLoading: isLoading, // Only expose our internal loading state
+    isLoading: isLoading,
   };
 
   return (

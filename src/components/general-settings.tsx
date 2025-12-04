@@ -26,12 +26,9 @@ export function GeneralSettings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Only update local state if not currently saving, to avoid overwriting user input.
-    if (!isSaving) {
-      setLocalAppName(appName);
-      setLocalLogoUrl(logoUrl);
-    }
-  }, [appName, logoUrl, isSaving]);
+    setLocalAppName(appName);
+    setLocalLogoUrl(logoUrl);
+  }, [appName, logoUrl]);
 
   const handleSave = async () => {
     setIsSaving(true);
