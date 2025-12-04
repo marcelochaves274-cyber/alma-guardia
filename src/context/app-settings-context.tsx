@@ -41,10 +41,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             const data = docSnap.data();
             setAppNameState(data.name || 'SGS Genius');
             setLogoUrlState(data.logoUrl || '');
-          } else {
-            // If no settings exist, use default values.
-            setAppNameState('SGS Genius');
-            setLogoUrlState('');
           }
         } catch (error) {
           console.error('Error fetching app settings from Firestore:', error);

@@ -1,4 +1,3 @@
-
 'use client'
 import { Header } from '@/components/header';
 import { Chat } from '@/components/chat';
