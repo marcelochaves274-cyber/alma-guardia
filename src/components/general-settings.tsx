@@ -25,7 +25,6 @@ export function GeneralSettings() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Apenas define o nome local uma vez quando os dados iniciais são carregados
     if (!isAppLoading) {
       setLocalAppName(initialAppName);
     }
@@ -50,9 +49,6 @@ export function GeneralSettings() {
     }
   };
   
-  // O campo só é desabilitado durante o salvamento. O carregamento inicial não o afeta.
-  const isInputDisabled = isSaving;
-  // O botão é desabilitado se estiver salvando, ou se o nome não mudou.
   const isButtonDisabled = isSaving || isAppLoading || initialAppName === localAppName;
 
   return (
@@ -75,7 +71,7 @@ export function GeneralSettings() {
                 value={localAppName}
                 onChange={(e) => setLocalAppName(e.target.value)}
                 placeholder="Digite o nome da sua empresa ou usuário"
-                disabled={isInputDisabled}
+                disabled={isSaving}
               />
             )}
           </div>
