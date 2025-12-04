@@ -5,11 +5,17 @@ export function Header() {
 
   return (
     <header className="flex h-16 shrink-0 items-center border-b bg-background px-4 md:px-6">
-      <div className="flex w-full items-center justify-center relative">
-        <div className="absolute left-0 flex items-center gap-2">
+      <div className="flex w-full items-center justify-between">
+        <div className="flex items-center gap-2">
           <SidebarTrigger />
         </div>
-        <h1 className="font-headline text-lg font-semibold">Sistema de Gestão de Segurança</h1>
+        <div className="flex flex-1 items-center justify-center">
+            <h1 className="font-headline text-lg font-semibold text-center whitespace-nowrap">
+            Sistema de Gestão de Segurança
+            </h1>
+        </div>
+        {/* Espaçador para manter o título centralizado */}
+        <div className="w-8" /> 
       </div>
     </header>
   );

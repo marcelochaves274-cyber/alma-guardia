@@ -28,36 +28,35 @@ export function GeneralSettings() {
 
   useEffect(() => {
     let isMounted = true;
-    if (!isUserLoading && user && firestore) {
-      const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
-      getDoc(settingsDocRef)
-        .then((docSnap) => {
-          if (isMounted && docSnap.exists()) {
-            setAppName(docSnap.data().name || '');
-          }
-        })
-        .catch((error) => {
-          console.error('Error fetching app settings:', error);
-          toast({
-            variant: 'destructive',
-            title: 'Erro ao carregar',
-            description: 'Não foi possível buscar as configurações salvas.',
-          });
-        })
-        .finally(() => {
-          if (isMounted) {
-            setIsLoading(false);
-          }
-        });
-    } else if (!isUserLoading) {
-      // Handle case where there's no user or firestore yet
-      // We will keep loading until firestore is available.
-      if (!firestore) {
-         // Firestore is not ready, keep loading
-      } else {
-         setIsLoading(false);
-      }
+    if (isUserLoading) {
+      return; // Wait for user status to be resolved
     }
+    if (!user || !firestore) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
+    getDoc(settingsDocRef)
+      .then((docSnap) => {
+        if (isMounted && docSnap.exists()) {
+          setAppName(docSnap.data().name || '');
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching app settings:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao carregar',
+          description: 'Não foi possível buscar as configurações salvas.',
+        });
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
     
     return () => { isMounted = false };
   }, [user, isUserLoading, firestore, toast]);
@@ -92,55 +91,43 @@ export function GeneralSettings() {
     }
   };
 
-  if (isLoading || isUserLoading) {
-    return (
-       <main className="flex flex-1 flex-col overflow-hidden p-4 md:p-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações Gerais</CardTitle>
-              <CardDescription>
-                Gerencie as configurações gerais do seu aplicativo.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-               <div className="flex items-center space-x-4">
-                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                 <p>Carregando configurações...</p>
-               </div>
-            </CardContent>
-          </Card>
-       </main>
-    )
-  }
-
   return (
-    <main className="flex w-full max-w-2xl flex-col overflow-hidden">
-      <Card>
-        <CardHeader>
+    <Card className="w-full max-w-4xl">
+       <CardHeader>
           <CardTitle>Configurações Gerais</CardTitle>
           <CardDescription>
             Gerencie as configurações gerais do seu aplicativo.
           </CardDescription>
         </CardHeader>
+      {isLoading ? (
         <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="app-name">Nome da Empresa/Usuário</Label>
-            <Input
-              id="app-name"
-              value={appName}
-              onChange={(e) => setAppName(e.target.value)}
-              placeholder="Digite o nome da sua empresa ou usuário"
-              disabled={isSaving}
-            />
+          <div className="flex items-center space-x-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <p>Carregando configurações...</p>
           </div>
         </CardContent>
-        <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleSave} disabled={isSaving || isLoading}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSaving ? 'Salvando...' : 'Salvar Nome'}
-          </Button>
-        </CardFooter>
-      </Card>
-    </main>
+      ) : (
+        <>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="app-name">Nome da Empresa/Usuário</Label>
+              <Input
+                id="app-name"
+                value={appName}
+                onChange={(e) => setAppName(e.target.value)}
+                placeholder="Digite o nome da sua empresa ou usuário"
+                disabled={isSaving}
+              />
+            </div>
+          </CardContent>
+          <CardFooter className="border-t px-6 py-4">
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSaving ? 'Salvando...' : 'Salvar Nome'}
+            </Button>
+          </CardFooter>
+        </>
+      )}
+    </Card>
   );
 }
