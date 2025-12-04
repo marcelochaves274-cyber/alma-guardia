@@ -2,8 +2,6 @@
 
 import React from 'react';
 import { FirebaseProvider, initializeFirebase } from '@/firebase';
-import { AppSettingsProvider } from '@/context/app-settings-context';
-import { SidebarProvider } from '@/components/ui/sidebar';
 
 export function FirebaseClientProvider({
   children,
@@ -14,11 +12,7 @@ export function FirebaseClientProvider({
 
   return (
     <FirebaseProvider value={{ firebaseApp, auth, firestore }}>
-      <AppSettingsProvider>
-        <SidebarProvider>
-          {children}
-        </SidebarProvider>
-      </AppSettingsProvider>
+      {children}
     </FirebaseProvider>
   );
 }
