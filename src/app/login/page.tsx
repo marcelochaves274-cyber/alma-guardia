@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -40,6 +39,22 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
+  const getFriendlyErrorMessage = (errorCode: string) => {
+    switch (errorCode) {
+      case 'auth/email-already-in-use':
+        return 'Este e-mail já está cadastrado. Tente fazer login.';
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        return 'Credenciais inválidas. Verifique seu e-mail e senha.';
+      case 'auth/user-not-found':
+        return 'Nenhum usuário encontrado com este e-mail. Crie uma conta.';
+      case 'auth/weak-password':
+        return 'A senha é muito fraca. Ela deve ter pelo menos 6 caracteres.';
+      default:
+        return 'Ocorreu um erro. Por favor, tente novamente.';
+    }
+  };
+
   const handleEmailAuth = async (authAction: 'login' | 'register') => {
     if (!firebaseApp) return;
     setIsEmailAuthLoading(true);
@@ -55,7 +70,7 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Erro de Autenticação',
-        description: error.message,
+        description: getFriendlyErrorMessage(error.code),
       });
     } finally {
       setIsEmailAuthLoading(false);
