@@ -66,7 +66,9 @@ export default function Home() {
           <SidebarNav activePage={activePage} setActivePage={setActivePage} />
         </Sidebar>
         <SidebarInset>
-          {renderContent()}
+          <div className="flex flex-1 items-center justify-center p-4">
+            {renderContent()}
+          </div>
         </SidebarInset>
       </div>
     </div>
