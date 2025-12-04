@@ -26,27 +26,37 @@ export function GeneralSettings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!isAppLoading) {
+    // Only update local state if not currently saving, to avoid overwriting user input.
+    if (!isSaving) {
       setLocalAppName(appName);
       setLocalLogoUrl(logoUrl);
     }
-  }, [appName, logoUrl, isAppLoading]);
+  }, [appName, logoUrl, isSaving]);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Only update if the values have changed
+      let saved = false;
       if (localAppName !== appName) {
         await setAppName(localAppName);
+        saved = true;
       }
       if (localLogoUrl !== logoUrl) {
         await setLogoUrl(localLogoUrl);
+        saved = true;
       }
       
-      toast({
-        title: 'Sucesso!',
-        description: 'As configurações foram salvas.',
-      });
+      if (saved) {
+        toast({
+          title: 'Sucesso!',
+          description: 'As configurações foram salvas.',
+        });
+      } else {
+        toast({
+          title: 'Nenhuma alteração',
+          description: 'Não havia novas configurações para salvar.',
+        });
+      }
     } catch (error) {
       console.error("Failed to save app settings:", error);
       toast({
@@ -70,7 +80,7 @@ export function GeneralSettings() {
     }
   };
 
-  const isFormDisabled = isAppLoading || isSaving;
+  const isFormDisabled = isSaving || isAppLoading;
 
   return (
     <main className="flex flex-1 flex-col overflow-hidden p-4 md:p-6">

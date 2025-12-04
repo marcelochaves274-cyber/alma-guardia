@@ -30,29 +30,37 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const { user, isLoading: isUserLoading } = useUser();
 
   useEffect(() => {
-    // Only fetch settings if we have a user and firestore instance.
-    if (user && firestore) {
+    // We can only fetch settings if the user loading is finished.
+    if (isUserLoading) {
       setIsLoading(true);
-      const fetchAppSettings = async () => {
-        try {
-          const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
-          const docSnap = await getDoc(settingsDocRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setAppNameState(data.name || 'SGS Genius');
-            setLogoUrlState(data.logoUrl || '');
-          }
-        } catch (error) {
-          console.error('Error fetching app settings from Firestore:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchAppSettings();
-    } else if (!isUserLoading) {
-        // If there's no user and we're not loading the user, stop loading settings.
-        setIsLoading(false);
+      return;
     }
+
+    // If there's no user, we are done loading.
+    if (!user || !firestore) {
+      setIsLoading(false);
+      return;
+    }
+    
+    // There is a user, let's fetch the settings.
+    setIsLoading(true);
+    const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
+    
+    getDoc(settingsDocRef)
+      .then((docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setAppNameState(data.name || 'SGS Genius');
+          setLogoUrlState(data.logoUrl || '');
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching app settings from Firestore:', error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+
   }, [firestore, user, isUserLoading]);
 
   const setAppName = async (name: string) => {
@@ -80,7 +88,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setAppName,
     logoUrl,
     setLogoUrl,
-    isLoading: isLoading || isUserLoading,
+    isLoading: isLoading, // Only expose our internal loading state
   };
 
   return (
