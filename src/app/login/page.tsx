@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +43,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
 
@@ -121,7 +122,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col items-center justify-center p-12 text-center">
+      <div className="hidden lg:flex flex-col items-center justify-center bg-background/80 p-12 text-center backdrop-blur-sm">
         <div className='max-w-md'>
           <h2 className='text-3xl font-bold text-foreground mb-4'>Segurança e Eficiência Operacional</h2>
           <p className='text-foreground/80'>
@@ -154,13 +155,27 @@ export default function LoginPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isEmailAuthLoading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isEmailAuthLoading}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  disabled={isEmailAuthLoading}
+                  aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </Button>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
