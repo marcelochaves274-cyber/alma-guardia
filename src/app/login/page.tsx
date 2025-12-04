@@ -32,7 +32,6 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
   const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
 
   useEffect(() => {
@@ -59,22 +58,16 @@ export default function LoginPage() {
         description: error.message,
       });
     } finally {
-        setIsEmailAuthLoading(false);
+      setIsEmailAuthLoading(false);
     }
   };
-  
-  const isLoading = isUserLoading;
 
-  if (isLoading) {
+  if (isUserLoading || (!isUserLoading && user)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
-  }
-
-  if (user) {
-    return null;
   }
 
   return (
