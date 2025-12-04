@@ -6,7 +6,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   type User,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -54,10 +55,38 @@ export default function LoginPage() {
   const { user, isLoading: isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isEmailLoading, setIsEmailLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  
+  const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
+
+  useEffect(() => {
+    if (!firebaseApp) {
+       setIsProcessingRedirect(false);
+       return;
+    };
+    const auth = getAuth(firebaseApp);
+
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          router.push('/');
+        }
+      })
+      .catch((error) => {
+        toast({
+          variant: 'destructive',
+          title: 'Erro com Login do Google',
+          description: error.message,
+        });
+      })
+      .finally(() => {
+        setIsProcessingRedirect(false);
+      });
+  }, [firebaseApp, router, toast]);
+
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -67,7 +96,7 @@ export default function LoginPage() {
 
   const handleEmailAuth = async (authAction: 'login' | 'register') => {
     if (!firebaseApp) return;
-    setIsEmailLoading(true);
+    setIsEmailAuthLoading(true);
     const auth = getAuth(firebaseApp);
     try {
       if (authAction === 'login') {
@@ -83,33 +112,19 @@ export default function LoginPage() {
         description: error.message,
       });
     } finally {
-        setIsEmailLoading(false);
+        setIsEmailAuthLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     if (!firebaseApp) return;
-    setIsGoogleLoading(true);
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      router.push('/');
-    } catch (error: any) {
-      // Don't show a toast for user-cancelled pop-ups
-      if (error.code !== 'auth/popup-closed-by-user') {
-        toast({
-          variant: 'destructive',
-          title: 'Erro com Login do Google',
-          description: error.message,
-        });
-      }
-    } finally {
-      setIsGoogleLoading(false);
-    }
+    await signInWithRedirect(auth, provider);
   };
   
-  if (isUserLoading || user) {
+  const isLoading = isUserLoading || isProcessingRedirect;
+  if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -117,7 +132,12 @@ export default function LoginPage() {
     );
   }
 
-  const isAnyLoading = isEmailLoading || isGoogleLoading;
+  // If user is loaded and exists, we shouldn't show the login page
+  if (user) {
+    return null;
+  }
+
+  const isAnyLoading = isEmailAuthLoading || isProcessingRedirect;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -161,7 +181,7 @@ export default function LoginPage() {
               disabled={isAnyLoading || !email || !password}
               className="w-full"
             >
-              {isEmailLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Entrar
             </Button>
             <Button
@@ -170,7 +190,7 @@ export default function LoginPage() {
               disabled={isAnyLoading || !email || !password}
               className="w-full"
             >
-              {isEmailLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Criar Conta
             </Button>
           </div>
@@ -190,7 +210,7 @@ export default function LoginPage() {
             onClick={handleGoogleSignIn}
             disabled={isAnyLoading}
           >
-            {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+            {isAnyLoading && !isEmailAuthLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
             Google
           </Button>
         </CardFooter>
