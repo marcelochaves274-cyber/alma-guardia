@@ -30,22 +30,26 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const { user, isLoading: isUserLoading } = useUser();
 
   useEffect(() => {
+    // We are loading as long as the user's auth state is undetermined.
     if (isUserLoading) {
-      setIsLoading(true); // Keep loading while user state is being determined
+      setIsLoading(true);
       return;
     }
 
+    // If there's no user or no firestore, we are done loading.
     if (!user || !firestore) {
-      setIsLoading(false); // Stop loading if no user or firestore
+      setIsLoading(false);
       return;
     }
     
-    // At this point, we have a user and firestore, so fetch settings.
+    // User is logged in, now we fetch their settings.
     const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
     
+    let isMounted = true;
+
     getDoc(settingsDocRef)
       .then((docSnap) => {
-        if (docSnap.exists()) {
+        if (isMounted && docSnap.exists()) {
           const data = docSnap.data();
           setAppNameState(data.name || 'SGS Genius');
           setLogoUrlState(data.logoUrl || '');
@@ -55,8 +59,14 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching app settings from Firestore:', error);
       })
       .finally(() => {
-        setIsLoading(false); // Stop loading after fetch is complete (success or fail)
+        if (isMounted) {
+          setIsLoading(false);
+        }
       });
+      
+    return () => {
+      isMounted = false;
+    }
 
   }, [firestore, user, isUserLoading]);
 
