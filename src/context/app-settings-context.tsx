@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 interface AppSettingsContextType {
   appName: string;
@@ -25,18 +26,24 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const firestore = useFirestore();
   const { user, isLoading: isUserLoading } = useUser();
+  const { toast } = useToast();
 
   useEffect(() => {
+    // Start loading only when we start checking for a user.
+    setIsLoading(true);
+    
+    // If the user status is still loading, we can't do anything yet.
     if (isUserLoading) {
       return; 
     }
 
+    // If there's no user or no firestore, there's nothing to fetch. Stop loading.
     if (!user || !firestore) {
       setIsLoading(false);
       return;
     }
     
-    setIsLoading(true);
+    // At this point, we have a user and firestore, so we can fetch the data.
     const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
     let isMounted = true;
 
@@ -44,23 +51,31 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       .then((docSnap) => {
         if (isMounted && docSnap.exists()) {
           const data = docSnap.data();
+          // Use a function update to prevent stale state
           setAppNameState(data.name || 'SGS Genius');
         }
       })
       .catch((error) => {
         console.error('Error fetching app settings from Firestore:', error);
+        toast({
+            variant: "destructive",
+            title: "Erro ao carregar configurações",
+            description: "Não foi possível buscar as configurações salvas."
+        })
       })
       .finally(() => {
+        // This will be called regardless of success or failure.
         if (isMounted) {
           setIsLoading(false);
         }
       });
       
     return () => {
+      // Cleanup to prevent state updates on an unmounted component
       isMounted = false;
     }
 
-  }, [firestore, user, isUserLoading]);
+  }, [firestore, user, isUserLoading, toast]);
 
   const setAppName = async (name: string) => {
     if (!firestore || !user) {
@@ -75,7 +90,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const contextValue = {
     appName,
     setAppName,
-    isLoading: isLoading,
+    isLoading: isLoading || isUserLoading,
   };
 
   return (
