@@ -120,92 +120,102 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm border-none bg-card/80 shadow-2xl backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <div className="mb-4 flex justify-center">
-            <SgsGeniusLogo className="h-12 w-12 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">Bem-vindo ao SGS Genius</CardTitle>
-          <CardDescription>
-            Entre ou crie uma conta para continuar
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isEmailAuthLoading}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isEmailAuthLoading}
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-            <div className="flex w-full gap-2">
-                <Button
-                onClick={() => handleEmailAuth('login')}
-                disabled={isEmailAuthLoading || !email || !password}
-                className="w-full"
-                >
-                {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Entrar
-                </Button>
-                <Button
-                variant="secondary"
-                onClick={() => handleEmailAuth('register')}
-                disabled={isEmailAuthLoading || !email || !password}
-                className="w-full"
-                >
-                {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Criar Conta
-                </Button>
+    <div className="flex min-h-screen w-full flex-col bg-background lg:grid lg:grid-cols-2">
+      <div className="hidden lg:flex flex-col items-center justify-center p-12 text-center">
+        <div className='max-w-md'>
+          <h2 className='text-3xl font-bold text-foreground mb-4'>Segurança e Eficiência Operacional</h2>
+          <p className='text-foreground/80'>
+            A implementação de um Sistema de Gestão de Segurança (SGS), conforme orienta a NBR 21101, é essencial para garantir um ambiente de trabalho seguro, reduzir riscos de acidentes, atender às exigências legais e melhorar a eficiência operacional, promovendo uma cultura de segurança que beneficia tanto os colaboradores quanto a sustentabilidade da empresa.
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center justify-center p-4">
+        <Card className="w-full max-w-sm border-none bg-card/80 shadow-2xl backdrop-blur-sm">
+          <CardHeader className="text-center">
+            <div className="mb-4 flex justify-center">
+              <SgsGeniusLogo className="h-12 w-12 text-primary" />
             </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="link" className="p-0 h-auto text-sm text-muted-foreground">Esqueceu sua senha?</Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Redefinir Senha</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Digite seu e-mail abaixo para receber um link de redefinição de senha.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className="space-y-2">
-                    <Label htmlFor="reset-email">Email</Label>
-                    <Input
-                      id="reset-email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                    />
-                </div>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handlePasswordReset} disabled={!resetEmail || isEmailAuthLoading}>
-                    {isEmailAuthLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Enviar Link
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-        </CardFooter>
-      </Card>
+            <CardTitle className="text-2xl">Bem-vindo ao SGS Genius</CardTitle>
+            <CardDescription>
+              Entre ou crie uma conta para continuar
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isEmailAuthLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isEmailAuthLoading}
+              />
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+              <div className="flex w-full gap-2">
+                  <Button
+                  onClick={() => handleEmailAuth('login')}
+                  disabled={isEmailAuthLoading || !email || !password}
+                  className="w-full"
+                  >
+                  {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Entrar
+                  </Button>
+                  <Button
+                  variant="secondary"
+                  onClick={() => handleEmailAuth('register')}
+                  disabled={isEmailAuthLoading || !email || !password}
+                  className="w-full"
+                  >
+                  {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Criar Conta
+                  </Button>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="link" className="p-0 h-auto text-sm text-muted-foreground">Esqueceu sua senha?</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Redefinir Senha</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Digite seu e-mail abaixo para receber um link de redefinição de senha.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="space-y-2">
+                      <Label htmlFor="reset-email">Email</Label>
+                      <Input
+                        id="reset-email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                      />
+                  </div>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handlePasswordReset} disabled={!resetEmail || isEmailAuthLoading}>
+                      {isEmailAuthLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Enviar Link
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }
