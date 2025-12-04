@@ -77,6 +77,7 @@ export function GeneralSettings() {
     }
   };
 
+  // Only disable the form while actively saving.
   const isFormDisabled = isSaving;
 
   return (

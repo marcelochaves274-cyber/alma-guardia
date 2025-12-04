@@ -30,7 +30,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const { user, isLoading: isUserLoading } = useUser();
 
   useEffect(() => {
-    // We are loading as long as the user's auth state is undetermined.
+    // We are only in a loading state if we haven't determined the user's auth state yet.
     if (isUserLoading) {
       setIsLoading(true);
       return;
@@ -42,7 +42,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    // User is logged in, now we fetch their settings.
+    // At this point, we have a user and firestore is available.
+    // Start fetching the settings.
+    setIsLoading(true);
     const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
     
     let isMounted = true;
@@ -60,6 +62,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       })
       .finally(() => {
         if (isMounted) {
+          // Critical: set loading to false after the fetch is complete.
           setIsLoading(false);
         }
       });
