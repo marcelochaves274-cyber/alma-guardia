@@ -60,12 +60,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   
   const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isCheckingRedirect, setIsCheckingRedirect] = useState(true);
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
   useEffect(() => {
     if (!firebaseApp) {
-      setIsCheckingRedirect(false);
+      setIsProcessingRedirect(false);
       return;
     }
     const auth = getAuth(firebaseApp);
@@ -76,11 +75,15 @@ export default function LoginPage() {
         }
       })
       .catch((error) => {
-        // This can happen if the user closes the popup or redirects without signing in
-        console.warn("Auth redirect error:", error.code);
+        toast({
+          variant: 'destructive',
+          title: 'Erro de Autenticação',
+          description: error.message,
+        });
+        console.error("Auth redirect error:", error);
       })
       .finally(() => {
-        setIsCheckingRedirect(false);
+        setIsProcessingRedirect(false);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firebaseApp, router]);
@@ -118,41 +121,11 @@ export default function LoginPage() {
     if (!firebaseApp) return;
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
-    
-    setIsGoogleLoading(true);
-    try {
-      await signInWithPopup(auth, provider);
-      router.push('/');
-    } catch (error: any) {
-      // Handle known error codes gracefully
-      if (error.code === 'auth/popup-closed-by-user') {
-        toast({
-          variant: 'default',
-          title: 'Login cancelado',
-          description: 'A janela de login do Google foi fechada.',
-        });
-      } else if (error.code === 'auth/popup-blocked' || error.code === 'auth/unauthorized-domain') {
-        toast({
-          variant: 'default',
-          title: 'Pop-up bloqueado',
-          description: 'O pop-up foi bloqueado. Tentando redirecionar...',
-        });
-        // Fallback to redirect method if popup is blocked or domain is unauthorized
-        await signInWithRedirect(auth, provider);
-      }
-      else {
-        toast({
-          variant: 'destructive',
-          title: 'Erro com Login do Google',
-          description: error.message,
-        });
-      }
-    } finally {
-      setIsGoogleLoading(false);
-    }
+    // No set loading state here, just redirect. The useEffect will handle the result.
+    await signInWithRedirect(auth, provider);
   };
   
-  const isLoading = isUserLoading || isCheckingRedirect;
+  const isLoading = isUserLoading || isProcessingRedirect;
 
   if (isLoading) {
     return (
@@ -167,7 +140,7 @@ export default function LoginPage() {
     return null;
   }
 
-  const isAnyLoading = isEmailAuthLoading || isGoogleLoading;
+  const isAnyAuthProcessRunning = isEmailAuthLoading || isProcessingRedirect;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -190,7 +163,7 @@ export default function LoginPage() {
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isAnyLoading}
+              disabled={isAnyAuthProcessRunning}
             />
           </div>
           <div className="space-y-2">
@@ -200,7 +173,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={isAnyLoading}
+              disabled={isAnyAuthProcessRunning}
             />
           </div>
         </CardContent>
@@ -208,7 +181,7 @@ export default function LoginPage() {
           <div className="flex w-full gap-2">
             <Button
               onClick={() => handleEmailAuth('login')}
-              disabled={isAnyLoading || !email || !password}
+              disabled={isAnyAuthProcessRunning || !email || !password}
               className="w-full"
             >
               {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -217,7 +190,7 @@ export default function LoginPage() {
             <Button
               variant="secondary"
               onClick={() => handleEmailAuth('register')}
-              disabled={isAnyLoading || !email || !password}
+              disabled={isAnyAuthProcessRunning || !email || !password}
               className="w-full"
             >
               {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -238,9 +211,9 @@ export default function LoginPage() {
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignIn}
-            disabled={isAnyLoading}
+            disabled={isAnyAuthProcessRunning}
           >
-            {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+            <GoogleIcon className="mr-2 h-4 w-4" />
             Google
           </Button>
         </CardFooter>
