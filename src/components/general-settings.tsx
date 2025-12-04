@@ -18,18 +18,18 @@ import { Loader2 } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 
 export function GeneralSettings() {
-  const { appName, setAppName, isLoading: isAppLoading } = useAppSettings();
+  const { appName: initialAppName, setAppName, isLoading: isAppLoading } = useAppSettings();
   const { toast } = useToast();
 
   const [localAppName, setLocalAppName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Sincroniza o estado local quando o nome do app é carregado do contexto
+    // Apenas define o nome local uma vez quando os dados iniciais são carregados
     if (!isAppLoading) {
-      setLocalAppName(appName);
+      setLocalAppName(initialAppName);
     }
-  }, [appName, isAppLoading]);
+  }, [initialAppName, isAppLoading]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -50,8 +50,10 @@ export function GeneralSettings() {
     }
   };
   
-  // O formulário só deve ser desabilitado durante o salvamento.
-  const isFormDisabled = isSaving;
+  // O campo só é desabilitado durante o salvamento. O carregamento inicial não o afeta.
+  const isInputDisabled = isSaving;
+  // O botão é desabilitado se estiver salvando, ou se o nome não mudou.
+  const isButtonDisabled = isSaving || isAppLoading || initialAppName === localAppName;
 
   return (
     <main className="flex flex-1 flex-col overflow-hidden p-4 md:p-6">
@@ -59,8 +61,7 @@ export function GeneralSettings() {
         <CardHeader>
           <CardTitle>Configurações Gerais</CardTitle>
           <CardDescription>
-            Gerencie as configurações gerais do seu aplicativo. O nome e a logo
-            salvos aqui aparecerão em todo o sistema.
+            Gerencie as configurações gerais do seu aplicativo.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -74,13 +75,13 @@ export function GeneralSettings() {
                 value={localAppName}
                 onChange={(e) => setLocalAppName(e.target.value)}
                 placeholder="Digite o nome da sua empresa ou usuário"
-                disabled={isFormDisabled}
+                disabled={isInputDisabled}
               />
             )}
           </div>
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleSave} disabled={isFormDisabled || isAppLoading || appName === localAppName}>
+          <Button onClick={handleSave} disabled={isButtonDisabled}>
              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSaving ? 'Salvando...' : 'Salvar Nome'}
           </Button>

@@ -30,16 +30,18 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const { user, isLoading: isUserLoading } = useUser();
 
   useEffect(() => {
+    // Inicia o processo, mas não faz nada até sabermos o estado do usuário
     if (isUserLoading) {
-      return; // Aguarda a definição do estado de autenticação.
+      return; 
     }
 
+    // Se não há usuário ou firestore, terminamos de "carregar"
     if (!user || !firestore) {
-      setIsLoading(false); // Não há usuário ou Firestore, então não há nada para carregar.
+      setIsLoading(false);
       return;
     }
     
-    // Temos um usuário, vamos buscar as configurações.
+    // Há um usuário, vamos buscar as configurações.
     const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
     let isMounted = true;
 
@@ -55,8 +57,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching app settings from Firestore:', error);
       })
       .finally(() => {
+        // Independentemente do resultado, o carregamento terminou.
         if (isMounted) {
-          setIsLoading(false); // Define como falso após a operação, seja sucesso ou falha.
+          setIsLoading(false);
         }
       });
       
