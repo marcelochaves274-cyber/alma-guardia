@@ -22,12 +22,18 @@ export default function Home() {
     }
   }, [user, isLoading, router]);
 
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
+  }
+
+  if (!user) {
+    // This case should ideally be handled by the redirect in useEffect,
+    // but it's a good fallback to prevent rendering the page content without a user.
+    return null;
   }
 
 
