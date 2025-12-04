@@ -5,6 +5,7 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useFirebaseApp, useUser } from '@/firebase';
@@ -22,6 +23,17 @@ import { Label } from '@/components/ui/label';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export default function LoginPage() {
   const firebaseApp = useFirebaseApp();
@@ -32,6 +44,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -42,12 +55,12 @@ export default function LoginPage() {
   const getFriendlyErrorMessage = (errorCode: string) => {
     switch (errorCode) {
       case 'auth/email-already-in-use':
-        return 'Este e-mail já está cadastrado. Tente fazer login.';
+        return 'Este e-mail já está em uso. Por favor, tente fazer login ou redefinir sua senha.';
       case 'auth/wrong-password':
       case 'auth/invalid-credential':
         return 'Credenciais inválidas. Verifique seu e-mail e senha.';
       case 'auth/user-not-found':
-        return 'Nenhum usuário encontrado com este e-mail. Crie uma conta.';
+        return 'Nenhum usuário encontrado com este e-mail. Por favor, crie uma conta.';
       case 'auth/weak-password':
         return 'A senha é muito fraca. Ela deve ter pelo menos 6 caracteres.';
       default:
@@ -70,6 +83,27 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Erro de Autenticação',
+        description: getFriendlyErrorMessage(error.code),
+      });
+    } finally {
+      setIsEmailAuthLoading(false);
+    }
+  };
+  
+  const handlePasswordReset = async () => {
+    if (!firebaseApp || !resetEmail) return;
+    const auth = getAuth(firebaseApp);
+    setIsEmailAuthLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      toast({
+        title: 'E-mail Enviado',
+        description: `Um link para redefinição de senha foi enviado para ${resetEmail}.`,
+      });
+    } catch (error: any) {
+       toast({
+        variant: 'destructive',
+        title: 'Erro',
         description: getFriendlyErrorMessage(error.code),
       });
     } finally {
@@ -120,26 +154,56 @@ export default function LoginPage() {
             />
           </div>
         </CardContent>
-        <CardFooter className="flex-col gap-4">
-          <div className="flex w-full gap-2">
-            <Button
-              onClick={() => handleEmailAuth('login')}
-              disabled={isEmailAuthLoading || !email || !password}
-              className="w-full"
-            >
-              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Entrar
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => handleEmailAuth('register')}
-              disabled={isEmailAuthLoading || !email || !password}
-              className="w-full"
-            >
-              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Criar Conta
-            </Button>
-          </div>
+        <CardFooter className="flex flex-col gap-4">
+            <div className="flex w-full gap-2">
+                <Button
+                onClick={() => handleEmailAuth('login')}
+                disabled={isEmailAuthLoading || !email || !password}
+                className="w-full"
+                >
+                {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Entrar
+                </Button>
+                <Button
+                variant="secondary"
+                onClick={() => handleEmailAuth('register')}
+                disabled={isEmailAuthLoading || !email || !password}
+                className="w-full"
+                >
+                {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Criar Conta
+                </Button>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="link" className="p-0 h-auto text-sm text-muted-foreground">Esqueceu sua senha?</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Redefinir Senha</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Digite seu e-mail abaixo para receber um link de redefinição de senha.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-2">
+                    <Label htmlFor="reset-email">Email</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                    />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handlePasswordReset} disabled={!resetEmail || isEmailAuthLoading}>
+                    {isEmailAuthLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Enviar Link
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
         </CardFooter>
       </Card>
     </div>
