@@ -13,37 +13,29 @@ import { useEffect } from 'react';
 export default function Home() {
   const { user, isLoading } = useUser();
   const router = useRouter();
-  const [activePage, setActivePage] = useState('reminders');
+  const [activePage, setActivePage] = useState('general-settings');
 
   useEffect(() => {
-    // If auth state is not loading and there's no user, redirect to login
     if (!isLoading && !user) {
       router.push('/login');
     }
   }, [user, isLoading, router]);
 
-  // Primary loading indicator for the initial auth check.
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
 
-  // If loading is finished and there's still no user, we'll be redirected,
-  // so rendering null prevents a flash of content.
   if (!user) {
     return null;
   }
 
-
   const renderContent = () => {
     switch (activePage) {
-      case 'general-settings':
-        return <GeneralSettings />;
       case 'reminders':
-      default:
         return (
             <div className="flex flex-1 overflow-hidden">
                 <aside className="hidden w-full max-w-md flex-col border-r lg:flex">
@@ -53,7 +45,10 @@ export default function Home() {
                 <Chat />
                 </main>
             </div>
-        )
+        );
+      case 'general-settings':
+      default:
+        return <GeneralSettings />;
     }
   };
 
@@ -66,7 +61,7 @@ export default function Home() {
           <SidebarNav activePage={activePage} setActivePage={setActivePage} />
         </Sidebar>
         <SidebarInset>
-          <div className="flex flex-1 items-center justify-center p-4">
+          <div className="w-full p-4 md:p-6">
             {renderContent()}
           </div>
         </SidebarInset>
