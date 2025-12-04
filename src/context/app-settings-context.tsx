@@ -29,29 +29,22 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const firestore = useFirestore();
   const { user, isLoading: isUserLoading } = useUser();
 
-  const getSettingsDocRef = (userId: string) => {
-    if (!firestore) return null;
-    return doc(firestore, 'users', userId, 'settings', 'appDetails');
-  };
-
   useEffect(() => {
     // Only fetch settings if we have a user and firestore instance.
     if (user && firestore) {
       setIsLoading(true);
       const fetchAppSettings = async () => {
         try {
-          const settingsDocRef = getSettingsDocRef(user.uid);
-          if (settingsDocRef) {
-            const docSnap = await getDoc(settingsDocRef);
-            if (docSnap.exists()) {
-              const data = docSnap.data();
-              setAppNameState(data.name || 'SGS Genius');
-              setLogoUrlState(data.logoUrl || '');
-            } else {
-              // If no settings exist, use default values.
-              setAppNameState('SGS Genius');
-              setLogoUrlState('');
-            }
+          const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
+          const docSnap = await getDoc(settingsDocRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setAppNameState(data.name || 'SGS Genius');
+            setLogoUrlState(data.logoUrl || '');
+          } else {
+            // If no settings exist, use default values.
+            setAppNameState('SGS Genius');
+            setLogoUrlState('');
           }
         } catch (error) {
           console.error('Error fetching app settings from Firestore:', error);
@@ -71,8 +64,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       console.error('Firestore not initialized or user not logged in');
       throw new Error('Usuário não autenticado.');
     }
-    const settingsDocRef = getSettingsDocRef(user.uid);
-    if (!settingsDocRef) return;
+    const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
     await setDoc(settingsDocRef, { name: name }, { merge: true });
     setAppNameState(name);
   };
@@ -82,8 +74,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       console.error('Firestore not initialized or user not logged in');
       throw new Error('Usuário não autenticado.');
     }
-    const settingsDocRef = getSettingsDocRef(user.uid);
-    if (!settingsDocRef) return;
+    const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
     await setDoc(settingsDocRef, { logoUrl: url }, { merge: true });
     setLogoUrlState(url);
   };
@@ -93,7 +84,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setAppName,
     logoUrl,
     setLogoUrl,
-    isLoading: isLoading, // This now only reflects settings loading
+    isLoading: isLoading || isUserLoading,
   };
 
   return (
