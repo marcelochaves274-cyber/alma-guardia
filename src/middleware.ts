@@ -1,36 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+// Este middleware está desativado para simplificar a lógica de autenticação
+// e resolver conflitos de carregamento. A verificação de rota agora é 
+// gerenciada no lado do cliente (em page.tsx e login/page.tsx).
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const cookie = request.cookies.get('firebase-auth-edge');
-
-  // Allow access to the login page itself
-  if (pathname.startsWith('/login')) {
-    // If user is logged in and tries to access login page, redirect to home
-    if (cookie) {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
-    return NextResponse.next();
-  }
-    
-  // Allow access to API routes and static files, these are not protected
-  if (pathname.startsWith('/api') || pathname.startsWith('/_next/static') || pathname.startsWith('/_next/image') || pathname.endsWith('.ico')) {
-    return NextResponse.next();
-  }
-
-  // If there's no auth cookie, redirect to the login page.
-  if (!cookie) {
-    const loginUrl = new URL('/login', request.url);
-    // you can add a `next` query parameter to redirect back to the original page
-    loginUrl.searchParams.set('next', pathname); 
-    return NextResponse.redirect(loginUrl);
-  }
-  
-  // If we are here, the user is authenticated, so we can continue.
   return NextResponse.next();
 }
 
-// This will apply the middleware to all routes except the ones specified.
 export const config = {
   matcher: [
     /*
