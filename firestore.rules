@@ -3,8 +3,9 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permite que usuários leiam e escrevam apenas em seus próprios documentos.
-    match /users/{userId}/{allPaths=**} {
+    // Permite que um usuário autenticado leia e escreva apenas
+    // nos documentos dentro da subcoleção 'settings' dele.
+    match /users/{userId}/settings/{docId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
