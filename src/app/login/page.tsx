@@ -6,9 +6,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-  type User,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useFirebaseApp, useUser } from '@/firebase';
@@ -60,15 +60,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   
   const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isCheckingRedirect, setIsCheckingRedirect] = useState(true);
 
   useEffect(() => {
     if (!firebaseApp) {
-       setIsProcessingRedirect(false);
-       return;
-    };
+      setIsCheckingRedirect(false);
+      return;
+    }
     const auth = getAuth(firebaseApp);
-
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) {
@@ -76,16 +76,14 @@ export default function LoginPage() {
         }
       })
       .catch((error) => {
-        toast({
-          variant: 'destructive',
-          title: 'Erro com Login do Google',
-          description: error.message,
-        });
+        // This can happen if the user closes the popup or redirects without signing in
+        console.warn("Auth redirect error:", error.code);
       })
       .finally(() => {
-        setIsProcessingRedirect(false);
+        setIsCheckingRedirect(false);
       });
-  }, [firebaseApp, router, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseApp, router]);
 
 
   useEffect(() => {
@@ -120,10 +118,42 @@ export default function LoginPage() {
     if (!firebaseApp) return;
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+    
+    setIsGoogleLoading(true);
+    try {
+      await signInWithPopup(auth, provider);
+      router.push('/');
+    } catch (error: any) {
+      // Handle known error codes gracefully
+      if (error.code === 'auth/popup-closed-by-user') {
+        toast({
+          variant: 'default',
+          title: 'Login cancelado',
+          description: 'A janela de login do Google foi fechada.',
+        });
+      } else if (error.code === 'auth/popup-blocked') {
+        toast({
+          variant: 'destructive',
+          title: 'Pop-up bloqueado',
+          description: 'O seu navegador bloqueou o pop-up de login. Por favor, habilite os pop-ups para este site e tente novamente.',
+        });
+        // Fallback to redirect method if popup is blocked
+        await signInWithRedirect(auth, provider);
+      }
+      else {
+        toast({
+          variant: 'destructive',
+          title: 'Erro com Login do Google',
+          description: error.message,
+        });
+      }
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
   
-  const isLoading = isUserLoading || isProcessingRedirect;
+  const isLoading = isUserLoading || isCheckingRedirect;
+
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -137,7 +167,7 @@ export default function LoginPage() {
     return null;
   }
 
-  const isAnyLoading = isEmailAuthLoading || isProcessingRedirect;
+  const isAnyLoading = isEmailAuthLoading || isGoogleLoading;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -210,7 +240,7 @@ export default function LoginPage() {
             onClick={handleGoogleSignIn}
             disabled={isAnyLoading}
           >
-            {isAnyLoading && !isEmailAuthLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+            {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
             Google
           </Button>
         </CardFooter>
