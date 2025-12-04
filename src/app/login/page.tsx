@@ -5,10 +5,6 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useFirebaseApp, useUser } from '@/firebase';
@@ -27,29 +23,6 @@ import { SgsGeniusLogo } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
-function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 48 48" {...props}>
-      <path
-        fill="#FFC107"
-        d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
-      />
-      <path
-        fill="#FF3D00"
-        d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
-      />
-      <path
-        fill="#4CAF50"
-        d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.657-3.356-11.303-8H24v-8H11.303C11.642,32.323,17.222,36,24,36z"
-      />
-      <path
-        fill="#1976D2"
-        d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.02,35.636,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z"
-      />
-    </svg>
-  );
-}
-
 export default function LoginPage() {
   const firebaseApp = useFirebaseApp();
   const { user, isLoading: isUserLoading } = useUser();
@@ -59,35 +32,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
-  const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
-
-  useEffect(() => {
-    if (!firebaseApp) {
-      setIsProcessingRedirect(false);
-      return;
-    }
-    const auth = getAuth(firebaseApp);
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          router.push('/');
-        }
-      })
-      .catch((error) => {
-        toast({
-          variant: 'destructive',
-          title: 'Erro de Autenticação',
-          description: error.message,
-        });
-        console.error("Auth redirect error:", error);
-      })
-      .finally(() => {
-        setIsProcessingRedirect(false);
-      });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firebaseApp, router]);
-
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -97,7 +42,7 @@ export default function LoginPage() {
 
   const handleEmailAuth = async (authAction: 'login' | 'register') => {
     if (!firebaseApp) return;
-    setIsEmailAuthLoading(true);
+    setIsAuthLoading(true);
     const auth = getAuth(firebaseApp);
     try {
       if (authAction === 'login') {
@@ -113,19 +58,11 @@ export default function LoginPage() {
         description: error.message,
       });
     } finally {
-        setIsEmailAuthLoading(false);
+        setIsAuthLoading(false);
     }
   };
-
-  const handleGoogleSignIn = async () => {
-    if (!firebaseApp) return;
-    const auth = getAuth(firebaseApp);
-    const provider = new GoogleAuthProvider();
-    // No set loading state here, just redirect. The useEffect will handle the result.
-    await signInWithRedirect(auth, provider);
-  };
   
-  const isLoading = isUserLoading || isProcessingRedirect;
+  const isLoading = isUserLoading;
 
   if (isLoading) {
     return (
@@ -139,8 +76,6 @@ export default function LoginPage() {
   if (user) {
     return null;
   }
-
-  const isAnyAuthProcessRunning = isEmailAuthLoading || isProcessingRedirect;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -163,7 +98,7 @@ export default function LoginPage() {
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isAnyAuthProcessRunning}
+              disabled={isAuthLoading}
             />
           </div>
           <div className="space-y-2">
@@ -173,7 +108,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={isAnyAuthProcessRunning}
+              disabled={isAuthLoading}
             />
           </div>
         </CardContent>
@@ -181,41 +116,22 @@ export default function LoginPage() {
           <div className="flex w-full gap-2">
             <Button
               onClick={() => handleEmailAuth('login')}
-              disabled={isAnyAuthProcessRunning || !email || !password}
+              disabled={isAuthLoading || !email || !password}
               className="w-full"
             >
-              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Entrar
             </Button>
             <Button
               variant="secondary"
               onClick={() => handleEmailAuth('register')}
-              disabled={isAnyAuthProcessRunning || !email || !password}
+              disabled={isAuthLoading || !email || !password}
               className="w-full"
             >
-              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Criar Conta
             </Button>
           </div>
-          <div className="relative w-full">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Ou continue com
-              </span>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleSignIn}
-            disabled={isAnyAuthProcessRunning}
-          >
-            <GoogleIcon className="mr-2 h-4 w-4" />
-            Google
-          </Button>
         </CardFooter>
       </Card>
     </div>
