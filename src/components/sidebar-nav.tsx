@@ -2,6 +2,7 @@
 
 import {
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -11,12 +12,17 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from './icons';
 import { useAppSettings } from '@/context/app-settings-context';
 import Image from 'next/image';
 import { Skeleton } from './ui/skeleton';
+import { getAuth, signOut } from 'firebase/auth';
+import { useFirebaseApp } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from './ui/button';
 
 type SidebarNavProps = {
     activePage: string;
@@ -26,12 +32,36 @@ type SidebarNavProps = {
 export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
   const { state } = useSidebar();
   const { logoUrl, isLoading } = useAppSettings();
+  const firebaseApp = useFirebaseApp();
+  const router = useRouter();
+  const { toast } = useToast();
+
   const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({
     settings: true,
   });
 
   const toggleSubMenu = (name: string) => {
     setOpenSubMenus((prev) => ({ ...prev, [name]: !prev[name] }));
+  };
+  
+  const handleSignOut = async () => {
+    if (!firebaseApp) return;
+    const auth = getAuth(firebaseApp);
+    try {
+      await signOut(auth);
+      router.push('/login');
+      toast({
+        title: 'Logout realizado',
+        description: 'Você foi desconectado com sucesso.',
+      })
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível fazer logout.',
+      })
+    }
   };
 
   return (
@@ -100,6 +130,16 @@ export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+            <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleSignOut} tooltip={{children: 'Sair'}}>
+                    <LogOut />
+                    <span>Sair</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </>
   );
 }
