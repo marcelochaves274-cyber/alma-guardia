@@ -49,7 +49,7 @@ export function GeneralSettings() {
     }
   };
   
-  const isButtonDisabled = isSaving || isAppLoading || initialAppName === localAppName;
+  const isSaveDisabled = isSaving || localAppName === initialAppName;
 
   return (
     <main className="flex flex-1 flex-col overflow-hidden p-4 md:p-6">
@@ -71,13 +71,12 @@ export function GeneralSettings() {
                 value={localAppName}
                 onChange={(e) => setLocalAppName(e.target.value)}
                 placeholder="Digite o nome da sua empresa ou usuário"
-                disabled={isSaving}
               />
             )}
           </div>
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleSave} disabled={isButtonDisabled}>
+          <Button onClick={handleSave} disabled={isSaveDisabled}>
              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSaving ? 'Salvando...' : 'Salvar Nome'}
           </Button>
