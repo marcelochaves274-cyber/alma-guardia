@@ -29,20 +29,18 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Start loading only when we start checking for a user.
-    setIsLoading(true);
-    
-    // If the user status is still loading, we can't do anything yet.
     if (isUserLoading) {
-      return; 
+      // Don't do anything until the user's auth state is resolved.
+      // isLoading will remain true.
+      return;
     }
 
-    // If there's no user or no firestore, there's nothing to fetch. Stop loading.
     if (!user || !firestore) {
+      // If there's no user or firestore, stop loading.
       setIsLoading(false);
       return;
     }
-    
+
     // At this point, we have a user and firestore, so we can fetch the data.
     const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
     let isMounted = true;
@@ -51,7 +49,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       .then((docSnap) => {
         if (isMounted && docSnap.exists()) {
           const data = docSnap.data();
-          // Use a function update to prevent stale state
           setAppNameState(data.name || 'SGS Genius');
         }
       })
@@ -90,7 +87,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const contextValue = {
     appName,
     setAppName,
-    isLoading: isLoading || isUserLoading,
+    isLoading: isLoading,
   };
 
   return (
