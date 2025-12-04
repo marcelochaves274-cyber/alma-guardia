@@ -142,7 +142,7 @@ export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
         </SidebarMenu>
         {state === 'expanded' && user?.email && (
           <div className="mt-2 border-t border-sidebar-border p-2 pt-3 text-center">
-            <p className="text-xs text-sidebar-foreground/70 truncate" title={user.email}>
+            <p className="text-xs font-bold text-sidebar-foreground/70 truncate" title={user.email}>
                 {user.email}
             </p>
           </div>
