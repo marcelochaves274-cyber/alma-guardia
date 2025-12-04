@@ -31,16 +31,16 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isUserLoading) {
-      setIsLoading(true);
+      setIsLoading(true); // Keep loading while user state is being determined
       return;
     }
 
     if (!user || !firestore) {
-      setIsLoading(false);
+      setIsLoading(false); // Stop loading if no user or firestore
       return;
     }
     
-    setIsLoading(true);
+    // At this point, we have a user and firestore, so fetch settings.
     const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
     
     getDoc(settingsDocRef)
@@ -55,7 +55,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching app settings from Firestore:', error);
       })
       .finally(() => {
-        setIsLoading(false);
+        setIsLoading(false); // Stop loading after fetch is complete (success or fail)
       });
 
   }, [firestore, user, isUserLoading]);
