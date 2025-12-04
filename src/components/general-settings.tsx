@@ -35,7 +35,7 @@ export function GeneralSettings() {
       await setAppName(localAppName);
       toast({
         title: 'Sucesso!',
-        description: 'O nome foi salvo.',
+        description: 'O nome da empresa/usuário foi salvo.',
       });
     } catch (error) {
       toast({
@@ -66,7 +66,6 @@ export function GeneralSettings() {
     )
   }
 
-
   return (
     <main className="flex flex-1 flex-col overflow-hidden p-4 md:p-6">
       <Card>
@@ -88,7 +87,7 @@ export function GeneralSettings() {
           </div>
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={handleSave} disabled={isSaving || isAppLoading}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSaving ? 'Salvando...' : 'Salvar Nome'}
           </Button>
