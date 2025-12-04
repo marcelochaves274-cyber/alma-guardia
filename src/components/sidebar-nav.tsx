@@ -19,7 +19,7 @@ import { useAppSettings } from '@/context/app-settings-context';
 import Image from 'next/image';
 import { Skeleton } from './ui/skeleton';
 import { getAuth, signOut } from 'firebase/auth';
-import { useFirebaseApp } from '@/firebase';
+import { useFirebaseApp, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
@@ -32,6 +32,7 @@ type SidebarNavProps = {
 export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
   const { state } = useSidebar();
   const { logoUrl, isLoading } = useAppSettings();
+  const { user } = useUser();
   const firebaseApp = useFirebaseApp();
   const router = useRouter();
   const { toast } = useToast();
@@ -139,6 +140,13 @@ export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
         </SidebarMenu>
+        {state === 'expanded' && user?.email && (
+          <div className="mt-2 border-t border-sidebar-border p-2 pt-3 text-center">
+            <p className="text-xs text-sidebar-foreground/70 truncate" title={user.email}>
+                {user.email}
+            </p>
+          </div>
+        )}
       </SidebarFooter>
     </>
   );
