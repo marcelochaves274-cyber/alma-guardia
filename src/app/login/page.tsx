@@ -6,11 +6,11 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
+  type User,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { useFirebaseApp } from '@/firebase';
+import { useFirebaseApp, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -25,7 +25,6 @@ import { Label } from '@/components/ui/label';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { firebaseConfig } from '@/firebase/config';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -52,46 +51,23 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export default function LoginPage() {
   const firebaseApp = useFirebaseApp();
+  const { user, isLoading: isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   useEffect(() => {
-    if (!firebaseApp) {
-      setIsProcessingRedirect(false);
-      return;
+    if (!isUserLoading && user) {
+      router.push('/');
     }
-    const auth = getAuth(firebaseApp);
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          // User successfully signed in via redirect.
-          router.push('/');
-        }
-      })
-      .catch((error) => {
-        console.error('Google redirect result error:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Erro com Login do Google',
-          description: error.message,
-        });
-      })
-      .finally(() => {
-        // This is crucial: stop the main page loading indicator
-        // after processing is complete, regardless of the outcome.
-        setIsProcessingRedirect(false);
-      });
-  // The empty dependency array is correct here. We only want this to run once on component mount.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firebaseApp]);
+  }, [user, isUserLoading, router]);
 
   const handleEmailAuth = async (authAction: 'login' | 'register') => {
     if (!firebaseApp) return;
-    setIsEmailAuthLoading(true);
+    setIsEmailLoading(true);
     const auth = getAuth(firebaseApp);
     try {
       if (authAction === 'login') {
@@ -107,23 +83,33 @@ export default function LoginPage() {
         description: error.message,
       });
     } finally {
-        setIsEmailAuthLoading(false);
+        setIsEmailLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     if (!firebaseApp) return;
+    setIsGoogleLoading(true);
     const auth = getAuth(firebaseApp);
     const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({
-      auth_domain: firebaseConfig.authDomain,
-    });
-    // signInWithRedirect will navigate away, no need for an additional loading state here.
-    // The useEffect will handle the result on page load.
-    await signInWithRedirect(auth, provider);
+    try {
+      await signInWithPopup(auth, provider);
+      router.push('/');
+    } catch (error: any) {
+      // Don't show a toast for user-cancelled pop-ups
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast({
+          variant: 'destructive',
+          title: 'Erro com Login do Google',
+          description: error.message,
+        });
+      }
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
   
-  if (isProcessingRedirect) {
+  if (isUserLoading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -131,7 +117,7 @@ export default function LoginPage() {
     );
   }
 
-  const isAnyLoading = isEmailAuthLoading || isProcessingRedirect;
+  const isAnyLoading = isEmailLoading || isGoogleLoading;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -175,7 +161,7 @@ export default function LoginPage() {
               disabled={isAnyLoading || !email || !password}
               className="w-full"
             >
-              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEmailLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Entrar
             </Button>
             <Button
@@ -184,7 +170,7 @@ export default function LoginPage() {
               disabled={isAnyLoading || !email || !password}
               className="w-full"
             >
-              {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEmailLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Criar Conta
             </Button>
           </div>
@@ -204,7 +190,7 @@ export default function LoginPage() {
             onClick={handleGoogleSignIn}
             disabled={isAnyLoading}
           >
-            <GoogleIcon className="mr-2 h-4 w-4" />
+            {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
             Google
           </Button>
         </CardFooter>
