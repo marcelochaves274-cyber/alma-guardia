@@ -15,6 +15,7 @@ import { useState, useEffect } from 'react';
 import { useAppSettings } from '@/context/app-settings-context';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { Skeleton } from './ui/skeleton';
 
 export function GeneralSettings() {
   const { appName, setAppName, isLoading: isAppLoading } = useAppSettings();
@@ -24,9 +25,11 @@ export function GeneralSettings() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Sync local state when appName from context is loaded/changed
-    setLocalAppName(appName);
-  }, [appName]);
+    // Sincroniza o estado local quando o nome do app é carregado do contexto
+    if (!isAppLoading) {
+      setLocalAppName(appName);
+    }
+  }, [appName, isAppLoading]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -47,8 +50,8 @@ export function GeneralSettings() {
     }
   };
   
-  // The form should be disabled during the initial data load and during save operations.
-  const isFormDisabled = isAppLoading || isSaving;
+  // O formulário só deve ser desabilitado durante o salvamento.
+  const isFormDisabled = isSaving;
 
   return (
     <main className="flex flex-1 flex-col overflow-hidden p-4 md:p-6">
@@ -64,7 +67,7 @@ export function GeneralSettings() {
           <div className="space-y-2">
             <Label htmlFor="app-name">Nome da Empresa/Usuário</Label>
             {isAppLoading ? (
-               <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+               <Skeleton className="h-10 w-full" />
             ) : (
                <Input
                 id="app-name"
@@ -77,7 +80,7 @@ export function GeneralSettings() {
           </div>
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleSave} disabled={isFormDisabled || appName === localAppName}>
+          <Button onClick={handleSave} disabled={isFormDisabled || isAppLoading || appName === localAppName}>
              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSaving ? 'Salvando...' : 'Salvar Nome'}
           </Button>
