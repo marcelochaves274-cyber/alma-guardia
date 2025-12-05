@@ -46,8 +46,8 @@ export default function Home() {
             </CardHeader>
           </Card>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="flex w-full flex-col items-center">
+        <main className="flex flex-1 justify-center overflow-y-auto p-4 md:p-6">
+          <div className="w-full max-w-4xl">
             {renderContent()}
           </div>
         </main>
