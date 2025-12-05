@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Bot, Send, User } from 'lucide-react';
 import { handleChat } from '@/app/actions';
@@ -88,7 +87,7 @@ export function Chat() {
         <CardDescription>Converse com a IA para definir os requisitos do seu aplicativo.</CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-full max-h-[500px] pr-4">
+        <div className="pr-4">
           <div className="space-y-6">
             {messages.map((message, index) => (
               <div
@@ -140,7 +139,7 @@ export function Chat() {
             )}
             <div ref={messagesEndRef} />
           </div>
-        </ScrollArea>
+        </div>
       </CardContent>
       <CardFooter className="border-t pt-4">
         <form
