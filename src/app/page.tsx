@@ -69,7 +69,7 @@ export default function Home() {
         </header>
 
         <main className="flex flex-1 justify-center overflow-y-hidden p-4 md:p-6">
-          <div className="w-full max-w-4xl">
+          <div className="w-full">
             {renderContent()}
           </div>
         </main>
