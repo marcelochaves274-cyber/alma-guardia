@@ -27,7 +27,7 @@ export default function Home() {
       default:
         return (
           <div className="w-full flex justify-center">
-            <div className="w-full">
+            <div className="w-full max-w-4xl">
               <GeneralSettings />
             </div>
           </div>
