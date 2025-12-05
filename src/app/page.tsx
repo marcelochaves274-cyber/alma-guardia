@@ -15,10 +15,10 @@ export default function Home() {
       case 'reminders':
         return (
           <div className="w-full space-y-6">
-            <div className="w-full max-w-4xl mx-auto">
+            <div className="w-full">
               <SgsConfiguration />
             </div>
-            <div className="w-full max-w-4xl mx-auto">
+            <div className="w-full">
               <Chat />
             </div>
           </div>
@@ -52,7 +52,7 @@ export default function Home() {
             </CardHeader>
           </Card>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="p-4 md:p-6">
           {renderContent()}
         </main>
       </SidebarInset>
