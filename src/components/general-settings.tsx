@@ -110,7 +110,7 @@ export function GeneralSettings() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="w-full">
            <CardHeader>
               <CardTitle>Nome da Empresa/Usuário</CardTitle>
@@ -149,6 +149,20 @@ export function GeneralSettings() {
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
                 <Button variant="secondary">Ação do Novo Card</Button>
+            </CardFooter>
+        </Card>
+        <Card className="w-full">
+           <CardHeader>
+              <CardTitle>Mais um Card</CardTitle>
+              <CardDescription>
+                Este é o terceiro card na linha.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p>Conteúdo do terceiro card.</p>
+            </CardContent>
+            <CardFooter className="border-t px-6 py-4">
+                <Button variant="secondary">Outra Ação</Button>
             </CardFooter>
         </Card>
     </div>
