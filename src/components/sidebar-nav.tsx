@@ -12,7 +12,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from './icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -38,6 +38,7 @@ export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
 
   const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({
     settings: true,
+    acidentes: true,
   });
 
   const toggleSubMenu = (name: string) => {
@@ -99,6 +100,42 @@ export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
               <ListTodo />
               <span>Lembretes</span>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('acidentes')}
+              tooltip={{
+                children: 'Acidentes/Incidentes',
+              }}
+            >
+              <Siren />
+              <span>Acidentes/Incidentes</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenus['acidentes'] ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenus['acidentes'] && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'register-occurrence'}
+                    onClick={() => setActivePage('register-occurrence')}
+                  >
+                    Registrar Ocorrência
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'occurrence-report'}
+                    onClick={() => setActivePage('occurrence-report')}
+                  >
+                    Relatório de Ocorrência
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
