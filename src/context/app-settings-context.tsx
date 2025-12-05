@@ -16,53 +16,110 @@ const themes = [
   {
     name: 'musgo',
     displayName: 'Musgo',
-    primary: '85 30% 40%',
-    accent: '85 20% 35%',
+    // Base HSL values
     background: '85 30% 20%',
+    foreground: '85 10% 95%',
+    card: '85 30% 25%',
+    popover: '85 30% 25%',
+    primary: '85 30% 40%',
+    secondary: '85 15% 30%',
+    muted: '85 15% 30%',
+    accent: '85 20% 35%',
+    border: '85 15% 35%',
+    input: '85 20% 85%',
+    ring: '85 30% 40%',
+    sidebar: '85 30% 15%',
   },
   {
     name: 'oceano',
     displayName: 'Oceano',
-    primary: '210 40% 50%',
-    accent: '210 40% 45%',
     background: '210 40% 20%',
+    foreground: '210 10% 95%',
+    card: '210 40% 25%',
+    popover: '210 40% 25%',
+    primary: '210 40% 50%',
+    secondary: '210 25% 30%',
+    muted: '210 25% 30%',
+    accent: '210 30% 40%',
+    border: '210 25% 40%',
+    input: '210 30% 85%',
+    ring: '210 40% 50%',
+    sidebar: '210 40% 15%',
   },
   {
     name: 'rubi',
     displayName: 'Rubi',
-    primary: '350 60% 50%',
-    accent: '350 60% 45%',
     background: '350 60% 20%',
+    foreground: '350 10% 95%',
+    card: '350 60% 25%',
+    popover: '350 60% 25%',
+    primary: '350 60% 50%',
+    secondary: '350 40% 30%',
+    muted: '350 40% 30%',
+    accent: '350 50% 40%',
+    border: '350 40% 40%',
+    input: '350 50% 85%',
+    ring: '350 60% 50%',
+    sidebar: '350 60% 15%',
   },
   {
     name: 'ambar',
     displayName: 'Âmbar',
-    primary: '35 80% 50%',
-    accent: '35 80% 45%',
     background: '35 80% 20%',
+    foreground: '35 10% 95%',
+    card: '35 80% 25%',
+    popover: '35 80% 25%',
+    primary: '35 80% 50%',
+    secondary: '35 60% 30%',
+    muted: '35 60% 30%',
+    accent: '35 70% 40%',
+    border: '35 60% 40%',
+    input: '35 70% 85%',
+    ring: '35 80% 50%',
+    sidebar: '35 80% 15%',
   },
   {
     name: 'violeta',
     displayName: 'Violeta',
-    primary: '260 60% 60%',
-    accent: '260 60% 55%',
     background: '260 60% 25%',
+    foreground: '260 10% 95%',
+    card: '260 60% 30%',
+    popover: '260 60% 30%',
+    primary: '260 60% 60%',
+    secondary: '260 40% 40%',
+    muted: '260 40% 40%',
+    accent: '260 50% 50%',
+    border: '260 40% 50%',
+    input: '260 50% 85%',
+    ring: '260 60% 60%',
+    sidebar: '260 60% 20%',
   },
   {
     name: 'ardosia',
     displayName: 'Ardósia',
-    primary: '220 15% 50%',
-    accent: '220 15% 45%',
     background: '220 15% 20%',
+    foreground: '220 10% 95%',
+    card: '220 15% 25%',
+    popover: '220 15% 25%',
+    primary: '220 15% 50%',
+    secondary: '220 10% 30%',
+    muted: '220 10% 30%',
+    accent: '220 12% 40%',
+    border: '220 10% 40%',
+    input: '220 12% 85%',
+    ring: '220 15% 50%',
+    sidebar: '220 15% 15%',
   },
 ];
+
+type Theme = (typeof themes)[0];
 
 interface AppSettingsContextType {
   appName: string;
   setAppName: (name: string) => Promise<void>;
   isLoading: boolean;
-  themes: typeof themes;
-  selectedTheme: (typeof themes)[0] | null;
+  themes: Theme[];
+  selectedTheme: Theme | null;
   setSelectedTheme: (themeName: string) => void;
   isSavingTheme: boolean;
   saveTheme: () => Promise<void>;
@@ -75,7 +132,7 @@ const AppSettingsContext = createContext<AppSettingsContextType | undefined>(
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [appName, setAppNameState] = useState('SGS Genius');
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedTheme, setSelectedThemeState] = useState<(typeof themes)[0] | null>(themes[0]);
+  const [selectedTheme, setSelectedThemeState] = useState<Theme | null>(themes[0]);
   const [isSavingTheme, setIsSavingTheme] = useState(false);
 
   const firestore = useFirestore();
@@ -86,9 +143,20 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     const theme = themes.find((t) => t.name === themeName) || themes[0];
     setSelectedThemeState(theme);
     const root = document.documentElement;
-    root.style.setProperty('--background', theme.background);
-    root.style.setProperty('--primary', theme.primary);
-    root.style.setProperty('--accent', theme.accent);
+    if (theme) {
+        root.style.setProperty('--background', theme.background);
+        root.style.setProperty('--foreground', theme.foreground);
+        root.style.setProperty('--card', theme.card);
+        root.style.setProperty('--popover', theme.popover);
+        root.style.setProperty('--primary', theme.primary);
+        root.style.setProperty('--secondary', theme.secondary);
+        root.style.setProperty('--muted', theme.muted);
+        root.style.setProperty('--accent', theme.accent);
+        root.style.setProperty('--border', theme.border);
+        root.style.setProperty('--input', theme.input);
+        root.style.setProperty('--ring', theme.ring);
+        root.style.setProperty('--sidebar-background', theme.sidebar);
+    }
   }, []);
 
   useEffect(() => {
