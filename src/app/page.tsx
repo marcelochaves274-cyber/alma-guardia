@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { GeneralSettings } from '@/components/general-settings';
 import { Chat } from '@/components/chat';
 import { SgsConfiguration } from '@/components/sgs-configuration';
-import { Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarTrigger } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -14,7 +14,7 @@ export default function Home() {
     switch (activePage) {
       case 'reminders':
         return (
-          <div className="w-full flex-1 flex flex-col items-center gap-6 overflow-y-auto p-4 md:p-6">
+          <div className="w-full flex flex-col items-center gap-6">
             <div className="w-full max-w-4xl">
               <SgsConfiguration />
             </div>
@@ -26,7 +26,7 @@ export default function Home() {
       case 'general-settings':
       default:
         return (
-          <div className="w-full flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="w-full">
             <GeneralSettings />
           </div>
         );
@@ -49,9 +49,9 @@ export default function Home() {
             </CardHeader>
           </Card>
         </header>
-        <SidebarInset>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
           {renderContent()}
-        </SidebarInset>
+        </main>
       </div>
     </div>
   );
