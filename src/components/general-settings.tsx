@@ -92,7 +92,7 @@ export function GeneralSettings() {
 
   if (isLoading) {
     return (
-        <Card className="w-full max-w-2xl">
+        <Card className="w-full">
             <CardHeader>
                 <CardTitle>Configurações Gerais</CardTitle>
                 <CardDescription>
@@ -111,34 +111,62 @@ export function GeneralSettings() {
 
   return (
     <div className="w-full">
-        <div className="max-w-2xl">
-            <Card>
-            <CardHeader>
-                <CardTitle>Nome da Empresa/Usuário</CardTitle>
-                <CardDescription>
-                    Este nome será usado em todo o aplicativo.
-                </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                    <Label htmlFor="app-name">Nome</Label>
-                    <Input
-                        id="app-name"
-                        value={appName}
-                        onChange={(e) => setAppName(e.target.value)}
-                        placeholder="Digite o nome da sua empresa ou usuário"
-                        disabled={isSaving}
-                    />
-                    </div>
-                </CardContent>
-                <CardFooter className="border-t px-6 py-4">
-                    <Button onClick={handleSave} disabled={isSaving}>
-                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isSaving ? 'Salvando...' : 'Salvar Nome'}
-                    </Button>
-                </CardFooter>
-            </Card>
-        </div>
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Nome da Empresa/Usuário</CardTitle>
+            <CardDescription>
+              Este nome será usado em todo o aplicativo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="app-name">Nome</Label>
+              <Input
+                id="app-name"
+                value={appName}
+                onChange={(e) => setAppName(e.target.value)}
+                placeholder="Digite o nome da sua empresa ou usuário"
+                disabled={isSaving}
+              />
+            </div>
+          </CardContent>
+          <CardFooter className="border-t px-6 py-4">
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSaving ? 'Salvando...' : 'Salvar Nome'}
+            </Button>
+          </CardFooter>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Novo Card</CardTitle>
+            <CardDescription>
+              Este é um card recém-adicionado.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Conteúdo do novo card aqui.</p>
+          </CardContent>
+          <CardFooter className="border-t px-6 py-4">
+            <Button variant="secondary">Ação</Button>
+          </CardFooter>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Mais um Card</CardTitle>
+            <CardDescription>
+              Este é o terceiro card.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Conteúdo do terceiro card.</p>
+          </CardContent>
+          <CardFooter className="border-t px-6 py-4">
+            <Button variant="outline">Outra Ação</Button>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }
