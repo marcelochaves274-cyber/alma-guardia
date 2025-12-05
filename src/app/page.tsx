@@ -14,13 +14,9 @@ export default function Home() {
     switch (activePage) {
       case 'reminders':
         return (
-          <div className="flex w-full flex-1 items-start overflow-hidden">
-            <aside className="hidden h-full w-full max-w-xs flex-col border-l bg-background md:flex">
-              <SgsConfiguration key="sgs-configuration" />
-            </aside>
-            <main className="flex flex-1 flex-col overflow-y-auto p-4 md:p-6">
-              <Chat />
-            </main>
+          <div className="flex w-full flex-1 flex-col gap-6 overflow-y-auto p-4 md:p-6">
+            <SgsConfiguration />
+            <Chat />
           </div>
         );
       case 'general-settings':
