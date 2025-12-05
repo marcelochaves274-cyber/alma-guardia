@@ -26,10 +26,8 @@ export default function Home() {
       case 'general-settings':
       default:
         return (
-          <div className="flex justify-center">
-            <div className="w-full">
-              <GeneralSettings />
-            </div>
+          <div className="w-full">
+            <GeneralSettings />
           </div>
         );
     }
@@ -52,7 +50,7 @@ export default function Home() {
             </CardHeader>
           </Card>
         </header>
-        <main className="p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-6">
           {renderContent()}
         </main>
       </SidebarInset>
