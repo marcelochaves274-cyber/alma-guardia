@@ -21,7 +21,7 @@ export function GeneralSettings() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user, isLoading: isUserLoading } = useUser();
-  
+
   const [appName, setAppName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -29,14 +29,20 @@ export function GeneralSettings() {
   useEffect(() => {
     let isMounted = true;
     if (user === undefined || isUserLoading) {
-      return; 
+      return;
     }
     if (!user || !firestore) {
       setIsLoading(false);
       return;
     }
 
-    const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
+    const settingsDocRef = doc(
+      firestore,
+      'users',
+      user.uid,
+      'settings',
+      'appDetails'
+    );
     getDoc(settingsDocRef)
       .then((docSnap) => {
         if (isMounted && docSnap.exists()) {
@@ -56,8 +62,10 @@ export function GeneralSettings() {
           setIsLoading(false);
         }
       });
-    
-    return () => { isMounted = false };
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, isUserLoading, firestore, toast]);
 
   const handleSave = async () => {
@@ -72,7 +80,13 @@ export function GeneralSettings() {
 
     setIsSaving(true);
     try {
-      const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
+      const settingsDocRef = doc(
+        firestore,
+        'users',
+        user.uid,
+        'settings',
+        'appDetails'
+      );
       await setDoc(settingsDocRef, { name: appName }, { merge: true });
       toast({
         title: 'Sucesso!',
@@ -83,7 +97,8 @@ export function GeneralSettings() {
       toast({
         variant: 'destructive',
         title: 'Erro ao salvar',
-        description: 'Não foi possível salvar o nome. Verifique as regras de segurança do Firestore.',
+        description:
+          'Não foi possível salvar o nome. Verifique as regras de segurança do Firestore.',
       });
     } finally {
       setIsSaving(false);
@@ -92,49 +107,81 @@ export function GeneralSettings() {
 
   if (isLoading) {
     return (
-        <Card className="w-full max-w-2xl">
-            <CardHeader>
-                <CardTitle>Configurações Gerais</CardTitle>
-                <CardDescription>
-                    Gerencie as configurações gerais do seu aplicativo.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex items-center space-x-4">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                    <p>Carregando configurações...</p>
-                </div>
-            </CardContent>
+      <div className="grid w-full gap-6 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Configurações Gerais</CardTitle>
+            <CardDescription>
+              Gerencie as configurações gerais do seu aplicativo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <p>Carregando configurações...</p>
+            </div>
+          </CardContent>
         </Card>
-    )
+      </div>
+    );
   }
 
   return (
-    <Card className="w-full max-w-2xl">
-      <CardHeader>
-        <CardTitle>Nome da Empresa/Usuário</CardTitle>
-        <CardDescription>
-          Este nome será usado em todo o aplicativo.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          <Label htmlFor="app-name">Nome</Label>
-          <Input
-            id="app-name"
-            value={appName}
-            onChange={(e) => setAppName(e.target.value)}
-            placeholder="Digite o nome da sua empresa ou usuário"
-            disabled={isSaving}
-          />
-        </div>
-      </CardContent>
-      <CardFooter className="border-t px-6 py-4">
-        <Button onClick={handleSave} disabled={isSaving}>
-          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isSaving ? 'Salvando...' : 'Salvar Nome'}
-        </Button>
-      </CardFooter>
-    </Card>
+    <div className="grid w-full gap-6 md:grid-cols-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>Nome da Empresa/Usuário</CardTitle>
+          <CardDescription>
+            Este nome será usado em todo o aplicativo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="app-name">Nome</Label>
+            <Input
+              id="app-name"
+              value={appName}
+              onChange={(e) => setAppName(e.target.value)}
+              placeholder="Digite o nome da sua empresa ou usuário"
+              disabled={isSaving}
+            />
+          </div>
+        </CardContent>
+        <CardFooter className="border-t px-6 py-4">
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSaving ? 'Salvando...' : 'Salvar Nome'}
+          </Button>
+        </CardFooter>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Novo Card</CardTitle>
+          <CardDescription>
+            Este é um card novo para demonstração.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Conteúdo do novo card.</p>
+        </CardContent>
+        <CardFooter className="border-t px-6 py-4">
+          <Button>Ação</Button>
+        </CardFooter>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Mais um Card</CardTitle>
+          <CardDescription>
+            Este é outro card para demonstração.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Conteúdo de mais um card.</p>
+        </CardContent>
+        <CardFooter className="border-t px-6 py-4">
+          <Button variant="secondary">Outra Ação</Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
