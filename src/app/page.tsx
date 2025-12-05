@@ -1,10 +1,9 @@
 'use client';
 import { useState } from 'react';
 import { GeneralSettings } from '@/components/general-settings';
-import { Header } from '@/components/header';
 import { Chat } from '@/components/chat';
 import { SgsConfiguration } from '@/components/sgs-configuration';
-import { Sidebar, SidebarInset } from '@/components/ui/sidebar';
+import { Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -35,27 +34,25 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground">
-      <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar>
-          <SidebarNav activePage={activePage} setActivePage={setActivePage} />
-        </Sidebar>
-        <SidebarInset>
-          <div className="flex flex-col w-full h-full">
-            <div className="p-4 md:px-6">
-                <Card className="w-full max-w-4xl mx-auto">
-                    <CardHeader>
-                        <CardTitle className="text-center text-lg md:text-xl">
-                            Sistema de Gestão de Segurança
-                        </CardTitle>
-                    </CardHeader>
-                </Card>
-            </div>
-            {renderContent()}
+    <div className="flex h-screen bg-background text-foreground">
+      <Sidebar>
+        <SidebarNav activePage={activePage} setActivePage={setActivePage} />
+      </Sidebar>
+      <SidebarInset>
+        <div className="flex flex-col w-full h-full">
+          <div className="p-4 md:px-6">
+              <Card className="w-full">
+                  <CardHeader>
+                      <CardTitle className="flex items-center gap-4 text-center text-lg md:text-xl">
+                          <SidebarTrigger className='md:hidden' />
+                          <span className='flex-1'>Sistema de Gestão de Segurança</span>
+                      </CardTitle>
+                  </CardHeader>
+              </Card>
           </div>
-        </SidebarInset>
-      </div>
+          {renderContent()}
+        </div>
+      </SidebarInset>
     </div>
   );
 }
