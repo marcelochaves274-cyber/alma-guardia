@@ -34,25 +34,25 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
-      <Sidebar>
-        <SidebarNav activePage={activePage} setActivePage={setActivePage} />
-      </Sidebar>
-      <SidebarInset>
-        <div className="flex flex-col w-full h-full">
-          <div className="w-full">
-              <Card className='rounded-none border-x-0 border-t-0'>
-                  <CardHeader>
-                      <CardTitle className="flex items-center gap-4 text-center text-lg md:text-xl px-4 md:px-6">
-                          <SidebarTrigger className='md:hidden' />
-                          <span className='flex-1'>Sistema de Gestão de Segurança</span>
-                      </CardTitle>
-                  </CardHeader>
-              </Card>
-          </div>
+    <div className="flex h-screen flex-col bg-background text-foreground">
+      <header className="w-full shrink-0">
+        <Card className="rounded-none border-x-0 border-t-0">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-4 px-4 py-2 text-center text-lg md:px-6 md:text-xl">
+              <SidebarTrigger className="md:hidden" />
+              <span className="flex-1">Sistema de Gestão de Segurança</span>
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      </header>
+      <div className="flex h-full min-h-0 flex-1">
+        <Sidebar>
+          <SidebarNav activePage={activePage} setActivePage={setActivePage} />
+        </Sidebar>
+        <SidebarInset>
           {renderContent()}
-        </div>
-      </SidebarInset>
+        </SidebarInset>
+      </div>
     </div>
   );
 }
