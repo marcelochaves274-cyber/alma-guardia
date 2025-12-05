@@ -36,7 +36,7 @@ export default function Home() {
       </Sidebar>
 
       <SidebarInset className="flex flex-col">
-        <header className="w-full shrink-0">
+        <header className="sticky top-0 z-10 w-full shrink-0">
           <Card className="rounded-none border-x-0 border-t-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-4 px-4 py-2 text-center text-lg md:px-6 md:text-xl">
@@ -46,8 +46,10 @@ export default function Home() {
             </CardHeader>
           </Card>
         </header>
-        <main className="flex flex-1 flex-col items-center p-4 md:p-6">
-          {renderContent()}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="flex w-full flex-col items-center">
+            {renderContent()}
+          </div>
         </main>
       </SidebarInset>
     </div>
