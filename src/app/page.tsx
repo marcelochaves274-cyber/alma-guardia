@@ -40,8 +40,8 @@ export default function Home() {
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col w-full h-full">
-          <div className="p-4 md:px-6">
-              <Card className="w-full max-w-4xl mx-auto">
+          <div className="p-4 md:px-6 w-full max-w-[1790px] mx-auto">
+              <Card>
                   <CardHeader>
                       <CardTitle className="flex items-center gap-4 text-center text-lg md:text-xl">
                           <SidebarTrigger className='md:hidden' />
