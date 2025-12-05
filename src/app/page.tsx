@@ -41,9 +41,9 @@ export default function Home() {
       <SidebarInset>
         <div className="flex flex-col w-full h-full">
           <div className="w-full">
-              <Card className='rounded-none'>
+              <Card className='rounded-none border-x-0 border-t-0'>
                   <CardHeader>
-                      <CardTitle className="flex items-center gap-4 text-center text-lg md:text-xl">
+                      <CardTitle className="flex items-center gap-4 text-center text-lg md:text-xl px-4 md:px-6">
                           <SidebarTrigger className='md:hidden' />
                           <span className='flex-1'>Sistema de Gestão de Segurança</span>
                       </CardTitle>
