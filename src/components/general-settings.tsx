@@ -92,7 +92,7 @@ export function GeneralSettings() {
   };
 
   return (
-    <Card className="w-full max-w-4xl">
+    <Card className="w-full">
        <CardHeader>
           <CardTitle>Configurações Gerais</CardTitle>
           <CardDescription>

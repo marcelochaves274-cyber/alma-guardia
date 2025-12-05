@@ -26,7 +26,7 @@ export default function Home() {
       case 'general-settings':
       default:
         return (
-          <div className="flex w-full flex-1 justify-center overflow-y-auto p-4 md:p-6">
+          <div className="w-full flex-1 overflow-y-auto p-4 md:p-6">
             <GeneralSettings />
           </div>
         );
