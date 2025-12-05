@@ -87,8 +87,8 @@ export function Chat() {
         <CardTitle>Chat SGS com IA</CardTitle>
         <CardDescription>Converse com a IA para definir os requisitos do seu aplicativo.</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full pr-4">
+      <CardContent>
+        <ScrollArea className="h-full max-h-[500px] pr-4">
           <div className="space-y-6">
             {messages.map((message, index) => (
               <div
