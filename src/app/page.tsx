@@ -38,16 +38,16 @@ export default function Home() {
       <SidebarInset className="flex flex-col">
         <header className="sticky top-0 z-10 w-full shrink-0">
           <Card className="rounded-none border-x-0 border-t-0">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-4 px-4 py-2 text-center text-lg md:px-6 md:text-xl">
+            <CardHeader className="px-4 py-2 md:px-6">
+              <CardTitle className="flex items-center gap-4 text-center text-lg md:text-xl">
                 <SidebarTrigger />
                 <span className="flex-1">Sistema de Gestão de Segurança</span>
               </CardTitle>
             </CardHeader>
           </Card>
         </header>
-        <main className="flex flex-1 flex-col items-center overflow-y-auto p-4 md:p-6">
-          <div className="w-full max-w-4xl flex-1">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="mx-auto w-full max-w-4xl">
             {renderContent()}
           </div>
         </main>
