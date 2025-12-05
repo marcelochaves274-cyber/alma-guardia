@@ -107,7 +107,7 @@ export function GeneralSettings() {
 
   if (isLoading) {
     return (
-      <div className="grid w-full gap-6 md:grid-cols-2">
+      <div className="w-full max-w-2xl">
         <Card>
           <CardHeader>
             <CardTitle>Configurações Gerais</CardTitle>
@@ -127,7 +127,7 @@ export function GeneralSettings() {
   }
 
   return (
-    <div className="grid w-full gap-6 md:grid-cols-2">
+    <div className="w-full max-w-2xl">
       <Card>
         <CardHeader>
           <CardTitle>Nome da Empresa/Usuário</CardTitle>
@@ -152,20 +152,6 @@ export function GeneralSettings() {
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSaving ? 'Salvando...' : 'Salvar Nome'}
           </Button>
-        </CardFooter>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Mais um Card</CardTitle>
-          <CardDescription>
-            Este é outro card para demonstração.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p>Conteúdo de mais um card.</p>
-        </CardContent>
-        <CardFooter className="border-t px-6 py-4">
-          <Button variant="secondary">Outra Ação</Button>
         </CardFooter>
       </Card>
     </div>
