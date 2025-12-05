@@ -68,10 +68,8 @@ export default function Home() {
           </div>
         </header>
 
-        <main className="flex flex-1 justify-center overflow-y-hidden p-4 md:p-6">
-          <div className="w-full">
-            {renderContent()}
-          </div>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          {renderContent()}
         </main>
       </SidebarInset>
     </div>
