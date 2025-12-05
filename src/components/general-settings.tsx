@@ -110,8 +110,8 @@ export function GeneralSettings() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="w-full">
+    <div className="w-full">
+        <Card>
            <CardHeader>
               <CardTitle>Nome da Empresa/Usuário</CardTitle>
               <CardDescription>
@@ -135,34 +135,6 @@ export function GeneralSettings() {
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isSaving ? 'Salvando...' : 'Salvar Nome'}
                 </Button>
-            </CardFooter>
-        </Card>
-        <Card className="w-full">
-           <CardHeader>
-              <CardTitle>Novo Card</CardTitle>
-              <CardDescription>
-                Este é um novo card ao lado do outro.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p>Conteúdo do novo card aqui.</p>
-            </CardContent>
-            <CardFooter className="border-t px-6 py-4">
-                <Button variant="secondary">Ação do Novo Card</Button>
-            </CardFooter>
-        </Card>
-        <Card className="w-full">
-           <CardHeader>
-              <CardTitle>Mais um Card</CardTitle>
-              <CardDescription>
-                Este é o terceiro card na linha.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p>Conteúdo do terceiro card.</p>
-            </CardContent>
-            <CardFooter className="border-t px-6 py-4">
-                <Button variant="secondary">Outra Ação</Button>
             </CardFooter>
         </Card>
     </div>
