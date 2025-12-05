@@ -38,6 +38,7 @@
     --sidebar-border: 85 15% 25%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
   .dark {
     --background: 85 25% 15%;
     --foreground: 85 10% 95%;
@@ -80,5 +81,6 @@
   }
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
