@@ -107,25 +107,28 @@ export function GeneralSettings() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Configurações Gerais</CardTitle>
-          <CardDescription>
-            Gerencie as configurações gerais do seu aplicativo.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-4">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            <p>Carregando configurações...</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle>Configurações Gerais</CardTitle>
+            <CardDescription>
+              Gerencie as configurações gerais do seu aplicativo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <p>Carregando configurações...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-      <Card>
+    <div className="grid gap-6 md:grid-cols-3">
+      <Card className="md:col-span-1">
         <CardHeader>
           <CardTitle>Nome da Empresa/Usuário</CardTitle>
           <CardDescription>
@@ -151,5 +154,28 @@ export function GeneralSettings() {
           </Button>
         </CardFooter>
       </Card>
+      <Card className="md:col-span-1">
+        <CardHeader>
+          <CardTitle>Novo Card</CardTitle>
+          <CardDescription>
+            Descrição para o novo card.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Conteúdo do novo card.</p>
+        </CardContent>
+      </Card>
+      <Card className="md:col-span-1">
+        <CardHeader>
+          <CardTitle>Mais um Card</CardTitle>
+          <CardDescription>
+            Descrição para mais um card.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Conteúdo de mais um card.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
