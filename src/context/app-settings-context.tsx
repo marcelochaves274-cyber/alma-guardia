@@ -8,7 +8,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -116,13 +116,18 @@ type Theme = (typeof themes)[0];
 
 interface AppSettingsContextType {
   appName: string;
-  setAppName: (name: string) => Promise<void>;
+  setAppNameState: React.Dispatch<React.SetStateAction<string>>;
+  logoUrl: string | null;
+  setLogoUrl: (url: string | null) => void;
   isLoading: boolean;
   themes: Theme[];
   selectedTheme: Theme | null;
   setSelectedTheme: (themeName: string) => void;
   isSavingTheme: boolean;
   saveTheme: () => Promise<void>;
+  isSavingLogo: boolean;
+  saveLogo: () => Promise<void>;
+  removeLogo: () => Promise<void>;
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(
@@ -131,9 +136,11 @@ const AppSettingsContext = createContext<AppSettingsContextType | undefined>(
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [appName, setAppNameState] = useState('SGS Genius');
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTheme, setSelectedThemeState] = useState<Theme | null>(themes[0]);
   const [isSavingTheme, setIsSavingTheme] = useState(false);
+  const [isSavingLogo, setIsSavingLogo] = useState(false);
 
   const firestore = useFirestore();
   const { user, isLoading: isUserLoading } = useUser();
@@ -181,6 +188,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             const data = docSnap.data();
             setAppNameState(data.name || 'SGS Genius');
             applyTheme(data.theme || 'musgo');
+            setLogoUrl(data.logoUrl || null);
           } else {
              applyTheme('musgo'); // Apply default if no settings exist
           }
@@ -205,16 +213,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     }
 
   }, [firestore, user, isUserLoading, toast, applyTheme]);
-
-  const setAppName = async (name: string) => {
-    if (!firestore || !user) {
-      console.error('Firestore not initialized or user not logged in');
-      throw new Error('Usuário não autenticado.');
-    }
-    const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
-    await setDoc(settingsDocRef, { name }, { merge: true });
-    setAppNameState(name);
-  };
   
   const setSelectedTheme = (themeName: string) => {
     applyTheme(themeName);
@@ -250,16 +248,90 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const saveLogo = async () => {
+    if (!firestore || !user) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Autenticação',
+        description: 'Você precisa estar logado para salvar a logo.',
+      });
+      return;
+    }
+     if (!logoUrl) {
+      toast({
+        variant: 'destructive',
+        title: 'Nenhuma logo selecionada',
+        description: 'Por favor, carregue uma imagem primeiro.',
+      });
+      return;
+    }
+    setIsSavingLogo(true);
+    try {
+      const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
+      await setDoc(settingsDocRef, { logoUrl: logoUrl }, { merge: true });
+      toast({
+        title: 'Sucesso!',
+        description: 'A logo foi salva.',
+      });
+    } catch (error) {
+      console.error('Error saving logo:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar',
+        description:
+          'Não foi possível salvar a logo.',
+      });
+    } finally {
+      setIsSavingLogo(false);
+    }
+  }
+  
+  const removeLogo = async () => {
+     if (!firestore || !user) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Autenticação',
+        description: 'Você precisa estar logado.',
+      });
+      return;
+    }
+    setIsSavingLogo(true);
+    try {
+      const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
+      // Using updateDoc to specifically remove a field
+      await updateDoc(settingsDocRef, { logoUrl: null });
+      setLogoUrl(null);
+      toast({
+        title: 'Logo Removida',
+        description: 'A sua logo foi removida com sucesso.',
+      });
+    } catch (error) {
+      console.error('Error removing logo:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao remover',
+        description:
+          'Não foi possível remover a logo.',
+      });
+    } finally {
+      setIsSavingLogo(false);
+    }
+  };
 
   const contextValue = {
     appName,
-    setAppName,
-    isLoading: isLoading,
+    setAppNameState,
+    logoUrl,
+    setLogoUrl,
+    isLoading: isLoading || isUserLoading,
     themes,
     selectedTheme,
     setSelectedTheme,
     isSavingTheme,
     saveTheme,
+    isSavingLogo,
+    saveLogo,
+    removeLogo
   };
 
   return (

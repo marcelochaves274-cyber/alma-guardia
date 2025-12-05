@@ -6,9 +6,13 @@ import { SgsConfiguration } from '@/components/sgs-configuration';
 import { Sidebar, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAppSettings } from '@/context/app-settings-context';
+import Image from 'next/image';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
   const [activePage, setActivePage] = useState('general-settings');
+  const { logoUrl, isLoading } = useAppSettings();
 
   const renderContent = () => {
     switch (activePage) {
@@ -46,8 +50,8 @@ export default function Home() {
             </CardHeader>
           </Card>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="mx-auto w-full max-w-4xl">
+        <main className="flex flex-1 flex-col items-center overflow-y-auto p-4 md:p-6">
+          <div className="w-full max-w-4xl">
             {renderContent()}
           </div>
         </main>

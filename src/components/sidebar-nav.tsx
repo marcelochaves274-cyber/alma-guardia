@@ -22,7 +22,6 @@ import { getAuth, signOut } from 'firebase/auth';
 import { useFirebaseApp, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from './ui/button';
 
 type SidebarNavProps = {
     activePage: string;
@@ -31,7 +30,7 @@ type SidebarNavProps = {
 
 export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
   const { state } = useSidebar();
-  const { logoUrl, isLoading } = useAppSettings();
+  const { appName, logoUrl, isLoading } = useAppSettings();
   const { user } = useUser();
   const firebaseApp = useFirebaseApp();
   const router = useRouter();
@@ -83,7 +82,7 @@ export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
             <SgsGeniusLogo className="h-6 w-6 text-primary" />
           )}
           {state === 'expanded' && (
-            <h2 className="text-lg font-semibold">SGS Genius</h2>
+            <h2 className="text-lg font-semibold truncate" title={appName}>{appName}</h2>
           )}
         </div>
       </SidebarHeader>

@@ -11,17 +11,29 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, X } from 'lucide-react';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ThemeSelector } from './theme-selector';
+import { useAppSettings } from '@/context/app-settings-context';
+import Image from 'next/image';
+import { Skeleton } from './ui/skeleton';
 
 export function GeneralSettings() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user, isLoading: isUserLoading } = useUser();
+  const {
+    logoUrl,
+    setLogoUrl,
+    isSavingLogo,
+    saveLogo,
+    removeLogo,
+    isLoading: isSettingsLoading,
+  } = useAppSettings();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [appName, setAppName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -69,6 +81,25 @@ export function GeneralSettings() {
     };
   }, [user, isUserLoading, firestore, toast]);
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) { // 1MB limit
+        toast({
+          variant: 'destructive',
+          title: 'Arquivo muito grande',
+          description: 'Por favor, escolha uma imagem menor que 1MB.',
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
   const handleSave = async () => {
     if (!firestore || !user) {
       toast({
@@ -106,10 +137,10 @@ export function GeneralSettings() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isSettingsLoading) {
     return (
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-1">
+        <Card className="md:col-span-3">
           <CardHeader>
             <CardTitle>Configurações Gerais</CardTitle>
             <CardDescription>
@@ -129,52 +160,72 @@ export function GeneralSettings() {
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Nome da Empresa/Usuário</CardTitle>
-            <CardDescription>
-              Este nome será usado em todo o aplicativo.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="app-name">Nome</Label>
-              <Input
-                id="app-name"
-                value={appName}
-                onChange={(e) => setAppName(e.target.value)}
-                placeholder="Digite o nome da sua empresa ou usuário"
-                disabled={isSaving}
-              />
+      <Card>
+        <CardHeader>
+          <CardTitle>Nome e Logo</CardTitle>
+          <CardDescription>
+            Personalize a identidade visual do seu aplicativo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="app-name">Nome da Empresa/Usuário</Label>
+            <Input
+              id="app-name"
+              value={appName}
+              onChange={(e) => setAppName(e.target.value)}
+              placeholder="Digite o nome da sua empresa ou usuário"
+              disabled={isSaving}
+            />
+          </div>
+           <div className="space-y-2">
+              <Label>Logo</Label>
+              <div className="flex items-center gap-4">
+                {isSettingsLoading ? <Skeleton className="h-16 w-16 rounded-md" /> : logoUrl ? (
+                  <div className="relative">
+                    <Image src={logoUrl} alt="Logo preview" width={64} height={64} className="rounded-md border object-contain" />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -right-2 -top-2 h-6 w-6 rounded-full"
+                      onClick={removeLogo}
+                      disabled={isSavingLogo}
+                      aria-label="Remover logo"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed">
+                    <span className="text-xs text-muted-foreground">Sem logo</span>
+                  </div>
+                )}
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isSavingLogo}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Carregar
+                </Button>
+                <Input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  onChange={handleFileChange}
+                  accept="image/png, image/jpeg, image/gif, image/svg+xml"
+                />
+              </div>
+               <p className="text-xs text-muted-foreground">Recomendado: 128x128px, máx 1MB.</p>
             </div>
-          </CardContent>
-          <CardFooter className="border-t px-6 py-4">
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSaving ? 'Salvando...' : 'Salvar Nome'}
-            </Button>
-          </CardFooter>
-        </Card>
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Novo Card</CardTitle>
-            <CardDescription>Descrição para o novo card.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Conteúdo do novo card.</p>
-          </CardContent>
-        </Card>
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Mais um Card</CardTitle>
-            <CardDescription>Descrição para mais um card.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Conteúdo de mais um card.</p>
-          </CardContent>
-        </Card>
-      </div>
+        </CardContent>
+        <CardFooter className="border-t px-6 py-4 flex justify-start gap-4">
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSaving ? 'Salvando...' : 'Salvar Nome'}
+          </Button>
+          <Button onClick={saveLogo} disabled={isSavingLogo}>
+            {isSavingLogo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSavingLogo ? 'Salvando...' : 'Salvar Logo'}
+          </Button>
+        </CardFooter>
+      </Card>
       <ThemeSelector />
     </div>
   );
