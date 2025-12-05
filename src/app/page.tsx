@@ -26,8 +26,10 @@ export default function Home() {
       case 'general-settings':
       default:
         return (
-          <div className="w-full">
-            <GeneralSettings />
+          <div className="w-full flex justify-center">
+            <div className="w-full">
+              <GeneralSettings />
+            </div>
           </div>
         );
     }
@@ -38,7 +40,7 @@ export default function Home() {
       <Sidebar>
         <SidebarNav activePage={activePage} setActivePage={setActivePage} />
       </Sidebar>
-      <div className="flex h-full min-h-0 flex-1 flex-col">
+      <div className="flex flex-1 flex-col min-h-0">
         <header className="w-full shrink-0">
           <Card className="rounded-none border-x-0 border-t-0">
             <CardHeader>

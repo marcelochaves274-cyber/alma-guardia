@@ -37,7 +37,6 @@ export function GeneralSettings() {
     }
 
     // Now we are sure we have a user and firestore
-    setIsLoading(true);
     const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
     getDoc(settingsDocRef)
       .then((docSnap) => {
