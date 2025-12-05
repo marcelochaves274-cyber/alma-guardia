@@ -8,6 +8,7 @@ import { SidebarNav } from '@/components/sidebar-nav';
 import { useAppSettings } from '@/context/app-settings-context';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
+import { RegisterOccurrence } from '@/components/register-occurrence';
 
 export default function Home() {
   const [activePage, setActivePage] = useState('general-settings');
@@ -26,6 +27,8 @@ export default function Home() {
             </div>
           </div>
         );
+      case 'register-occurrence':
+        return <RegisterOccurrence />;
       case 'general-settings':
       default:
         return <GeneralSettings />;
@@ -36,6 +39,8 @@ export default function Home() {
     switch (activePage) {
       case 'reminders':
         return 'Lembretes e Chat';
+      case 'register-occurrence':
+        return 'Registrar Ocorrência de Acidente/Incidente';
       case 'general-settings':
       default:
         return 'Configurações Gerais';
