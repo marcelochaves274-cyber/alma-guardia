@@ -7,7 +7,7 @@ export function Header() {
       <div className="flex w-full items-center justify-between">
         <SidebarTrigger />
         <div className="flex flex-1 items-center justify-center">
-          <h1 className="font-headline text-lg font-semibold text-center whitespace-nowrap">
+          <h1 className="text-lg font-semibold text-center whitespace-nowrap">
             Sistema de Gestão de Segurança
           </h1>
         </div>
