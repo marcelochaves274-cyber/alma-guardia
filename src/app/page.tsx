@@ -9,6 +9,7 @@ import { useAppSettings } from '@/context/app-settings-context';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RegisterOccurrence } from '@/components/register-occurrence';
+import { ManageOccurrences } from '@/components/manage-occurrences';
 
 export default function Home() {
   const [activePage, setActivePage] = useState('general-settings');
@@ -29,6 +30,8 @@ export default function Home() {
         );
       case 'register-occurrence':
         return <RegisterOccurrence />;
+      case 'manage-occurrences':
+        return <ManageOccurrences />;
       case 'general-settings':
       default:
         return <GeneralSettings />;
@@ -41,6 +44,8 @@ export default function Home() {
         return 'Lembretes e Chat';
       case 'register-occurrence':
         return 'Registrar Ocorrência de Acidente/Incidente';
+      case 'manage-occurrences':
+        return 'Gerenciar Ocorrências';
       case 'general-settings':
       default:
         return 'Configurações Gerais';
