@@ -46,10 +46,12 @@ export default function Home() {
             </CardHeader>
           </Card>
         </header>
-        <main className="flex flex-1 justify-center overflow-y-auto p-4 md:p-6">
+        <main className="flex flex-1 flex-col items-center overflow-y-auto p-4 md:p-6">
+          <span>y</span>
           <div className="w-full max-w-4xl">
             {renderContent()}
           </div>
+          <span>y</span>
         </main>
       </SidebarInset>
     </div>
