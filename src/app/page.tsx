@@ -31,6 +31,16 @@ export default function Home() {
         return <GeneralSettings />;
     }
   };
+  
+  const getPageTitle = () => {
+    switch (activePage) {
+      case 'reminders':
+        return 'Lembretes e Chat';
+      case 'general-settings':
+      default:
+        return 'Configurações Gerais';
+    }
+  }
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -71,7 +81,7 @@ export default function Home() {
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="mx-auto w-full max-w-4xl space-y-6">
              <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                {activePage === 'general-settings' ? 'Configurações Gerais' : 'Lembretes e Chat'}
+                {getPageTitle()}
             </h1>
             {renderContent()}
           </div>
