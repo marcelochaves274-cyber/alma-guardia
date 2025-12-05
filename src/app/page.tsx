@@ -26,7 +26,7 @@ export default function Home() {
       case 'general-settings':
       default:
         return (
-          <div className="w-full flex justify-center">
+          <div className="flex w-full justify-center">
             <div className="w-full max-w-4xl">
               <GeneralSettings />
             </div>
@@ -45,7 +45,7 @@ export default function Home() {
           <Card className="rounded-none border-x-0 border-t-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-4 px-4 py-2 text-center text-lg md:px-6 md:text-xl">
-                <SidebarTrigger className="md:hidden" />
+                <SidebarTrigger />
                 <span className="flex-1">Sistema de Gestão de Segurança</span>
               </CardTitle>
             </CardHeader>
