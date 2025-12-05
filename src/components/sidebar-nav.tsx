@@ -162,6 +162,14 @@ export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
                     Configurações gerais
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    isActive={activePage === 'manage-occurrences'}
+                    onClick={() => setActivePage('manage-occurrences')}
+                  >
+                    Gerenciar Ocorrências
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
               </SidebarMenuSub>
             )}
           </SidebarMenuItem>
