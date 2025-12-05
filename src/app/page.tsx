@@ -5,14 +5,13 @@ import { Chat } from '@/components/chat';
 import { SgsConfiguration } from '@/components/sgs-configuration';
 import { Sidebar, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/sidebar-nav';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppSettings } from '@/context/app-settings-context';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
   const [activePage, setActivePage] = useState('general-settings');
-  const { logoUrl, isLoading } = useAppSettings();
+  const { logoUrl, appName, isLoading } = useAppSettings();
 
   const renderContent = () => {
     switch (activePage) {
@@ -40,27 +39,35 @@ export default function Home() {
       </Sidebar>
 
       <SidebarInset className="flex flex-col">
-        <header className="sticky top-0 z-10 w-full shrink-0">
-          <Card className="rounded-none border-x-0 border-t-0">
-            <CardHeader className="px-4 py-2 md:px-6">
-              <CardTitle className="flex items-center gap-4 text-center text-lg md:text-xl">
-                <SidebarTrigger />
-                {isLoading ? (
-                  <Skeleton className="h-6 w-6 rounded-sm" />
-                ) : logoUrl ? (
-                  <Image
-                    src={logoUrl}
-                    alt="Logo"
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 rounded-sm object-contain"
-                  />
-                ) : null}
-                <span className="flex-1">Sistema de Gestão de Segurança</span>
-              </CardTitle>
-            </CardHeader>
-          </Card>
+        <header className="relative flex h-20 items-center justify-center border-b bg-card px-4 md:px-6">
+          <div className="absolute left-4 flex items-center gap-4">
+            <SidebarTrigger />
+          </div>
+          <div className="flex items-center gap-4">
+            {isLoading ? (
+              <Skeleton className="h-10 w-10 rounded-md" />
+            ) : logoUrl ? (
+              <Image
+                src={logoUrl}
+                alt="Logo"
+                width={40}
+                height={40}
+                className="rounded-md object-contain"
+              />
+            ) : null}
+            <div className="flex flex-col items-center justify-center">
+              <span className="text-xl font-bold text-foreground">
+                Sistema de Gestão de Segurança
+              </span>
+              {!isLoading && appName && (
+                <span className="text-lg font-bold text-muted-foreground">
+                  {appName}
+                </span>
+              )}
+            </div>
+          </div>
         </header>
+
         <main className="flex flex-1 justify-center overflow-y-hidden p-4 md:p-6">
           <div className="w-full max-w-4xl">
             {renderContent()}

@@ -116,7 +116,7 @@ type Theme = (typeof themes)[0];
 
 interface AppSettingsContextType {
   appName: string;
-  setAppNameState: React.Dispatch<React.SetStateAction<string>>;
+  setAppName: (name: string) => Promise<void>;
   logoUrl: string | null;
   setLogoUrl: (url: string | null) => void;
   isLoading: boolean;
@@ -135,7 +135,7 @@ const AppSettingsContext = createContext<AppSettingsContextType | undefined>(
 );
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
-  const [appName, setAppNameState] = useState('SGS Genius');
+  const [appName, setAppNameState] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTheme, setSelectedThemeState] = useState<Theme | null>(themes[0]);
@@ -186,7 +186,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         if (isMounted) {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setAppNameState(data.name || 'SGS Genius');
+            setAppNameState(data.name || '');
             applyTheme(data.theme || 'musgo');
             setLogoUrl(data.logoUrl || null);
           } else {
@@ -213,6 +213,19 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     }
 
   }, [firestore, user, isUserLoading, toast, applyTheme]);
+  
+  const setAppName = async (name: string) => {
+    if (!firestore || !user) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Autenticação',
+        description: 'Você precisa estar logado para salvar.',
+      });
+      throw new Error('Authentication error');
+    }
+    await setDoc(doc(firestore, 'users', user.uid, 'settings', 'appDetails'), { name }, { merge: true });
+    setAppNameState(name);
+  };
   
   const setSelectedTheme = (themeName: string) => {
     applyTheme(themeName);
@@ -320,7 +333,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
 
   const contextValue = {
     appName,
-    setAppNameState,
+    setAppName,
     logoUrl,
     setLogoUrl,
     isLoading: isLoading || isUserLoading,
