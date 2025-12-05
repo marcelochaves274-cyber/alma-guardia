@@ -26,7 +26,7 @@ export default function Home() {
       case 'general-settings':
       default:
         return (
-          <div className="flex w-full justify-center">
+          <div className="flex justify-center">
             <div className="w-full">
               <GeneralSettings />
             </div>
