@@ -45,12 +45,23 @@ export default function Home() {
             <CardHeader className="px-4 py-2 md:px-6">
               <CardTitle className="flex items-center gap-4 text-center text-lg md:text-xl">
                 <SidebarTrigger />
+                {isLoading ? (
+                  <Skeleton className="h-6 w-6 rounded-sm" />
+                ) : logoUrl ? (
+                  <Image
+                    src={logoUrl}
+                    alt="Logo"
+                    width={24}
+                    height={24}
+                    className="h-6 w-6 rounded-sm object-contain"
+                  />
+                ) : null}
                 <span className="flex-1">Sistema de Gestão de Segurança</span>
               </CardTitle>
             </CardHeader>
           </Card>
         </header>
-        <main className="flex flex-1 flex-col items-center overflow-y-auto p-4 md:p-6">
+        <main className="flex flex-1 justify-center overflow-y-auto p-4 md:p-6">
           <div className="w-full max-w-4xl">
             {renderContent()}
           </div>
