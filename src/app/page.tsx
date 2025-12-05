@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { GeneralSettings } from '@/components/general-settings';
 import { Chat } from '@/components/chat';
 import { SgsConfiguration } from '@/components/sgs-configuration';
-import { Sidebar, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -40,7 +40,8 @@ export default function Home() {
       <Sidebar>
         <SidebarNav activePage={activePage} setActivePage={setActivePage} />
       </Sidebar>
-      <div className="flex flex-1 flex-col">
+
+      <SidebarInset>
         <header className="w-full shrink-0">
           <Card className="rounded-none border-x-0 border-t-0">
             <CardHeader>
@@ -54,7 +55,7 @@ export default function Home() {
         <main className="overflow-y-auto p-4 md:p-6">
           {renderContent()}
         </main>
-      </div>
+      </SidebarInset>
     </div>
   );
 }
