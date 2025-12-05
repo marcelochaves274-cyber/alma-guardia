@@ -39,7 +39,7 @@ export default function Home() {
         <SidebarNav activePage={activePage} setActivePage={setActivePage} />
       </Sidebar>
 
-      <SidebarInset>
+      <SidebarInset className="flex flex-col">
         <header className="w-full shrink-0">
           <Card className="rounded-none border-x-0 border-t-0">
             <CardHeader>
@@ -50,7 +50,7 @@ export default function Home() {
             </CardHeader>
           </Card>
         </header>
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-6 flex flex-col items-center">
           {renderContent()}
         </main>
       </SidebarInset>
