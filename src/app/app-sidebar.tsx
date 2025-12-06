@@ -14,21 +14,18 @@ import {
 } from '@/components/ui/sidebar';
 import { ListTodo, Settings, ChevronDown, LogOut, Siren } from 'lucide-react';
 import { useState } from 'react';
-import { SgsGeniusLogo } from './icons';
+import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
 import Image from 'next/image';
-import { Skeleton } from './ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getAuth, signOut } from 'firebase/auth';
 import { useFirebaseApp, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { activePage, setActivePage } from './page';
 
-type SidebarNavProps = {
-    activePage: string;
-    setActivePage: (page: string) => void;
-};
 
-export function SidebarNav({ activePage, setActivePage }: SidebarNavProps) {
+export function AppSidebar() {
   const { state } = useSidebar();
   const { appName, logoUrl, isLoading } = useAppSettings();
   const { user } = useUser();
