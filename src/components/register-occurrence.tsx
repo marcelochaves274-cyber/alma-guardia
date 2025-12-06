@@ -82,6 +82,28 @@ export function RegisterOccurrence() {
             />
           </div>
         </div>
+        
+        <div className="space-y-2">
+            <Label htmlFor="occurrence-location">Local da Ocorrência</Label>
+            <Input id="occurrence-location" placeholder="Setor, máquina, área, etc." />
+        </div>
+
+        <div className="flex-1 min-w-64 space-y-3">
+          <Label>Faixa Etária</Label>
+          <Select>
+              <SelectTrigger>
+                  <SelectValue placeholder="Selecione a faixa etária" />
+              </SelectTrigger>
+              <SelectContent>
+                  <SelectItem value="crianca">Criança (0-12 anos)</SelectItem>
+                  <SelectItem value="adolescente">Adolescente (13-17 anos)</SelectItem>
+                  <SelectItem value="adulto1">Adulto (18-39 anos)</SelectItem>
+                  <SelectItem value="adulto2">Adulto (40-59 anos)</SelectItem>
+                  <SelectItem value="idoso">Idoso (60+ anos)</SelectItem>
+              </SelectContent>
+          </Select>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="description">Descrição da Ocorrência</Label>
           <Textarea
@@ -149,26 +171,8 @@ export function RegisterOccurrence() {
                 <Input id="phone" placeholder="(00) 00000-0000" />
             </div>
         </div>
-        <div className="space-y-2">
-            <Label htmlFor="occurrence-location">Local da Ocorrência</Label>
-            <Input id="occurrence-location" placeholder="Setor, máquina, área, etc." />
-        </div>
+
         <div className="flex flex-wrap gap-6">
-             <div className="flex-1 min-w-64 space-y-3">
-                <Label>Faixa Etária</Label>
-                <Select>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Selecione a faixa etária" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="crianca">Criança (0-12 anos)</SelectItem>
-                        <SelectItem value="adolescente">Adolescente (13-17 anos)</SelectItem>
-                        <SelectItem value="adulto1">Adulto (18-39 anos)</SelectItem>
-                        <SelectItem value="adulto2">Adulto (40-59 anos)</SelectItem>
-                        <SelectItem value="idoso">Idoso (60+ anos)</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
             <div className="flex-1 min-w-64 space-y-3">
                 <Label>Análise da Ocorrência</Label>
                 <RadioGroup className="flex items-center space-x-4 pt-2">
