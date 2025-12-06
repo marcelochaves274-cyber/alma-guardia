@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -13,20 +12,91 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { Separator } from './ui/separator';
+import { useFirestore, useUser } from '@/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { Skeleton } from './ui/skeleton';
 
 export function ManageOccurrences() {
   const { toast } = useToast();
-  const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([
-    'Queda de mesmo nível',
-    'Corte',
-    'Contato com produto químico',
-  ]);
-  const [newType, setNewType] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const firestore = useFirestore();
+  const { user, isLoading: isUserLoading } = useUser();
 
-  const handleAddType = (e: FormEvent) => {
+  const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
+  const [newType, setNewType] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const getSettingsDocRef = useCallback(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid, 'settings', 'occurrenceTypes');
+  }, [firestore, user]);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (isUserLoading) return;
+    
+    const fetchOccurrenceTypes = async () => {
+      const docRef = getSettingsDocRef();
+      if (!docRef) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const docSnap = await getDoc(docRef);
+        if (isMounted) {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setOccurrenceTypes(data.types || []);
+          } else {
+            // If no settings exist, initialize with some defaults
+            const defaultTypes = ['Queda de mesmo nível', 'Corte', 'Contato com produto químico'];
+            setOccurrenceTypes(defaultTypes);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching occurrence types:", error);
+        toast({
+            variant: "destructive",
+            title: "Erro ao carregar",
+            description: "Não foi possível buscar os tipos de ocorrência."
+        });
+      } finally {
+        if (isMounted) {
+            setIsLoading(false);
+        }
+      }
+    };
+
+    fetchOccurrenceTypes();
+    
+    return () => { isMounted = false; };
+  }, [isUserLoading, getSettingsDocRef, toast]);
+  
+  const saveTypesToFirestore = async (types: string[]) => {
+    const docRef = getSettingsDocRef();
+    if (!docRef) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.'});
+      return false;
+    }
+    
+    setIsSaving(true);
+    try {
+        await setDoc(docRef, { types });
+        return true;
+    } catch (error) {
+        console.error("Error saving types:", error);
+        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar os tipos de ocorrência.'});
+        return false;
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+
+  const handleAddType = async (e: FormEvent) => {
     e.preventDefault();
     if (!newType.trim()) {
       toast({
@@ -36,7 +106,8 @@ export function ManageOccurrences() {
       });
       return;
     }
-    if (occurrenceTypes.includes(newType.trim())) {
+    const trimmedType = newType.trim();
+    if (occurrenceTypes.map(t => t.toLowerCase()).includes(trimmedType.toLowerCase())) {
       toast({
         variant: 'destructive',
         title: 'Tipo duplicado',
@@ -45,26 +116,59 @@ export function ManageOccurrences() {
       return;
     }
 
-    setIsLoading(true);
-    // Simulating an API call
-    setTimeout(() => {
-      setOccurrenceTypes((prev) => [...prev, newType.trim()]);
-      setNewType('');
-      toast({
-        title: 'Sucesso!',
-        description: `O tipo "${newType.trim()}" foi adicionado.`,
-      });
-      setIsLoading(false);
-    }, 500);
+    const newTypes = [...occurrenceTypes, trimmedType];
+    const success = await saveTypesToFirestore(newTypes);
+    if(success) {
+        setOccurrenceTypes(newTypes);
+        setNewType('');
+        toast({
+            title: 'Sucesso!',
+            description: `O tipo "${trimmedType}" foi adicionado.`,
+        });
+    }
   };
 
-  const handleRemoveType = (typeToRemove: string) => {
-    setOccurrenceTypes((prev) => prev.filter((type) => type !== typeToRemove));
-    toast({
-      title: 'Removido',
-      description: `O tipo "${typeToRemove}" foi removido.`,
-    });
+  const handleRemoveType = async (typeToRemove: string) => {
+    const newTypes = occurrenceTypes.filter((type) => type !== typeToRemove);
+    const success = await saveTypesToFirestore(newTypes);
+    if(success) {
+        setOccurrenceTypes(newTypes);
+        toast({
+        title: 'Removido',
+        description: `O tipo "${typeToRemove}" foi removido.`,
+        });
+    }
   };
+  
+  if (isLoading) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Tipos de Ocorrência</CardTitle>
+                <CardDescription>
+                Adicione ou remova os tipos de ocorrência que podem ser registrados
+                no sistema.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="flex items-end gap-4">
+                    <div className="w-full space-y-2">
+                        <Skeleton className="h-4 w-1/3" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                     <Skeleton className="h-10 w-32" />
+                </div>
+                <Separator />
+                <div className="space-y-3">
+                     <Skeleton className="h-5 w-1/4" />
+                     <Skeleton className="h-12 w-full" />
+                     <Skeleton className="h-12 w-full" />
+                     <Skeleton className="h-12 w-full" />
+                </div>
+            </CardContent>
+        </Card>
+    )
+  }
 
   return (
     <Card>
@@ -86,12 +190,12 @@ export function ManageOccurrences() {
               placeholder="Ex: Incêndio"
               value={newType}
               onChange={(e) => setNewType(e.target.value)}
-              disabled={isLoading}
+              disabled={isSaving}
             />
           </div>
-          <Button type="submit" disabled={isLoading}>
-            <Plus className="mr-2 h-4 w-4" />
-            {isLoading ? 'Adicionando...' : 'Adicionar'}
+          <Button type="submit" disabled={isSaving || !newType.trim()}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+            {isSaving ? 'Adicionando...' : 'Adicionar'}
           </Button>
         </form>
 
@@ -111,10 +215,11 @@ export function ManageOccurrences() {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleRemoveType(type)}
+                    disabled={isSaving}
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     aria-label={`Remover ${type}`}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                   </Button>
                 </li>
               ))}
