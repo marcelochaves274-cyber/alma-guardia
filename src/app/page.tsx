@@ -7,6 +7,7 @@ import { RegisterOccurrence } from '@/components/register-occurrence';
 import { ManageOccurrences } from '@/components/manage-occurrences';
 import { ManageLocations } from '@/components/manage-locations';
 import { ManageMap } from '@/components/manage-map';
+import { OccurrenceReport } from '@/components/occurrence-report';
 import AppLayout from './app-layout';
 
 // This is a temporary state management. In a real app, you'd use a more robust
@@ -26,6 +27,8 @@ export default function Home() {
         return <GeneralSettings />;
       case 'register-occurrence':
         return <RegisterOccurrence />;
+      case 'occurrence-report':
+        return <OccurrenceReport />;
       case 'manage-occurrences':
         return <ManageOccurrences />;
       case 'manage-locations':
