@@ -185,7 +185,7 @@ export function RegisterOccurrence() {
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {occurrenceDate ? (
-                      format(occurrenceDate, 'PPP', {})
+                      format(occurrenceDate, 'dd/MM/yyyy')
                     ) : (
                       <span>Escolha uma data</span>
                     )}
@@ -302,7 +302,7 @@ export function RegisterOccurrence() {
                       >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {birthDate ? (
-                          format(birthDate, 'PPP')
+                          format(birthDate, 'dd/MM/yyyy')
                       ) : (
                           <span>Escolha uma data</span>
                       )}
@@ -411,7 +411,7 @@ export function RegisterOccurrence() {
                   </>
                 ) : (
                   <p className="text-muted-foreground text-center p-4">
-                    Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
+                    Nenhum mapa foi carregado. <br />Vá para "Configurações" > "Gerenciar Mapa" para fazer o upload.
                   </p>
                 )}
               </div>
