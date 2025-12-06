@@ -204,31 +204,6 @@ export function RegisterOccurrence() {
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="occurrence-type">Tipo de Ocorrência</Label>
-              <Select name="occurrenceType" required disabled={isLoadingTypes || occurrenceTypes.length === 0}>
-                <SelectTrigger id="occurrence-type">
-                  <SelectValue placeholder={
-                    isLoadingTypes ? "Carregando..." : 
-                    occurrenceTypes.length === 0 ? "Nenhum tipo cadastrado" : "Selecione o tipo"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingTypes ? (
-                    <div className="flex items-center justify-center p-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    </div>
-                  ) : (
-                    occurrenceTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="occurrence-location">Local da Ocorrência</Label>
               <Select name="occurrenceLocation" required disabled={isLoadingLocations || locations.length === 0}>
                 <SelectTrigger id="occurrence-location">
@@ -246,6 +221,30 @@ export function RegisterOccurrence() {
                     locations.map((loc) => (
                       <SelectItem key={loc} value={loc}>
                         {loc}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="occurrence-type">Tipo de Ocorrência</Label>
+              <Select name="occurrenceType" required disabled={isLoadingTypes || occurrenceTypes.length === 0}>
+                <SelectTrigger id="occurrence-type">
+                  <SelectValue placeholder={
+                    isLoadingTypes ? "Carregando..." : 
+                    occurrenceTypes.length === 0 ? "Nenhum tipo cadastrado" : "Selecione o tipo"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingTypes ? (
+                    <div className="flex items-center justify-center p-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : (
+                    occurrenceTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
                       </SelectItem>
                     ))
                   )}
@@ -319,8 +318,10 @@ export function RegisterOccurrence() {
                         toYear={new Date().getFullYear()}
                         locale={ptBR}
                         classNames={{
-                            caption_label: "flex items-center text-sm font-medium",
-                            caption_dropdowns: "flex items-center gap-2"
+                            caption_label: "hidden",
+                            caption_dropdowns: "flex items-center gap-2",
+                            dropdown_month: "bg-card text-card-foreground rounded-md p-1",
+                            dropdown_year: "bg-card text-card-foreground rounded-md p-1",
                         }}
                         initialFocus
                       />
