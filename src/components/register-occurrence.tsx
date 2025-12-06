@@ -41,6 +41,7 @@ type Marker = { x: number; y: number } | null;
 
 export function RegisterOccurrence() {
   const [occurrenceDate, setOccurrenceDate] = useState<Date>();
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
@@ -184,7 +185,7 @@ export function RegisterOccurrence() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="occurrence-date">Data da Ocorrência</Label>
-              <Popover>
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant={'outline'}
@@ -205,7 +206,10 @@ export function RegisterOccurrence() {
                   <Calendar
                     mode="single"
                     selected={occurrenceDate}
-                    onSelect={setOccurrenceDate}
+                    onSelect={(date) => {
+                        setOccurrenceDate(date);
+                        setIsCalendarOpen(false);
+                    }}
                     locale={ptBR}
                     initialFocus
                   />
