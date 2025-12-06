@@ -30,6 +30,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Calendar as CalendarIcon, Loader2, MapPin, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -171,8 +172,8 @@ export function RegisterOccurrence() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
-          <div className="flex flex-wrap gap-6">
-            <div className="flex-1 min-w-64 space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
               <Label htmlFor="occurrence-date">Data da Ocorrência</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -196,14 +197,15 @@ export function RegisterOccurrence() {
                     mode="single"
                     selected={occurrenceDate}
                     onSelect={setOccurrenceDate}
+                    locale={ptBR}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
             </div>
-            <div className="flex-1 min-w-64 space-y-2">
+            <div className="space-y-2">
               <Label htmlFor="occurrence-type">Tipo de Ocorrência</Label>
-              <Select name="occurrenceType" disabled={isLoadingTypes || occurrenceTypes.length === 0}>
+              <Select name="occurrenceType" required disabled={isLoadingTypes || occurrenceTypes.length === 0}>
                 <SelectTrigger id="occurrence-type">
                   <SelectValue placeholder={
                     isLoadingTypes ? "Carregando..." : 
@@ -225,12 +227,10 @@ export function RegisterOccurrence() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="flex flex-wrap gap-6">
-            <div className="flex-1 min-w-64 space-y-2">
+            <div className="space-y-2">
               <Label htmlFor="occurrence-location">Local da Ocorrência</Label>
-              <Select name="occurrenceLocation" disabled={isLoadingLocations || locations.length === 0}>
+              <Select name="occurrenceLocation" required disabled={isLoadingLocations || locations.length === 0}>
                 <SelectTrigger id="occurrence-location">
                   <SelectValue placeholder={
                     isLoadingLocations ? "Carregando..." : 
@@ -252,9 +252,9 @@ export function RegisterOccurrence() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1 min-w-64 space-y-3">
+            <div className="space-y-2">
               <Label>Faixa Etária</Label>
-              <Select name="ageGroup">
+              <Select name="ageGroup" required>
                   <SelectTrigger>
                       <SelectValue placeholder="Selecione a faixa etária" />
                   </SelectTrigger>
@@ -276,6 +276,7 @@ export function RegisterOccurrence() {
               name="description"
               placeholder="Descreva detalhadamente o que aconteceu."
               className="min-h-[100px]"
+              required
             />
           </div>
 
@@ -284,12 +285,12 @@ export function RegisterOccurrence() {
               <h3 className="text-lg font-semibold text-foreground">Informação da Pessoa Envolvida</h3>
           </div>
 
-          <div className="flex flex-wrap gap-6">
-              <div className="flex-1 min-w-64 space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-2">
                   <Label htmlFor="full-name">Nome Completo</Label>
-                  <Input name="involvedPersonName" id="full-name" placeholder="Nome completo do envolvido" />
+                  <Input name="involvedPersonName" id="full-name" placeholder="Nome completo do envolvido" required />
               </div>
-              <div className="flex-1 min-w-64 space-y-2">
+              <div className="space-y-2">
                   <Label htmlFor="birth-date">Data de Nascimento</Label>
                   <Popover>
                   <PopoverTrigger asChild>
@@ -310,54 +311,57 @@ export function RegisterOccurrence() {
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                       <Calendar
-                      mode="single"
-                      selected={birthDate}
-                      onSelect={setBirthDate}
-                      captionLayout="dropdown-buttons"
-                      fromYear={1930}
-                      toYear={new Date().getFullYear()}
-                      initialFocus
+                        mode="single"
+                        selected={birthDate}
+                        onSelect={setBirthDate}
+                        captionLayout="dropdown-buttons"
+                        fromYear={1930}
+                        toYear={new Date().getFullYear()}
+                        locale={ptBR}
+                        classNames={{
+                            caption_label: "flex items-center text-sm font-medium",
+                            caption_dropdowns: "flex items-center gap-2"
+                        }}
+                        initialFocus
                       />
                   </PopoverContent>
                   </Popover>
               </div>
-              <div className="flex-1 min-w-64 space-y-2">
+              <div className="space-y-2">
                   <Label htmlFor="cpf">CPF</Label>
                   <Input name="cpf" id="cpf" placeholder="000.000.000-00" />
               </div>
-              <div className="flex-1 min-w-64 space-y-2">
+              <div className="space-y-2">
                   <Label htmlFor="city">Cidade</Label>
                   <Input name="city" id="city" placeholder="Cidade de residência" />
               </div>
-              <div className="flex-1 min-w-64 space-y-2">
+              <div className="space-y-2">
                   <Label htmlFor="state">Estado</Label>
                   <Input name="state" id="state" placeholder="UF" />
               </div>
-              <div className="flex-1 min-w-64 space-y-2">
+              <div className="space-y-2">
                   <Label htmlFor="phone">Fone</Label>
                   <Input name="phone" id="phone" placeholder="(00) 00000-0000" />
               </div>
           </div>
 
           <Separator />
-          <div className="flex flex-wrap gap-6">
-              <div className="flex-1 min-w-64 space-y-3">
-                  <Label>Análise da Ocorrência</Label>
-                  <RadioGroup name="analysis" className="flex items-center space-x-4 pt-2">
-                      <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="alta" id="alta" className="border-red-500 text-red-500 focus:ring-red-500" />
-                          <Label htmlFor="alta" className="font-bold text-red-500">Alta</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="media" id="media" className="border-orange-500 text-orange-500 focus:ring-orange-500" />
-                          <Label htmlFor="media" className="font-bold text-orange-500">Média</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="baixa" id="baixa" className="border-yellow-500 text-yellow-500 focus:ring-yellow-500" />
-                          <Label htmlFor="baixa" className="font-bold text-yellow-500">Baixa</Label>
-                      </div>
-                  </RadioGroup>
-              </div>
+          <div className="space-y-3">
+              <Label>Análise da Ocorrência</Label>
+              <RadioGroup name="analysis" required className="flex items-center space-x-4 pt-2">
+                  <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="alta" id="alta" className="border-red-500 text-red-500 focus:ring-red-500" />
+                      <Label htmlFor="alta" className="font-bold text-red-500">Alta</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="media" id="media" className="border-orange-500 text-orange-500 focus:ring-orange-500" />
+                      <Label htmlFor="media" className="font-bold text-orange-500">Média</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="baixa" id="baixa" className="border-yellow-500 text-yellow-500 focus:ring-yellow-500" />
+                      <Label htmlFor="baixa" className="font-bold text-yellow-500">Baixa</Label>
+                  </div>
+              </RadioGroup>
           </div>
           
           <Separator />
