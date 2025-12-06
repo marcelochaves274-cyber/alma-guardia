@@ -61,35 +61,37 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <AppSidebar />
       </Sidebar>
       <SidebarInset>
-        <header className="relative flex h-20 items-center justify-center border-b bg-card px-4 md:px-6">
-          <div className="absolute left-4 flex items-center gap-4">
-            <SidebarTrigger />
-          </div>
-          <div className="flex items-center gap-4">
-            {logoUrl && (
-              <Image
-                src={logoUrl}
-                alt="Logo"
-                width={40}
-                height={40}
-                className="rounded-md object-contain"
-              />
-            )}
-            <div className="flex flex-col items-center justify-center">
-              <span className="font-bold text-xl text-foreground">
-                Sistema de Gestão de Segurança
-              </span>
-              {appName && (
-                <span className="font-bold text-lg text-muted-foreground">
-                  {appName}
-                </span>
-              )}
+        <div className="flex flex-col h-screen">
+          <header className="sticky top-0 z-10 flex h-20 items-center justify-center border-b bg-card px-4 shadow-sm md:px-6">
+            <div className="absolute left-4 flex items-center gap-4">
+              <SidebarTrigger />
             </div>
-          </div>
-        </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          {children}
-        </main>
+            <div className="flex items-center gap-4">
+              {logoUrl && (
+                <Image
+                  src={logoUrl}
+                  alt="Logo"
+                  width={40}
+                  height={40}
+                  className="rounded-md object-contain"
+                />
+              )}
+              <div className="flex flex-col items-center justify-center">
+                <span className="font-bold text-xl text-foreground">
+                  Sistema de Gestão de Segurança
+                </span>
+                {appName && (
+                  <span className="font-bold text-lg text-muted-foreground">
+                    {appName}
+                  </span>
+                )}
+              </div>
+            </div>
+          </header>
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+            {children}
+          </main>
+        </div>
       </SidebarInset>
     </>
   );
