@@ -33,13 +33,10 @@ export function AppSidebar() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({
-    settings: true,
-    acidentes: true,
-  });
+  const [openSubMenu, setOpenSubMenu] = useState<string | null>('reminders');
 
   const toggleSubMenu = (name: string) => {
-    setOpenSubMenus((prev) => ({ ...prev, [name]: !prev[name] }));
+    setOpenSubMenu(prev => prev === name ? null : name);
   };
   
   const handleSignOut = async () => {
@@ -61,6 +58,20 @@ export function AppSidebar() {
       })
     }
   };
+  
+  const handlePageChange = (page: string) => {
+    setActivePage(page);
+    // If the page is not in a submenu, close all submenus
+    const subMenuParents = {
+      'register-occurrence': 'acidentes',
+      'occurrence-report': 'acidentes',
+      'general-settings': 'settings',
+      'manage-occurrences': 'settings'
+    };
+    if (!Object.keys(subMenuParents).includes(page)) {
+      setOpenSubMenu(null);
+    }
+  }
 
   return (
     <>
@@ -89,7 +100,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               isActive={activePage === 'reminders'}
-              onClick={() => setActivePage('reminders')}
+              onClick={() => handlePageChange('reminders')}
               tooltip={{
                 children: 'Lembretes',
               }}
@@ -109,16 +120,16 @@ export function AppSidebar() {
               <span>Acidentes/Incidentes</span>
               <ChevronDown
                 className={`ml-auto h-4 w-4 transition-transform ${
-                  openSubMenus['acidentes'] ? 'rotate-180' : ''
+                  openSubMenu === 'acidentes' ? 'rotate-180' : ''
                 }`}
               />
             </SidebarMenuButton>
-            {openSubMenus['acidentes'] && state === 'expanded' && (
+            {openSubMenu === 'acidentes' && state === 'expanded' && (
               <SidebarMenuSub>
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton 
                     isActive={activePage === 'register-occurrence'}
-                    onClick={() => setActivePage('register-occurrence')}
+                    onClick={() => handlePageChange('register-occurrence')}
                   >
                     Registrar Ocorrência
                   </SidebarMenuSubButton>
@@ -126,7 +137,7 @@ export function AppSidebar() {
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton 
                     isActive={activePage === 'occurrence-report'}
-                    onClick={() => setActivePage('occurrence-report')}
+                    onClick={() => handlePageChange('occurrence-report')}
                   >
                     Relatório de Ocorrência
                   </SidebarMenuSubButton>
@@ -145,16 +156,16 @@ export function AppSidebar() {
               <span>Configurações</span>
               <ChevronDown
                 className={`ml-auto h-4 w-4 transition-transform ${
-                  openSubMenus['settings'] ? 'rotate-180' : ''
+                  openSubMenu === 'settings' ? 'rotate-180' : ''
                 }`}
               />
             </SidebarMenuButton>
-            {openSubMenus['settings'] && state === 'expanded' && (
+            {openSubMenu === 'settings' && state === 'expanded' && (
               <SidebarMenuSub>
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton 
                     isActive={activePage === 'general-settings'}
-                    onClick={() => setActivePage('general-settings')}
+                    onClick={() => handlePageChange('general-settings')}
                   >
                     Configurações gerais
                   </SidebarMenuSubButton>
@@ -162,7 +173,7 @@ export function AppSidebar() {
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton
                     isActive={activePage === 'manage-occurrences'}
-                    onClick={() => setActivePage('manage-occurrences')}
+                    onClick={() => handlePageChange('manage-occurrences')}
                   >
                     Gerenciar Ocorrências
                   </SidebarMenuSubButton>
