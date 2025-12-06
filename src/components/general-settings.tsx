@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -18,6 +17,7 @@ import { useAppSettings } from '@/context/app-settings-context';
 import Image from 'next/image';
 import { Skeleton } from './ui/skeleton';
 import { ThemeSelector } from './theme-selector';
+import { Separator } from './ui/separator';
 
 export function GeneralSettings() {
   const { toast } = useToast();
@@ -81,7 +81,7 @@ export function GeneralSettings() {
 
   if (isSettingsLoading) {
     return (
-      <div className="space-y-6">
+      <div className="w-full space-y-6">
         <Card className="w-full">
           <CardHeader>
             <Skeleton className="h-6 w-1/2" />
@@ -108,7 +108,7 @@ export function GeneralSettings() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Identidade Visual</CardTitle>
@@ -116,8 +116,8 @@ export function GeneralSettings() {
             Personalize o nome e o logotipo do seu aplicativo. O nome e o logotipo aparecerão no cabeçalho.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
+        <CardContent className="space-y-8">
+          <div className="space-y-4">
             <Label htmlFor="app-name">Nome da Empresa/Usuário</Label>
             <Input
               id="app-name"
@@ -126,8 +126,15 @@ export function GeneralSettings() {
               placeholder="Digite o nome"
               disabled={isSavingName}
             />
+             <Button onClick={handleSaveName} disabled={isSavingName} className="w-full sm:w-auto">
+              {isSavingName && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSavingName ? 'Salvando...' : 'Salvar Nome'}
+            </Button>
           </div>
-           <div className="space-y-2">
+
+          <Separator />
+          
+           <div className="space-y-4">
               <Label>Logo</Label>
               <div className="flex items-center gap-4">
                 {isSettingsLoading ? <Skeleton className="h-16 w-16 rounded-md" /> : logoUrl ? (
@@ -162,18 +169,12 @@ export function GeneralSettings() {
                 />
               </div>
                <p className="text-xs text-muted-foreground">Recomendado: 128x128px, máx 1MB.</p>
+               <Button onClick={saveLogo} disabled={isSavingLogo} className="w-full sm:w-auto">
+                {isSavingLogo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSavingLogo ? 'Salvando...' : 'Salvar Logo'}
+              </Button>
             </div>
         </CardContent>
-        <CardFooter className="border-t px-6 py-4 flex justify-start gap-4">
-          <Button onClick={handleSaveName} disabled={isSavingName}>
-            {isSavingName && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSavingName ? 'Salvando...' : 'Salvar Nome'}
-          </Button>
-          <Button onClick={saveLogo} disabled={isSavingLogo}>
-            {isSavingLogo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSavingLogo ? 'Salvando...' : 'Salvar Logo'}
-          </Button>
-        </CardFooter>
       </Card>
       <ThemeSelector />
     </div>
