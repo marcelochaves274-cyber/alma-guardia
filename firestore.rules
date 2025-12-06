@@ -3,20 +3,20 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permite que um usuário autenticado leia e escreva apenas
-    // nos documentos dentro da subcoleção 'settings' dele.
-    match /users/{userId}/settings/{docId} {
+    
+    // Regra geral de acesso para documentos de um usuário
+    match /users/{userId}/{collection}/{docId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Regra específica para os tipos de ocorrência
-    match /users/{userId}/settings/occurrenceTypes {
+    // Garante que o usuário só possa ler/escrever seus próprios documentos
+    // nas coleções de settings e occurrences.
+    match /users/{userId}/settings/{settingId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-
-    // Regra específica para os locais
-    match /users/{userId}/settings/locations {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    
+    match /users/{userId}/occurrences/{occurrenceId} {
+      allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
