@@ -116,7 +116,7 @@ export function GeneralSettings() {
             Personalize o nome e o logotipo do seu aplicativo. O nome e o logotipo aparecerão no cabeçalho.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 md:grid-cols-2">
+        <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="app-name">Nome da Empresa/Usuário</Label>
             <Input
