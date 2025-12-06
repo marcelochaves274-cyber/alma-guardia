@@ -32,7 +32,7 @@ import { Calendar as CalendarIcon, Loader2, MapPin, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
@@ -129,7 +129,7 @@ export function RegisterOccurrence() {
     if (value.length > 5) {
       value = `${value.slice(0, 5)}/${value.slice(5)}`;
     }
-    setBirthDate(value);
+    setBirthDate(value.slice(0, 10)); // Limit to 10 chars (dd/mm/yyyy)
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -138,6 +138,11 @@ export function RegisterOccurrence() {
         toast({ variant: 'destructive', title: 'Erro', description: 'Você não está autenticado.' });
         return;
     }
+    if (!occurrenceDate) {
+        toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a data da ocorrência.' });
+        return;
+    }
+
 
     setIsSubmitting(true);
     
@@ -146,7 +151,7 @@ export function RegisterOccurrence() {
 
     const occurrenceData = {
         ...data,
-        occurrenceDate,
+        occurrenceDate: Timestamp.fromDate(occurrenceDate),
         mapMarker: marker,
         userId: user.uid,
         createdAt: serverTimestamp()
@@ -381,8 +386,8 @@ export function RegisterOccurrence() {
                     <Image
                       src={mapUrl}
                       alt="Mapa de ocorrências"
-                      layout="fill"
-                      objectFit="contain"
+                      fill
+                      style={{objectFit:"contain"}}
                       className="rounded-md"
                     />
                     {marker && (
@@ -418,3 +423,5 @@ export function RegisterOccurrence() {
     </Card>
   );
 }
+
+    
