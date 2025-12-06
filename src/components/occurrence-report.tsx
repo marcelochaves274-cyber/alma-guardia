@@ -55,9 +55,6 @@ const months = [
     { value: '10', label: 'Outubro' }, { value: '11', label: 'Novembro' }, { value: '12', label: 'Dezembro' }
 ];
 
-const currentYear = new Date().getFullYear();
-const years = Array.from({ length: 10 }, (_, i) => (currentYear - i).toString());
-
 export function OccurrenceReport() {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -74,6 +71,7 @@ export function OccurrenceReport() {
   const [filterAnalysis, setFilterAnalysis] = useState<string>('');
 
   // Dynamic options for selects
+  const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
 
@@ -108,6 +106,15 @@ export function OccurrenceReport() {
         id: doc.id,
         ...doc.data(),
       } as Occurrence));
+      
+      const years = new Set(
+        occurrencesData
+          .map(occ => occ.occurrenceDate?.toDate().getFullYear())
+          .filter((year): year is number => !!year)
+          .map(String)
+      );
+      setAvailableYears(Array.from(years).sort((a, b) => Number(b) - Number(a)));
+      
       setOccurrences(occurrencesData);
       setIsLoading(false);
     });
@@ -162,10 +169,10 @@ export function OccurrenceReport() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {/* Year Filter */}
-            <Select value={filterYear} onValueChange={setFilterYear}>
+            <Select value={filterYear} onValueChange={setFilterYear} disabled={availableYears.length === 0}>
               <SelectTrigger><SelectValue placeholder="Filtrar por Ano" /></SelectTrigger>
               <SelectContent>
-                {years.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
+                {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
               </SelectContent>
             </Select>
 
