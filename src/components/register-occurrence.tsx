@@ -54,6 +54,14 @@ export function RegisterOccurrence() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [birthDate, setBirthDate] = useState('');
+  
+  // States for form fields
+  const [occurrenceLocation, setOccurrenceLocation] = useState('');
+  const [occurrenceType, setOccurrenceType] = useState('');
+  const [ageGroup, setAgeGroup] = useState('');
+  const [analysis, setAnalysis] = useState('');
+  
+  const formRef = useRef<HTMLFormElement>(null);
 
   const firestore = useFirestore();
   const { user } = useUser();
@@ -134,7 +142,7 @@ export function RegisterOccurrence() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!firestore || !user) {
+    if (!firestore || !user || !formRef.current) {
         toast({ variant: 'destructive', title: 'Erro', description: 'Você não está autenticado.' });
         return;
     }
@@ -145,12 +153,28 @@ export function RegisterOccurrence() {
 
     setIsSubmitting(true);
     
-    const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries());
+    // Manual data collection
+    const description = (formRef.current.elements.namedItem('description') as HTMLTextAreaElement).value;
+    const involvedPersonName = (formRef.current.elements.namedItem('involvedPersonName') as HTMLInputElement).value;
+    const cpf = (formRef.current.elements.namedItem('cpf') as HTMLInputElement).value;
+    const city = (formRef.current.elements.namedItem('city') as HTMLInputElement).value;
+    const state = (formRef.current.elements.namedItem('state') as HTMLInputElement).value;
+    const phone = (formRef.current.elements.namedItem('phone') as HTMLInputElement).value;
+
 
     const occurrenceData = {
-        ...data,
         occurrenceDate: Timestamp.fromDate(occurrenceDate),
+        occurrenceLocation,
+        occurrenceType,
+        ageGroup,
+        description,
+        involvedPersonName,
+        birthDate, // from state
+        cpf,
+        city,
+        state,
+        phone,
+        analysis, // from state
         mapMarker: marker,
         userId: user.uid,
         createdAt: serverTimestamp()
@@ -163,10 +187,14 @@ export function RegisterOccurrence() {
         toast({ title: 'Sucesso!', description: 'Ocorrência registrada com sucesso.' });
         
         // Reset form state after successful submission
-        e.currentTarget.reset();
+        formRef.current.reset();
         setOccurrenceDate(undefined);
         setMarker(null);
         setBirthDate('');
+        setOccurrenceLocation('');
+        setOccurrenceType('');
+        setAgeGroup('');
+        setAnalysis('');
 
     } catch (error) {
         console.error("Error saving occurrence:", error);
@@ -179,7 +207,7 @@ export function RegisterOccurrence() {
 
   return (
     <Card className="w-full">
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} ref={formRef}>
         <CardHeader>
           <CardTitle>Registro de Ocorrência</CardTitle>
           <CardDescription>
@@ -223,7 +251,7 @@ export function RegisterOccurrence() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="occurrence-location">Local da Ocorrência</Label>
-              <Select name="occurrenceLocation" required disabled={isLoadingLocations || locations.length === 0}>
+              <Select name="occurrenceLocation" required disabled={isLoadingLocations || locations.length === 0} onValueChange={setOccurrenceLocation} value={occurrenceLocation}>
                 <SelectTrigger id="occurrence-location">
                   <SelectValue placeholder={
                     isLoadingLocations ? "Carregando..." : 
@@ -247,7 +275,7 @@ export function RegisterOccurrence() {
             </div>
              <div className="space-y-2">
               <Label htmlFor="occurrence-type">Tipo de Ocorrência</Label>
-              <Select name="occurrenceType" required disabled={isLoadingTypes || occurrenceTypes.length === 0}>
+              <Select name="occurrenceType" required disabled={isLoadingTypes || occurrenceTypes.length === 0} onValueChange={setOccurrenceType} value={occurrenceType}>
                 <SelectTrigger id="occurrence-type">
                   <SelectValue placeholder={
                     isLoadingTypes ? "Carregando..." : 
@@ -271,7 +299,7 @@ export function RegisterOccurrence() {
             </div>
             <div className="space-y-2">
               <Label>Faixa Etária</Label>
-              <Select name="ageGroup" required>
+              <Select name="ageGroup" required onValueChange={setAgeGroup} value={ageGroup}>
                   <SelectTrigger>
                       <SelectValue placeholder="Selecione a faixa etária" />
                   </SelectTrigger>
@@ -339,7 +367,7 @@ export function RegisterOccurrence() {
           <Separator />
           <div className="space-y-3">
               <Label>Análise da Ocorrência</Label>
-              <RadioGroup name="analysis" required className="flex items-center space-x-4 pt-2">
+              <RadioGroup name="analysis" required className="flex items-center space-x-4 pt-2" onValueChange={setAnalysis} value={analysis}>
                   <div className="flex items-center space-x-2">
                       <RadioGroupItem value="alta" id="alta" className="border-red-500 text-red-500 focus:ring-red-500" />
                       <Label htmlFor="alta" className="font-bold text-red-500">Alta</Label>
