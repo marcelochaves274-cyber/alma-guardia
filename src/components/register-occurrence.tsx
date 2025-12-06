@@ -44,8 +44,8 @@ export function RegisterOccurrence() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="space-y-2">
+        <div className="flex flex-wrap gap-6">
+          <div className="flex-1 min-w-64 space-y-2">
             <Label htmlFor="occurrence-date">Data da Ocorrência</Label>
             <Popover>
               <PopoverTrigger asChild>
@@ -74,7 +74,7 @@ export function RegisterOccurrence() {
               </PopoverContent>
             </Popover>
           </div>
-          <div className="space-y-2">
+          <div className="flex-1 min-w-64 space-y-2">
             <Label htmlFor="occurrence-type">Tipo de Ocorrência</Label>
             <Input
               id="occurrence-type"
@@ -95,12 +95,12 @@ export function RegisterOccurrence() {
             <h3 className="text-lg font-semibold text-foreground">Informação da Pessoa Envolvida</h3>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="space-y-2">
+        <div className="flex flex-wrap gap-6">
+            <div className="flex-1 min-w-64 space-y-2">
                 <Label htmlFor="full-name">Nome Completo</Label>
                 <Input id="full-name" placeholder="Nome completo do envolvido" />
             </div>
-             <div className="space-y-2">
+             <div className="flex-1 min-w-64 space-y-2">
                 <Label htmlFor="birth-date">Data de Nascimento</Label>
                 <Popover>
                 <PopoverTrigger asChild>
@@ -132,19 +132,19 @@ export function RegisterOccurrence() {
                 </PopoverContent>
                 </Popover>
             </div>
-             <div className="space-y-2">
+             <div className="flex-1 min-w-64 space-y-2">
                 <Label htmlFor="cpf">CPF</Label>
                 <Input id="cpf" placeholder="000.000.000-00" />
             </div>
-             <div className="space-y-2">
+             <div className="flex-1 min-w-64 space-y-2">
                 <Label htmlFor="city">Cidade</Label>
                 <Input id="city" placeholder="Cidade de residência" />
             </div>
-            <div className="space-y-2">
+            <div className="flex-1 min-w-64 space-y-2">
                 <Label htmlFor="state">Estado</Label>
                 <Input id="state" placeholder="UF" />
             </div>
-            <div className="space-y-2">
+            <div className="flex-1 min-w-64 space-y-2">
                 <Label htmlFor="phone">Fone</Label>
                 <Input id="phone" placeholder="(00) 00000-0000" />
             </div>
@@ -153,8 +153,8 @@ export function RegisterOccurrence() {
             <Label htmlFor="occurrence-location">Local da Ocorrência</Label>
             <Input id="occurrence-location" placeholder="Setor, máquina, área, etc." />
         </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-             <div className="space-y-3">
+        <div className="flex flex-wrap gap-6">
+             <div className="flex-1 min-w-64 space-y-3">
                 <Label>Faixa Etária</Label>
                 <Select>
                     <SelectTrigger>
@@ -169,9 +169,9 @@ export function RegisterOccurrence() {
                     </SelectContent>
                 </Select>
             </div>
-            <div className="space-y-3">
+            <div className="flex-1 min-w-64 space-y-3">
                 <Label>Análise da Ocorrência</Label>
-                <RadioGroup className="flex items-center space-x-4">
+                <RadioGroup className="flex items-center space-x-4 pt-2">
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="alta" id="alta" className="border-red-500 text-red-500 focus:ring-red-500" />
                         <Label htmlFor="alta" className="font-bold text-red-500">Alta</Label>
