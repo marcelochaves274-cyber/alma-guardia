@@ -41,7 +41,6 @@ type Marker = { x: number; y: number } | null;
 
 export function RegisterOccurrence() {
   const [occurrenceDate, setOccurrenceDate] = useState<Date>();
-  const [birthDate, setBirthDate] = useState<Date>();
   const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
@@ -129,14 +128,12 @@ export function RegisterOccurrence() {
 
     setIsSubmitting(true);
     
-    // Simplistic form data gathering. In a real app, use a form library.
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
     const occurrenceData = {
         ...data,
         occurrenceDate,
-        birthDate,
         mapMarker: marker,
         userId: user.uid,
         createdAt: serverTimestamp()
@@ -147,9 +144,8 @@ export function RegisterOccurrence() {
         await addDoc(occurrencesCollectionRef, occurrenceData);
         
         toast({ title: 'Sucesso!', description: 'Ocorrência registrada com sucesso.' });
-        // Reset form state here if needed
+        
         setOccurrenceDate(undefined);
-        setBirthDate(undefined);
         setMarker(null);
         e.currentTarget.reset();
 
@@ -291,42 +287,7 @@ export function RegisterOccurrence() {
               </div>
               <div className="space-y-2">
                   <Label htmlFor="birth-date">Data de Nascimento</Label>
-                  <Popover>
-                  <PopoverTrigger asChild>
-                      <Button
-                      variant={'outline'}
-                      className={cn(
-                          'w-full justify-start text-left font-normal',
-                          !birthDate && 'text-muted-foreground'
-                      )}
-                      >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {birthDate ? (
-                          format(birthDate, 'dd/MM/yyyy')
-                      ) : (
-                          <span>Escolha uma data</span>
-                      )}
-                      </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={birthDate}
-                        onSelect={setBirthDate}
-                        captionLayout="dropdown-buttons"
-                        fromYear={1930}
-                        toYear={new Date().getFullYear()}
-                        locale={ptBR}
-                        classNames={{
-                            caption_label: "hidden",
-                            caption_dropdowns: "flex items-center gap-2",
-                            dropdown_month: "bg-card text-card-foreground rounded-md p-1",
-                            dropdown_year: "bg-card text-card-foreground rounded-md p-1",
-                        }}
-                        initialFocus
-                      />
-                  </PopoverContent>
-                  </Popover>
+                  <Input name="birthDate" id="birth-date" placeholder="dd/mm/aaaa" />
               </div>
               <div className="space-y-2">
                   <Label htmlFor="cpf">CPF</Label>
