@@ -16,6 +16,7 @@ import { Skeleton } from './ui/skeleton';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 export function ManageMap() {
   const { toast } = useToast();
