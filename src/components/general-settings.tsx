@@ -98,7 +98,7 @@ export function GeneralSettings() {
           <CardHeader>
              <Skeleton className="h-6 w-1/3" />
              <Skeleton className="h-4 w-1/2" />
-          </CardHeader>
+          </Header>
           <CardContent>
              <Skeleton className="h-24 w-full" />
           </CardContent>
