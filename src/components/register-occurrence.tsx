@@ -379,7 +379,7 @@ export function RegisterOccurrence() {
               <div
                 ref={mapContainerRef}
                 onClick={handleMapClick}
-                className="relative w-full h-auto min-h-64 border-2 border-dashed rounded-md cursor-pointer bg-muted/20 flex items-center justify-center"
+                className="relative w-full h-auto min-h-[500px] border-2 border-dashed rounded-md cursor-pointer bg-muted/20 flex items-center justify-center overflow-hidden"
               >
                 {isLoadingMap ? (
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -393,11 +393,13 @@ export function RegisterOccurrence() {
                       className="rounded-md"
                     />
                     {marker && (
-                      <MapPin
-                        className="absolute h-8 w-8 text-red-500 transform -translate-x-1/2 -translate-y-full"
+                      <div
+                        className="absolute transform -translate-x-1/2 -translate-y-1/2"
                         style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
-                        fill="currentColor"
-                      />
+                      >
+                         <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse"></div>
+                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 rounded-full border-2 border-red-500 opacity-75"></div>
+                      </div>
                     )}
                   </>
                 ) : (
