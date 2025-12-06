@@ -82,7 +82,7 @@ export function GeneralSettings() {
   if (isSettingsLoading) {
     return (
       <div className="space-y-6">
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <Skeleton className="h-6 w-1/2" />
             <Skeleton className="h-4 w-3/4" />
@@ -94,7 +94,7 @@ export function GeneralSettings() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="w-full">
           <CardHeader>
              <Skeleton className="h-6 w-1/3" />
              <Skeleton className="h-4 w-1/2" />
@@ -109,7 +109,7 @@ export function GeneralSettings() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Identidade Visual</CardTitle>
           <CardDescription>
