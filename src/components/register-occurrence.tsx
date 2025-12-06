@@ -162,10 +162,11 @@ export function RegisterOccurrence() {
         
         toast({ title: 'Sucesso!', description: 'Ocorrência registrada com sucesso.' });
         
+        // Reset form state after successful submission
+        e.currentTarget.reset();
         setOccurrenceDate(undefined);
         setMarker(null);
         setBirthDate('');
-        e.currentTarget.reset();
 
     } catch (error) {
         console.error("Error saving occurrence:", error);
@@ -422,3 +423,5 @@ export function RegisterOccurrence() {
     </Card>
   );
 }
+
+    
