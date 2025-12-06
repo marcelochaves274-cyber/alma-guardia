@@ -397,19 +397,15 @@ export function RegisterOccurrence() {
                     />
                     {marker && (
                       <div
-                        className="absolute transform -translate-x-1/2 -translate-y-1/2"
-                        style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
+                        className="absolute pointer-events-none"
+                        style={{
+                          left: `${marker.x}%`,
+                          top: `${marker.y}%`,
+                          transform: 'translate(-50%, -100%)',
+                        }}
                         aria-label="Marcador de ocorrência"
                       >
-                         <div 
-                            className="h-3 w-3 rounded-full bg-red-600 ring-2 ring-white/80 shadow-2xl"
-                            style={{
-                                boxShadow: '0 0 8px 3px rgba(220, 38, 38, 0.6)',
-                            }}
-                         ></div>
-                         <div 
-                            className="absolute top-1/2 left-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-red-500/80 opacity-75 animate-pulse"
-                         ></div>
+                         <MapPin className="h-8 w-8 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
                       </div>
                     )}
                   </>
