@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -28,12 +28,54 @@ import {
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useFirestore, useUser } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export function RegisterOccurrence() {
   const [occurrenceDate, setOccurrenceDate] = useState<Date>();
   const [birthDate, setBirthDate] = useState<Date>();
+  const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
+  const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const getSettingsDocRef = useCallback(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid, 'settings', 'occurrenceTypes');
+  }, [firestore, user]);
+
+  useEffect(() => {
+    const fetchOccurrenceTypes = async () => {
+      const docRef = getSettingsDocRef();
+      if (!docRef) {
+        setIsLoadingTypes(false);
+        return;
+      }
+      try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setOccurrenceTypes(data.types || []);
+        }
+      } catch (error) {
+        console.error("Error fetching occurrence types:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar dados",
+          description: "Não foi possível buscar os tipos de ocorrência."
+        });
+      } finally {
+        setIsLoadingTypes(false);
+      }
+    };
+    fetchOccurrenceTypes();
+  }, [getSettingsDocRef, toast]);
+
 
   return (
     <Card className="w-full">
@@ -76,13 +118,30 @@ export function RegisterOccurrence() {
           </div>
           <div className="flex-1 min-w-64 space-y-2">
             <Label htmlFor="occurrence-type">Tipo de Ocorrência</Label>
-            <Input
-              id="occurrence-type"
-              placeholder="Ex: Queda, Corte, Incêndio"
-            />
+            <Select disabled={isLoadingTypes || occurrenceTypes.length === 0}>
+              <SelectTrigger id="occurrence-type">
+                <SelectValue placeholder={
+                  isLoadingTypes ? "Carregando..." : 
+                  occurrenceTypes.length === 0 ? "Nenhum tipo cadastrado" : "Selecione o tipo"
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                {isLoadingTypes ? (
+                   <div className="flex items-center justify-center p-2">
+                     <Loader2 className="h-4 w-4 animate-spin" />
+                   </div>
+                ) : (
+                  occurrenceTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
           </div>
         </div>
-        
+
         <div className="space-y-2">
             <Label htmlFor="occurrence-location">Local da Ocorrência</Label>
             <Input id="occurrence-location" placeholder="Setor, máquina, área, etc." />
@@ -103,7 +162,7 @@ export function RegisterOccurrence() {
               </SelectContent>
           </Select>
         </div>
-
+        
         <div className="space-y-2">
           <Label htmlFor="description">Descrição da Ocorrência</Label>
           <Textarea
