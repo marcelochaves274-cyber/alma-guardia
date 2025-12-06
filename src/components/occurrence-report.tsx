@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, getDocs, doc, getDoc, Timestamp, deleteDoc } from 'firebase/firestore';
+import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
@@ -110,13 +110,14 @@ export function OccurrenceReport() {
     fetchSelectOptions('locations', setLocations);
   }, [getSettingsDocRef]);
   
-  // Fetch all occurrences
+  // Fetch all occurrences with real-time updates
   useEffect(() => {
     if (!user || !firestore) return;
     setIsLoading(true);
 
     const occurrencesCollectionRef = collection(firestore, 'users', user.uid, 'occurrences');
-    getDocs(occurrencesCollectionRef).then((querySnapshot) => {
+    
+    const unsubscribe = onSnapshot(occurrencesCollectionRef, (querySnapshot) => {
       const occurrencesData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -132,8 +133,19 @@ export function OccurrenceReport() {
       
       setOccurrences(occurrencesData.sort((a, b) => b.occurrenceDate.toMillis() - a.occurrenceDate.toMillis()));
       setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching real-time occurrences:", error);
+        toast({
+            variant: "destructive",
+            title: "Erro de conexão",
+            description: "Não foi possível buscar as ocorrências em tempo real."
+        });
+        setIsLoading(false);
     });
-  }, [user, firestore]);
+    
+    // Cleanup subscription on component unmount
+    return () => unsubscribe();
+  }, [user, firestore, toast]);
 
   const filteredOccurrences = useMemo(() => {
     return occurrences.filter(occ => {
@@ -170,7 +182,8 @@ export function OccurrenceReport() {
       const docRef = doc(firestore, 'users', user.uid, 'occurrences', occurrenceId);
       await deleteDoc(docRef);
 
-      setOccurrences(prev => prev.filter(occ => occ.id !== occurrenceId));
+      // The onSnapshot listener will automatically update the state,
+      // so manually setting occurrences is no longer needed.
       
       toast({
         title: 'Sucesso!',
@@ -343,7 +356,7 @@ export function OccurrenceReport() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
-                    Nenhuma ocorrência encontrada com os filtros selecionados.
+                    {occurrences.length === 0 ? "Nenhuma ocorrência registrada ainda." : "Nenhuma ocorrência encontrada com os filtros selecionados."}
                   </TableCell>
                 </TableRow>
               )}
