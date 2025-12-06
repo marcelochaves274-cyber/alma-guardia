@@ -19,7 +19,7 @@ export default function Home() {
     switch (activePage) {
       case 'reminders':
         return (
-          <div className="w-full space-y-6">
+          <div className="space-y-6">
             <div className="w-full">
               <SgsConfiguration />
             </div>
@@ -89,7 +89,7 @@ export default function Home() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="mx-auto w-full max-w-4xl space-y-6">
+          <div className="space-y-6">
              <h1 className="text-3xl font-bold tracking-tight text-foreground">
                 {getPageTitle()}
             </h1>
