@@ -52,6 +52,7 @@ export function RegisterOccurrence() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [birthDate, setBirthDate] = useState('');
 
   const firestore = useFirestore();
   const { user } = useUser();
@@ -119,6 +120,17 @@ export function RegisterOccurrence() {
     setMarker({ x, y });
   };
   
+  const handleBirthDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    if (value.length > 2) {
+      value = `${value.slice(0, 2)}/${value.slice(2)}`;
+    }
+    if (value.length > 5) {
+      value = `${value.slice(0, 5)}/${value.slice(5)}`;
+    }
+    setBirthDate(value);
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!firestore || !user) {
@@ -147,6 +159,7 @@ export function RegisterOccurrence() {
         
         setOccurrenceDate(undefined);
         setMarker(null);
+        setBirthDate('');
         e.currentTarget.reset();
 
     } catch (error) {
@@ -287,7 +300,14 @@ export function RegisterOccurrence() {
               </div>
               <div className="space-y-2">
                   <Label htmlFor="birth-date">Data de Nascimento</Label>
-                  <Input name="birthDate" id="birth-date" placeholder="dd/mm/aaaa" />
+                   <Input 
+                    name="birthDate" 
+                    id="birth-date" 
+                    placeholder="dd/mm/aaaa"
+                    value={birthDate}
+                    onChange={handleBirthDateChange}
+                    maxLength={10}
+                  />
               </div>
               <div className="space-y-2">
                   <Label htmlFor="cpf">CPF</Label>
