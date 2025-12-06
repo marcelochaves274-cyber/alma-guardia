@@ -90,7 +90,7 @@ export default function Home() {
 
         <main className="flex-1 overflow-y-auto p-6">
           <div className="w-full space-y-6">
-             <h1 className="text-3xl font-bold tracking-tight text-foreground">
+             <h1 className="text-3xl font-bold tracking-tight text-foreground mb-6">
                 {getPageTitle()}
             </h1>
             {renderContent()}
