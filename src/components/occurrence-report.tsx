@@ -25,12 +25,25 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, getDocs, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, Timestamp, deleteDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import { Pencil, Trash2, Loader2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
 
 interface Occurrence {
   id: string;
@@ -58,9 +71,11 @@ const months = [
 export function OccurrenceReport() {
   const firestore = useFirestore();
   const { user } = useUser();
+  const { toast } = useToast();
   
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string>('');
@@ -115,7 +130,7 @@ export function OccurrenceReport() {
       );
       setAvailableYears(Array.from(years).sort((a, b) => Number(b) - Number(a)));
       
-      setOccurrences(occurrencesData);
+      setOccurrences(occurrencesData.sort((a, b) => b.occurrenceDate.toMillis() - a.occurrenceDate.toMillis()));
       setIsLoading(false);
     });
   }, [user, firestore]);
@@ -145,6 +160,34 @@ export function OccurrenceReport() {
     setFilterAnalysis('');
   }
 
+  const handleDelete = async (occurrenceId: string) => {
+    if (!firestore || !user) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.'});
+      return;
+    }
+    setIsDeleting(occurrenceId);
+    try {
+      const docRef = doc(firestore, 'users', user.uid, 'occurrences', occurrenceId);
+      await deleteDoc(docRef);
+
+      setOccurrences(prev => prev.filter(occ => occ.id !== occurrenceId));
+      
+      toast({
+        title: 'Sucesso!',
+        description: 'Ocorrência excluída com sucesso.',
+      });
+    } catch (error) {
+      console.error("Error deleting occurrence:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir',
+        description: 'Não foi possível excluir a ocorrência.',
+      });
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
   const renderSkeletons = () => (
     Array.from({ length: 5 }).map((_, i) => (
       <TableRow key={i}>
@@ -153,6 +196,7 @@ export function OccurrenceReport() {
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
       </TableRow>
     ))
   )
@@ -239,6 +283,7 @@ export function OccurrenceReport() {
                 <TableHead>Local</TableHead>
                 <TableHead>Envolvido</TableHead>
                 <TableHead>Análise</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -258,11 +303,46 @@ export function OccurrenceReport() {
                           </Badge>
                       ) : 'N/A'}
                     </TableCell>
+                    <TableCell className="text-right">
+                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar ocorrência">
+                          <Pencil className="h-4 w-4" />
+                       </Button>
+                       <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                             <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                aria-label="Excluir ocorrência"
+                                disabled={isDeleting === occ.id}
+                              >
+                                {isDeleting === occ.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                             </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                  Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro da ocorrência de <span className="font-semibold">{occ.involvedPersonName}</span> do dia <span className="font-semibold">{format(occ.occurrenceDate.toDate(), 'dd/MM/yyyy')}</span>.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                      onClick={() => handleDelete(occ.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                      Sim, excluir
+                                  </AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                       </AlertDialog>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     Nenhuma ocorrência encontrada com os filtros selecionados.
                   </TableCell>
                 </TableRow>
