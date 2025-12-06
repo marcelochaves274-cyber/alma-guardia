@@ -143,7 +143,6 @@ export function RegisterOccurrence() {
         return;
     }
 
-
     setIsSubmitting(true);
     
     const formData = new FormData(e.currentTarget);
@@ -423,5 +422,3 @@ export function RegisterOccurrence() {
     </Card>
   );
 }
-
-    
