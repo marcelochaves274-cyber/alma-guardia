@@ -38,20 +38,22 @@ export function RegisterOccurrence() {
   const [occurrenceDate, setOccurrenceDate] = useState<Date>();
   const [birthDate, setBirthDate] = useState<Date>();
   const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
 
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
 
-  const getSettingsDocRef = useCallback(() => {
+  const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid, 'settings', 'occurrenceTypes');
+    return doc(firestore, 'users', user.uid, 'settings', collectionName);
   }, [firestore, user]);
 
   useEffect(() => {
     const fetchOccurrenceTypes = async () => {
-      const docRef = getSettingsDocRef();
+      const docRef = getSettingsDocRef('occurrenceTypes');
       if (!docRef) {
         setIsLoadingTypes(false);
         return;
@@ -74,6 +76,33 @@ export function RegisterOccurrence() {
       }
     };
     fetchOccurrenceTypes();
+  }, [getSettingsDocRef, toast]);
+  
+  useEffect(() => {
+    const fetchLocations = async () => {
+      const docRef = getSettingsDocRef('locations');
+      if (!docRef) {
+        setIsLoadingLocations(false);
+        return;
+      }
+      try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setLocations(data.locations || []);
+        }
+      } catch (error) {
+        console.error("Error fetching locations:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar dados",
+          description: "Não foi possível buscar os locais."
+        });
+      } finally {
+        setIsLoadingLocations(false);
+      }
+    };
+    fetchLocations();
   }, [getSettingsDocRef, toast]);
 
 
@@ -142,25 +171,46 @@ export function RegisterOccurrence() {
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="flex flex-wrap gap-6">
+          <div className="flex-1 min-w-64 space-y-2">
             <Label htmlFor="occurrence-location">Local da Ocorrência</Label>
-            <Input id="occurrence-location" placeholder="Setor, máquina, área, etc." />
-        </div>
-
-        <div className="flex-1 min-w-64 space-y-3">
-          <Label>Faixa Etária</Label>
-          <Select>
-              <SelectTrigger>
-                  <SelectValue placeholder="Selecione a faixa etária" />
+             <Select disabled={isLoadingLocations || locations.length === 0}>
+              <SelectTrigger id="occurrence-location">
+                <SelectValue placeholder={
+                  isLoadingLocations ? "Carregando..." : 
+                  locations.length === 0 ? "Nenhum local cadastrado" : "Selecione o local"
+                } />
               </SelectTrigger>
               <SelectContent>
-                  <SelectItem value="crianca">Criança (0-12 anos)</SelectItem>
-                  <SelectItem value="adolescente">Adolescente (13-17 anos)</SelectItem>
-                  <SelectItem value="adulto1">Adulto (18-39 anos)</SelectItem>
-                  <SelectItem value="adulto2">Adulto (40-59 anos)</SelectItem>
-                  <SelectItem value="idoso">Idoso (60+ anos)</SelectItem>
+                {isLoadingLocations ? (
+                   <div className="flex items-center justify-center p-2">
+                     <Loader2 className="h-4 w-4 animate-spin" />
+                   </div>
+                ) : (
+                  locations.map((loc) => (
+                    <SelectItem key={loc} value={loc}>
+                      {loc}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
-          </Select>
+            </Select>
+          </div>
+          <div className="flex-1 min-w-64 space-y-3">
+            <Label>Faixa Etária</Label>
+            <Select>
+                <SelectTrigger>
+                    <SelectValue placeholder="Selecione a faixa etária" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="crianca">Criança (0-12 anos)</SelectItem>
+                    <SelectItem value="adolescente">Adolescente (13-17 anos)</SelectItem>
+                    <SelectItem value="adulto1">Adulto (18-39 anos)</SelectItem>
+                    <SelectItem value="adulto2">Adulto (40-59 anos)</SelectItem>
+                    <SelectItem value="idoso">Idoso (60+ anos)</SelectItem>
+                </SelectContent>
+            </Select>
+          </div>
         </div>
         
         <div className="space-y-2">

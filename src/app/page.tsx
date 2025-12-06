@@ -5,6 +5,7 @@ import { Chat } from '@/components/chat';
 import { SgsConfiguration } from '@/components/sgs-configuration';
 import { RegisterOccurrence } from '@/components/register-occurrence';
 import { ManageOccurrences } from '@/components/manage-occurrences';
+import { ManageLocations } from '@/components/manage-locations';
 import AppLayout from './app-layout';
 
 // This is a temporary state management. In a real app, you'd use a more robust
@@ -26,6 +27,8 @@ export default function Home() {
         return <RegisterOccurrence />;
       case 'manage-occurrences':
         return <ManageOccurrences />;
+      case 'manage-locations':
+        return <ManageLocations />;
       case 'reminders':
       default:
         return (

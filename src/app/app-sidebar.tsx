@@ -12,7 +12,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -62,13 +62,18 @@ export function AppSidebar() {
   const handlePageChange = (page: string) => {
     setActivePage(page);
     // If the page is not in a submenu, close all submenus
-    const subMenuParents = {
+    const subMenuParents: Record<string, string> = {
       'register-occurrence': 'acidentes',
       'occurrence-report': 'acidentes',
       'general-settings': 'settings',
-      'manage-occurrences': 'settings'
+      'manage-occurrences': 'settings',
+      'manage-locations': 'settings'
     };
-    if (!Object.keys(subMenuParents).includes(page)) {
+
+    const parentMenu = subMenuParents[page];
+    if (parentMenu) {
+      setOpenSubMenu(parentMenu);
+    } else {
       setOpenSubMenu(null);
     }
   }
@@ -176,6 +181,14 @@ export function AppSidebar() {
                     onClick={() => handlePageChange('manage-occurrences')}
                   >
                     Gerenciar Ocorrências
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                 <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    isActive={activePage === 'manage-locations'}
+                    onClick={() => handlePageChange('manage-locations')}
+                  >
+                    Gerenciar Locais
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
