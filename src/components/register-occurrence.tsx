@@ -362,7 +362,7 @@ export function RegisterOccurrence() {
           
           <Separator />
            <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-start">
                   <div>
                       <h3 className="text-lg font-semibold text-foreground">Localização no Mapa</h3>
                       <p className="text-sm text-muted-foreground">
@@ -376,6 +376,9 @@ export function RegisterOccurrence() {
                     </Button>
                   )}
               </div>
+               <p className="text-sm text-destructive">
+                Importante: Se a imagem do mapa for alterada futuramente, as marcações de ocorrências já salvas não serão atualizadas para a nova imagem.
+              </p>
               <div
                 ref={mapContainerRef}
                 onClick={handleMapClick}
@@ -396,9 +399,17 @@ export function RegisterOccurrence() {
                       <div
                         className="absolute transform -translate-x-1/2 -translate-y-1/2"
                         style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
+                        aria-label="Marcador de ocorrência"
                       >
-                         <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse"></div>
-                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 rounded-full border-2 border-red-500 opacity-75"></div>
+                         <div 
+                            className="h-3 w-3 rounded-full bg-red-600 ring-2 ring-white/80 shadow-2xl"
+                            style={{
+                                boxShadow: '0 0 8px 3px rgba(220, 38, 38, 0.6)',
+                            }}
+                         ></div>
+                         <div 
+                            className="absolute top-1/2 left-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-red-500/80 opacity-75 animate-pulse"
+                         ></div>
                       </div>
                     )}
                   </>
