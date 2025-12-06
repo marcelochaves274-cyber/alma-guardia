@@ -12,11 +12,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Loader2, Pencil, Check, X } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export function ManageOccurrences() {
   const { toast } = useToast();
@@ -27,6 +38,8 @@ export function ManageOccurrences() {
   const [newType, setNewType] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [editingType, setEditingType] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState('');
 
   const getSettingsDocRef = useCallback(() => {
     if (!firestore || !user) return null;
@@ -51,7 +64,6 @@ export function ManageOccurrences() {
             const data = docSnap.data();
             setOccurrenceTypes(data.types || []);
           } else {
-            // If no settings exist, initialize with some defaults
             const defaultTypes = ['Queda de mesmo nível', 'Corte', 'Contato com produto químico'];
             setOccurrenceTypes(defaultTypes);
           }
@@ -139,6 +151,49 @@ export function ManageOccurrences() {
         });
     }
   };
+
+  const handleStartEditing = (type: string) => {
+    setEditingType(type);
+    setEditingValue(type);
+  };
+
+  const handleCancelEditing = () => {
+    setEditingType(null);
+    setEditingValue('');
+  };
+  
+  const handleSaveEdit = async () => {
+    if (!editingType || !editingValue.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Campo vazio',
+        description: 'O tipo de ocorrência não pode ser vazio.',
+      });
+      return;
+    }
+
+    const trimmedValue = editingValue.trim();
+    if (occurrenceTypes.map(t => t.toLowerCase()).includes(trimmedValue.toLowerCase()) && trimmedValue.toLowerCase() !== editingType.toLowerCase()) {
+        toast({
+            variant: 'destructive',
+            title: 'Tipo duplicado',
+            description: 'Este tipo de ocorrência já existe.',
+        });
+        return;
+    }
+
+    const newTypes = occurrenceTypes.map(t => (t === editingType ? trimmedValue : t));
+    const success = await saveTypesToFirestore(newTypes);
+    if(success) {
+        setOccurrenceTypes(newTypes);
+        setEditingType(null);
+        setEditingValue('');
+        toast({
+            title: 'Sucesso!',
+            description: 'O tipo de ocorrência foi atualizado.',
+        });
+    }
+  }
   
   if (isLoading) {
     return (
@@ -210,17 +265,66 @@ export function ManageOccurrences() {
                   key={type}
                   className="flex items-center justify-between rounded-md border bg-card p-3"
                 >
-                  <span className="text-sm font-medium">{type}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveType(type)}
-                    disabled={isSaving}
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    aria-label={`Remover ${type}`}
-                  >
-                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                  </Button>
+                  {editingType === type ? (
+                    <div className='flex-1 flex items-center gap-2'>
+                        <Input
+                            value={editingValue}
+                            onChange={(e) => setEditingValue(e.target.value)}
+                            className="h-8"
+                            autoFocus
+                            onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
+                        />
+                         <Button variant="ghost" size="icon" onClick={handleSaveEdit} className='h-8 w-8 text-green-500 hover:text-green-600' aria-label="Salvar edição"><Check className="h-4 w-4" /></Button>
+                         <Button variant="ghost" size="icon" onClick={handleCancelEditing} className='h-8 w-8 text-muted-foreground hover:text-destructive' aria-label="Cancelar edição"><X className="h-4 w-4" /></Button>
+                    </div>
+                  ) : (
+                    <>
+                        <span className="text-sm font-medium">{type}</span>
+                        <div className="flex items-center">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleStartEditing(type)}
+                                disabled={isSaving}
+                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                aria-label={`Editar ${type}`}
+                            >
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                            
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        disabled={isSaving}
+                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                        aria-label={`Remover ${type}`}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o tipo de ocorrência "{type}" e poderá afetar relatórios ou filtros existentes que o utilizam.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction 
+                                            onClick={() => handleRemoveType(type)} 
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                            Sim, excluir
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
