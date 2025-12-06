@@ -12,7 +12,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, MapPin } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, MapPin, Map } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -61,13 +61,14 @@ export function AppSidebar() {
   
   const handlePageChange = (page: string) => {
     setActivePage(page);
-    // If the page is not in a submenu, close all submenus
+    // This logic ensures the correct parent menu is open when a sub-item is clicked.
     const subMenuParents: Record<string, string> = {
       'register-occurrence': 'acidentes',
       'occurrence-report': 'acidentes',
       'general-settings': 'settings',
       'manage-occurrences': 'settings',
-      'manage-locations': 'settings'
+      'manage-locations': 'settings',
+      'manage-map': 'settings'
     };
 
     const parentMenu = subMenuParents[page];
@@ -189,6 +190,14 @@ export function AppSidebar() {
                     onClick={() => handlePageChange('manage-locations')}
                   >
                     Gerenciar Locais
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                 <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    isActive={activePage === 'manage-map'}
+                    onClick={() => handlePageChange('manage-map')}
+                  >
+                    Gerenciar Mapa
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
