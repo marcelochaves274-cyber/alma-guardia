@@ -108,7 +108,7 @@ export function GeneralSettings() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Identidade Visual</CardTitle>
