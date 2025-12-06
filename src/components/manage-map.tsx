@@ -120,6 +120,9 @@ export function ManageMap() {
         <CardDescription>
           Faça o upload de uma imagem (planta baixa, mapa, etc.) para marcar a localização exata das ocorrências.
         </CardDescription>
+        <p className="text-sm text-destructive pt-2">
+          Importante: Alterar a imagem do mapa não atualizará as marcações em ocorrências já registradas. A nova imagem será usada apenas para futuros registros.
+        </p>
       </CardHeader>
       <CardContent className="space-y-8">
         <div className="space-y-4">
