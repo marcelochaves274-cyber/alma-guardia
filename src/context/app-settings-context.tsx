@@ -190,16 +190,19 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             applyTheme(data.theme || 'musgo');
             setLogoUrl(data.logoUrl || null);
           } else {
-             applyTheme('musgo'); // Apply default if no settings exist
+             // This is expected on first load, so we don't show an error.
+             console.log("No settings document found. Using defaults.");
+             applyTheme('musgo');
           }
         }
       })
       .catch((error) => {
-        console.error('Error fetching app settings from Firestore:', error);
+        // Now we show the detailed error message
+        console.error('Error fetching app settings:', error);
         toast({
             variant: "destructive",
-            title: "Erro ao carregar configurações",
-            description: "Não foi possível buscar as configurações salvas."
+            title: "Erro de Leitura do Banco de Dados",
+            description: `Não foi possível carregar as configurações. Erro: ${error.message}`
         })
       })
       .finally(() => {
@@ -248,13 +251,12 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         title: 'Sucesso!',
         description: 'O tema foi salvo.',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving theme:', error);
       toast({
         variant: 'destructive',
-        title: 'Erro ao salvar',
-        description:
-          'Não foi possível salvar o tema. Verifique as regras de segurança do Firestore.',
+        title: 'Erro ao Salvar Tema',
+        description: `Não foi possível salvar. Erro: ${error.message}`,
       });
     } finally {
       setIsSavingTheme(false);
@@ -286,13 +288,12 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         title: 'Sucesso!',
         description: 'A logo foi salva.',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving logo:', error);
       toast({
         variant: 'destructive',
-        title: 'Erro ao salvar',
-        description:
-          'Não foi possível salvar a logo.',
+        title: 'Erro ao Salvar Logo',
+        description: `Não foi possível salvar. Erro: ${error.message}`,
       });
     } finally {
       setIsSavingLogo(false);
@@ -311,20 +312,18 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setIsSavingLogo(true);
     try {
       const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
-      // Using updateDoc to specifically remove a field
       await updateDoc(settingsDocRef, { logoUrl: null });
       setLogoUrl(null);
       toast({
         title: 'Logo Removida',
         description: 'A sua logo foi removida com sucesso.',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error removing logo:', error);
       toast({
         variant: 'destructive',
-        title: 'Erro ao remover',
-        description:
-          'Não foi possível remover a logo.',
+        title: 'Erro ao Remover Logo',
+        description: `Não foi possível remover. Erro: ${error.message}`,
       });
     } finally {
       setIsSavingLogo(false);
