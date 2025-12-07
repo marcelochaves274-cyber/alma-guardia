@@ -1,9 +1,9 @@
 // Your web app's Firebase configuration
 export const firebaseConfig = {
-  apiKey: "AIzaSyCu7MM-s5vcgdiSTc8pmkdwdf6uZhzd8Tw",
-  authDomain: "studio-6033207211-536c4.firebaseapp.com",
-  projectId: "studio-6033207211-536c4",
-  storageBucket: "studio-6033207211-536c4.appspot.com",
-  messagingSenderId: "1092948132261",
-  appId: "1:1092948132261:web:24d6e2a1716ee862b5284c"
+  apiKey: "AIzaSyBe_TJCgQ-i1KHBtYkG3jYt_FpFvO9F-EM",
+  authDomain: "brave-drive-472322-m2.firebaseapp.com",
+  projectId: "brave-drive-472322-m2",
+  storageBucket: "brave-drive-472322-m2.appspot.com",
+  messagingSenderId: "542287796074",
+  appId: "1:542287796074:web:0b297b0a7c6534575bfca4"
 };
