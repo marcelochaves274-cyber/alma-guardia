@@ -65,7 +65,7 @@ export default function LoginPage() {
       case 'auth/weak-password':
         return 'A senha é muito fraca. Ela deve ter pelo menos 6 caracteres.';
       case 'auth/invalid-api-key':
-        return 'A chave de API do Firebase é inválida. A configuração do projeto não está correta. Tente atualizar a página.';
+        return 'A chave de API do Firebase é inválida. A configuração do projeto pode não estar correta. Tente atualizar a página.';
       default:
         return 'Ocorreu um erro inesperado. Verifique sua conexão e tente novamente.';
     }
@@ -83,6 +83,7 @@ export default function LoginPage() {
       }
       router.push('/');
     } catch (error: any) {
+      console.error("Authentication Error Code:", error.code);
       toast({
         variant: 'destructive',
         title: 'Erro de Autenticação',
