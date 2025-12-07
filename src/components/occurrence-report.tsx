@@ -44,6 +44,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface Occurrence {
   id: string;
@@ -55,10 +56,10 @@ interface Occurrence {
   description: string;
 }
 
-const analysisMapping: Record<string, { label: string, variant: 'destructive' | 'secondary' | 'default' }> = {
-    alta: { label: 'Alta', variant: 'destructive' },
-    media: { label: 'Média', variant: 'secondary' },
-    baixa: { label: 'Baixa', variant: 'default' }
+const analysisMapping: Record<string, { label: string, className: string }> = {
+    alta: { label: 'Alta', className: 'bg-red-500 text-white hover:bg-red-600' },
+    media: { label: 'Média', className: 'bg-orange-500 text-white hover:bg-orange-600' },
+    baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
 const months = [
@@ -208,8 +209,6 @@ export function OccurrenceReport() {
   };
 
   const handleEdit = (occurrence: Occurrence) => {
-    // A proper implementation would open a modal with a form.
-    // For now, we'll just show an alert.
     alert(`Funcionalidade de edição para a ocorrência de "${occurrence.involvedPersonName}" em ${format(occurrence.occurrenceDate, 'dd/MM/yyyy')} será implementada a seguir.`);
   };
 
@@ -323,7 +322,7 @@ export function OccurrenceReport() {
                     <TableCell>{occ.involvedPersonName}</TableCell>
                     <TableCell>
                       {occ.analysis && analysisMapping[occ.analysis] ? (
-                          <Badge variant={analysisMapping[occ.analysis].variant}>
+                          <Badge className={cn(analysisMapping[occ.analysis].className)}>
                               {analysisMapping[occ.analysis].label}
                           </Badge>
                       ) : 'N/A'}
@@ -379,3 +378,5 @@ export function OccurrenceReport() {
     </div>
   );
 }
+
+    
