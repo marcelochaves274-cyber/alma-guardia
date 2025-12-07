@@ -25,6 +25,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from './ui/scroll-area';
 import { MultiSelectFilter } from './multi-select-filter';
+import { MonthFilter } from './month-filter';
 
 interface Occurrence {
   id: string;
@@ -52,6 +53,7 @@ export function MapReport() {
 
   // Filter states
   const [filterYears, setFilterYears] = useState<string[]>([]);
+  const [filterMonths, setFilterMonths] = useState<string[]>([]);
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
 
@@ -155,12 +157,13 @@ export function MapReport() {
       if (!occDate) return false;
 
       const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
+      const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.occurrenceType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.occurrenceLocation);
 
-      return yearMatch && typeMatch && locationMatch && !!occ.mapMarker;
+      return yearMatch && monthMatch && typeMatch && locationMatch && !!occ.mapMarker;
     });
-  }, [occurrences, filterYears, filterTypes, filterLocations]);
+  }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations]);
 
   const clusters = useMemo(() => {
     const points = filteredOccurrences.filter(occ => occ.mapMarker);
@@ -196,6 +199,7 @@ export function MapReport() {
   
   const clearFilters = () => {
     setFilterYears([]);
+    setFilterMonths([]);
     setFilterTypes([]);
     setFilterLocations([]);
   }
@@ -218,6 +222,10 @@ export function MapReport() {
               onChange={setFilterYears}
               disabled={availableYears.length === 0}
             />
+             <MonthFilter
+              selectedMonths={filterMonths}
+              onChange={setFilterMonths}
+            />
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"
               options={occurrenceTypes.map(t => ({ value: t, label: t }))}
@@ -233,7 +241,7 @@ export function MapReport() {
               disabled={!locations || locations.length === 0}
             />
             
-            <Button onClick={clearFilters} variant="outline" className="w-full lg:col-start-4">
+            <Button onClick={clearFilters} variant="outline" className="w-full sm:col-start-auto md:col-start-auto lg:col-start-4">
               Limpar Filtros
             </Button>
           </div>

@@ -2,8 +2,6 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
-import { AppSettingsProvider } from '@/context/app-settings-context';
-import { SidebarProvider } from '@/components/ui/sidebar';
 
 export const metadata: Metadata = {
   title: 'SGS Genius',
@@ -24,11 +22,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <AppSettingsProvider>
-            <SidebarProvider>
-              {children}
-            </SidebarProvider>
-          </AppSettingsProvider>
+          {children}
         </FirebaseClientProvider>
         <Toaster />
       </body>
