@@ -175,7 +175,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
 
     if (!user || !firestore) {
       setIsLoading(false);
-      applyTheme('musgo'); // Apply default theme
+      applyTheme('musgo'); // Apply default theme if no user/firestore
       return;
     }
 
@@ -190,20 +190,26 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             applyTheme(data.theme || 'musgo');
             setLogoUrl(data.logoUrl || null);
           } else {
-             // This is expected on first load, so we don't show an error.
-             console.log("No settings document found. Using defaults.");
+             // This is the expected case for a new user.
+             // We apply default settings without showing any error.
+             console.log("No settings document found. Applying default settings for a new user.");
              applyTheme('musgo');
+             setAppNameState('');
+             setLogoUrl(null);
           }
         }
       })
       .catch((error) => {
-        // Now we show the detailed error message
-        console.error('Error fetching app settings:', error);
-        toast({
-            variant: "destructive",
-            title: "Erro de Leitura do Banco de Dados",
-            description: `Não foi possível carregar as configurações. Erro: ${error.message}`
-        })
+        if (isMounted) {
+          // This will now only catch actual errors, like permission denied,
+          // not "document not found".
+          console.error('Error fetching app settings:', error);
+          toast({
+              variant: "destructive",
+              title: "Erro ao Carregar Configurações",
+              description: `Não foi possível carregar suas configurações. Causa: ${error.message}`
+          })
+        }
       })
       .finally(() => {
         if (isMounted) {
@@ -362,3 +368,5 @@ export function useAppSettings() {
   }
   return context;
 }
+
+    
