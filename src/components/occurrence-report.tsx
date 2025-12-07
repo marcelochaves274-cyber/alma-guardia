@@ -16,13 +16,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
@@ -45,8 +38,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { setActivePage, setOccurrenceToEdit } from '@/app/page';
 import { MultiSelectFilter } from './multi-select-filter';
+import { usePage } from '@/context/page-context';
 
 interface Occurrence {
   id: string;
@@ -70,6 +63,7 @@ export function OccurrenceReport() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { setActivePage, setOccurrenceToEdit } = usePage();
   
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [isLoading, setIsLoading] = useState(true);

@@ -1,5 +1,4 @@
 'use client';
-import { useState } from 'react';
 import { GeneralSettings } from '@/components/general-settings';
 import { Chat } from '@/components/chat';
 import { SgsConfiguration } from '@/components/sgs-configuration';
@@ -10,37 +9,17 @@ import { ManageMap } from '@/components/manage-map';
 import { OccurrenceReport } from '@/components/occurrence-report';
 import { MapReport } from '@/components/map-report';
 import AppLayout from './app-layout';
-
-// This is a temporary state management. In a real app, you'd use a more robust
-// solution like React Context, Redux, or Zustand.
-export let activePage = 'reminders';
-export let setActivePage: (page: string) => void;
-export let occurrenceToEdit: any | null = null;
-export let setOccurrenceToEdit: (occurrence: any | null) => void;
-
+import { usePage } from '@/context/page-context';
 
 export default function Home() {
-  const [page, setPage] = useState('reminders');
-  const [editingOccurrence, setEditingOccurrence] = useState<any | null>(null);
-
-  activePage = page;
-  setActivePage = (newPage) => {
-    // If we're navigating away from the edit page, clear the editing state
-    if (newPage !== 'register-occurrence') {
-      setEditingOccurrence(null);
-    }
-    setPage(newPage);
-  };
-  
-  occurrenceToEdit = editingOccurrence;
-  setOccurrenceToEdit = setEditingOccurrence;
+  const { activePage } = usePage();
 
   const renderContent = () => {
     switch (activePage) {
       case 'general-settings':
         return <GeneralSettings />;
       case 'register-occurrence':
-        return <RegisterOccurrence occurrenceToEdit={editingOccurrence} />;
+        return <RegisterOccurrence />;
       case 'occurrence-report':
         return <OccurrenceReport />;
       case 'map-report':

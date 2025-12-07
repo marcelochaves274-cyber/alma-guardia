@@ -36,16 +36,13 @@ import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp 
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
-import { setActivePage } from '@/app/page';
+import { usePage } from '@/context/page-context';
 
 
 type Marker = { x: number; y: number } | null;
 
-interface RegisterOccurrenceProps {
-  occurrenceToEdit?: any | null;
-}
-
-export function RegisterOccurrence({ occurrenceToEdit }: RegisterOccurrenceProps) {
+export function RegisterOccurrence() {
+  const { occurrenceToEdit, setActivePage } = usePage();
   const isEditing = !!occurrenceToEdit;
 
   // Form states
