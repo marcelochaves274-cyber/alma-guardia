@@ -1,10 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from '@/lib/utils';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
+import { CheckIcon } from 'lucide-react';
 
 interface MultiSelectFilterProps {
   placeholder: string;
@@ -17,19 +20,20 @@ interface MultiSelectFilterProps {
 export function MultiSelectFilter({ placeholder, options, selected, onChange, disabled }: MultiSelectFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleSelect = (value: string) => {
+  const handleSelect = useCallback((value: string) => {
     const newSelected = selected.includes(value)
       ? selected.filter(item => item !== value)
       : [...selected, value];
     onChange(newSelected);
-  };
-
+  }, [selected, onChange]);
+  
   const getButtonText = () => {
     if (selected.length === 0) return placeholder;
     if (selected.length === 1) {
       const option = options.find(o => o.value === selected[0]);
       return option?.label || placeholder;
     }
+    if (selected.length === options.length) return "Todos selecionados";
     return `${selected.length} selecionados`;
   };
 
