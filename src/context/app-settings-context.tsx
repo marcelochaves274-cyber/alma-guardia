@@ -189,7 +189,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             applyTheme(data.theme || 'musgo');
             setLogoUrl(data.logoUrl || null);
           } else {
-             // This is a new user or settings haven't been saved. This is normal.
              applyTheme('musgo');
              setAppNameState('');
              setLogoUrl(null);
@@ -197,7 +196,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch((error) => {
-        // Ignore "permission-denied" on initial load, as it just means the doc doesn't exist yet.
         if (error.code !== 'permission-denied') {
             console.error('Error fetching app settings:', error);
             toast({
@@ -205,10 +203,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
                 title: 'Erro ao carregar configurações',
                 description: 'Não foi possível buscar suas configurações salvas.',
             });
-        } else {
-            console.log("Permission denied on initial fetch, assuming new user.");
         }
-        // Apply defaults even if there's an error
         applyTheme('musgo');
         setAppNameState('');
         setLogoUrl(null);

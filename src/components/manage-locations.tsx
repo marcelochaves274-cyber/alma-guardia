@@ -48,7 +48,10 @@ export function ManageLocations() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isUserLoading) return;
+    if (isUserLoading || !user || !firestore) {
+      if(!isUserLoading) setIsLoading(false);
+      return;
+    }
     
     const fetchLocations = async () => {
       const docRef = getSettingsDocRef();
@@ -69,12 +72,14 @@ export function ManageLocations() {
           }
         }
       } catch (error) {
-        console.error("Error fetching locations:", error);
-        toast({
-            variant: "destructive",
-            title: "Erro ao carregar",
-            description: "Não foi possível buscar os locais."
-        });
+        if (error.code !== 'permission-denied') {
+          console.error("Error fetching locations:", error);
+          toast({
+              variant: "destructive",
+              title: "Erro ao carregar",
+              description: "Não foi possível buscar os locais."
+          });
+        }
       } finally {
         if (isMounted) {
             setIsLoading(false);
@@ -85,7 +90,7 @@ export function ManageLocations() {
     fetchLocations();
     
     return () => { isMounted = false; };
-  }, [isUserLoading, getSettingsDocRef, toast]);
+  }, [isUserLoading, user, firestore, getSettingsDocRef, toast]);
   
   const saveLocationsToFirestore = async (updatedLocations: string[]) => {
     const docRef = getSettingsDocRef();

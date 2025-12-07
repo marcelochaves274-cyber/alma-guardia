@@ -48,7 +48,10 @@ export function ManageOccurrences() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isUserLoading) return;
+    if (isUserLoading || !user || !firestore) {
+      if(!isUserLoading) setIsLoading(false);
+      return;
+    }
     
     const fetchOccurrenceTypes = async () => {
       const docRef = getSettingsDocRef();
@@ -69,12 +72,14 @@ export function ManageOccurrences() {
           }
         }
       } catch (error) {
-        console.error("Error fetching occurrence types:", error);
-        toast({
-            variant: "destructive",
-            title: "Erro ao carregar",
-            description: "Não foi possível buscar os tipos de ocorrência."
-        });
+         if (error.code !== 'permission-denied') {
+            console.error("Error fetching occurrence types:", error);
+            toast({
+                variant: "destructive",
+                title: "Erro ao carregar",
+                description: "Não foi possível buscar os tipos de ocorrência."
+            });
+         }
       } finally {
         if (isMounted) {
             setIsLoading(false);
@@ -85,7 +90,7 @@ export function ManageOccurrences() {
     fetchOccurrenceTypes();
     
     return () => { isMounted = false; };
-  }, [isUserLoading, getSettingsDocRef, toast]);
+  }, [isUserLoading, user, firestore, getSettingsDocRef, toast]);
   
   const saveTypesToFirestore = async (types: string[]) => {
     const docRef = getSettingsDocRef();

@@ -8,13 +8,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, X } from 'lucide-react';
 import Image from 'next/image';
 import { Skeleton } from './ui/skeleton';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 
@@ -27,29 +27,43 @@ export function ManageMap() {
   const [isLoading, setIsLoading] = useState(true);
 
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
+
+  const getSettingsDocRef = useCallback(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'sgs_genius', user.uid, 'settings', 'mapDetails');
+  }, [firestore, user]);
 
   useEffect(() => {
     let isMounted = true;
-    if (!user || !firestore) {
-      setIsLoading(false);
+    if (isUserLoading || !user || !firestore) {
+      if(!isUserLoading) setIsLoading(false);
       return;
     }
 
-    const settingsDocRef = doc(firestore, 'sgs_genius', user.uid, 'settings', 'mapDetails');
+    const settingsDocRef = getSettingsDocRef();
+    if (!settingsDocRef) {
+      setIsLoading(false);
+      return;
+    }
+    
     getDoc(settingsDocRef)
       .then((docSnap) => {
         if (isMounted && docSnap.exists()) {
           setMapUrl(docSnap.data().mapUrl || null);
         }
       })
-      .catch((error) => console.error("Error fetching map:", error))
+      .catch((error) => {
+        if (error.code !== 'permission-denied') {
+          console.error("Error fetching map:", error);
+        }
+      })
       .finally(() => {
         if (isMounted) setIsLoading(false);
       });
       
     return () => { isMounted = false; }
-  }, [user, firestore]);
+  }, [user, firestore, isUserLoading, getSettingsDocRef]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -71,7 +85,8 @@ export function ManageMap() {
   };
 
   const handleSaveMap = async () => {
-    if (!firestore || !user) {
+    const settingsDocRef = getSettingsDocRef();
+    if (!settingsDocRef) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
       return;
     }
@@ -81,7 +96,6 @@ export function ManageMap() {
     }
 
     setIsSaving(true);
-    const settingsDocRef = doc(firestore, 'sgs_genius', user.uid, 'settings', 'mapDetails');
     try {
       await setDoc(settingsDocRef, { mapUrl }, { merge: true });
       toast({ title: 'Sucesso!', description: 'O mapa foi salvo.' });
@@ -94,15 +108,15 @@ export function ManageMap() {
   };
 
   const handleRemoveMap = async () => {
-    if (!firestore || !user) {
+    const settingsDocRef = getSettingsDocRef();
+    if (!settingsDocRef) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
       return;
     }
 
     setIsSaving(true);
-    const settingsDocRef = doc(firestore, 'sgs_genius', user.uid, 'settings', 'mapDetails');
     try {
-      await updateDoc(settingsDocRef, { mapUrl: null });
+      await setDoc(settingsDocRef, { mapUrl: null }, { merge: true });
       setMapUrl(null);
       toast({ title: 'Mapa Removido', description: 'O mapa foi removido com sucesso.' });
     } catch (error) {
