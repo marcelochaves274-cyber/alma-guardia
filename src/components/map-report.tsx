@@ -13,6 +13,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
@@ -60,7 +67,8 @@ export function MapReport() {
 
   // Filter states
   const [filterYears, setFilterYears] = useState<string[]>([]);
-  const [filterMonths, setFilterMonths] = useState<string[]>([]);
+  const [filterStartMonth, setFilterStartMonth] = useState<string>('');
+  const [filterEndMonth, setFilterEndMonth] = useState<string>('');
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
 
@@ -162,20 +170,25 @@ export function MapReport() {
     return occurrences.filter(occ => {
       const occDate = occ.occurrenceDate;
       if (!occDate) return false;
+      const occMonth = occDate.getMonth() + 1;
 
       const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
-      const monthMatch = filterMonths.length === 0 || filterMonths.includes((occDate.getMonth() + 1).toString());
+      
+      const startMonth = filterStartMonth ? parseInt(filterStartMonth, 10) : 1;
+      const endMonth = filterEndMonth ? parseInt(filterEndMonth, 10) : 12;
+      const monthMatch = occMonth >= startMonth && occMonth <= endMonth;
+
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.occurrenceType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.occurrenceLocation);
 
       return yearMatch && monthMatch && typeMatch && locationMatch && !!occ.mapMarker;
     });
-  }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations]);
+  }, [occurrences, filterYears, filterStartMonth, filterEndMonth, filterTypes, filterLocations]);
 
   const clusters = useMemo(() => {
     const points = filteredOccurrences.filter(occ => occ.mapMarker);
     const clusters: Cluster[] = [];
-    const distanceThreshold = 5; // 5% of map dimensions
+    const distanceThreshold = 5; 
 
     points.forEach(point => {
         let foundCluster = false;
@@ -186,7 +199,6 @@ export function MapReport() {
             );
             if (distance < distanceThreshold) {
                 cluster.occurrences.push(point);
-                // Recalculate cluster center (optional, but good for accuracy)
                 cluster.x = cluster.occurrences.reduce((sum, occ) => sum + (occ.mapMarker?.x || 0), 0) / cluster.occurrences.length;
                 cluster.y = cluster.occurrences.reduce((sum, occ) => sum + (occ.mapMarker?.y || 0), 0) / cluster.occurrences.length;
                 foundCluster = true;
@@ -207,7 +219,8 @@ export function MapReport() {
 
   const clearFilters = () => {
     setFilterYears([]);
-    setFilterMonths([]);
+    setFilterStartMonth('');
+    setFilterEndMonth('');
     setFilterTypes([]);
     setFilterLocations([]);
   }
@@ -222,7 +235,7 @@ export function MapReport() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
             <MultiSelectFilter
               placeholder="Filtrar por Ano"
               options={availableYears.map(y => ({ value: y, label: y }))}
@@ -230,12 +243,22 @@ export function MapReport() {
               onChange={setFilterYears}
               disabled={availableYears.length === 0}
             />
-            <MultiSelectFilter
-              placeholder="Filtrar por Mês"
-              options={months}
-              selected={filterMonths}
-              onChange={setFilterMonths}
-            />
+            
+            <div className="grid grid-cols-2 gap-2">
+                <Select onValueChange={setFilterStartMonth} value={filterStartMonth}>
+                    <SelectTrigger><SelectValue placeholder="Mês Inicial" /></SelectTrigger>
+                    <SelectContent>
+                        {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                 <Select onValueChange={setFilterEndMonth} value={filterEndMonth}>
+                    <SelectTrigger><SelectValue placeholder="Mês Final" /></SelectTrigger>
+                    <SelectContent>
+                        {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"
               options={occurrenceTypes.map(t => ({ value: t, label: t }))}

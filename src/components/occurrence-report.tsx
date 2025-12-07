@@ -16,6 +16,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
@@ -77,7 +84,8 @@ export function OccurrenceReport() {
 
   // Filter states
   const [filterYears, setFilterYears] = useState<string[]>([]);
-  const [filterMonths, setFilterMonths] = useState<string[]>([]);
+  const [filterStartMonth, setFilterStartMonth] = useState<string>('');
+  const [filterEndMonth, setFilterEndMonth] = useState<string>('');
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
   const [filterName, setFilterName] = useState<string>('');
@@ -122,10 +130,9 @@ export function OccurrenceReport() {
     const unsubscribe = onSnapshot(occurrencesCollectionRef, (querySnapshot) => {
       const occurrencesData = querySnapshot.docs.map(doc => {
         const data = doc.data();
-        // Convert Firestore Timestamp to JS Date object
         const occurrenceDate = data.occurrenceDate instanceof Timestamp 
           ? data.occurrenceDate.toDate() 
-          : new Date(); // Fallback to current date if something is wrong
+          : new Date(); 
 
         return {
           id: doc.id,
@@ -154,7 +161,6 @@ export function OccurrenceReport() {
         setIsLoading(false);
     });
     
-    // Cleanup subscription on component unmount
     return () => unsubscribe();
   }, [user, firestore, toast]);
 
@@ -162,9 +168,14 @@ export function OccurrenceReport() {
     return occurrences.filter(occ => {
       const occDate = occ.occurrenceDate;
       if (!occDate) return false;
+      const occMonth = occDate.getMonth() + 1;
 
       const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
-      const monthMatch = filterMonths.length === 0 || filterMonths.includes((occDate.getMonth() + 1).toString());
+      
+      const startMonth = filterStartMonth ? parseInt(filterStartMonth, 10) : 1;
+      const endMonth = filterEndMonth ? parseInt(filterEndMonth, 10) : 12;
+      const monthMatch = occMonth >= startMonth && occMonth <= endMonth;
+
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.occurrenceType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.occurrenceLocation);
       const analysisMatch = filterAnalyses.length === 0 || filterAnalyses.includes(occ.analysis);
@@ -172,11 +183,12 @@ export function OccurrenceReport() {
 
       return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && nameMatch;
     });
-  }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations, filterName, filterAnalyses]);
+  }, [occurrences, filterYears, filterStartMonth, filterEndMonth, filterTypes, filterLocations, filterName, filterAnalyses]);
 
   const clearFilters = () => {
     setFilterYears([]);
-    setFilterMonths([]);
+    setFilterStartMonth('');
+    setFilterEndMonth('');
     setFilterTypes([]);
     setFilterLocations([]);
     setFilterName('');
@@ -237,7 +249,7 @@ export function OccurrenceReport() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
             <MultiSelectFilter
               placeholder="Filtrar por Ano"
               options={availableYears.map(y => ({ value: y, label: y }))}
@@ -245,12 +257,22 @@ export function OccurrenceReport() {
               onChange={setFilterYears}
               disabled={availableYears.length === 0}
             />
-            <MultiSelectFilter
-              placeholder="Filtrar por Mês"
-              options={months}
-              selected={filterMonths}
-              onChange={setFilterMonths}
-            />
+            
+            <div className="grid grid-cols-2 gap-2">
+                <Select onValueChange={setFilterStartMonth} value={filterStartMonth}>
+                    <SelectTrigger><SelectValue placeholder="Mês Inicial" /></SelectTrigger>
+                    <SelectContent>
+                        {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                 <Select onValueChange={setFilterEndMonth} value={filterEndMonth}>
+                    <SelectTrigger><SelectValue placeholder="Mês Final" /></SelectTrigger>
+                    <SelectContent>
+                        {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"
               options={occurrenceTypes.map(t => ({ value: t, label: t }))}
@@ -276,7 +298,7 @@ export function OccurrenceReport() {
               placeholder="Filtrar por Nome"
               value={filterName}
               onChange={(e) => setFilterName(e.target.value)}
-              className="md:col-span-2 lg:col-span-2"
+              className="lg:col-span-2"
             />
             
             <Button onClick={clearFilters} variant="outline" className="w-full">
