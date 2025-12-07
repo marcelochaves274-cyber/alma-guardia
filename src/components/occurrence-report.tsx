@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
