@@ -47,7 +47,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Occurrence {
   id: string;
-  occurrenceDate: Date; // Changed to Date object
+  occurrenceDate: Date;
   occurrenceType: string;
   occurrenceLocation: string;
   involvedPersonName: string;
@@ -181,7 +181,7 @@ export function OccurrenceReport() {
     setFilterAnalysis('');
   }
 
-  const handleDelete = async (occurrenceId: string, occurrenceName: string, occurrenceDate: Date) => {
+  const handleDelete = async (occurrenceId: string) => {
     if (!firestore || !user) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.'});
       return;
@@ -205,6 +205,12 @@ export function OccurrenceReport() {
     } finally {
       setIsDeleting(null);
     }
+  };
+
+  const handleEdit = (occurrence: Occurrence) => {
+    // A proper implementation would open a modal with a form.
+    // For now, we'll just show an alert.
+    alert(`Funcionalidade de edição para a ocorrência de "${occurrence.involvedPersonName}" em ${format(occurrence.occurrenceDate, 'dd/MM/yyyy')} será implementada a seguir.`);
   };
 
   const renderSkeletons = () => (
@@ -311,7 +317,7 @@ export function OccurrenceReport() {
               ) : filteredOccurrences.length > 0 ? (
                 filteredOccurrences.map((occ) => (
                   <TableRow key={occ.id}>
-                    <TableCell>{occ.occurrenceDate ? format(occ.occurrenceDate, 'dd/MM/yyyy') : 'N/A'}</TableCell>
+                    <TableCell>{occ.occurrenceDate ? format(occ.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
                     <TableCell>{occ.occurrenceType}</TableCell>
                     <TableCell>{occ.occurrenceLocation}</TableCell>
                     <TableCell>{occ.involvedPersonName}</TableCell>
@@ -323,7 +329,7 @@ export function OccurrenceReport() {
                       ) : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
-                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar ocorrência">
+                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar ocorrência" onClick={() => handleEdit(occ)}>
                           <Pencil className="h-4 w-4" />
                        </Button>
                        <AlertDialog>
@@ -342,13 +348,13 @@ export function OccurrenceReport() {
                               <AlertDialogHeader>
                                   <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                  Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro da ocorrência de <span className="font-semibold">{occ.involvedPersonName}</span> do dia <span className="font-semibold">{format(occ.occurrenceDate, 'dd/MM/yyyy')}</span>.
+                                  Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro da ocorrência de <span className="font-semibold">{occ.involvedPersonName}</span> do dia <span className="font-semibold">{occ.occurrenceDate ? format(occ.occurrenceDate, 'dd/MM/yyyy') : ''}</span>.
                                   </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                   <AlertDialogAction 
-                                      onClick={() => handleDelete(occ.id, occ.involvedPersonName, occ.occurrenceDate)}
+                                      onClick={() => handleDelete(occ.id)}
                                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
                                       Sim, excluir
@@ -373,5 +379,3 @@ export function OccurrenceReport() {
     </div>
   );
 }
-
-    
