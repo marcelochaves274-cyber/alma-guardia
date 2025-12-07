@@ -25,6 +25,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from './ui/scroll-area';
 import { MultiSelectFilter } from './multi-select-filter';
+import { cn } from '@/lib/utils';
+
 
 interface Occurrence {
   id: string;
