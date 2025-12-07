@@ -1,14 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permite que um usuário leia e escreva em seus próprios documentos de ocorrência.
-    match /sgs_genius/{userId}/chat_messages/{docId} {
+    match /sgs_genius/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Permite que um usuário leia e escreva em seus próprios documentos de configuração.
-    match /sgs_genius/{userId}/settings/{settingDocId} {
-       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

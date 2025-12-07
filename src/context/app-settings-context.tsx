@@ -196,17 +196,21 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch((error) => {
-        if (error.code !== 'permission-denied') {
-            console.error('Error fetching app settings:', error);
-            toast({
-                variant: 'destructive',
-                title: 'Erro ao carregar configurações',
-                description: 'Não foi possível buscar suas configurações salvas.',
-            });
+        if (error.code === 'permission-denied') {
+          applyTheme('musgo');
+          setAppNameState('');
+          setLogoUrl(null);
+        } else {
+          console.error('Error fetching app settings:', error);
+          toast({
+              variant: 'destructive',
+              title: 'Erro ao carregar configurações',
+              description: 'Não foi possível buscar suas configurações salvas.',
+          });
+          applyTheme('musgo');
+          setAppNameState('');
+          setLogoUrl(null);
         }
-        applyTheme('musgo');
-        setAppNameState('');
-        setLogoUrl(null);
       })
       .finally(() => {
         if (isMounted) {
@@ -263,7 +267,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     }
     setIsSavingLogo(true);
     try {
-      await setDoc(settingsDocRef, { logoUrl }, { merge: true });
+      await setDoc(settingsDocRef, { logoUrl: logoUrl }, { merge: true });
       toast({ title: 'Sucesso!', description: 'A logo foi salva.' });
     } catch (error: any) {
       console.error('Error saving logo:', error);
