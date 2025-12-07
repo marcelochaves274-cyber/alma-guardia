@@ -2,25 +2,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Matches any document in the 'sgs_genius' root collection.
-    // This rule is generally too broad and should be locked down.
-    match /sgs_genius/{userId} {
-       allow read, write: if isSignedIn() && request.auth.uid == userId;
-    }
-
-    // Matches documents in the 'settings' subcollection for a specific user.
-    // This is where appDetails, locations, etc., are stored.
-    match /sgs_genius/{userId}/settings/{docId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
-    }
-
-    // Matches documents in the 'chat_messages' (occurrences) subcollection.
-    match /sgs_genius/{userId}/chat_messages/{messageId} {
-       allow read, write: if isSignedIn() && request.auth.uid == userId;
+    // Permite que um usuário leia e escreva apenas em seus próprios documentos.
+    match /sgs_genius/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
