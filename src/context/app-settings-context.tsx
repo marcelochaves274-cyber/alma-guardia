@@ -168,14 +168,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
-
-    if (isUserLoading) {
-      return;
-    }
+    if (isUserLoading) return;
 
     if (!user || !firestore) {
       setIsLoading(false);
-      applyTheme('musgo'); // Apply default theme if no user/firestore
+      applyTheme('musgo'); // Apply default theme if no user
       return;
     }
 
@@ -190,9 +187,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             applyTheme(data.theme || 'musgo');
             setLogoUrl(data.logoUrl || null);
           } else {
-             // This is the expected case for a new user.
-             // We apply default settings without showing any error.
-             console.log("No settings document found. Applying default settings for a new user.");
+             // This is the expected case for a new user. Apply defaults.
              applyTheme('musgo');
              setAppNameState('');
              setLogoUrl(null);
@@ -201,14 +196,22 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       })
       .catch((error) => {
         if (isMounted) {
-          // This will now only catch actual errors, like permission denied,
-          // not "document not found".
-          console.error('Error fetching app settings:', error);
-          toast({
-              variant: "destructive",
-              title: "Erro ao Carregar Configurações",
-              description: `Não foi possível carregar suas configurações. Causa: ${error.message}`
-          })
+            // This is the CRITICAL change. If we get a permission error, we assume it's a new user
+            // and the document doesn't exist yet, which is fine. We just apply defaults and continue.
+            if (error.code === 'permission-denied' || error.message.includes('insufficient permissions')) {
+                console.warn("Permission denied on initial settings load. Assuming new user and applying defaults.");
+                applyTheme('musgo');
+                setAppNameState('');
+                setLogoUrl(null);
+            } else {
+                // For any other error, we show the toast.
+                console.error('Error fetching app settings:', error);
+                toast({
+                    variant: "destructive",
+                    title: "Erro ao Carregar Configurações",
+                    description: `Não foi possível carregar suas configurações. Causa: ${error.message}`
+                });
+            }
         }
       })
       .finally(() => {
@@ -217,9 +220,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         }
       });
       
-    return () => {
-      isMounted = false;
-    }
+    return () => { isMounted = false; }
 
   }, [firestore, user, isUserLoading, toast, applyTheme]);
   
