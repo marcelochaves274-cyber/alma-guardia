@@ -22,17 +22,19 @@ import { getAuth, signOut } from 'firebase/auth';
 import { useFirebaseApp, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { usePage } from '@/context/page-context';
 
+interface AppSidebarProps {
+  activePage: string;
+  setActivePage: (page: string) => void;
+}
 
-export function AppSidebar() {
+export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   const { state } = useSidebar();
   const { appName, logoUrl, isLoading } = useAppSettings();
   const { user } = useUser();
   const firebaseApp = useFirebaseApp();
   const router = useRouter();
   const { toast } = useToast();
-  const { activePage, setActivePage } = usePage();
 
   const [openSubMenu, setOpenSubMenu] = useState<string | null>('reminders');
 

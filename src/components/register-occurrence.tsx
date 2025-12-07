@@ -36,13 +36,15 @@ import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp 
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
-import { usePage } from '@/context/page-context';
-
 
 type Marker = { x: number; y: number } | null;
 
-export function RegisterOccurrence() {
-  const { occurrenceToEdit, setActivePage } = usePage();
+interface RegisterOccurrenceProps {
+  occurrenceToEdit: any | null;
+  setPage: (page: string) => void;
+}
+
+export function RegisterOccurrence({ occurrenceToEdit, setPage }: RegisterOccurrenceProps) {
   const isEditing = !!occurrenceToEdit;
 
   // Form states
@@ -79,7 +81,8 @@ export function RegisterOccurrence() {
   // Populate form if we are editing
   useEffect(() => {
     if (isEditing && occurrenceToEdit) {
-      setOccurrenceDate(occurrenceToEdit.occurrenceDate instanceof Timestamp ? occurrenceToEdit.occurrenceDate.toDate() : occurrenceToEdit.occurrenceDate);
+      const date = occurrenceToEdit.occurrenceDate;
+      setOccurrenceDate(date instanceof Timestamp ? date.toDate() : date);
       setOccurrenceLocation(occurrenceToEdit.occurrenceLocation || '');
       setOccurrenceType(occurrenceToEdit.occurrenceType || '');
       setAgeGroup(occurrenceToEdit.ageGroup || '');
@@ -219,14 +222,14 @@ export function RegisterOccurrence() {
     };
 
     try {
-      if (isEditing) {
+      if (isEditing && occurrenceToEdit) {
         const docRef = doc(firestore, 'sgs_genius', user.uid, 'chat_messages', occurrenceToEdit.id);
         await updateDoc(docRef, {
           ...occurrenceData,
           updatedAt: serverTimestamp()
         });
         toast({ title: 'Sucesso!', description: 'Ocorrência atualizada com sucesso.' });
-        setActivePage('occurrence-report');
+        setPage('occurrence-report');
       } else {
         const occurrencesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'chat_messages');
         await addDoc(occurrencesCollectionRef, {
@@ -281,7 +284,7 @@ export function RegisterOccurrence() {
                     mode="single"
                     selected={occurrenceDate}
                     onSelect={(date) => {
-                        setOccurrenceDate(date);
+                        if(date) setOccurrenceDate(date);
                         setIsCalendarOpen(false);
                     }}
                     locale={ptBR}
@@ -420,7 +423,7 @@ export function RegisterOccurrence() {
                       <Label htmlFor="media" className="font-bold text-orange-500">Média</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="baixa" id="baixa" id="baixa" className="border-yellow-500 text-yellow-500 focus:ring-yellow-500" />
+                      <RadioGroupItem value="baixa" id="baixa" className="border-yellow-500 text-yellow-500 focus:ring-yellow-500" />
                       <Label htmlFor="baixa" className="font-bold text-yellow-500">Baixa</Label>
                   </div>
               </RadioGroup>
@@ -477,7 +480,7 @@ export function RegisterOccurrence() {
                   </>
                 ) : (
                   <p className="text-muted-foreground text-center p-4">
-                    Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
+                    Nenhum mapa foi carregado. <br />Vá para "Configurações" > "Gerenciar Mapa" para fazer o upload.
                   </p>
                 )}
               </div>
@@ -490,7 +493,7 @@ export function RegisterOccurrence() {
             {isEditing ? 'Salvar Alterações' : 'Salvar Ocorrência'}
           </Button>
            {isEditing && (
-            <Button variant="outline" className="w-full" onClick={() => setActivePage('occurrence-report')}>
+            <Button variant="outline" className="w-full" onClick={() => setPage('occurrence-report')}>
               Cancelar Edição
             </Button>
           )}

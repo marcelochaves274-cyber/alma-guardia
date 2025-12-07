@@ -39,7 +39,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { MultiSelectFilter } from './multi-select-filter';
-import { usePage } from '@/context/page-context';
 
 interface Occurrence {
   id: string;
@@ -49,6 +48,10 @@ interface Occurrence {
   involvedPersonName: string;
   analysis: 'alta' | 'media' | 'baixa';
   description: string;
+}
+
+interface OccurrenceReportProps {
+  onEdit: (occurrence: Occurrence) => void;
 }
 
 const analysisMapping: Record<string, { label: string, className: string }> = {
@@ -74,11 +77,10 @@ const monthOptions = [
     { value: '11', label: 'Dezembro' },
 ];
 
-export function OccurrenceReport() {
+export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-  const { setActivePage, setOccurrenceToEdit } = usePage();
   
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -217,8 +219,7 @@ export function OccurrenceReport() {
   };
 
   const handleEdit = (occurrence: Occurrence) => {
-    setOccurrenceToEdit(occurrence);
-    setActivePage('register-occurrence');
+    onEdit(occurrence);
   };
   
   const handleMonthsChange = useCallback((selected: string[]) => {

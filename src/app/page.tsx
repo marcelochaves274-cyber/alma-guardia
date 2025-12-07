@@ -9,19 +9,32 @@ import { ManageMap } from '@/components/manage-map';
 import { OccurrenceReport } from '@/components/occurrence-report';
 import { MapReport } from '@/components/map-report';
 import AppLayout from './app-layout';
-import { usePage } from '@/context/page-context';
+import { useState } from 'react';
 
 export default function Home() {
-  const { activePage } = usePage();
+  const [activePage, setActivePage] = useState('reminders');
+  const [occurrenceToEdit, setOccurrenceToEdit] = useState<any | null>(null);
+
+  const handlePageChange = (page: string) => {
+    if (page !== 'register-occurrence') {
+      setOccurrenceToEdit(null);
+    }
+    setActivePage(page);
+  };
+
+  const handleEditOccurrence = (occurrence: any) => {
+    setOccurrenceToEdit(occurrence);
+    setActivePage('register-occurrence');
+  }
 
   const renderContent = () => {
     switch (activePage) {
       case 'general-settings':
         return <GeneralSettings />;
       case 'register-occurrence':
-        return <RegisterOccurrence />;
+        return <RegisterOccurrence occurrenceToEdit={occurrenceToEdit} setPage={handlePageChange} />;
       case 'occurrence-report':
-        return <OccurrenceReport />;
+        return <OccurrenceReport onEdit={handleEditOccurrence} />;
       case 'map-report':
         return <MapReport />;
       case 'manage-occurrences':
@@ -46,7 +59,7 @@ export default function Home() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout activePage={activePage} setActivePage={handlePageChange}>
       <div className="w-full space-y-6">
         {renderContent()}
       </div>

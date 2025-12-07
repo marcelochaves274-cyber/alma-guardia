@@ -9,11 +9,9 @@ import {
 } from '@/components/ui/sidebar';
 import { AppSidebar } from './app-sidebar';
 import { useUser } from '@/firebase';
-import { redirect } from 'next/navigation';
-import { useAppSettings } from '@/context/app-settings-context';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
+import { useAppSettings } from '@/context/app-settings-context';
 
 function Loader2(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -34,7 +32,13 @@ function Loader2(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+interface AppLayoutProps {
+  children: ReactNode;
+  activePage: string;
+  setActivePage: (page: string) => void;
+}
+
+export default function AppLayout({ children, activePage, setActivePage }: AppLayoutProps) {
   const { user, isLoading: isAuthLoading } = useUser();
   const { appName, logoUrl, isLoading: isSettingsLoading } = useAppSettings();
   const router = useRouter();
@@ -58,7 +62,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <Sidebar>
-        <AppSidebar />
+        <AppSidebar activePage={activePage} setActivePage={setActivePage} />
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col h-screen">
