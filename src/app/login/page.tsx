@@ -55,7 +55,6 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
   const getFriendlyErrorMessage = (errorCode: string) => {
-    console.error("Firebase Auth Error Code:", errorCode); // Log para depuração
     switch (errorCode) {
       case 'auth/email-already-in-use':
         return 'Este e-mail já está em uso. Por favor, tente fazer login ou redefinir sua senha.';

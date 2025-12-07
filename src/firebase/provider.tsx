@@ -156,14 +156,20 @@ export const useFirebaseApp = (): FirebaseApp => {
 
 type MemoFirebase <T> = T & {__memo?: boolean};
 
-export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
-  const memoized = useMemo(factory, deps);
-  
-  if(typeof memoized !== 'object' || memoized === null) return memoized;
-  (memoized as MemoFirebase<T>).__memo = true;
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
+  // The 'as T' cast is used here because while we add a private '__memo' property,
+  // the external type signature should remain clean and unmodified for the consumer.
+  const memoized = useMemo(() => {
+    const value = factory();
+    if (typeof value === 'object' && value !== null) {
+      (value as MemoFirebase<T>).__memo = true;
+    }
+    return value;
+  }, deps);
   
   return memoized;
 }
+
 
 /**
  * Hook specifically for accessing the authenticated user's state.
