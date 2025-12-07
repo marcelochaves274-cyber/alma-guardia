@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { setActivePage, setOccurrenceToEdit } from '@/app/page';
 
 interface Occurrence {
   id: string;
@@ -209,7 +210,8 @@ export function OccurrenceReport() {
   };
 
   const handleEdit = (occurrence: Occurrence) => {
-    alert(`Funcionalidade de edição para a ocorrência de "${occurrence.involvedPersonName}" em ${format(occurrence.occurrenceDate, 'dd/MM/yyyy')} será implementada a seguir.`);
+    setOccurrenceToEdit(occurrence);
+    setActivePage('register-occurrence');
   };
 
   const renderSkeletons = () => (
@@ -378,5 +380,3 @@ export function OccurrenceReport() {
     </div>
   );
 }
-
-    

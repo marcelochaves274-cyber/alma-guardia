@@ -14,19 +14,32 @@ import AppLayout from './app-layout';
 // solution like React Context, Redux, or Zustand.
 export let activePage = 'reminders';
 export let setActivePage: (page: string) => void;
+export let occurrenceToEdit: any | null = null;
+export let setOccurrenceToEdit: (occurrence: any | null) => void;
 
 
 export default function Home() {
   const [page, setPage] = useState('reminders');
+  const [editingOccurrence, setEditingOccurrence] = useState<any | null>(null);
+
   activePage = page;
-  setActivePage = setPage;
+  setActivePage = (newPage) => {
+    // If we're navigating away from the edit page, clear the editing state
+    if (newPage !== 'register-occurrence') {
+      setEditingOccurrence(null);
+    }
+    setPage(newPage);
+  };
+  
+  occurrenceToEdit = editingOccurrence;
+  setOccurrenceToEdit = setEditingOccurrence;
 
   const renderContent = () => {
     switch (activePage) {
       case 'general-settings':
         return <GeneralSettings />;
       case 'register-occurrence':
-        return <RegisterOccurrence />;
+        return <RegisterOccurrence occurrenceToEdit={editingOccurrence} />;
       case 'occurrence-report':
         return <OccurrenceReport />;
       case 'manage-occurrences':

@@ -32,40 +32,71 @@ import { Calendar as CalendarIcon, Loader2, MapPin, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
+import { setActivePage } from '@/app/page';
+
 
 type Marker = { x: number; y: number } | null;
 
-export function RegisterOccurrence() {
-  const [occurrenceDate, setOccurrenceDate] = useState<Date>();
+interface RegisterOccurrenceProps {
+  occurrenceToEdit?: any | null;
+}
+
+export function RegisterOccurrence({ occurrenceToEdit }: RegisterOccurrenceProps) {
+  const isEditing = !!occurrenceToEdit;
+
+  // Form states
+  const [occurrenceDate, setOccurrenceDate] = useState<Date | undefined>();
+  const [occurrenceLocation, setOccurrenceLocation] = useState('');
+  const [occurrenceType, setOccurrenceType] = useState('');
+  const [ageGroup, setAgeGroup] = useState('');
+  const [analysis, setAnalysis] = useState('');
+  const [description, setDescription] = useState('');
+  const [involvedPersonName, setInvolvedPersonName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [phone, setPhone] = useState('');
+  const [marker, setMarker] = useState<Marker>(null);
+
+  // UI/Data loading states
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
-
   const [mapUrl, setMapUrl] = useState<string | null>(null);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
-  const [marker, setMarker] = useState<Marker>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
   
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [birthDate, setBirthDate] = useState('');
-  
-  // States for form fields
-  const [occurrenceLocation, setOccurrenceLocation] = useState('');
-  const [occurrenceType, setOccurrenceType] = useState('');
-  const [ageGroup, setAgeGroup] = useState('');
-  const [analysis, setAnalysis] = useState('');
-  
-  const formRef = useRef<HTMLFormElement>(null);
-
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+
+  // Populate form if we are editing
+  useEffect(() => {
+    if (isEditing && occurrenceToEdit) {
+      setOccurrenceDate(occurrenceToEdit.occurrenceDate instanceof Timestamp ? occurrenceToEdit.occurrenceDate.toDate() : occurrenceToEdit.occurrenceDate);
+      setOccurrenceLocation(occurrenceToEdit.occurrenceLocation || '');
+      setOccurrenceType(occurrenceToEdit.occurrenceType || '');
+      setAgeGroup(occurrenceToEdit.ageGroup || '');
+      setAnalysis(occurrenceToEdit.analysis || '');
+      setDescription(occurrenceToEdit.description || '');
+      setInvolvedPersonName(occurrenceToEdit.involvedPersonName || '');
+      setBirthDate(occurrenceToEdit.birthDate || '');
+      setCpf(occurrenceToEdit.cpf || '');
+      setCity(occurrenceToEdit.city || '');
+      setState(occurrenceToEdit.state || '');
+      setPhone(occurrenceToEdit.phone || '');
+      setMarker(occurrenceToEdit.mapMarker || null);
+    }
+  }, [isEditing, occurrenceToEdit]);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -139,10 +170,26 @@ export function RegisterOccurrence() {
     }
     setBirthDate(value.slice(0, 10)); // Limit to 10 chars (dd/mm/yyyy)
   };
+  
+  const resetForm = () => {
+    setOccurrenceDate(undefined);
+    setOccurrenceLocation('');
+    setOccurrenceType('');
+    setAgeGroup('');
+    setAnalysis('');
+    setDescription('');
+    setInvolvedPersonName('');
+    setBirthDate('');
+    setCpf('');
+    setCity('');
+    setState('');
+    setPhone('');
+    setMarker(null);
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!firestore || !user || !formRef.current) {
+    if (!firestore || !user) {
         toast({ variant: 'destructive', title: 'Erro', description: 'Você não está autenticado.' });
         return;
     }
@@ -150,18 +197,13 @@ export function RegisterOccurrence() {
         toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a data da ocorrência.' });
         return;
     }
+    if (!analysis) {
+        toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a análise da ocorrência.' });
+        return;
+    }
 
     setIsSubmitting(true);
     
-    // Manual data collection
-    const description = (formRef.current.elements.namedItem('description') as HTMLTextAreaElement).value;
-    const involvedPersonName = (formRef.current.elements.namedItem('involvedPersonName') as HTMLInputElement).value;
-    const cpf = (formRef.current.elements.namedItem('cpf') as HTMLInputElement).value;
-    const city = (formRef.current.elements.namedItem('city') as HTMLInputElement).value;
-    const state = (formRef.current.elements.namedItem('state') as HTMLInputElement).value;
-    const phone = (formRef.current.elements.namedItem('phone') as HTMLInputElement).value;
-
-
     const occurrenceData = {
         occurrenceDate: Timestamp.fromDate(occurrenceDate),
         occurrenceLocation,
@@ -169,36 +211,38 @@ export function RegisterOccurrence() {
         ageGroup,
         description,
         involvedPersonName,
-        birthDate, // from state
+        birthDate,
         cpf,
         city,
         state,
         phone,
-        analysis, // from state
+        analysis,
         mapMarker: marker,
         userId: user.uid,
-        createdAt: serverTimestamp()
     };
 
     try {
+      if (isEditing) {
+        const docRef = doc(firestore, 'users', user.uid, 'occurrences', occurrenceToEdit.id);
+        await updateDoc(docRef, {
+          ...occurrenceData,
+          updatedAt: serverTimestamp()
+        });
+        toast({ title: 'Sucesso!', description: 'Ocorrência atualizada com sucesso.' });
+        setActivePage('occurrence-report');
+      } else {
         const occurrencesCollectionRef = collection(firestore, 'users', user.uid, 'occurrences');
-        await addDoc(occurrencesCollectionRef, occurrenceData);
-        
+        await addDoc(occurrencesCollectionRef, {
+            ...occurrenceData,
+            createdAt: serverTimestamp()
+        });
         toast({ title: 'Sucesso!', description: 'Ocorrência registrada com sucesso.' });
-        
-        // Reset form state after successful submission
-        formRef.current.reset();
-        setOccurrenceDate(undefined);
-        setMarker(null);
-        setBirthDate('');
-        setOccurrenceLocation('');
-        setOccurrenceType('');
-        setAgeGroup('');
-        setAnalysis('');
+        resetForm();
+      }
 
     } catch (error) {
         console.error("Error saving occurrence:", error);
-        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível registrar a ocorrência.'});
+        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar a ocorrência.'});
     } finally {
         setIsSubmitting(false);
     }
@@ -207,11 +251,11 @@ export function RegisterOccurrence() {
 
   return (
     <Card className="w-full">
-      <form onSubmit={handleSubmit} ref={formRef}>
+      <form onSubmit={handleSubmit}>
         <CardHeader>
-          <CardTitle>Registro de Ocorrência</CardTitle>
+          <CardTitle>{isEditing ? 'Editar Ocorrência' : 'Registro de Ocorrência'}</CardTitle>
           <CardDescription>
-            Preencha os campos abaixo para registrar um novo acidente ou incidente.
+            {isEditing ? 'Altere os dados da ocorrência abaixo.' : 'Preencha os campos abaixo para registrar um novo acidente ou incidente.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -322,6 +366,8 @@ export function RegisterOccurrence() {
               placeholder="Descreva detalhadamente o que aconteceu."
               className="min-h-[100px]"
               required
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </div>
 
@@ -333,7 +379,7 @@ export function RegisterOccurrence() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="space-y-2">
                   <Label htmlFor="full-name">Nome Completo</Label>
-                  <Input name="involvedPersonName" id="full-name" placeholder="Nome completo do envolvido" required />
+                  <Input name="involvedPersonName" id="full-name" placeholder="Nome completo do envolvido" required value={involvedPersonName} onChange={(e) => setInvolvedPersonName(e.target.value)} />
               </div>
               <div className="space-y-2">
                   <Label htmlFor="birth-date">Data de Nascimento</Label>
@@ -348,19 +394,19 @@ export function RegisterOccurrence() {
               </div>
               <div className="space-y-2">
                   <Label htmlFor="cpf">CPF</Label>
-                  <Input name="cpf" id="cpf" placeholder="000.000.000-00" />
+                  <Input name="cpf" id="cpf" placeholder="000.000.000-00" value={cpf} onChange={(e) => setCpf(e.target.value)} />
               </div>
               <div className="space-y-2">
                   <Label htmlFor="city">Cidade</Label>
-                  <Input name="city" id="city" placeholder="Cidade de residência" />
+                  <Input name="city" id="city" placeholder="Cidade de residência" value={city} onChange={(e) => setCity(e.target.value)} />
               </div>
               <div className="space-y-2">
                   <Label htmlFor="state">Estado</Label>
-                  <Input name="state" id="state" placeholder="UF" />
+                  <Input name="state" id="state" placeholder="UF" value={state} onChange={(e) => setState(e.target.value)} />
               </div>
               <div className="space-y-2">
                   <Label htmlFor="phone">Fone</Label>
-                  <Input name="phone" id="phone" placeholder="(00) 00000-0000" />
+                  <Input name="phone" id="phone" placeholder="(00) 00000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
           </div>
 
@@ -441,11 +487,16 @@ export function RegisterOccurrence() {
            </div>
 
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-2">
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Salvar Ocorrência
+            {isEditing ? 'Salvar Alterações' : 'Salvar Ocorrência'}
           </Button>
+           {isEditing && (
+            <Button variant="outline" className="w-full" onClick={() => setActivePage('occurrence-report')}>
+              Cancelar Edição
+            </Button>
+          )}
         </CardFooter>
       </form>
     </Card>
