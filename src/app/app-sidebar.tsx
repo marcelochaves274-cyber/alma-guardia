@@ -154,7 +154,6 @@ export function AppSidebar() {
                     isActive={activePage === 'map-report'}
                     onClick={() => handlePageChange('map-report')}
                   >
-                     <Map className="mr-2 h-4 w-4" />
                     Relatório de Mapa
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
