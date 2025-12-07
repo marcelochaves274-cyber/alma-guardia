@@ -1,6 +1,9 @@
 'use client';
 import { useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/firebase';
+import { AppSettingsProvider, useAppSettings } from '@/context/app-settings-context';
 
 import { GeneralSettings } from '@/components/general-settings';
 import { Chat } from '@/components/chat';
@@ -13,7 +16,6 @@ import { OccurrenceReport } from '@/components/occurrence-report';
 import { MapReport } from '@/components/map-report';
 import { AppSidebar } from '@/app/app-sidebar';
 
-import { useAppSettings, AppSettingsProvider } from '@/context/app-settings-context';
 import {
   Sidebar,
   SidebarInset,
@@ -21,11 +23,44 @@ import {
   SidebarProvider
 } from '@/components/ui/sidebar';
 
-function AppLayoutContent() {
+function Loader() {
+  return (
+    <div className="flex h-screen w-screen items-center justify-center bg-background">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-12 w-12 animate-spin text-primary"
+      >
+        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+      </svg>
+    </div>
+  );
+}
+
+function MainAppLayout() {
+  const { user, isLoading } = useUser();
+  const router = useRouter();
+
   const [activePage, setActivePage] = useState('reminders');
   const [occurrenceToEdit, setOccurrenceToEdit] = useState<any | null>(null);
   const { appName, logoUrl } = useAppSettings();
 
+  if (isLoading) {
+    return <Loader />;
+  }
+
+  if (!user) {
+    router.push('/login');
+    return <Loader />;
+  }
+  
   const handlePageChange = (page: string) => {
     if (page !== 'register-occurrence') {
       setOccurrenceToEdit(null);
@@ -116,7 +151,7 @@ function AppLayoutContent() {
 export function AppLayout() {
   return (
     <AppSettingsProvider>
-      <AppLayoutContent />
+      <MainAppLayout />
     </AppSettingsProvider>
-  );
+  )
 }
