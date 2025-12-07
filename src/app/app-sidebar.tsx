@@ -12,7 +12,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, MapPin, Map } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, Map } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -65,6 +65,7 @@ export function AppSidebar() {
     const subMenuParents: Record<string, string> = {
       'register-occurrence': 'acidentes',
       'occurrence-report': 'acidentes',
+      'map-report': 'acidentes',
       'general-settings': 'settings',
       'manage-occurrences': 'settings',
       'manage-locations': 'settings',
@@ -146,6 +147,15 @@ export function AppSidebar() {
                     onClick={() => handlePageChange('occurrence-report')}
                   >
                     Relatório de Ocorrência
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'map-report'}
+                    onClick={() => handlePageChange('map-report')}
+                  >
+                     <Map className="mr-2 h-4 w-4" />
+                    Relatório de Mapa
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
