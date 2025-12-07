@@ -16,7 +16,6 @@ const themes = [
   {
     name: 'musgo',
     displayName: 'Musgo',
-    // Base HSL values
     background: '85 30% 20%',
     foreground: '85 10% 95%',
     card: '85 30% 25%',
@@ -154,39 +153,32 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const applyTheme = useCallback((themeName: string | null) => {
     const theme = themes.find((t) => t.name === themeName) || themes[0];
     setSelectedThemeState(theme);
-    const root = document.documentElement;
-    if (theme) {
-        root.style.setProperty('--background', theme.background);
-        root.style.setProperty('--foreground', theme.foreground);
-        root.style.setProperty('--card', theme.card);
-        root.style.setProperty('--popover', theme.popover);
-        root.style.setProperty('--primary', theme.primary);
-        root.style.setProperty('--secondary', theme.secondary);
-        root.style.setProperty('--muted', theme.muted);
-        root.style.setProperty('--accent', theme.accent);
-        root.style.setProperty('--border', theme.border);
-        root.style.setProperty('--input', theme.input);
-        root.style.setProperty('--ring', theme.ring);
-        root.style.setProperty('--sidebar-background', theme.sidebar);
+    if (typeof window !== 'undefined') {
+      const root = document.documentElement;
+      root.style.setProperty('--background', theme.background);
+      root.style.setProperty('--foreground', theme.foreground);
+      root.style.setProperty('--card', theme.card);
+      root.style.setProperty('--popover', theme.popover);
+      root.style.setProperty('--primary', theme.primary);
+      root.style.setProperty('--secondary', theme.secondary);
+      root.style.setProperty('--muted', theme.muted);
+      root.style.setProperty('--accent', theme.accent);
+      root.style.setProperty('--border', theme.border);
+      root.style.setProperty('--input', theme.input);
+      root.style.setProperty('--ring', theme.ring);
+      root.style.setProperty('--sidebar-background', theme.sidebar);
     }
   }, []);
 
   useEffect(() => {
     let isMounted = true;
-    if (isUserLoading) return;
-
-    if (!user || !firestore) {
-      setIsLoading(false);
-      applyTheme('musgo'); // Apply default theme if no user
+    if (isUserLoading || !user || !firestore) {
+      if (!isUserLoading) setIsLoading(false);
       return;
     }
 
     const settingsDocRef = getSettingsDocRef();
-    if (!settingsDocRef) {
-        setIsLoading(false);
-        applyTheme('musgo');
-        return;
-    }
+    if (!settingsDocRef) return;
     
     getDoc(settingsDocRef)
       .then((docSnap) => {
@@ -197,6 +189,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             applyTheme(data.theme || 'musgo');
             setLogoUrl(data.logoUrl || null);
           } else {
+             // This is a new user or settings haven't been saved. This is normal.
              applyTheme('musgo');
              setAppNameState('');
              setLogoUrl(null);
@@ -204,12 +197,21 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch((error) => {
-        if (isMounted) {
-            console.warn('Could not fetch app settings (this is normal on first login):', error.message);
-            applyTheme('musgo');
-            setAppNameState('');
-            setLogoUrl(null);
+        // Ignore "permission-denied" on initial load, as it just means the doc doesn't exist yet.
+        if (error.code !== 'permission-denied') {
+            console.error('Error fetching app settings:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao carregar configurações',
+                description: 'Não foi possível buscar suas configurações salvas.',
+            });
+        } else {
+            console.log("Permission denied on initial fetch, assuming new user.");
         }
+        // Apply defaults even if there's an error
+        applyTheme('musgo');
+        setAppNameState('');
+        setLogoUrl(null);
       })
       .finally(() => {
         if (isMounted) {
@@ -224,45 +226,31 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const setAppName = async (name: string) => {
     const settingsDocRef = getSettingsDocRef();
     if (!settingsDocRef) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro de Autenticação',
-        description: 'Você precisa estar logado para salvar.',
-      });
-      throw new Error('Authentication error');
+      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
+      throw new Error('User not authenticated');
     }
     await setDoc(settingsDocRef, { name }, { merge: true });
     setAppNameState(name);
   };
   
   const setSelectedTheme = (themeName: string) => {
-    applyTheme(themeName);
+    const themeToApply = themes.find(t => t.name === themeName) || themes[0];
+    applyTheme(themeToApply.name);
   }
 
   const saveTheme = async () => {
     const settingsDocRef = getSettingsDocRef();
     if (!settingsDocRef || !selectedTheme) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível salvar o tema. Verifique sua conexão.',
-      });
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível salvar o tema.' });
       return;
     }
     setIsSavingTheme(true);
      try {
       await setDoc(settingsDocRef, { theme: selectedTheme.name }, { merge: true });
-      toast({
-        title: 'Sucesso!',
-        description: 'O tema foi salvo.',
-      });
+      toast({ title: 'Sucesso!', description: 'O tema foi salvo.' });
     } catch (error: any) {
       console.error('Error saving theme:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Salvar Tema',
-        description: `Não foi possível salvar. Erro: ${error.message}`,
-      });
+      toast({ variant: 'destructive', title: 'Erro ao Salvar Tema', description: error.message });
     } finally {
       setIsSavingTheme(false);
     }
@@ -271,35 +259,20 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const saveLogo = async () => {
     const settingsDocRef = getSettingsDocRef();
     if (!settingsDocRef) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro de Autenticação',
-        description: 'Você precisa estar logado para salvar a logo.',
-      });
+      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
       return;
     }
      if (!logoUrl) {
-      toast({
-        variant: 'destructive',
-        title: 'Nenhuma logo selecionada',
-        description: 'Por favor, carregue uma imagem primeiro.',
-      });
+      toast({ variant: 'destructive', title: 'Nenhuma logo', description: 'Carregue uma imagem primeiro.' });
       return;
     }
     setIsSavingLogo(true);
     try {
-      await setDoc(settingsDocRef, { logoUrl: logoUrl }, { merge: true });
-      toast({
-        title: 'Sucesso!',
-        description: 'A logo foi salva.',
-      });
+      await setDoc(settingsDocRef, { logoUrl }, { merge: true });
+      toast({ title: 'Sucesso!', description: 'A logo foi salva.' });
     } catch (error: any) {
       console.error('Error saving logo:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Salvar Logo',
-        description: `Não foi possível salvar. Erro: ${error.message}`,
-      });
+      toast({ variant: 'destructive', title: 'Erro ao Salvar Logo', description: error.message });
     } finally {
       setIsSavingLogo(false);
     }
@@ -308,28 +281,17 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const removeLogo = async () => {
     const settingsDocRef = getSettingsDocRef();
      if (!settingsDocRef) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro de Autenticação',
-        description: 'Você precisa estar logado.',
-      });
+      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
       return;
     }
     setIsSavingLogo(true);
     try {
-      await updateDoc(settingsDocRef, { logoUrl: null });
+      await setDoc(settingsDocRef, { logoUrl: null }, { merge: true });
       setLogoUrl(null);
-      toast({
-        title: 'Logo Removida',
-        description: 'A sua logo foi removida com sucesso.',
-      });
+      toast({ title: 'Logo Removida', description: 'A sua logo foi removida com sucesso.' });
     } catch (error: any) {
       console.error('Error removing logo:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Remover Logo',
-        description: `Não foi possível remover. Erro: ${error.message}`,
-      });
+      toast({ variant: 'destructive', title: 'Erro ao Remover Logo', description: error.message });
     } finally {
       setIsSavingLogo(false);
     }
