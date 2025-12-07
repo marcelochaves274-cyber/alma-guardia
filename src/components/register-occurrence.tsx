@@ -434,7 +434,7 @@ export function RegisterOccurrence() {
                   </>
                 ) : (
                   <p className="text-muted-foreground text-center p-4">
-                    Nenhum mapa foi carregado. <br />Vá para "Configurações" > "Gerenciar Mapa" para fazer o upload.
+                    Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
                   </p>
                 )}
               </div>
@@ -451,5 +451,3 @@ export function RegisterOccurrence() {
     </Card>
   );
 }
-
-    
