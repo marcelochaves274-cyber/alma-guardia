@@ -22,12 +22,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <AppSettingsProvider>
-          <FirebaseClientProvider>
+        <FirebaseClientProvider>
+          <AppSettingsProvider>
             {children}
             <Toaster />
-          </FirebaseClientProvider>
-        </AppSettingsProvider>
+          </AppSettingsProvider>
+        </FirebaseClientProvider>
       </body>
     </html>
   );
