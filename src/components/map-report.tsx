@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
@@ -19,9 +18,13 @@ import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
 import { Button } from './ui/button';
-import { Loader2, ChevronDown, MapPin } from 'lucide-react';
+import { Loader2, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { Badge } from './ui/badge';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { ScrollArea } from './ui/scroll-area';
 
 interface Occurrence {
   id: string;
@@ -29,6 +32,12 @@ interface Occurrence {
   occurrenceType: string;
   occurrenceLocation: string;
   mapMarker?: { x: number; y: number };
+}
+
+interface Cluster {
+  occurrences: Occurrence[];
+  x: number;
+  y: number;
 }
 
 const months = [
@@ -78,8 +87,9 @@ function MultiSelectFilter({ placeholder, options, selected, onChange, disabled 
           <span>{getButtonText()}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
-        <div className="max-h-60 overflow-auto p-1">
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+        <ScrollArea className="max-h-60">
+        <div className="p-1">
           {options.map((option) => (
             <div
               key={option.value}
@@ -100,6 +110,7 @@ function MultiSelectFilter({ placeholder, options, selected, onChange, disabled 
             </div>
           ))}
         </div>
+        </ScrollArea>
       </PopoverContent>
     </Popover>
   );
@@ -225,6 +236,39 @@ export function MapReport() {
     });
   }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations]);
 
+  const clusters = useMemo(() => {
+    const points = filteredOccurrences.filter(occ => occ.mapMarker);
+    const clusters: Cluster[] = [];
+    const distanceThreshold = 5; // 5% of map dimensions
+
+    points.forEach(point => {
+        let foundCluster = false;
+        for (const cluster of clusters) {
+            const distance = Math.sqrt(
+                Math.pow(cluster.x - (point.mapMarker?.x || 0), 2) +
+                Math.pow(cluster.y - (point.mapMarker?.y || 0), 2)
+            );
+            if (distance < distanceThreshold) {
+                cluster.occurrences.push(point);
+                // Recalculate cluster center (optional, but good for accuracy)
+                cluster.x = cluster.occurrences.reduce((sum, occ) => sum + (occ.mapMarker?.x || 0), 0) / cluster.occurrences.length;
+                cluster.y = cluster.occurrences.reduce((sum, occ) => sum + (occ.mapMarker?.y || 0), 0) / cluster.occurrences.length;
+                foundCluster = true;
+                break;
+            }
+        }
+        if (!foundCluster && point.mapMarker) {
+            clusters.push({
+                occurrences: [point],
+                x: point.mapMarker.x,
+                y: point.mapMarker.y,
+            });
+        }
+    });
+
+    return clusters;
+  }, [filteredOccurrences]);
+
   const clearFilters = () => {
     setFilterYears([]);
     setFilterMonths([]);
@@ -282,7 +326,7 @@ export function MapReport() {
         <CardHeader>
           <CardTitle>Resultados no Mapa</CardTitle>
           <CardDescription>
-            {isLoading ? 'Carregando...' : `Foram encontradas ${filteredOccurrences.length} ocorrências com marcação no mapa.`}
+            {isLoading ? 'Carregando...' : `Foram encontradas ${filteredOccurrences.length} ocorrências com marcação no mapa, agrupadas em ${clusters.length} pontos.`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -299,19 +343,47 @@ export function MapReport() {
                       className="rounded-md"
                       priority
                     />
-                    {filteredOccurrences.map(occ => occ.mapMarker && (
-                      <div
-                        key={occ.id}
-                        className="absolute pointer-events-none"
-                        style={{
-                          left: `${occ.mapMarker.x}%`,
-                          top: `${occ.mapMarker.y}%`,
-                          transform: 'translate(-50%, -100%)',
-                        }}
-                        aria-label="Marcador de ocorrência"
-                      >
-                         <MapPin className="h-8 w-8 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
-                      </div>
+                    {clusters.map((cluster, index) => (
+                        <Popover key={index}>
+                            <PopoverTrigger asChild>
+                                <div
+                                    className="absolute cursor-pointer"
+                                    style={{
+                                    left: `${cluster.x}%`,
+                                    top: `${cluster.y}%`,
+                                    transform: 'translate(-50%, -100%)',
+                                    }}
+                                >
+                                    <MapPin className="h-8 w-8 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
+                                    {cluster.occurrences.length > 1 && (
+                                        <Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0">
+                                            {cluster.occurrences.length}
+                                        </Badge>
+                                    )}
+                                </div>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                                <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <h4 className="font-medium leading-none">{cluster.occurrences.length > 1 ? 'Ocorrências Agrupadas' : 'Detalhes da Ocorrência'}</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        {cluster.occurrences.length} ocorrência(s) neste local.
+                                    </p>
+                                </div>
+                                <ScrollArea className="h-48">
+                                <div className="grid gap-2 pr-4">
+                                    {cluster.occurrences.map(occ => (
+                                        <div key={occ.id} className="text-sm p-2 border rounded-md">
+                                            <p><strong className="font-medium">Data:</strong> {format(occ.occurrenceDate, 'dd/MM/yy HH:mm', { locale: ptBR })}</p>
+                                            <p><strong className="font-medium">Tipo:</strong> {occ.occurrenceType}</p>
+                                            <p><strong className="font-medium">Local:</strong> {occ.occurrenceLocation}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                </ScrollArea>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                     ))}
                   </>
                 ) : (
