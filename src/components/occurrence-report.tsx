@@ -64,13 +64,6 @@ const analysisMapping: Record<string, { label: string, className: string }> = {
     baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
-const months = [
-    { value: '1', label: 'Janeiro' }, { value: '2', label: 'Fevereiro' }, { value: '3', label: 'Março' },
-    { value: '4', label: 'Abril' }, { value: '5', label: 'Maio' }, { value: '6', label: 'Junho' },
-    { value: '7', label: 'Julho' }, { value: '8', label: 'Agosto' }, { value: '9', label: 'Setembro' },
-    { value: '10', label: 'Outubro' }, { value: '11', label: 'Novembro' }, { value: '12', label: 'Dezembro' }
-];
-
 const analysisOptions = Object.entries(analysisMapping).map(([key, { label }]) => ({ value: key, label }));
 
 export function OccurrenceReport() {
@@ -84,8 +77,6 @@ export function OccurrenceReport() {
 
   // Filter states
   const [filterYears, setFilterYears] = useState<string[]>([]);
-  const [filterStartMonth, setFilterStartMonth] = useState<string>('');
-  const [filterEndMonth, setFilterEndMonth] = useState<string>('');
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
   const [filterName, setFilterName] = useState<string>('');
@@ -168,27 +159,19 @@ export function OccurrenceReport() {
     return occurrences.filter(occ => {
       const occDate = occ.occurrenceDate;
       if (!occDate) return false;
-      const occMonth = occDate.getMonth() + 1;
 
       const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
-      
-      const startMonth = filterStartMonth ? parseInt(filterStartMonth, 10) : 1;
-      const endMonth = filterEndMonth ? parseInt(filterEndMonth, 10) : 12;
-      const monthMatch = occMonth >= startMonth && occMonth <= endMonth;
-
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.occurrenceType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.occurrenceLocation);
       const analysisMatch = filterAnalyses.length === 0 || filterAnalyses.includes(occ.analysis);
       const nameMatch = !filterName || occ.involvedPersonName?.toLowerCase().includes(filterName.toLowerCase());
 
-      return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && nameMatch;
+      return yearMatch && typeMatch && locationMatch && analysisMatch && nameMatch;
     });
-  }, [occurrences, filterYears, filterStartMonth, filterEndMonth, filterTypes, filterLocations, filterName, filterAnalyses]);
+  }, [occurrences, filterYears, filterTypes, filterLocations, filterName, filterAnalyses]);
 
   const clearFilters = () => {
     setFilterYears([]);
-    setFilterStartMonth('');
-    setFilterEndMonth('');
     setFilterTypes([]);
     setFilterLocations([]);
     setFilterName('');
@@ -257,21 +240,6 @@ export function OccurrenceReport() {
               onChange={setFilterYears}
               disabled={availableYears.length === 0}
             />
-            
-            <div className="grid grid-cols-2 gap-2">
-                <Select onValueChange={setFilterStartMonth} value={filterStartMonth}>
-                    <SelectTrigger><SelectValue placeholder="Mês Inicial" /></SelectTrigger>
-                    <SelectContent>
-                        {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-                 <Select onValueChange={setFilterEndMonth} value={filterEndMonth}>
-                    <SelectTrigger><SelectValue placeholder="Mês Final" /></SelectTrigger>
-                    <SelectContent>
-                        {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-            </div>
             
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"
