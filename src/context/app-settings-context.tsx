@@ -189,6 +189,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             applyTheme(data.theme || 'musgo');
             setLogoUrl(data.logoUrl || null);
           } else {
+             // This is a new user or settings haven't been saved yet.
+             // Apply default theme and clear other settings without showing an error.
              applyTheme('musgo');
              setAppNameState('');
              setLogoUrl(null);
@@ -197,6 +199,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       })
       .catch((error) => {
         if (error.code === 'permission-denied') {
+          // This can happen on first load if rules are strict.
+          // We gracefully apply defaults.
           applyTheme('musgo');
           setAppNameState('');
           setLogoUrl(null);

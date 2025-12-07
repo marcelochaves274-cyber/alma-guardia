@@ -9,7 +9,7 @@ import {
   type Auth,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { useFirebaseApp, useUser, initializeFirebase } from '@/firebase';
+import { useUser, initializeFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -37,13 +37,11 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function LoginPage() {
-  // Use a inicialização direta para garantir que a configuração mais recente seja usada.
   const { auth: initializedAuth } = initializeFirebase();
   const { user, isLoading: isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
-  const [auth] = useState<Auth | null>(initializedAuth);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -76,7 +74,7 @@ export default function LoginPage() {
   };
 
   const handleEmailAuth = async (authAction: 'login' | 'register') => {
-    if (!auth) {
+    if (!initializedAuth) {
        toast({
         variant: 'destructive',
         title: 'Erro de Configuração',
@@ -87,9 +85,9 @@ export default function LoginPage() {
     setIsEmailAuthLoading(true);
     try {
       if (authAction === 'login') {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(initializedAuth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        await createUserWithEmailAndPassword(initializedAuth, email, password);
       }
       router.push('/');
     } catch (error: any) {
@@ -104,10 +102,10 @@ export default function LoginPage() {
   };
   
   const handlePasswordReset = async () => {
-    if (!auth || !resetEmail) return;
+    if (!initializedAuth || !resetEmail) return;
     setIsEmailAuthLoading(true);
     try {
-      await sendPasswordResetEmail(auth, resetEmail);
+      await sendPasswordResetEmail(initializedAuth, resetEmail);
       toast({
         title: 'E-mail Enviado',
         description: `Um link para redefinição de senha foi enviado para ${resetEmail}.`,
@@ -126,7 +124,7 @@ export default function LoginPage() {
   if (isUserLoading || (!isUserLoading && user)) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
