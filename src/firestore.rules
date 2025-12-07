@@ -4,9 +4,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Regra geral que permite a um usuário autenticado ler e escrever 
-    // em qualquer documento/coleção dentro de seu próprio diretório de usuário.
-    // Ex: /users/{userId}/...
+    // Permite que um usuário autenticado leia e escreva em qualquer documento
+    // ou coleção dentro de seu próprio diretório de usuário.
     match /users/{userId}/{path=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
