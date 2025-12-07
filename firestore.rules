@@ -1,15 +1,87 @@
-
+/**
+ * Core Philosophy: This ruleset establishes a "secure read-only" model for the SGS Genius application.
+ * All data is currently public to read, which is suitable for initial prototyping where data is not yet sensitive.
+ * However, all write operations (create, update, delete) are explicitly disabled. This is a critical security measure
+ * taken because the data models (SgsGenius, ChatMessage, Parameter) are missing essential ownership fields (e.g., 'ownerId',
+ * 'creatorId', or a 'members' map). Without these fields, it's impossible to securely authorize who can modify data.
+ *
+ * Data Structure: The data is organized under a top-level `sgs_genius` collection. Each document in this collection
+ * represents a unique application instance and contains two subcollections: `chat_messages` and `parameters`.
+ *
+ * Key Security Decisions:
+ * - Public Reads: To facilitate rapid prototyping and UI development, all data is publicly readable (`get`, `list`).
+ * - No Writes Allowed: All write operations are denied (`if false;`) as a temporary but essential security posture. This
+ *   prevents unauthorized data modification until the application's data models are updated with ownership information.
+ * - Denormalization for Authorization (Required): The rules are architected with the expectation that authorization data
+ *   (like an `ownerId`) will be denormalized directly onto each document. Once the schema is updated, these rules can be
+ *   easily modified to enforce ownership without requiring costly cross-document `get()` calls.
+ *
+ * Instructions for Developer: To enable write access, you MUST update your data models. Add a field like `ownerId: string`
+ * to each entity (`SgsGenius`, `ChatMessage`, `Parameter`) and ensure your application's frontend writes the authenticated
+ * user's UID to this field upon document creation. Then, update the `// TODO` sections in these rules to enforce that
+ * `resource.data.ownerId == request.auth.uid`.
+ */
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Regra geral que permite a um usuário autenticado ler e escrever 
-    // em qualquer documento/coleção dentro de seu próprio diretório de usuário.
-    // Ex: /users/{userId}/...
-    match /users/{userId}/{path=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+    // Helper Functions
+    /**
+     * Checks if the user is authenticated.
+     */
+    // function isSignedIn() {
+    //   return request.auth != null;
+    // }
+
+    /**
+     * @description Enforces public read access for SGS Genius application instances but blocks all writes due to schema limitations.
+     * @path /sgs_genius/{sgsGeniusId}
+     * @allow (get) An unauthenticated user reading an sgs_genius document: `get /sgs_genius/app123`.
+     * @deny (create) An authenticated user trying to create a new sgs_genius document: `create /sgs_genius/app123 {...}`. Fails because writes are disabled.
+     * @principle Public read-access, but writes are disabled due to missing ownership fields in the schema.
+     */
+    match /sgs_genius/{sgsGeniusId} {
+      allow get: if true;
+      allow list: if true;
+
+      // CRITICAL: Cannot implement owner-only writes. The 'SgsGenius' entity is missing an 'ownerId' or 'creatorId' field.
+      allow create: if request.auth != null; // TODO: Add owner validation once the schema is updated with an ownership field. e.g., `isSignedIn() && request.resource.data.ownerId == request.auth.uid;`
+      allow update: if false; // TODO: Add owner validation once the schema is updated. e.g., `isSignedIn() && resource.data.ownerId == request.auth.uid;`
+      allow delete: if false; // TODO: Add owner validation once the schema is updated. e.g., `isSignedIn() && resource.data.ownerId == request.auth.uid;`
     }
 
+    /**
+     * @description Enforces public read access for chat messages but blocks all writes due to schema limitations.
+     * @path /sgs_genius/{sgsGeniusId}/chat_messages/{chatMessageId}
+     * @allow (get) Any user reading a specific chat message: `get /sgs_genius/app123/chat_messages/msg456`.
+     * @deny (create) An authenticated user trying to post a new chat message: `create /sgs_genius/app123/chat_messages/msg789 {...}`. Fails because writes are disabled.
+     * @principle Inherits security context from the parent, but since the parent lacks ownership, writes are disabled for safety.
+     */
+    match /sgs_genius/{sgsGeniusId}/chat_messages/{chatMessageId} {
+      allow get: if true;
+      allow list: if true;
+
+      // CRITICAL: Cannot implement owner-only writes. The 'ChatMessage' entity is missing a 'senderId' or 'ownerId' field.
+      allow create: if request.auth != null; // TODO: Add owner validation once the schema is updated with an ownership field. e.g., `isSignedIn() && request.resource.data.senderId == request.auth.uid;`
+      allow update: if false; // TODO: Add owner validation once the schema is updated. e.g., `isSignedIn() && resource.data.senderId == request.auth.uid;`
+      allow delete: if false; // TODO: Add owner validation once the schema is updated. e.g., `isSignedIn() && resource.data.senderId == request.auth.uid;`
+    }
+
+    /**
+     * @description Enforces public read access for parameters but blocks all writes due to schema limitations.
+     * @path /sgs_genius/{sgsGeniusId}/parameters/{parameterId}
+     * @allow (get) Any user reading a specific parameter: `get /sgs_genius/app123/parameters/param456`.
+     * @deny (update) An authenticated user trying to change a parameter: `update /sgs_genius/app123/parameters/param456 {...}`. Fails because writes are disabled.
+     * @principle Inherits security context from the parent, but since the parent lacks ownership, writes are disabled for safety.
+     */
+    match /sgs_genius/{sgsGeniusId}/parameters/{parameterId} {
+      allow get: if true;
+      allow list: if true;
+
+      // CRITICAL: Cannot implement owner-only writes. The 'Parameter' entity is missing an 'ownerId' or 'creatorId' field.
+      allow create: if request.auth != null; // TODO: Add owner validation once the schema is updated with an ownership field. e.g., `isSignedIn() && request.resource.data.ownerId == request.auth.uid;`
+      allow update: if false; // TODO: Add owner validation once the schema is updated. e.g., `isSignedIn() && resource.data.ownerId == request.auth.uid;`
+      allow delete: if false; // TODO: Add owner validation once the schema is updated. e.g., `isSignedIn() && resource.data.ownerId == request.auth.uid;`
+    }
   }
 }

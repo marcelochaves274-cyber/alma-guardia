@@ -1,0 +1,179 @@
+{
+  "entities": {
+    "SgsGenius": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SgsGenius",
+      "type": "object",
+      "description": "Represents the main SGS Genius application data.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the SGS Genius application instance."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the SGS application."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the application was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the application was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ChatMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatMessage",
+      "type": "object",
+      "description": "Represents a single chat message within the SGS Genius application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the chat message."
+        },
+        "sgsGeniusId": {
+          "type": "string",
+          "description": "Reference to the SGS Genius application this message belongs to. (Relationship: SgsGenius 1:N ChatMessage)"
+        },
+        "sender": {
+          "type": "string",
+          "description": "Indicates who sent the message (e.g., 'user' or 'ai')."
+        },
+        "message": {
+          "type": "string",
+          "description": "The content of the chat message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp indicating when the message was sent.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "sgsGeniusId",
+        "sender",
+        "message",
+        "timestamp"
+      ]
+    },
+    "Parameter": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Parameter",
+      "type": "object",
+      "description": "Represents a modifiable parameter within the SGS Genius application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the parameter."
+        },
+        "sgsGeniusId": {
+          "type": "string",
+          "description": "Reference to the SGS Genius application this parameter belongs to. (Relationship: SgsGenius 1:N Parameter)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the parameter."
+        },
+        "value": {
+          "type": "string",
+          "description": "The current value of the parameter."
+        },
+        "dataType": {
+          "type": "string",
+          "description": "The data type of the parameter (e.g., 'string', 'number', 'boolean')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of what the parameter controls."
+        }
+      },
+      "required": [
+        "id",
+        "sgsGeniusId",
+        "name",
+        "value",
+        "dataType",
+        "description"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/sgs_genius/{sgsGeniusId}",
+        "definition": {
+          "entityName": "SgsGenius",
+          "schema": {
+            "$ref": "#/backend/entities/SgsGenius"
+          },
+          "description": "Stores the main SGS Genius application data. Each document represents a unique SGS application instance.",
+          "params": [
+            {
+              "name": "sgsGeniusId",
+              "description": "Unique identifier for the SGS Genius application instance."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/sgs_genius/{sgsGeniusId}/chat_messages/{chatMessageId}",
+        "definition": {
+          "entityName": "ChatMessage",
+          "schema": {
+            "$ref": "#/backend/entities/ChatMessage"
+          },
+          "description": "Stores chat messages associated with a specific SGS Genius application.  Includes the sgsGeniusId for relationship.",
+          "params": [
+            {
+              "name": "sgsGeniusId",
+              "description": "The ID of the SGS Genius application to which this message belongs."
+            },
+            {
+              "name": "chatMessageId",
+              "description": "Unique identifier for the chat message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/sgs_genius/{sgsGeniusId}/parameters/{parameterId}",
+        "definition": {
+          "entityName": "Parameter",
+          "schema": {
+            "$ref": "#/backend/entities/Parameter"
+          },
+          "description": "Stores modifiable parameters associated with a specific SGS Genius application. Includes the sgsGeniusId for relationship.",
+          "params": [
+            {
+              "name": "sgsGeniusId",
+              "description": "The ID of the SGS Genius application to which this parameter belongs."
+            },
+            {
+              "name": "parameterId",
+              "description": "Unique identifier for the parameter."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the SGS Genius application, focusing on chat interactions with an AI and parameter adjustments. It provides a secure and scalable data model, suitable for the app's collaborative and iterative development process. The structure prioritizes Authorization Independence through denormalization, simplifies security rules via Structural Segregation, and standardizes access patterns using Access Modeling. This design supports atomic operations and efficient `list` operations while upholding data integrity.\n\nAuthorization Independence:\nAuthorization independence is achieved by avoiding hierarchical authorization dependencies. There are no `get()` calls in the security rules. Every collection has all of the authorization information needed in the document itself.\n\nQAPs (Rules are not Filters):\nThe structure is designed to support secure `list` operations. This is accomplished by segregating data based on access requirements and using membership maps to define access rights. Segregation means that rules do not have to filter based on document content and membership maps mean that list access can be controlled."
+  }
+}
