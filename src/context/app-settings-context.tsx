@@ -145,6 +145,12 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const firestore = useFirestore();
   const { user, isLoading: isUserLoading } = useUser();
   const { toast } = useToast();
+  
+  const getSettingsDocRef = useCallback(() => {
+    if (!firestore || !user) return null;
+    // This is the correct, consistent path for all visual settings.
+    return doc(firestore, 'sgs_genius', user.uid, 'settings', 'appDetails');
+  }, [firestore, user]);
 
   const applyTheme = useCallback((themeName: string | null) => {
     const theme = themes.find((t) => t.name === themeName) || themes[0];
@@ -176,7 +182,12 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const settingsDocRef = doc(firestore, 'sgs_genius', user.uid);
+    const settingsDocRef = getSettingsDocRef();
+    if (!settingsDocRef) {
+        setIsLoading(false);
+        applyTheme('musgo');
+        return;
+    }
     
     getDoc(settingsDocRef)
       .then((docSnap) => {
@@ -187,7 +198,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             applyTheme(data.theme || 'musgo');
             setLogoUrl(data.logoUrl || null);
           } else {
-             // This is the expected case for a new user. Apply defaults.
+             // If doc doesn't exist, it's a new user. Apply defaults silently.
              applyTheme('musgo');
              setAppNameState('');
              setLogoUrl(null);
@@ -196,22 +207,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       })
       .catch((error) => {
         if (isMounted) {
-            // This is the CRITICAL change. If we get a permission error, we assume it's a new user
-            // and the document doesn't exist yet, which is fine. We just apply defaults and continue.
-            if (error.code === 'permission-denied' || error.message.includes('insufficient permissions')) {
-                console.warn("Permission denied on initial settings load. Assuming new user and applying defaults.");
-                applyTheme('musgo');
-                setAppNameState('');
-                setLogoUrl(null);
-            } else {
-                // For any other error, we show the toast.
-                console.error('Error fetching app settings:', error);
-                toast({
-                    variant: "destructive",
-                    title: "Erro ao Carregar Configurações",
-                    description: `Não foi possível carregar suas configurações. Causa: ${error.message}`
-                });
-            }
+            console.error('Error fetching app settings:', error);
+            // Don't show toast on initial load permission error, just apply defaults
+            applyTheme('musgo');
+            setAppNameState('');
+            setLogoUrl(null);
         }
       })
       .finally(() => {
@@ -222,10 +222,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       
     return () => { isMounted = false; }
 
-  }, [firestore, user, isUserLoading, toast, applyTheme]);
+  }, [firestore, user, isUserLoading, toast, applyTheme, getSettingsDocRef]);
   
   const setAppName = async (name: string) => {
-    if (!firestore || !user) {
+    const settingsDocRef = getSettingsDocRef();
+    if (!settingsDocRef) {
       toast({
         variant: 'destructive',
         title: 'Erro de Autenticação',
@@ -233,7 +234,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       });
       throw new Error('Authentication error');
     }
-    await setDoc(doc(firestore, 'sgs_genius', user.uid), { name }, { merge: true });
+    // Use merge:true to create the doc if it doesn't exist, or update it if it does.
+    await setDoc(settingsDocRef, { name }, { merge: true });
     setAppNameState(name);
   };
   
@@ -242,17 +244,17 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   }
 
   const saveTheme = async () => {
-     if (!firestore || !user || !selectedTheme) {
+    const settingsDocRef = getSettingsDocRef();
+    if (!settingsDocRef || !selectedTheme) {
       toast({
         variant: 'destructive',
-        title: 'Erro de Autenticação',
-        description: 'Você precisa estar logado para salvar um tema.',
+        title: 'Erro',
+        description: 'Não foi possível salvar o tema. Verifique sua conexão.',
       });
       return;
     }
     setIsSavingTheme(true);
      try {
-      const settingsDocRef = doc(firestore, 'sgs_genius', user.uid);
       await setDoc(settingsDocRef, { theme: selectedTheme.name }, { merge: true });
       toast({
         title: 'Sucesso!',
@@ -271,7 +273,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   }
 
   const saveLogo = async () => {
-    if (!firestore || !user) {
+    const settingsDocRef = getSettingsDocRef();
+    if (!settingsDocRef) {
       toast({
         variant: 'destructive',
         title: 'Erro de Autenticação',
@@ -289,7 +292,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     }
     setIsSavingLogo(true);
     try {
-      const settingsDocRef = doc(firestore, 'sgs_genius', user.uid);
+      // Use merge:true to create the doc if it doesn't exist.
       await setDoc(settingsDocRef, { logoUrl: logoUrl }, { merge: true });
       toast({
         title: 'Sucesso!',
@@ -308,7 +311,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   }
   
   const removeLogo = async () => {
-     if (!firestore || !user) {
+    const settingsDocRef = getSettingsDocRef();
+     if (!settingsDocRef) {
       toast({
         variant: 'destructive',
         title: 'Erro de Autenticação',
@@ -318,7 +322,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     }
     setIsSavingLogo(true);
     try {
-      const settingsDocRef = doc(firestore, 'sgs_genius', user.uid);
+      // Here we use updateDoc because we only want this to work if the doc already exists.
       await updateDoc(settingsDocRef, { logoUrl: null });
       setLogoUrl(null);
       toast({
@@ -369,5 +373,3 @@ export function useAppSettings() {
   }
   return context;
 }
-
-    
