@@ -64,8 +64,10 @@ export default function LoginPage() {
         return 'Nenhum usuário encontrado com este e-mail. Por favor, crie uma conta.';
       case 'auth/weak-password':
         return 'A senha é muito fraca. Ela deve ter pelo menos 6 caracteres.';
+      case 'auth/invalid-api-key':
+        return 'A chave de API do Firebase é inválida. A configuração do projeto não está correta. Tente atualizar a página.';
       default:
-        return 'Ocorreu um erro. Por favor, tente novamente.';
+        return 'Ocorreu um erro inesperado. Verifique sua conexão e tente novamente.';
     }
   };
 
