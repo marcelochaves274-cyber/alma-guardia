@@ -30,7 +30,7 @@ import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Pencil, Trash2, Loader2, CheckIcon, ChevronDown } from 'lucide-react';
+import { Pencil, Trash2, Loader2, ChevronDown } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -109,7 +109,6 @@ function MultiSelectFilter({ placeholder, options, selected, onChange, disabled 
           disabled={disabled}
         >
           <span>{getButtonText()}</span>
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
