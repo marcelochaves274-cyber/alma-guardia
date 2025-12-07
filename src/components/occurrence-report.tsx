@@ -18,12 +18,11 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -31,7 +30,7 @@ import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Pencil, Trash2, Loader2, CheckIcon, ChevronDown } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,6 +69,76 @@ const months = [
     { value: '10', label: 'Outubro' }, { value: '11', label: 'Novembro' }, { value: '12', label: 'Dezembro' }
 ];
 
+const analysisOptions = Object.entries(analysisMapping).map(([key, { label }]) => ({ value: key, label }));
+
+interface MultiSelectFilterProps {
+  placeholder: string;
+  options: { value: string; label: string }[];
+  selected: string[];
+  onChange: (selected: string[]) => void;
+  disabled?: boolean;
+}
+
+function MultiSelectFilter({ placeholder, options, selected, onChange, disabled }: MultiSelectFilterProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleSelect = (value: string) => {
+    const newSelected = selected.includes(value)
+      ? selected.filter(item => item !== value)
+      : [...selected, value];
+    onChange(newSelected);
+  };
+
+  const getButtonText = () => {
+    if (selected.length === 0) return placeholder;
+    if (selected.length === 1) {
+      const option = options.find(o => o.value === selected[0]);
+      return option?.label || placeholder;
+    }
+    return `${selected.length} selecionados`;
+  };
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={isOpen}
+          className="w-full justify-between"
+          disabled={disabled}
+        >
+          <span className="truncate">{getButtonText()}</span>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0">
+        <div className="max-h-60 overflow-auto p-1">
+          {options.map((option) => (
+            <div
+              key={option.value}
+              className="flex items-center space-x-2 p-2 hover:bg-accent rounded-md cursor-pointer"
+              onClick={() => handleSelect(option.value)}
+            >
+              <Checkbox
+                id={`check-${option.value}`}
+                checked={selected.includes(option.value)}
+                onCheckedChange={() => handleSelect(option.value)}
+              />
+              <label
+                htmlFor={`check-${option.value}`}
+                className="w-full text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                {option.label}
+              </label>
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function OccurrenceReport() {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -80,12 +149,12 @@ export function OccurrenceReport() {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Filter states
-  const [filterYear, setFilterYear] = useState<string>('');
-  const [filterMonth, setFilterMonth] = useState<string>('');
-  const [filterType, setFilterType] = useState<string>('');
-  const [filterLocation, setFilterLocation] = useState<string>('');
+  const [filterYears, setFilterYears] = useState<string[]>([]);
+  const [filterMonths, setFilterMonths] = useState<string[]>([]);
+  const [filterTypes, setFilterTypes] = useState<string[]>([]);
+  const [filterLocations, setFilterLocations] = useState<string[]>([]);
   const [filterName, setFilterName] = useState<string>('');
-  const [filterAnalysis, setFilterAnalysis] = useState<string>('');
+  const [filterAnalyses, setFilterAnalyses] = useState<string[]>([]);
 
   // Dynamic options for selects
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -163,24 +232,24 @@ export function OccurrenceReport() {
       const occDate = occ.occurrenceDate;
       if (!occDate) return false;
 
-      const yearMatch = !filterYear || occDate.getFullYear().toString() === filterYear;
-      const monthMatch = !filterMonth || (occDate.getMonth() + 1).toString() === filterMonth;
-      const typeMatch = !filterType || occ.occurrenceType === filterType;
-      const locationMatch = !filterLocation || occ.occurrenceLocation === filterLocation;
-      const analysisMatch = !filterAnalysis || occ.analysis === filterAnalysis;
+      const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
+      const monthMatch = filterMonths.length === 0 || filterMonths.includes((occDate.getMonth() + 1).toString());
+      const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.occurrenceType);
+      const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.occurrenceLocation);
+      const analysisMatch = filterAnalyses.length === 0 || filterAnalyses.includes(occ.analysis);
       const nameMatch = !filterName || occ.involvedPersonName?.toLowerCase().includes(filterName.toLowerCase());
 
       return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && nameMatch;
     });
-  }, [occurrences, filterYear, filterMonth, filterType, filterLocation, filterName, filterAnalysis]);
+  }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations, filterName, filterAnalyses]);
 
   const clearFilters = () => {
-    setFilterYear('');
-    setFilterMonth('');
-    setFilterType('');
-    setFilterLocation('');
+    setFilterYears([]);
+    setFilterMonths([]);
+    setFilterTypes([]);
+    setFilterLocations([]);
     setFilterName('');
-    setFilterAnalysis('');
+    setFilterAnalyses([]);
   }
 
   const handleDelete = async (occurrenceId: string) => {
@@ -238,47 +307,40 @@ export function OccurrenceReport() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {/* Year Filter */}
-            <Select value={filterYear} onValueChange={setFilterYear} disabled={availableYears.length === 0}>
-              <SelectTrigger><SelectValue placeholder="Filtrar por Ano" /></SelectTrigger>
-              <SelectContent>
-                {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            {/* Month Filter */}
-            <Select value={filterMonth} onValueChange={setFilterMonth}>
-              <SelectTrigger><SelectValue placeholder="Filtrar por Mês" /></SelectTrigger>
-              <SelectContent>
-                {months.map(month => <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            {/* Type Filter */}
-            <Select value={filterType} onValueChange={setFilterType} disabled={!occurrenceTypes || occurrenceTypes.length === 0}>
-              <SelectTrigger><SelectValue placeholder="Filtrar por Tipo" /></SelectTrigger>
-              <SelectContent>
-                {occurrenceTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            {/* Location Filter */}
-            <Select value={filterLocation} onValueChange={setFilterLocation} disabled={!locations || locations.length === 0}>
-              <SelectTrigger><SelectValue placeholder="Filtrar por Local" /></SelectTrigger>
-              <SelectContent>
-                {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            {/* Analysis Filter */}
-            <Select value={filterAnalysis} onValueChange={setFilterAnalysis}>
-              <SelectTrigger><SelectValue placeholder="Filtrar por Análise" /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(analysisMapping).map(([key, {label}]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <MultiSelectFilter
+              placeholder="Filtrar por Ano"
+              options={availableYears.map(y => ({ value: y, label: y }))}
+              selected={filterYears}
+              onChange={setFilterYears}
+              disabled={availableYears.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Mês"
+              options={months}
+              selected={filterMonths}
+              onChange={setFilterMonths}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Tipo"
+              options={occurrenceTypes.map(t => ({ value: t, label: t }))}
+              selected={filterTypes}
+              onChange={setFilterTypes}
+              disabled={!occurrenceTypes || occurrenceTypes.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Local"
+              options={locations.map(l => ({ value: l, label: l }))}
+              selected={filterLocations}
+              onChange={setFilterLocations}
+              disabled={!locations || locations.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Análise"
+              options={analysisOptions}
+              selected={filterAnalyses}
+              onChange={setFilterAnalyses}
+            />
             
-            {/* Name Filter */}
             <Input
               placeholder="Filtrar por Nome"
               value={filterName}
