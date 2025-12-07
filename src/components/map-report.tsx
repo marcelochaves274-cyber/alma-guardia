@@ -25,14 +25,6 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from './ui/scroll-area';
 import { MultiSelectFilter } from './multi-select-filter';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-
 
 interface Occurrence {
   id: string;
@@ -75,10 +67,9 @@ export function MapReport() {
 
   // Filter states
   const [filterYears, setFilterYears] = useState<string[]>([]);
+  const [filterMonths, setFilterMonths] = useState<string[]>([]);
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
-  const [filterStartMonth, setFilterStartMonth] = useState<string>('');
-  const [filterEndMonth, setFilterEndMonth] = useState<string>('');
 
   // Dynamic options for selects
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -180,17 +171,13 @@ export function MapReport() {
       if (!occDate) return false;
 
       const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
+      const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.occurrenceType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.occurrenceLocation);
 
-      const occMonth = occDate.getMonth();
-      const startMonth = filterStartMonth !== '' ? parseInt(filterStartMonth, 10) : 0;
-      const endMonth = filterEndMonth !== '' ? parseInt(filterEndMonth, 10) : 11;
-      const monthMatch = occMonth >= startMonth && occMonth <= endMonth;
-
-      return yearMatch && typeMatch && locationMatch && monthMatch && !!occ.mapMarker;
+      return yearMatch && monthMatch && typeMatch && locationMatch && !!occ.mapMarker;
     });
-  }, [occurrences, filterYears, filterTypes, filterLocations, filterStartMonth, filterEndMonth]);
+  }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations]);
 
   const clusters = useMemo(() => {
     const points = filteredOccurrences.filter(occ => occ.mapMarker);
@@ -226,10 +213,9 @@ export function MapReport() {
 
   const clearFilters = () => {
     setFilterYears([]);
+    setFilterMonths([]);
     setFilterTypes([]);
     setFilterLocations([]);
-    setFilterStartMonth('');
-    setFilterEndMonth('');
   }
 
   return (
@@ -250,30 +236,12 @@ export function MapReport() {
               onChange={setFilterYears}
               disabled={availableYears.length === 0}
             />
-            <Select onValueChange={setFilterStartMonth} value={filterStartMonth}>
-              <SelectTrigger>
-                <SelectValue placeholder="Mês Inicial" />
-              </SelectTrigger>
-              <SelectContent>
-                {monthOptions.map(opt => (
-                  <SelectItem key={`start-${opt.value}`} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-             <Select onValueChange={setFilterEndMonth} value={filterEndMonth}>
-              <SelectTrigger>
-                <SelectValue placeholder="Mês Final" />
-              </SelectTrigger>
-              <SelectContent>
-                {monthOptions.map(opt => (
-                  <SelectItem key={`end-${opt.value}`} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MultiSelectFilter
+              placeholder="Filtrar por Mês"
+              options={monthOptions}
+              selected={filterMonths}
+              onChange={setFilterMonths}
+            />
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"
               options={occurrenceTypes.map(t => ({ value: t, label: t }))}
