@@ -148,7 +148,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   
   const getSettingsDocRef = useCallback(() => {
     if (!firestore || !user) return null;
-    // This is the correct, consistent path for all visual settings.
     return doc(firestore, 'sgs_genius', user.uid, 'settings', 'appDetails');
   }, [firestore, user]);
 
@@ -198,7 +197,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             applyTheme(data.theme || 'musgo');
             setLogoUrl(data.logoUrl || null);
           } else {
-             // If doc doesn't exist, it's a new user. Apply defaults silently.
              applyTheme('musgo');
              setAppNameState('');
              setLogoUrl(null);
@@ -207,8 +205,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       })
       .catch((error) => {
         if (isMounted) {
-            console.error('Error fetching app settings:', error);
-            // Don't show toast on initial load permission error, just apply defaults
+            console.warn('Could not fetch app settings (this is normal on first login):', error.message);
             applyTheme('musgo');
             setAppNameState('');
             setLogoUrl(null);
@@ -234,7 +231,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       });
       throw new Error('Authentication error');
     }
-    // Use merge:true to create the doc if it doesn't exist, or update it if it does.
     await setDoc(settingsDocRef, { name }, { merge: true });
     setAppNameState(name);
   };
@@ -292,7 +288,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     }
     setIsSavingLogo(true);
     try {
-      // Use merge:true to create the doc if it doesn't exist.
       await setDoc(settingsDocRef, { logoUrl: logoUrl }, { merge: true });
       toast({
         title: 'Sucesso!',
@@ -322,7 +317,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     }
     setIsSavingLogo(true);
     try {
-      // Here we use updateDoc because we only want this to work if the doc already exists.
       await updateDoc(settingsDocRef, { logoUrl: null });
       setLogoUrl(null);
       toast({

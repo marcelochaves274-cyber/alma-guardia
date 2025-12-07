@@ -1,37 +1,26 @@
-/**
- * Core Philosophy: This ruleset establishes a "secure read-only" model for the SGS Genius application.
- * All data is currently public to read, which is suitable for initial prototyping where data is not yet sensitive.
- * However, all write operations (create, update, delete) are explicitly disabled. This is a critical security measure
- * taken because the data models (SgsGenius, ChatMessage, Parameter) are missing essential ownership fields (e.g., 'ownerId',
- * 'creatorId', or a 'members' map). Without these fields, it's impossible to securely authorize who can modify data.
- *
- * Data Structure: The data is organized under a top-level `sgs_genius` collection. Each document in this collection
- * represents a unique application instance and contains two subcollections: `chat_messages` and `parameters`.
- *
- * Key Security Decisions:
- * - Public Reads: To facilitate rapid prototyping and UI development, all data is publicly readable (`get`, `list`).
- * - No Writes Allowed: All write operations are denied (`if false;`) as a temporary but essential security posture. This
- *   prevents unauthorized data modification until the application's data models are updated with ownership information.
- * - Denormalization for Authorization (Required): The rules are architected with the expectation that authorization data
- *   (like an `ownerId`) will be denormalized directly onto each document. Once the schema is updated, these rules can be
- *   easily modified to enforce ownership without requiring costly cross-document `get()` calls.
- *
- * Instructions for Developer: To enable write access, you MUST update your data models. Add a field like `ownerId: string`
- * to each entity (`SgsGenius`, `ChatMessage`, `Parameter`) and ensure your application's frontend writes the authenticated
- * user's UID to this field upon document creation. Then, update the `// TODO` sections in these rules to enforce that
- * `resource.data.ownerId == request.auth.uid`.
- */
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
     function isSignedIn() {
       return request.auth != null;
     }
 
-    match /sgs_genius/{userId}/{path=**} {
+    // Matches any document in the 'sgs_genius' root collection.
+    // This rule is generally too broad and should be locked down.
+    match /sgs_genius/{userId} {
+       allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Matches documents in the 'settings' subcollection for a specific user.
+    // This is where appDetails, locations, etc., are stored.
+    match /sgs_genius/{userId}/settings/{docId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Matches documents in the 'chat_messages' (occurrences) subcollection.
+    match /sgs_genius/{userId}/chat_messages/{messageId} {
+       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
   }
 }
-    
