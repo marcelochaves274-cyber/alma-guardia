@@ -12,7 +12,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, Map } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -113,7 +113,7 @@ export function AppSidebar() {
               }}
             >
               <ListTodo />
-              <span>Lembretes</span>
+              <span className="font-bold">Lembretes</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
@@ -124,7 +124,7 @@ export function AppSidebar() {
               }}
             >
               <Siren />
-              <span>Acidentes/Incidentes</span>
+              <span className="font-bold">Acidentes/Incidentes</span>
               <ChevronDown
                 className={`ml-auto h-4 w-4 transition-transform ${
                   openSubMenu === 'acidentes' ? 'rotate-180' : ''
@@ -168,7 +168,7 @@ export function AppSidebar() {
               }}
             >
               <Settings />
-              <span>Configurações</span>
+              <span className="font-bold">Configurações</span>
               <ChevronDown
                 className={`ml-auto h-4 w-4 transition-transform ${
                   openSubMenu === 'settings' ? 'rotate-180' : ''
