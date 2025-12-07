@@ -17,12 +17,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -45,6 +39,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { setActivePage, setOccurrenceToEdit } from '@/app/page';
+import { MultiSelectFilter } from './multi-select-filter';
 
 interface Occurrence {
   id: string;
@@ -70,73 +65,6 @@ const months = [
 ];
 
 const analysisOptions = Object.entries(analysisMapping).map(([key, { label }]) => ({ value: key, label }));
-
-interface MultiSelectFilterProps {
-  placeholder: string;
-  options: { value: string; label: string }[];
-  selected: string[];
-  onChange: (selected: string[]) => void;
-  disabled?: boolean;
-}
-
-function MultiSelectFilter({ placeholder, options, selected, onChange, disabled }: MultiSelectFilterProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const handleSelect = (value: string) => {
-    const newSelected = selected.includes(value)
-      ? selected.filter(item => item !== value)
-      : [...selected, value];
-    onChange(newSelected);
-  };
-
-  const getButtonText = () => {
-    if (selected.length === 0) return placeholder;
-    if (selected.length === 1) {
-      const option = options.find(o => o.value === selected[0]);
-      return option?.label || placeholder;
-    }
-    return `${selected.length} selecionados`;
-  };
-
-  return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={isOpen}
-          className="w-full justify-between"
-          disabled={disabled}
-        >
-          <span>{getButtonText()}</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
-        <div className="max-h-60 overflow-auto p-1">
-          {options.map((option) => (
-            <div
-              key={option.value}
-              className="flex items-center space-x-2 p-2 hover:bg-accent rounded-md cursor-pointer"
-              onClick={() => handleSelect(option.value)}
-            >
-              <Checkbox
-                id={`check-${option.value}`}
-                checked={selected.includes(option.value)}
-                onCheckedChange={() => handleSelect(option.value)}
-              />
-              <label
-                htmlFor={`check-${option.value}`}
-                className="w-full text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-              >
-                {option.label}
-              </label>
-            </div>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
 
 export function OccurrenceReport() {
   const firestore = useFirestore();
@@ -170,10 +98,14 @@ export function OccurrenceReport() {
     const fetchSelectOptions = async (docName: string, setData: (data: string[]) => void) => {
       const docRef = getSettingsDocRef(docName);
       if (!docRef) return;
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setData(data.types || data.locations || []);
+      try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setData(data.types || data.locations || []);
+        }
+      } catch (error) {
+        console.error(`Error fetching ${docName}:`, error);
       }
     };
     fetchSelectOptions('occurrenceTypes', setOccurrenceTypes);
