@@ -40,6 +40,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { MultiSelectFilter } from './multi-select-filter';
 import { MonthSelector } from './month-selector';
+import { Label } from './ui/label';
 
 interface Occurrence {
   id: string;

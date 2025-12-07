@@ -26,6 +26,7 @@ import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from './ui/scroll-area';
 import { MultiSelectFilter } from './multi-select-filter';
 import { MonthSelector } from './month-selector';
+import { Label } from './ui/label';
 
 interface Occurrence {
   id: string;
