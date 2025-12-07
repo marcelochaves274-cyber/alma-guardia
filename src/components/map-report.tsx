@@ -25,6 +25,13 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from './ui/scroll-area';
 import { MultiSelectFilter } from './multi-select-filter';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 
 interface Occurrence {
@@ -41,6 +48,21 @@ interface Cluster {
   y: number;
 }
 
+const monthOptions = [
+    { value: '0', label: 'Janeiro' },
+    { value: '1', label: 'Fevereiro' },
+    { value: '2', label: 'Março' },
+    { value: '3', label: 'Abril' },
+    { value: '4', label: 'Maio' },
+    { value: '5', label: 'Junho' },
+    { value: '6', label: 'Julho' },
+    { value: '7', label: 'Agosto' },
+    { value: '8', label: 'Setembro' },
+    { value: '9', label: 'Outubro' },
+    { value: '10', label: 'Novembro' },
+    { value: '11', label: 'Dezembro' },
+];
+
 export function MapReport() {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -55,6 +77,8 @@ export function MapReport() {
   const [filterYears, setFilterYears] = useState<string[]>([]);
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
+  const [filterStartMonth, setFilterStartMonth] = useState<string>('');
+  const [filterEndMonth, setFilterEndMonth] = useState<string>('');
 
   // Dynamic options for selects
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -159,9 +183,14 @@ export function MapReport() {
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.occurrenceType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.occurrenceLocation);
 
-      return yearMatch && typeMatch && locationMatch && !!occ.mapMarker;
+      const occMonth = occDate.getMonth();
+      const startMonth = filterStartMonth !== '' ? parseInt(filterStartMonth, 10) : 0;
+      const endMonth = filterEndMonth !== '' ? parseInt(filterEndMonth, 10) : 11;
+      const monthMatch = occMonth >= startMonth && occMonth <= endMonth;
+
+      return yearMatch && typeMatch && locationMatch && monthMatch && !!occ.mapMarker;
     });
-  }, [occurrences, filterYears, filterTypes, filterLocations]);
+  }, [occurrences, filterYears, filterTypes, filterLocations, filterStartMonth, filterEndMonth]);
 
   const clusters = useMemo(() => {
     const points = filteredOccurrences.filter(occ => occ.mapMarker);
@@ -199,6 +228,8 @@ export function MapReport() {
     setFilterYears([]);
     setFilterTypes([]);
     setFilterLocations([]);
+    setFilterStartMonth('');
+    setFilterEndMonth('');
   }
 
   return (
@@ -219,7 +250,30 @@ export function MapReport() {
               onChange={setFilterYears}
               disabled={availableYears.length === 0}
             />
-
+            <Select onValueChange={setFilterStartMonth} value={filterStartMonth}>
+              <SelectTrigger>
+                <SelectValue placeholder="Mês Inicial" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map(opt => (
+                  <SelectItem key={`start-${opt.value}`} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+             <Select onValueChange={setFilterEndMonth} value={filterEndMonth}>
+              <SelectTrigger>
+                <SelectValue placeholder="Mês Final" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map(opt => (
+                  <SelectItem key={`end-${opt.value}`} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"
               options={occurrenceTypes.map(t => ({ value: t, label: t }))}
@@ -235,7 +289,7 @@ export function MapReport() {
               disabled={!locations || locations.length === 0}
             />
             
-            <Button onClick={clearFilters} variant="outline" className="w-full">
+            <Button onClick={clearFilters} variant="outline" className="w-full lg:col-start-4">
               Limpar Filtros
             </Button>
           </div>

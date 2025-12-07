@@ -40,6 +40,13 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { MultiSelectFilter } from './multi-select-filter';
 import { usePage } from '@/context/page-context';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Occurrence {
   id: string;
@@ -59,6 +66,21 @@ const analysisMapping: Record<string, { label: string, className: string }> = {
 
 const analysisOptions = Object.entries(analysisMapping).map(([key, { label }]) => ({ value: key, label }));
 
+const monthOptions = [
+    { value: '0', label: 'Janeiro' },
+    { value: '1', label: 'Fevereiro' },
+    { value: '2', label: 'Março' },
+    { value: '3', label: 'Abril' },
+    { value: '4', label: 'Maio' },
+    { value: '5', label: 'Junho' },
+    { value: '6', label: 'Julho' },
+    { value: '7', label: 'Agosto' },
+    { value: '8', label: 'Setembro' },
+    { value: '9', label: 'Outubro' },
+    { value: '10', label: 'Novembro' },
+    { value: '11', label: 'Dezembro' },
+];
+
 export function OccurrenceReport() {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -75,6 +97,8 @@ export function OccurrenceReport() {
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
   const [filterName, setFilterName] = useState<string>('');
   const [filterAnalyses, setFilterAnalyses] = useState<string[]>([]);
+  const [filterStartMonth, setFilterStartMonth] = useState<string>('');
+  const [filterEndMonth, setFilterEndMonth] = useState<string>('');
   
   // Dynamic options for selects
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -160,9 +184,14 @@ export function OccurrenceReport() {
       const analysisMatch = filterAnalyses.length === 0 || filterAnalyses.includes(occ.analysis);
       const nameMatch = !filterName || occ.involvedPersonName?.toLowerCase().includes(filterName.toLowerCase());
       
-      return yearMatch && typeMatch && locationMatch && analysisMatch && nameMatch;
+      const occMonth = occDate.getMonth();
+      const startMonth = filterStartMonth !== '' ? parseInt(filterStartMonth, 10) : 0;
+      const endMonth = filterEndMonth !== '' ? parseInt(filterEndMonth, 10) : 11;
+      const monthMatch = occMonth >= startMonth && occMonth <= endMonth;
+
+      return yearMatch && typeMatch && locationMatch && analysisMatch && nameMatch && monthMatch;
     });
-  }, [occurrences, filterYears, filterTypes, filterLocations, filterName, filterAnalyses]);
+  }, [occurrences, filterYears, filterTypes, filterLocations, filterName, filterAnalyses, filterStartMonth, filterEndMonth]);
 
   const clearFilters = () => {
     setFilterYears([]);
@@ -170,6 +199,8 @@ export function OccurrenceReport() {
     setFilterLocations([]);
     setFilterName('');
     setFilterAnalyses([]);
+    setFilterStartMonth('');
+    setFilterEndMonth('');
   }
 
   const handleDelete = async (occurrenceId: string) => {
@@ -234,7 +265,30 @@ export function OccurrenceReport() {
               onChange={setFilterYears}
               disabled={availableYears.length === 0}
             />
-            
+            <Select onValueChange={setFilterStartMonth} value={filterStartMonth}>
+              <SelectTrigger>
+                <SelectValue placeholder="Mês Inicial" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map(opt => (
+                  <SelectItem key={`start-${opt.value}`} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select onValueChange={setFilterEndMonth} value={filterEndMonth}>
+              <SelectTrigger>
+                <SelectValue placeholder="Mês Final" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map(opt => (
+                  <SelectItem key={`end-${opt.value}`} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"
               options={occurrenceTypes.map(t => ({ value: t, label: t }))}
