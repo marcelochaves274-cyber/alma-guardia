@@ -339,7 +339,7 @@ export function MapReport() {
                       src={mapUrl}
                       alt="Mapa de ocorrências"
                       fill
-                      style={{objectFit:"contain"}}
+                      style={{objectFit:"cover"}}
                       className="rounded-md"
                       priority
                     />
