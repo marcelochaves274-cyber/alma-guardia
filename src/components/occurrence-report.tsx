@@ -39,6 +39,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { MultiSelectFilter } from './multi-select-filter';
+import { MonthFilter } from './month-filter';
 
 interface Occurrence {
   id: string;
@@ -73,6 +74,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
 
   // Filter states
   const [filterYears, setFilterYears] = useState<string[]>([]);
+  const [filterMonths, setFilterMonths] = useState<string[]>([]);
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
   const [filterName, setFilterName] = useState<string>('');
@@ -157,17 +159,19 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
       if (!occDate) return false;
 
       const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
+      const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.occurrenceType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.occurrenceLocation);
       const analysisMatch = filterAnalyses.length === 0 || filterAnalyses.includes(occ.analysis);
       const nameMatch = !filterName || occ.involvedPersonName?.toLowerCase().includes(filterName.toLowerCase());
 
-      return yearMatch && typeMatch && locationMatch && analysisMatch && nameMatch;
+      return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && nameMatch;
     });
-  }, [occurrences, filterYears, filterTypes, filterLocations, filterName, filterAnalyses]);
+  }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations, filterName, filterAnalyses]);
 
   const clearFilters = () => {
     setFilterYears([]);
+    setFilterMonths([]);
     setFilterTypes([]);
     setFilterLocations([]);
     setFilterName('');
@@ -234,6 +238,11 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
               selected={filterYears}
               onChange={setFilterYears}
               disabled={availableYears.length === 0}
+            />
+             <MonthFilter
+              selectedMonths={filterMonths}
+              onChange={setFilterMonths}
+              disabled={occurrences.length === 0}
             />
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"
