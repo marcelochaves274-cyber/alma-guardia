@@ -27,7 +27,7 @@ export function ManageMap() {
   const [isLoading, setIsLoading] = useState(true);
 
   const firestore = useFirestore();
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const getSettingsDocRef = useCallback(() => {
     if (!firestore || !user) return null;
@@ -53,7 +53,7 @@ export function ManageMap() {
           setMapUrl(docSnap.data().mapUrl || null);
         }
       })
-      .catch((error) => {
+      .catch((error: any) => {
         if (error.code !== 'permission-denied') {
           console.error("Error fetching map:", error);
         }

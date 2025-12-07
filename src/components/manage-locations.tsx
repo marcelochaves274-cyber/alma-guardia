@@ -32,7 +32,7 @@ import {
 export function ManageLocations() {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const [locations, setLocations] = useState<string[]>([]);
   const [newLocation, setNewLocation] = useState('');
@@ -71,7 +71,7 @@ export function ManageLocations() {
             setLocations(defaultLocations);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         if (isMounted && error.code !== 'permission-denied') {
           console.error("Error fetching locations:", error);
           toast({

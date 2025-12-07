@@ -32,7 +32,7 @@ import {
 export function ManageOccurrences() {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
   const [newType, setNewType] = useState('');
@@ -72,7 +72,7 @@ export function ManageOccurrences() {
             setOccurrenceTypes(defaultTypes);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
          if (isMounted && error.code !== 'permission-denied') {
             console.error("Error fetching occurrence types:", error);
             toast({
