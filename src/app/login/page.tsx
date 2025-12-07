@@ -6,9 +6,10 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  type Auth,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { useFirebaseApp, useUser } from '@/firebase';
+import { useFirebaseApp, useUser, initializeFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -36,11 +37,13 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function LoginPage() {
-  const firebaseApp = useFirebaseApp();
+  // Use a inicialização direta para garantir que a configuração mais recente seja usada.
+  const { auth: initializedAuth } = initializeFirebase();
   const { user, isLoading: isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
+  const [auth] = useState<Auth | null>(initializedAuth);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -54,6 +57,7 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
   const getFriendlyErrorMessage = (errorCode: string) => {
+    console.error("Firebase Auth Error Code:", errorCode); // Log para depuração
     switch (errorCode) {
       case 'auth/email-already-in-use':
         return 'Este e-mail já está em uso. Por favor, tente fazer login ou redefinir sua senha.';
@@ -67,14 +71,20 @@ export default function LoginPage() {
       case 'auth/invalid-api-key':
         return 'A chave de API do Firebase é inválida. A configuração do projeto pode não estar correta. Tente atualizar a página.';
       default:
-        return 'Ocorreu um erro inesperado. Verifique sua conexão e tente novamente.';
+        return 'Ocorreu um erro inesperado. Verifique sua conexão e tente novamente. Código: ' + errorCode;
     }
   };
 
   const handleEmailAuth = async (authAction: 'login' | 'register') => {
-    if (!firebaseApp) return;
+    if (!auth) {
+       toast({
+        variant: 'destructive',
+        title: 'Erro de Configuração',
+        description: 'A autenticação do Firebase não foi inicializada corretamente. Tente atualizar a página.',
+      });
+      return;
+    }
     setIsEmailAuthLoading(true);
-    const auth = getAuth(firebaseApp);
     try {
       if (authAction === 'login') {
         await signInWithEmailAndPassword(auth, email, password);
@@ -83,7 +93,6 @@ export default function LoginPage() {
       }
       router.push('/');
     } catch (error: any) {
-      console.error("Authentication Error Code:", error.code);
       toast({
         variant: 'destructive',
         title: 'Erro de Autenticação',
@@ -95,8 +104,7 @@ export default function LoginPage() {
   };
   
   const handlePasswordReset = async () => {
-    if (!firebaseApp || !resetEmail) return;
-    const auth = getAuth(firebaseApp);
+    if (!auth || !resetEmail) return;
     setIsEmailAuthLoading(true);
     try {
       await sendPasswordResetEmail(auth, resetEmail);
