@@ -47,7 +47,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Occurrence {
   id: string;
-  occurrenceDate: Timestamp;
+  occurrenceDate: Date; // Changed to Date object
   occurrenceType: string;
   occurrenceLocation: string;
   involvedPersonName: string;
@@ -118,20 +118,29 @@ export function OccurrenceReport() {
     const occurrencesCollectionRef = collection(firestore, 'users', user.uid, 'occurrences');
     
     const unsubscribe = onSnapshot(occurrencesCollectionRef, (querySnapshot) => {
-      const occurrencesData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      } as Occurrence));
+      const occurrencesData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        // Convert Firestore Timestamp to JS Date object
+        const occurrenceDate = data.occurrenceDate instanceof Timestamp 
+          ? data.occurrenceDate.toDate() 
+          : new Date(); // Fallback to current date if something is wrong
+
+        return {
+          id: doc.id,
+          ...data,
+          occurrenceDate: occurrenceDate,
+        } as Occurrence;
+      });
       
       const years = new Set(
         occurrencesData
-          .map(occ => occ.occurrenceDate?.toDate().getFullYear())
+          .map(occ => occ.occurrenceDate?.getFullYear())
           .filter((year): year is number => !!year)
           .map(String)
       );
       setAvailableYears(Array.from(years).sort((a, b) => Number(b) - Number(a)));
       
-      setOccurrences(occurrencesData.sort((a, b) => b.occurrenceDate.toMillis() - a.occurrenceDate.toMillis()));
+      setOccurrences(occurrencesData.sort((a, b) => b.occurrenceDate.getTime() - a.occurrenceDate.getTime()));
       setIsLoading(false);
     }, (error) => {
         console.error("Error fetching real-time occurrences:", error);
@@ -149,7 +158,7 @@ export function OccurrenceReport() {
 
   const filteredOccurrences = useMemo(() => {
     return occurrences.filter(occ => {
-      const occDate = occ.occurrenceDate?.toDate();
+      const occDate = occ.occurrenceDate;
       if (!occDate) return false;
 
       const yearMatch = !filterYear || occDate.getFullYear().toString() === filterYear;
@@ -172,7 +181,7 @@ export function OccurrenceReport() {
     setFilterAnalysis('');
   }
 
-  const handleDelete = async (occurrenceId: string) => {
+  const handleDelete = async (occurrenceId: string, occurrenceName: string, occurrenceDate: Date) => {
     if (!firestore || !user) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.'});
       return;
@@ -181,9 +190,6 @@ export function OccurrenceReport() {
     try {
       const docRef = doc(firestore, 'users', user.uid, 'occurrences', occurrenceId);
       await deleteDoc(docRef);
-
-      // The onSnapshot listener will automatically update the state,
-      // so manually setting occurrences is no longer needed.
       
       toast({
         title: 'Sucesso!',
@@ -242,7 +248,7 @@ export function OccurrenceReport() {
             </Select>
 
             {/* Type Filter */}
-            <Select value={filterType} onValueChange={setFilterType}>
+            <Select value={filterType} onValueChange={setFilterType} disabled={!occurrenceTypes || occurrenceTypes.length === 0}>
               <SelectTrigger><SelectValue placeholder="Filtrar por Tipo" /></SelectTrigger>
               <SelectContent>
                 {occurrenceTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
@@ -250,7 +256,7 @@ export function OccurrenceReport() {
             </Select>
 
             {/* Location Filter */}
-            <Select value={filterLocation} onValueChange={setFilterLocation}>
+            <Select value={filterLocation} onValueChange={setFilterLocation} disabled={!locations || locations.length === 0}>
               <SelectTrigger><SelectValue placeholder="Filtrar por Local" /></SelectTrigger>
               <SelectContent>
                 {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
@@ -305,7 +311,7 @@ export function OccurrenceReport() {
               ) : filteredOccurrences.length > 0 ? (
                 filteredOccurrences.map((occ) => (
                   <TableRow key={occ.id}>
-                    <TableCell>{occ.occurrenceDate ? format(occ.occurrenceDate.toDate(), 'dd/MM/yyyy') : 'N/A'}</TableCell>
+                    <TableCell>{occ.occurrenceDate ? format(occ.occurrenceDate, 'dd/MM/yyyy') : 'N/A'}</TableCell>
                     <TableCell>{occ.occurrenceType}</TableCell>
                     <TableCell>{occ.occurrenceLocation}</TableCell>
                     <TableCell>{occ.involvedPersonName}</TableCell>
@@ -336,13 +342,13 @@ export function OccurrenceReport() {
                               <AlertDialogHeader>
                                   <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                  Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro da ocorrência de <span className="font-semibold">{occ.involvedPersonName}</span> do dia <span className="font-semibold">{format(occ.occurrenceDate.toDate(), 'dd/MM/yyyy')}</span>.
+                                  Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro da ocorrência de <span className="font-semibold">{occ.involvedPersonName}</span> do dia <span className="font-semibold">{format(occ.occurrenceDate, 'dd/MM/yyyy')}</span>.
                                   </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                   <AlertDialogAction 
-                                      onClick={() => handleDelete(occ.id)}
+                                      onClick={() => handleDelete(occ.id, occ.involvedPersonName, occ.occurrenceDate)}
                                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
                                       Sim, excluir
@@ -367,3 +373,5 @@ export function OccurrenceReport() {
     </div>
   );
 }
+
+    
