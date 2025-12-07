@@ -72,7 +72,7 @@ export function ManageLocations() {
           }
         }
       } catch (error) {
-        if (error.code !== 'permission-denied') {
+        if (isMounted && error.code !== 'permission-denied') {
           console.error("Error fetching locations:", error);
           toast({
               variant: "destructive",

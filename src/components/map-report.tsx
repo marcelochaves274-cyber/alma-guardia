@@ -25,7 +25,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from './ui/scroll-area';
 import { MultiSelectFilter } from './multi-select-filter';
-import { MonthFilter } from './month-filter';
+import { MonthSelector } from './month-selector';
 
 interface Occurrence {
   id: string;
@@ -69,21 +69,21 @@ export function MapReport() {
 
   // Fetch dynamic options for filters
   useEffect(() => {
-    const fetchSelectOptions = async (docName: string, setData: (data: string[]) => void) => {
+    const fetchSelectOptions = async (docName: string, setData: (data: string[]) => void, field: 'types' | 'locations') => {
       const docRef = getSettingsDocRef(docName);
       if (!docRef) return;
       try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setData(data.types || data.locations || []);
+          setData(data[field] || []);
         }
       } catch (error) {
         console.error(`Error fetching ${docName}:`, error);
       }
     };
-    fetchSelectOptions('occurrenceTypes', setOccurrenceTypes);
-    fetchSelectOptions('locations', setLocations);
+    fetchSelectOptions('occurrenceTypes', setOccurrenceTypes, 'types');
+    fetchSelectOptions('locations', setLocations, 'locations');
   }, [getSettingsDocRef]);
   
   useEffect(() => {
@@ -214,17 +214,17 @@ export function MapReport() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+          <div className="space-y-2">
+            <Label>Filtrar por Mês</Label>
+            <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <MultiSelectFilter
               placeholder="Filtrar por Ano"
               options={availableYears.map(y => ({ value: y, label: y }))}
               selected={filterYears}
               onChange={setFilterYears}
               disabled={availableYears.length === 0}
-            />
-             <MonthFilter
-              selectedMonths={filterMonths}
-              onChange={setFilterMonths}
             />
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"
@@ -241,7 +241,7 @@ export function MapReport() {
               disabled={!locations || locations.length === 0}
             />
             
-            <Button onClick={clearFilters} variant="outline" className="w-full sm:col-start-auto md:col-start-auto lg:col-start-4">
+            <Button onClick={clearFilters} variant="outline" className="w-full">
               Limpar Filtros
             </Button>
           </div>

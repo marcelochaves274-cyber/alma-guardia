@@ -68,11 +68,12 @@ export function ManageOccurrences() {
             setOccurrenceTypes(data.types || []);
           } else {
             const defaultTypes = ['Queda de mesmo nível', 'Corte', 'Contato com produto químico'];
+            // Pre-populate for new users, but don't save until they add something
             setOccurrenceTypes(defaultTypes);
           }
         }
       } catch (error) {
-         if (error.code !== 'permission-denied') {
+         if (isMounted && error.code !== 'permission-denied') {
             console.error("Error fetching occurrence types:", error);
             toast({
                 variant: "destructive",
