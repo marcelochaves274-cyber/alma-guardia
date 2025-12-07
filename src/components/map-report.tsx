@@ -210,6 +210,10 @@ export function MapReport() {
 
     return clusters;
   }, [filteredOccurrences]);
+  
+  const handleMonthsChange = useCallback((selected: string[]) => {
+    setFilterMonths(selected);
+  }, []);
 
   const clearFilters = () => {
     setFilterYears([]);
@@ -240,7 +244,7 @@ export function MapReport() {
               placeholder="Filtrar por Mês"
               options={monthOptions}
               selected={filterMonths}
-              onChange={setFilterMonths}
+              onChange={handleMonthsChange}
             />
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"

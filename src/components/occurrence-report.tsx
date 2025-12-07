@@ -220,6 +220,10 @@ export function OccurrenceReport() {
     setOccurrenceToEdit(occurrence);
     setActivePage('register-occurrence');
   };
+  
+  const handleMonthsChange = useCallback((selected: string[]) => {
+    setFilterMonths(selected);
+  }, []);
 
   const renderSkeletons = () => (
     Array.from({ length: 5 }).map((_, i) => (
@@ -256,7 +260,7 @@ export function OccurrenceReport() {
               placeholder="Filtrar por Mês"
               options={monthOptions}
               selected={filterMonths}
-              onChange={setFilterMonths}
+              onChange={handleMonthsChange}
             />
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"
