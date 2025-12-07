@@ -162,7 +162,7 @@ export function OccurrenceReport() {
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid, 'settings', collectionName);
+    return doc(firestore, 'sgs_genius', user.uid, 'settings', collectionName);
   }, [firestore, user]);
 
   // Fetch dynamic options for filters
@@ -185,7 +185,7 @@ export function OccurrenceReport() {
     if (!user || !firestore) return;
     setIsLoading(true);
 
-    const occurrencesCollectionRef = collection(firestore, 'users', user.uid, 'occurrences');
+    const occurrencesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'chat_messages');
     
     const unsubscribe = onSnapshot(occurrencesCollectionRef, (querySnapshot) => {
       const occurrencesData = querySnapshot.docs.map(doc => {
@@ -258,7 +258,7 @@ export function OccurrenceReport() {
     }
     setIsDeleting(occurrenceId);
     try {
-      const docRef = doc(firestore, 'users', user.uid, 'occurrences', occurrenceId);
+      const docRef = doc(firestore, 'sgs_genius', user.uid, 'chat_messages', occurrenceId);
       await deleteDoc(docRef);
       
       toast({

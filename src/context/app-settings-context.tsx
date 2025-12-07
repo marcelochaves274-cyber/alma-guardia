@@ -176,7 +176,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
+    const settingsDocRef = doc(firestore, 'sgs_genius', user.uid);
     
     getDoc(settingsDocRef)
       .then((docSnap) => {
@@ -233,7 +233,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       });
       throw new Error('Authentication error');
     }
-    await setDoc(doc(firestore, 'users', user.uid, 'settings', 'appDetails'), { name }, { merge: true });
+    await setDoc(doc(firestore, 'sgs_genius', user.uid), { name }, { merge: true });
     setAppNameState(name);
   };
   
@@ -252,7 +252,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     }
     setIsSavingTheme(true);
      try {
-      const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
+      const settingsDocRef = doc(firestore, 'sgs_genius', user.uid);
       await setDoc(settingsDocRef, { theme: selectedTheme.name }, { merge: true });
       toast({
         title: 'Sucesso!',
@@ -289,7 +289,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     }
     setIsSavingLogo(true);
     try {
-      const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
+      const settingsDocRef = doc(firestore, 'sgs_genius', user.uid);
       await setDoc(settingsDocRef, { logoUrl: logoUrl }, { merge: true });
       toast({
         title: 'Sucesso!',
@@ -318,7 +318,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     }
     setIsSavingLogo(true);
     try {
-      const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'appDetails');
+      const settingsDocRef = doc(firestore, 'sgs_genius', user.uid);
       await updateDoc(settingsDocRef, { logoUrl: null });
       setLogoUrl(null);
       toast({

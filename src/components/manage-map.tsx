@@ -36,7 +36,7 @@ export function ManageMap() {
       return;
     }
 
-    const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'mapDetails');
+    const settingsDocRef = doc(firestore, 'sgs_genius', user.uid, 'settings', 'mapDetails');
     getDoc(settingsDocRef)
       .then((docSnap) => {
         if (isMounted && docSnap.exists()) {
@@ -81,7 +81,7 @@ export function ManageMap() {
     }
 
     setIsSaving(true);
-    const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'mapDetails');
+    const settingsDocRef = doc(firestore, 'sgs_genius', user.uid, 'settings', 'mapDetails');
     try {
       await setDoc(settingsDocRef, { mapUrl }, { merge: true });
       toast({ title: 'Sucesso!', description: 'O mapa foi salvo.' });
@@ -100,7 +100,7 @@ export function ManageMap() {
     }
 
     setIsSaving(true);
-    const settingsDocRef = doc(firestore, 'users', user.uid, 'settings', 'mapDetails');
+    const settingsDocRef = doc(firestore, 'sgs_genius', user.uid, 'settings', 'mapDetails');
     try {
       await updateDoc(settingsDocRef, { mapUrl: null });
       setMapUrl(null);

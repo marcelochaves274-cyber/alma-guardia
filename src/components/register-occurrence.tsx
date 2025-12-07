@@ -100,7 +100,7 @@ export function RegisterOccurrence({ occurrenceToEdit }: RegisterOccurrenceProps
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid, 'settings', collectionName);
+    return doc(firestore, 'sgs_genius', user.uid, 'settings', collectionName);
   }, [firestore, user]);
 
   useEffect(() => {
@@ -223,7 +223,7 @@ export function RegisterOccurrence({ occurrenceToEdit }: RegisterOccurrenceProps
 
     try {
       if (isEditing) {
-        const docRef = doc(firestore, 'users', user.uid, 'occurrences', occurrenceToEdit.id);
+        const docRef = doc(firestore, 'sgs_genius', user.uid, 'chat_messages', occurrenceToEdit.id);
         await updateDoc(docRef, {
           ...occurrenceData,
           updatedAt: serverTimestamp()
@@ -231,7 +231,7 @@ export function RegisterOccurrence({ occurrenceToEdit }: RegisterOccurrenceProps
         toast({ title: 'Sucesso!', description: 'Ocorrência atualizada com sucesso.' });
         setActivePage('occurrence-report');
       } else {
-        const occurrencesCollectionRef = collection(firestore, 'users', user.uid, 'occurrences');
+        const occurrencesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'chat_messages');
         await addDoc(occurrencesCollectionRef, {
             ...occurrenceData,
             createdAt: serverTimestamp()
@@ -423,7 +423,7 @@ export function RegisterOccurrence({ occurrenceToEdit }: RegisterOccurrenceProps
                       <Label htmlFor="media" className="font-bold text-orange-500">Média</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="baixa" id="baixa" className="border-yellow-500 text-yellow-500 focus:ring-yellow-500" />
+                      <RadioGroupItem value="baixa" id="baixa" id="baixa" className="border-yellow-500 text-yellow-500 focus:ring-yellow-500" />
                       <Label htmlFor="baixa" className="font-bold text-yellow-500">Baixa</Label>
                   </div>
               </RadioGroup>

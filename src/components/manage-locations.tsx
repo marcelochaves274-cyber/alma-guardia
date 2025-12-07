@@ -43,7 +43,7 @@ export function ManageLocations() {
 
   const getSettingsDocRef = useCallback(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid, 'settings', 'locations');
+    return doc(firestore, 'sgs_genius', user.uid, 'settings', 'locations');
   }, [firestore, user]);
 
   useEffect(() => {

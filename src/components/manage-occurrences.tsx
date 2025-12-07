@@ -43,7 +43,7 @@ export function ManageOccurrences() {
 
   const getSettingsDocRef = useCallback(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid, 'settings', 'occurrenceTypes');
+    return doc(firestore, 'sgs_genius', user.uid, 'settings', 'occurrenceTypes');
   }, [firestore, user]);
 
   useEffect(() => {
