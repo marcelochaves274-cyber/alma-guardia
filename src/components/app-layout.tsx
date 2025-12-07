@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
-import { AppSettingsProvider, useAppSettings } from '@/context/app-settings-context';
+import { useAppSettings } from '@/context/app-settings-context';
 
 import { GeneralSettings } from '@/components/general-settings';
 import { Chat } from '@/components/chat';
@@ -45,14 +45,14 @@ function Loader() {
 }
 
 function MainAppLayout() {
-  const { user, isLoading } = useUser();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
 
   const [activePage, setActivePage] = useState('reminders');
   const [occurrenceToEdit, setOccurrenceToEdit] = useState<any | null>(null);
   const { appName, logoUrl } = useAppSettings();
 
-  if (isLoading) {
+  if (isUserLoading) {
     return <Loader />;
   }
 
@@ -149,9 +149,5 @@ function MainAppLayout() {
 }
 
 export function AppLayout() {
-  return (
-    <AppSettingsProvider>
-      <MainAppLayout />
-    </AppSettingsProvider>
-  )
+  return <MainAppLayout />;
 }
