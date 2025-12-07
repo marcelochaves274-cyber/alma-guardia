@@ -13,7 +13,7 @@ import { OccurrenceReport } from '@/components/occurrence-report';
 import { MapReport } from '@/components/map-report';
 import { AppSidebar } from '@/app/app-sidebar';
 
-import { useAppSettings } from '@/context/app-settings-context';
+import { useAppSettings, AppSettingsProvider } from '@/context/app-settings-context';
 import {
   Sidebar,
   SidebarInset,
@@ -21,7 +21,7 @@ import {
   SidebarProvider
 } from '@/components/ui/sidebar';
 
-export function AppLayout() {
+function AppLayoutContent() {
   const [activePage, setActivePage] = useState('reminders');
   const [occurrenceToEdit, setOccurrenceToEdit] = useState<any | null>(null);
   const { appName, logoUrl } = useAppSettings();
@@ -70,47 +70,53 @@ export function AppLayout() {
   };
 
   return (
-    <AppSettingsProvider>
-      <SidebarProvider>
-        <Sidebar>
-          <AppSidebar activePage={activePage} setActivePage={handlePageChange} />
-        </Sidebar>
-        <SidebarInset>
-          <div className="flex flex-col h-screen">
-            <header className="sticky top-0 z-10 flex h-20 items-center justify-center border-b bg-card px-4 shadow-sm md:px-6">
-              <div className="absolute left-4 flex items-center gap-4">
-                <SidebarTrigger />
-              </div>
-              <div className="flex items-center gap-4">
-                {logoUrl && (
-                  <Image
-                    src={logoUrl}
-                    alt="Logo"
-                    width={40}
-                    height={40}
-                    className="rounded-md object-contain"
-                  />
-                )}
-                <div className="flex flex-col items-center justify-center">
-                  <span className="font-bold text-xl text-foreground">
-                    Sistema de Gestão de Segurança
+    <SidebarProvider>
+      <Sidebar>
+        <AppSidebar activePage={activePage} setActivePage={handlePageChange} />
+      </Sidebar>
+      <SidebarInset>
+        <div className="flex flex-col h-screen">
+          <header className="sticky top-0 z-10 flex h-20 items-center justify-center border-b bg-card px-4 shadow-sm md:px-6">
+            <div className="absolute left-4 flex items-center gap-4">
+              <SidebarTrigger />
+            </div>
+            <div className="flex items-center gap-4">
+              {logoUrl && (
+                <Image
+                  src={logoUrl}
+                  alt="Logo"
+                  width={40}
+                  height={40}
+                  className="rounded-md object-contain"
+                />
+              )}
+              <div className="flex flex-col items-center justify-center">
+                <span className="font-bold text-xl text-foreground">
+                  Sistema de Gestão de Segurança
+                </span>
+                {appName && (
+                  <span className="font-bold text-lg text-muted-foreground">
+                    {appName}
                   </span>
-                  {appName && (
-                    <span className="font-bold text-lg text-muted-foreground">
-                      {appName}
-                    </span>
-                  )}
-                </div>
+                )}
               </div>
-            </header>
-            <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-               <div className="w-full space-y-6">
-                {renderContent()}
-              </div>
-            </main>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+            </div>
+          </header>
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+             <div className="w-full space-y-6">
+              {renderContent()}
+            </div>
+          </main>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
+
+export function AppLayout() {
+  return (
+    <AppSettingsProvider>
+      <AppLayoutContent />
     </AppSettingsProvider>
   );
 }
