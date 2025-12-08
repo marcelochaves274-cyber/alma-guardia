@@ -174,44 +174,6 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
           </SidebarMenuItem>
            <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={() => toggleSubMenu('risk-assessment')}
-              tooltip={{
-                children: 'Avaliação de Riscos',
-              }}
-            >
-              <ClipboardList />
-              <span className="font-bold">Avaliação de Riscos</span>
-              <ChevronDown
-                className={`ml-auto h-4 w-4 transition-transform ${
-                  openSubMenu === 'risk-assessment' ? 'rotate-180' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-            {openSubMenu === 'risk-assessment' && state === 'expanded' && (
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
-                    isActive={activePage === 'register-risk-assessment'}
-                    onClick={() => handlePageChange('register-risk-assessment')}
-                  >
-                     <ListPlus className="mr-2 h-4 w-4" />
-                    Registrar Avaliação
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
-                    isActive={activePage === 'risk-assessment-report'}
-                    onClick={() => handlePageChange('risk-assessment-report')}
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Relatório de Avaliação
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
-           <SidebarMenuItem>
-            <SidebarMenuButton
               onClick={() => toggleSubMenu('tratamento')}
               tooltip={{
                 children: 'Tratamento de Risco',
@@ -293,6 +255,44 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     onClick={() => handlePageChange('fauna-flora-geo-map-report')}
                   >
                     Relatório de Mapa
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('risk-assessment')}
+              tooltip={{
+                children: 'Avaliação de Riscos',
+              }}
+            >
+              <ClipboardList />
+              <span className="font-bold">Avaliação de Riscos</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'risk-assessment' ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenu === 'risk-assessment' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'register-risk-assessment'}
+                    onClick={() => handlePageChange('register-risk-assessment')}
+                  >
+                     <ListPlus className="mr-2 h-4 w-4" />
+                    Registrar Avaliação
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'risk-assessment-report'}
+                    onClick={() => handlePageChange('risk-assessment-report')}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Relatório de Avaliação
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>

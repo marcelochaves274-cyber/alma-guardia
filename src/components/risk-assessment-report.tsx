@@ -49,8 +49,8 @@ import { Label } from './ui/label';
 interface RiskAssessment {
   id: string;
   assessmentDate: Date;
-  riskType: string;
   location: string;
+  taskDescription: string;
   riskLevel: number;
   situation: 'pendente' | 'finalizado' | 'reaberto';
 }
@@ -201,7 +201,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
       <TableRow key={i}>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-48" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
@@ -270,7 +270,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
               <TableRow>
                 <TableHead>Data</TableHead>
                 <TableHead>Local</TableHead>
-                <TableHead>Tipo de Risco</TableHead>
+                <TableHead>Etapa da Atividade</TableHead>
                 <TableHead>Nível de Risco</TableHead>
                 <TableHead>Situação</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -287,7 +287,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
                     <TableRow key={ass.id}>
                       <TableCell>{ass.assessmentDate ? format(ass.assessmentDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
                       <TableCell>{ass.location}</TableCell>
-                      <TableCell>{ass.riskType}</TableCell>
+                      <TableCell>{ass.taskDescription}</TableCell>
                       <TableCell>
                           <Badge className={cn(riskProps.className)}>
                               {riskProps.label}
