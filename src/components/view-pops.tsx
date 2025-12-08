@@ -21,7 +21,7 @@ import {
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Pencil } from 'lucide-react';
 import type { PopDocument } from './manage-pops';
 
 export function ViewPops() {
@@ -34,6 +34,7 @@ export function ViewPops() {
   const [popContent, setPopContent] = useState('');
   const [isLoadingPops, setIsLoadingPops] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const getSettingsDocRef = useCallback(() => {
     if (!firestore || !user) return null;
@@ -74,6 +75,7 @@ export function ViewPops() {
     setSelectedPopName(popName);
     const selected = pops.find(p => p.name === popName);
     setPopContent(selected?.content || '');
+    setIsEditing(false); // Reset editing state on new selection
   };
 
   const handleSaveContent = async () => {
@@ -96,6 +98,7 @@ export function ViewPops() {
         title: 'Sucesso!',
         description: `Conteúdo do ${selectedPopName} foi salvo.`,
       });
+      setIsEditing(false); // Exit editing mode on save
     } catch (error) {
       console.error("Error saving POP content:", error);
       toast({
@@ -145,23 +148,39 @@ export function ViewPops() {
         </div>
 
         {selectedPopName && (
-          <div className="space-y-2">
+          <div className="space-y-4">
+             <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md border">
+              O conteúdo exibido abaixo destina-se à leitura e conferência. O documento original e assinado encontra-se arquivado com o responsável pelo SGS.
+            </p>
             <Textarea
               value={popContent}
               onChange={(e) => setPopContent(e.target.value)}
-              placeholder={`Digite o conteúdo do ${selectedPopName} aqui...`}
+              placeholder={isEditing ? `Digite o conteúdo do ${selectedPopName} aqui...` : 'Selecione um POP para ver seu conteúdo.'}
               className="min-h-[400px] text-base"
+              readOnly={!isEditing}
               disabled={isSaving}
             />
           </div>
         )}
       </CardContent>
       {selectedPopName && (
-        <CardFooter>
-          <Button onClick={handleSaveContent} disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSaving ? 'Salvando...' : 'Salvar Conteúdo'}
-          </Button>
+        <CardFooter className="flex justify-end">
+           {isEditing ? (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isSaving}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveContent} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </div>
+           ) : (
+             <Button onClick={() => setIsEditing(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar Conteúdo
+             </Button>
+           )}
         </CardFooter>
       )}
     </Card>
