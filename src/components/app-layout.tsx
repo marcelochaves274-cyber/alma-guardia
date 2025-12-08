@@ -232,6 +232,12 @@ function MainAppLayout() {
     }
   };
 
+  const getProfileTitle = () => {
+    if (profile === 'admin') return 'SGS - Admin';
+    if (profile === 'observer') return 'SGS - Observador';
+    return 'Sistema de Gestão de Segurança';
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -255,7 +261,7 @@ function MainAppLayout() {
               )}
               <div className="flex flex-col items-center justify-center">
                 <span className="font-bold text-xl text-foreground">
-                  Sistema de Gestão de Segurança
+                  {getProfileTitle()}
                 </span>
                 {appName && (
                   <span className="font-bold text-lg text-muted-foreground">
