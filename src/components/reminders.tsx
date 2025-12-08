@@ -21,7 +21,7 @@ interface Equipment {
 }
 
 interface RemindersProps {
-  setPage: (page: string) => void;
+  setPage: (page: string, filters?: any) => void;
 }
 
 export function Reminders({ setPage }: RemindersProps) {
@@ -66,6 +66,22 @@ export function Reminders({ setPage }: RemindersProps) {
       unsubscribeEquipments();
     };
   }, [user, firestore]);
+  
+  const handleViewTreatments = () => {
+    setPage('treatment-report', {
+        treatmentReport: {
+            situations: ['pendente', 'reaberto']
+        }
+    });
+  }
+  
+  const handleViewEquipments = () => {
+    setPage('equipment-report', {
+        equipmentReport: {
+            status: 'overdue'
+        }
+    })
+  }
 
   const isLoading = isLoadingTreatments || isLoadingEquipments;
 
@@ -93,7 +109,7 @@ export function Reminders({ setPage }: RemindersProps) {
                 <p className="text-xs text-muted-foreground">pendentes ou reabertos</p>
               </CardContent>
               <CardFooter>
-                 <Button className="w-full" onClick={() => setPage('treatment-report')}>
+                 <Button className="w-full" onClick={handleViewTreatments} disabled={pendingTreatments === 0}>
                     Ver Tratamentos
                  </Button>
               </CardFooter>
@@ -108,7 +124,7 @@ export function Reminders({ setPage }: RemindersProps) {
                 <p className="text-xs text-muted-foreground">vistorias atrasadas</p>
               </CardContent>
               <CardFooter>
-                 <Button className="w-full" onClick={() => setPage('equipment-report')}>
+                 <Button className="w-full" onClick={handleViewEquipments} disabled={overdueEquipments === 0}>
                     Ver Equipamentos
                  </Button>
               </CardFooter>

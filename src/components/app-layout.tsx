@@ -64,11 +64,22 @@ function Loader() {
   );
 }
 
+type ReportFilters = {
+  treatmentReport?: {
+    situations: string[];
+  };
+  equipmentReport?: {
+    status: 'overdue';
+  };
+}
+
 function MainAppLayout() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
   const [activePage, setActivePage] = useState('reminders');
+  const [reportFilters, setReportFilters] = useState<ReportFilters | null>(null);
+
   const [occurrenceToEdit, setOccurrenceToEdit] = useState<any | null>(null);
   const [treatmentToEdit, setTreatmentToEdit] = useState<any | null>(null);
   const [faunaFloraGeoToEdit, setFaunaFloraGeoToEdit] = useState<any | null>(null);
@@ -86,7 +97,9 @@ function MainAppLayout() {
     return <Loader />;
   }
   
-  const handlePageChange = (page: string) => {
+  const handlePageChange = (page: string, filters?: ReportFilters) => {
+    setReportFilters(filters || null);
+
     if (page !== 'register-occurrence') {
       setOccurrenceToEdit(null);
     }
@@ -163,7 +176,7 @@ function MainAppLayout() {
       case 'register-treatment':
         return <RegisterTreatment treatmentToEdit={treatmentToEdit} setPage={handlePageChange} />;
       case 'treatment-report':
-        return <TreatmentReport onEdit={handleEditTreatment} />;
+        return <TreatmentReport onEdit={handleEditTreatment} preFilter={reportFilters?.treatmentReport} />;
       case 'treatment-map-report':
         return <TreatmentMapReport />;
       case 'register-fauna-flora-geo':
@@ -179,7 +192,7 @@ function MainAppLayout() {
       case 'register-equipment':
         return <RegisterEquipment equipmentToEdit={equipmentToEdit} setPage={handlePageChange} />;
       case 'equipment-report':
-        return <EquipmentReport onEdit={handleEditEquipment} />;
+        return <EquipmentReport onEdit={handleEditEquipment} preFilter={reportFilters?.equipmentReport}/>;
       case 'register-activity':
         return <RegisterActivity activityToEdit={activityToEdit} setPage={handlePageChange} />;
       case 'activity-report':

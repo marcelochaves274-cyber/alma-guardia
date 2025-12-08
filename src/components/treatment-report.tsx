@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -52,6 +53,9 @@ interface Treatment {
 
 interface TreatmentReportProps {
   onEdit: (treatment: Treatment) => void;
+  preFilter?: {
+    situations: string[];
+  };
 }
 
 const getRiskLevelProperties = (score: number) => {
@@ -86,7 +90,7 @@ const getSituationProperties = (situation: string) => {
     }
 }
 
-export function TreatmentReport({ onEdit }: TreatmentReportProps) {
+export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -101,12 +105,18 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
   const [filterRiskLevels, setFilterRiskLevels] = useState<string[]>([]);
-  const [filterSituations, setFilterSituations] = useState<string[]>([]);
+  const [filterSituations, setFilterSituations] = useState<string[]>(preFilter?.situations || []);
   
   // Dynamic options for selects
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [treatmentTypes, setTreatmentTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
+  
+  useEffect(() => {
+    if (preFilter?.situations) {
+      setFilterSituations(preFilter.situations);
+    }
+  }, [preFilter]);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;

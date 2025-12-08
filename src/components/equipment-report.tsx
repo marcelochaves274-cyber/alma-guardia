@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { format, differenceInDays, startOfDay } from 'date-fns';
+import { format, differenceInDays, startOfDay, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
@@ -53,6 +53,9 @@ interface Equipment {
 
 interface EquipmentReportProps {
   onEdit: (equipment: Equipment) => void;
+  preFilter?: {
+    status: 'overdue';
+  };
 }
 
 const statusMapping: Record<string, { label: string, className: string }> = {
@@ -65,26 +68,26 @@ const statusOptions = Object.entries(statusMapping).map(([key, { label }]) => ({
 
 const getInspectionStatus = (nextInspectionDate?: Date) => {
     if (!nextInspectionDate) {
-        return { label: 'Sem data', className: 'bg-gray-400 text-white' };
+        return { label: 'Sem data', className: 'bg-gray-400 text-white', isOverdue: false };
     }
     const today = startOfDay(new Date());
     const inspectionDay = startOfDay(nextInspectionDate);
     const daysUntil = differenceInDays(inspectionDay, today);
 
     if (daysUntil < 0) {
-        return { label: 'Vistoria Atrasada', className: 'bg-red-600 text-white' };
+        return { label: 'Vistoria Atrasada', className: 'bg-red-600 text-white', isOverdue: true };
     }
     if (daysUntil === 0) {
-        return { label: 'Vistoriar Hoje', className: 'bg-yellow-500 text-black' };
+        return { label: 'Vistoriar Hoje', className: 'bg-yellow-500 text-black', isOverdue: false };
     }
     if (daysUntil <= 30) {
-        return { label: `Vence em ${daysUntil} dia(s)`, className: 'bg-orange-500 text-white' };
+        return { label: `Vence em ${daysUntil} dia(s)`, className: 'bg-orange-500 text-white', isOverdue: false };
     }
-    return { label: `Vence em ${daysUntil} dia(s)`, className: 'bg-green-600 text-white' };
+    return { label: `Vence em ${daysUntil} dia(s)`, className: 'bg-green-600 text-white', isOverdue: false };
 };
 
 
-export function EquipmentReport({ onEdit }: EquipmentReportProps) {
+export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -97,10 +100,15 @@ export function EquipmentReport({ onEdit }: EquipmentReportProps) {
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterBrands, setFilterBrands] = useState<string[]>([]);
   const [filterStatuses, setFilterStatuses] = useState<string[]>([]);
+  const [filterOverdue, setFilterOverdue] = useState(preFilter?.status === 'overdue');
   
   // Dynamic options for selects
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
+  
+  useEffect(() => {
+    setFilterOverdue(preFilter?.status === 'overdue');
+  }, [preFilter]);
   
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -152,22 +160,26 @@ export function EquipmentReport({ onEdit }: EquipmentReportProps) {
   }, [user, firestore, toast]);
   
   const filteredEquipments = useMemo(() => {
+    const today = startOfDay(new Date());
     return equipments.filter(eq => {
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(eq.equipmentType);
       const brandMatch = filterBrands.length === 0 || filterBrands.includes(eq.brand);
       const statusMatch = filterStatuses.length === 0 || filterStatuses.includes(eq.status);
-      return typeMatch && brandMatch && statusMatch;
+      const overdueMatch = !filterOverdue || (eq.nextInspectionDate && isBefore(eq.nextInspectionDate.toDate(), today));
+
+      return typeMatch && brandMatch && statusMatch && overdueMatch;
     }).sort((a,b) => {
         const dateA = a.nextInspectionDate?.toDate()?.getTime() || Infinity;
         const dateB = b.nextInspectionDate?.toDate()?.getTime() || Infinity;
         return dateA - dateB;
     });
-  }, [equipments, filterTypes, filterBrands, filterStatuses]);
+  }, [equipments, filterTypes, filterBrands, filterStatuses, filterOverdue]);
 
   const clearFilters = () => {
     setFilterTypes([]);
     setFilterBrands([]);
     setFilterStatuses([]);
+    setFilterOverdue(false);
   }
 
   const handleDelete = async (equipmentId: string) => {
@@ -235,7 +247,19 @@ export function EquipmentReport({ onEdit }: EquipmentReportProps) {
               selected={filterStatuses}
               onChange={setFilterStatuses}
             />
-            <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
+            <div className="flex items-center space-x-2">
+                <input
+                    type="checkbox"
+                    id="overdue-filter"
+                    checked={filterOverdue}
+                    onChange={(e) => setFilterOverdue(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <label htmlFor="overdue-filter" className="text-sm font-medium text-gray-700">
+                    Apenas vistorias atrasadas
+                </label>
+            </div>
+            <Button onClick={clearFilters} variant="outline" className="w-full lg:col-start-4">Limpar Filtros</Button>
           </div>
         </CardContent>
       </Card>
