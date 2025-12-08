@@ -157,7 +157,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                 </SidebarMenuSubItem>
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton 
-                    isActive={active_page === 'map-report'}
+                    isActive={activePage === 'map-report'}
                     onClick={() => handlePageChange('map-report')}
                   >
                     Relatório de Mapa
