@@ -367,11 +367,11 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
                             </div>
                             <div>
                                 <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
-                                <p>
+                                <div>
                                 <Badge className={cn(getRiskLevelProperties(assessment.riskLevel).className)}>
                                     {getRiskLevelProperties(assessment.riskLevel).label}
                                 </Badge>
-                                </p>
+                                </div>
                             </div>
                         </div>
                     </div>
