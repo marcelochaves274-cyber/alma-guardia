@@ -421,7 +421,10 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="proposed-treatment">Tratamento Proposto</Label>
+             <div className="flex items-center gap-2">
+              <Label htmlFor="proposed-treatment">Tratamento Proposto</Label>
+              <HelpTooltip content="Detalhe as medidas que foram sugeridas para eliminar ou reduzir o risco a um nível aceitável." />
+            </div>
             <Textarea
               id="proposed-treatment"
               name="proposedTreatment"
@@ -432,7 +435,10 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="action-taken">Ação Realizada</Label>
+             <div className="flex items-center gap-2">
+              <Label htmlFor="action-taken">Ação Realizada</Label>
+               <HelpTooltip content="Descreva a ação que foi efetivamente implementada para tratar o risco. Seja claro e objetivo." />
+            </div>
             <Textarea
               id="action-taken"
               name="actionTaken"

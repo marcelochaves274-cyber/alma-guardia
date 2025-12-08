@@ -24,6 +24,8 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Pencil } from 'lucide-react';
 import { Separator } from './ui/separator';
+import { HelpTooltip } from './ui/help-tooltip';
+import { Label } from './ui/label';
 
 type SectionKey = 
   | 'escopo'
@@ -187,17 +189,24 @@ export function ViewSgsDocs() {
               {sectionDescriptions[selectedSection]}
             </p>
             <Separator />
-            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md border">
-              O conteúdo exibido abaixo destina-se à leitura e conferência. O documento original e assinado encontra-se arquivado com o responsável pelo SGS.
-            </p>
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={isEditing ? `Digite o conteúdo da seção aqui...` : 'Selecione uma seção para ver seu conteúdo.'}
-              className="min-h-[400px] text-base"
-              readOnly={!isEditing}
-              disabled={isSaving}
-            />
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor='sgs-doc-content'>Conteúdo da Seção</Label>
+                <HelpTooltip content="Documente esta seção do seu SGS. Siga as orientações da norma NBR 21101 para garantir a conformidade." />
+              </div>
+              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md border">
+                O conteúdo exibido abaixo destina-se à leitura e conferência. O documento original e assinado encontra-se arquivado com o responsável pelo SGS.
+              </p>
+              <Textarea
+                id='sgs-doc-content'
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder={isEditing ? `Digite o conteúdo da seção aqui...` : 'Selecione uma seção para ver seu conteúdo.'}
+                className="min-h-[400px] text-base"
+                readOnly={!isEditing}
+                disabled={isSaving}
+              />
+            </div>
           </div>
         )}
       </CardContent>
