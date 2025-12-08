@@ -23,6 +23,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Pencil } from 'lucide-react';
+import { Separator } from './ui/separator';
 
 type SectionKey = 
   | 'escopo'
@@ -50,6 +51,18 @@ const docSections: { key: SectionKey, label: string }[] = [
     { key: 'avaliacao', label: 'Avaliação e Desempenho' },
     { key: 'melhoria', label: 'Melhorias Contínuas' },
 ];
+
+const sectionDescriptions: Record<SectionKey, string> = {
+  escopo: 'Conforme NBR ISO 21101:2023, item 4.3\n“A organização deve determinar os limites e a aplicabilidade do sistema de gestão da segurança para estabelecer o seu escopo. O escopo deve ser mantido como informação documentada e deve considerar as atividades, produtos e serviços oferecidos, as partes interessadas relevantes e os requisitos legais e outros aplicáveis.”',
+  termos: 'Conforme NBR 21101:2023, item 3:\n"A organização deve definir termos e definições relevantes para o sistema de gestão de segurança, garantindo entendimento comum entre todos os envolvidos."',
+  contexto: 'Conforme NBR 21101:2023, item 4.1:\n"A organização deve determinar questões internas e externas relevantes ao seu propósito e que afetam sua capacidade de alcançar os resultados esperados do SGS."',
+  lideranca: 'Conforme NBR 21101:2023, itens 5.1 e 5.2:\n"A liderança deve demonstrar comprometimento com o SGS, estabelecendo uma política de segurança alinhada aos objetivos do parque e à NBR 21101."',
+  planejamento: 'Conforme NBR 21101:2023, item 6:\n"A organização deve planejar as ações para abordar riscos e oportunidades, assegurar a consecução dos objetivos e integrar o SGS aos processos operacionais."',
+  apoio: 'Conforme NBR 21101:2023, item 7:\n"A organização deve assegurar recursos, competências, conscientização, comunicação e informações documentadas necessárias para o SGS."',
+  operacao: 'Conforme NBR 21101:2023, item 8:\n"A organização deve planejar, implementar e controlar processos operacionais relacionados à segurança em atividades de turismo de aventura."',
+  avaliacao: 'Conforme NBR 21101:2023, item 9:\n"A organização deve monitorar, medir, analisar e avaliar o desempenho do SGS para assegurar sua eficácia."',
+  melhoria: 'Conforme NBR 21101:2023, item 10:\n"A organização deve buscar continuamente melhorar a adequação, suficiência e eficácia do SGS."',
+};
 
 export function ViewSgsDocs() {
   const firestore = useFirestore();
@@ -170,7 +183,11 @@ export function ViewSgsDocs() {
 
         {selectedSection && (
           <div className="space-y-4">
-             <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md border">
+            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md border whitespace-pre-wrap">
+              {sectionDescriptions[selectedSection]}
+            </p>
+            <Separator />
+            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md border">
               O conteúdo exibido abaixo destina-se à leitura e conferência. O documento original e assinado encontra-se arquivado com o responsável pelo SGS.
             </p>
             <Textarea
