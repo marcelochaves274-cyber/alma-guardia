@@ -258,7 +258,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
               onChange={setFilterAnalyses}
             />
              <MultiSelectFilter
-              placeholder="Filtrar por Faixa Etária"
+              placeholder="Filtrar Faixa Etária"
               options={ageGroupOptions}
               selected={filterAgeGroups}
               onChange={setFilterAgeGroups}
