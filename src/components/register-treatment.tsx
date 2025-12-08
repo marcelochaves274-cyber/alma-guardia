@@ -81,7 +81,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
   const [marker, setMarker] = useState<Marker>(null);
   const [probability, setProbability] = useState('');
   const [consequence, setConsequence] = useState('');
-  const [situation, setSituation] = useState('');
+  const [situation, setSituation] = useState(isEditing ? '' : 'finalizado');
   const [completionDate, setCompletionDate] = useState<Date | undefined>();
 
 
@@ -117,7 +117,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
       setProbability(treatmentToEdit.probability || '');
       setConsequence(treatmentToEdit.consequence || '');
       setMarker(treatmentToEdit.mapMarker || null);
-      setSituation(treatmentToEdit.situation || '');
+      setSituation(treatmentToEdit.situation || 'finalizado');
     }
   }, [isEditing, treatmentToEdit]);
 
@@ -194,7 +194,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
     setProbability('');
     setConsequence('');
     setMarker(null);
-    setSituation('');
+    setSituation('finalizado');
     setCompletionDate(undefined);
   }
 
@@ -226,7 +226,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
         mapMarker: marker,
         userId: user.uid,
         situation,
-        completionDate: completionDate ? Timestamp.fromDate(completionDate) : null,
+        completionDate: completionDate && (situation === 'pendente' || situation === 'reaberto') ? Timestamp.fromDate(completionDate) : null,
     };
 
     try {
@@ -503,39 +503,41 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="completion-date">Data para Conclusão</Label>
-                     <Popover open={isCompletionCalendarOpen} onOpenChange={setIsCompletionCalendarOpen}>
-                        <PopoverTrigger asChild>
-                        <Button
-                            variant={'outline'}
-                            className={cn(
-                            'w-full justify-start text-left font-normal',
-                            !completionDate && 'text-muted-foreground'
-                            )}
-                        >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {completionDate ? (
-                            format(completionDate, 'dd/MM/yyyy')
-                            ) : (
-                            <span>Selecione a data</span>
-                            )}
-                        </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={completionDate}
-                            onSelect={(date) => {
-                                if(date) setCompletionDate(date);
-                                setIsCompletionCalendarOpen(false);
-                            }}
-                            locale={ptBR}
-                            initialFocus
-                        />
-                        </PopoverContent>
-                    </Popover>
-                </div>
+                {(situation === 'pendente' || situation === 'reaberto') && (
+                  <div className="space-y-2">
+                      <Label htmlFor="completion-date">Data para Conclusão</Label>
+                      <Popover open={isCompletionCalendarOpen} onOpenChange={setIsCompletionCalendarOpen}>
+                          <PopoverTrigger asChild>
+                          <Button
+                              variant={'outline'}
+                              className={cn(
+                              'w-full justify-start text-left font-normal',
+                              !completionDate && 'text-muted-foreground'
+                              )}
+                          >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {completionDate ? (
+                              format(completionDate, 'dd/MM/yyyy')
+                              ) : (
+                              <span>Selecione a data</span>
+                              )}
+                          </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                          <Calendar
+                              mode="single"
+                              selected={completionDate}
+                              onSelect={(date) => {
+                                  if(date) setCompletionDate(date);
+                                  setIsCompletionCalendarOpen(false);
+                              }}
+                              locale={ptBR}
+                              initialFocus
+                          />
+                          </PopoverContent>
+                      </Popover>
+                  </div>
+                )}
             </div>
 
             <div className="flex justify-end gap-4 pt-4">
