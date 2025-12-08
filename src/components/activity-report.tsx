@@ -23,7 +23,6 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, Timestamp, doc, getDoc, query, where, limit, orderBy } from 'firebase/firestore';
@@ -84,7 +83,7 @@ export function ActivityReport() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedContent, setSelectedContent] = useState({ title: '', content: '' });
-  const [selectedAssessment, setSelectedAssessment] = useState<RiskAssessment | null>(null);
+  const [selectedAssessments, setSelectedAssessments] = useState<RiskAssessment[]>([]);
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
 
   // States to hold the fetched documents content
@@ -165,7 +164,7 @@ export function ActivityReport() {
         .filter(ra => ra.location === activity.riskAssessmentLocation)
         .sort((a, b) => b.assessmentDate.getTime() - a.assessmentDate.getTime());
     
-    setSelectedAssessment(assessmentsForLocation[0] || null);
+    setSelectedAssessments(assessmentsForLocation);
     setIsAssessmentModalOpen(true);
   };
 
@@ -259,65 +258,65 @@ export function ActivityReport() {
       
       {/* Specific Risk Assessment Modal */}
        <Dialog open={isAssessmentModalOpen} onOpenChange={setIsAssessmentModalOpen}>
-        <DialogContent className="max-w-2xl">
-          {selectedAssessment ? (
+        <DialogContent className="max-w-4xl">
+          {selectedAssessments.length > 0 ? (
             <>
             <DialogHeader>
-              <DialogTitle>Detalhes da Avaliação de Risco</DialogTitle>
-              <DialogDescription>
-                Esta é a avaliação de risco mais recente para o local: {selectedAssessment.location}.
-              </DialogDescription>
+              <DialogTitle>Avaliações de Risco para: {selectedAssessments[0].location}</DialogTitle>
+              <p className='text-sm text-muted-foreground'>
+                Exibindo {selectedAssessments.length} avaliação(ões) para este local.
+              </p>
             </DialogHeader>
-            <ScrollArea className="max-h-[70vh] pr-6">
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="font-semibold text-muted-foreground">Data da Avaliação</Label>
-                    <p>{format(selectedAssessment.assessmentDate, 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}</p>
-                  </div>
-                  <div>
-                    <Label className="font-semibold text-muted-foreground">Local</Label>
-                    <p>{selectedAssessment.location}</p>
-                  </div>
-                </div>
-                  <div>
-                    <Label className="font-semibold text-muted-foreground">Etapa da Atividade</Label>
-                    <p>{selectedAssessment.taskDescription || 'Não informado'}</p>
-                  </div>
-                    <div>
-                    <Label className="font-semibold text-muted-foreground">Causa</Label>
-                    <p>{selectedAssessment.riskSource  || 'Não informado'}</p>
-                  </div>
-                    <div>
-                    <Label className="font-semibold text-muted-foreground">Perigo</Label>
-                    <p>{selectedAssessment.effects  || 'Não informado'}</p>
-                  </div>
-                    <div>
-                    <Label className="font-semibold text-muted-foreground">Dano</Label>
-                    <p>{selectedAssessment.existingControls  || 'Não informado'}</p>
-                  </div>
-                    <div>
-                    <Label className="font-semibold text-muted-foreground">Controle Operacional</Label>
-                    <p>{selectedAssessment.recommendedControls  || 'Não informado'}</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 mt-4">
-                    <div>
-                        <Label className="font-semibold text-muted-foreground">Probabilidade</Label>
-                        <p>{selectedAssessment.probability}</p>
+            <ScrollArea className="max-h-[70vh] pr-4">
+              <div className="space-y-6 py-4">
+                {selectedAssessments.map((assessment) => (
+                    <div key={assessment.id} className="space-y-4 rounded-lg border p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <Label className="font-semibold text-muted-foreground">Data da Avaliação</Label>
+                            <p>{format(assessment.assessmentDate, 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}</p>
+                        </div>
+                        <div>
+                            <Label className="font-semibold text-muted-foreground">Etapa da Atividade</Label>
+                            <p>{assessment.taskDescription || 'Não informado'}</p>
+                        </div>
+                        </div>
+                        <div>
+                            <Label className="font-semibold text-muted-foreground">Causa</Label>
+                            <p>{assessment.riskSource  || 'Não informado'}</p>
+                        </div>
+                            <div>
+                            <Label className="font-semibold text-muted-foreground">Perigo</Label>
+                            <p>{assessment.effects  || 'Não informado'}</p>
+                        </div>
+                            <div>
+                            <Label className="font-semibold text-muted-foreground">Dano</Label>
+                            <p>{assessment.existingControls  || 'Não informado'}</p>
+                        </div>
+                            <div>
+                            <Label className="font-semibold text-muted-foreground">Controle Operacional</Label>
+                            <p>{assessment.recommendedControls  || 'Não informado'}</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 mt-4">
+                            <div>
+                                <Label className="font-semibold text-muted-foreground">Probabilidade</Label>
+                                <p>{assessment.probability}</p>
+                            </div>
+                            <div>
+                                <Label className="font-semibold text-muted-foreground">Consequência</Label>
+                                <p>{assessment.consequence}</p>
+                            </div>
+                            <div>
+                                <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
+                                <p>
+                                <Badge className={cn(getRiskLevelProperties(assessment.riskLevel).className)}>
+                                    {getRiskLevelProperties(assessment.riskLevel).label}
+                                </Badge>
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                      <div>
-                        <Label className="font-semibold text-muted-foreground">Consequência</Label>
-                        <p>{selectedAssessment.consequence}</p>
-                    </div>
-                      <div>
-                        <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
-                        <p>
-                          <Badge className={cn(getRiskLevelProperties(selectedAssessment.riskLevel).className)}>
-                              {getRiskLevelProperties(selectedAssessment.riskLevel).label}
-                          </Badge>
-                        </p>
-                    </div>
-                  </div>
+                ))}
               </div>
             </ScrollArea>
               <div className="flex justify-end pt-2">
@@ -331,7 +330,7 @@ export function ActivityReport() {
           ) : (
             <DialogHeader>
                 <DialogTitle>Avaliação de Risco não encontrada</DialogTitle>
-                 <DialogDescription className="py-4">Não foi possível encontrar uma avaliação de risco associada a este local.</DialogDescription>
+                 <p className="py-4 text-sm text-muted-foreground">Não foi possível encontrar uma avaliação de risco associada a este local.</p>
                  <div className="flex justify-end pt-2">
                     <DialogClose asChild>
                         <Button type="button" variant="secondary">
