@@ -36,6 +36,7 @@ import { ActivityReport } from './activity-report';
 import { Reminders } from './reminders';
 import { RegisterNotice } from './register-notice';
 import { PendingNotices } from './pending-notices';
+import { HelpPage } from './help-page';
 
 
 import {
@@ -157,6 +158,8 @@ function MainAppLayout() {
 
   const renderContent = () => {
     switch (activePage) {
+      case 'help':
+        return <HelpPage />;
       case 'general-settings':
         return <GeneralSettings />;
       case 'register-occurrence':
