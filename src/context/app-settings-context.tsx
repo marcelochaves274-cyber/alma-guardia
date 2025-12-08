@@ -142,7 +142,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [isSavingLogo, setIsSavingLogo] = useState(false);
 
   const firestore = useFirestore();
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   
   const getSettingsDocRef = useCallback(() => {
