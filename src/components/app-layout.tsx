@@ -34,6 +34,7 @@ import { RegisterEquipment } from './register-equipment';
 import { ManageEquipmentAndBrands } from './manage-equipment-and-brands';
 import { EquipmentReport } from './equipment-report';
 import { RegisterActivity } from './register-activity';
+import { ActivityReport } from './activity-report';
 
 
 import {
@@ -173,6 +174,8 @@ function MainAppLayout() {
         return <EquipmentReport onEdit={handleEditEquipment} />;
       case 'register-activity':
         return <RegisterActivity />;
+      case 'activity-report':
+        return <ActivityReport />;
       case 'view-pops':
         return <ViewPops />;
       case 'view-tcrs':
