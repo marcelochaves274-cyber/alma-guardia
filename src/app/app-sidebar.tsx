@@ -13,7 +13,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -97,6 +97,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'manage-pops': 'settings',
       'manage-fauna-flora-geo': 'settings',
       'manage-equipment-and-brands': 'settings',
+      'tutorial': 'informacoes',
     };
 
     const parentMenu = subMenuParents[page];
@@ -105,7 +106,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     } else {
       // For top-level items, we can decide to close other submenus
       // or handle as needed. Here we close them.
-      if (!['help'].includes(page)) {
+      if (!['help', 'informacoes'].includes(page)) {
           setOpenSubMenu(null);
       }
     }
@@ -175,6 +176,34 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
               <HelpCircle />
               <span className="font-bold">Ajuda</span>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('informacoes')}
+              tooltip={{
+                children: 'Informações',
+              }}
+            >
+              <Info />
+              <span className="font-bold">Informações</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'informacoes' ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenu === 'informacoes' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'tutorial'}
+                    onClick={() => handlePageChange('tutorial')}
+                  >
+                    Tutorial
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton

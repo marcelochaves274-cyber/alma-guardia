@@ -40,6 +40,7 @@ import { PendingNotices } from './pending-notices';
 import { HelpPage } from './help-page';
 import { ProfileSelector } from './profile-selector';
 import { useProfile } from '@/context/profile-context';
+import { TutorialPage } from './tutorial-page';
 
 
 import {
@@ -168,6 +169,8 @@ function MainAppLayout() {
     switch (activePage) {
       case 'help':
         return <HelpPage />;
+      case 'tutorial':
+        return <TutorialPage />;
       case 'general-settings':
         return <GeneralSettings />;
       case 'manage-profile':
