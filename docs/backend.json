@@ -448,6 +448,52 @@
         "manufacturingDate",
         "status"
       ]
+    },
+    "Activity": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Activity",
+      "type": "object",
+      "description": "Represents a registered activity session.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the activity record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who registered the activity."
+        },
+        "activityName": {
+          "type": "string",
+          "description": "The name of the activity being performed."
+        },
+        "pop": {
+          "type": "string",
+          "description": "The selected POP document for the activity."
+        },
+        "tcr": {
+          "type": "string",
+          "description": "The selected TCR document for the activity."
+        },
+        "riskAssessmentLocation": {
+          "type": "string",
+          "description": "The location associated with the risk assessment for this activity."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the activity was registered."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "activityName",
+        "pop",
+        "tcr",
+        "riskAssessmentLocation",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -590,6 +636,26 @@
             {
               "name": "equipmentId",
               "description": "Unique identifier for the equipment record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/sgs_genius/{userId}/activities/{activityId}",
+        "definition": {
+          "entityName": "Activity",
+          "schema": {
+            "$ref": "#/backend/entities/Activity"
+          },
+          "description": "Stores registered activity sessions for a user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Corresponds to the user's UID."
+            },
+            {
+              "name": "activityId",
+              "description": "Unique identifier for the activity record."
             }
           ]
         }

@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, addDoc, collection, serverTimestamp, getDocs } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { PopDocument } from './manage-pops';
@@ -28,7 +28,7 @@ export function RegisterActivity() {
   const [activityName, setActivityName] = useState('');
   const [pop, setPop] = useState('');
   const [tcr, setTcr] = useState('');
-  const [location, setLocation] = useState('');
+  const [riskAssessmentLocation, setRiskAssessmentLocation] = useState('');
   
   const [allDocs, setAllDocs] = useState<PopDocument[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
@@ -100,7 +100,7 @@ export function RegisterActivity() {
     setActivityName('');
     setPop('');
     setTcr('');
-    setLocation('');
+    setRiskAssessmentLocation('');
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -110,7 +110,7 @@ export function RegisterActivity() {
         return;
     }
 
-    if (!activityName || !pop || !tcr || !location) {
+    if (!activityName || !pop || !tcr || !riskAssessmentLocation) {
         toast({ variant: 'destructive', title: 'Campos obrigatórios', description: 'Por favor, preencha todos os campos.' });
         return;
     }
@@ -122,7 +122,7 @@ export function RegisterActivity() {
         activityName,
         pop,
         tcr,
-        location,
+        riskAssessmentLocation,
         createdAt: serverTimestamp(),
     };
     
@@ -147,7 +147,7 @@ export function RegisterActivity() {
         <CardHeader>
           <CardTitle>Registrar Atividade</CardTitle>
           <CardDescription>
-            Selecione a atividade, POP, TCR e local para registrar.
+            Selecione a atividade, POP, TCR e avaliação de risco para registrar.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -205,10 +205,10 @@ export function RegisterActivity() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location">Local</Label>
-              <Select name="location" required disabled={isLoading || locations.length === 0} onValueChange={setLocation} value={location}>
-                <SelectTrigger id="location">
-                  <SelectValue placeholder={isLoading ? "Carregando..." : locations.length === 0 ? "Nenhum local cadastrado" : "Selecione o local"} />
+              <Label htmlFor="risk-assessment">Avaliação de Risco</Label>
+              <Select name="riskAssessmentLocation" required disabled={isLoading || locations.length === 0} onValueChange={setRiskAssessmentLocation} value={riskAssessmentLocation}>
+                <SelectTrigger id="risk-assessment">
+                  <SelectValue placeholder={isLoading ? "Carregando..." : locations.length === 0 ? "Nenhuma avaliação cadastrada" : "Selecione o local da avaliação"} />
                 </SelectTrigger>
                 <SelectContent>
                     {locations.map((loc) => (

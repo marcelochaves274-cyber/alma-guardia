@@ -28,7 +28,7 @@ interface Activity {
   activityName: string;
   pop: string;
   tcr: string;
-  location: string;
+  riskAssessmentLocation: string;
   createdAt: Timestamp;
 }
 
@@ -94,7 +94,7 @@ export function ActivityReport() {
                 <TableHead>Atividade</TableHead>
                 <TableHead>POP</TableHead>
                 <TableHead>TCR</TableHead>
-                <TableHead>Local</TableHead>
+                <TableHead>Avaliação de Risco</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -107,7 +107,7 @@ export function ActivityReport() {
                       <TableCell>{act.activityName.replace(/^POP\/TCR\s/, '')}</TableCell>
                       <TableCell>{act.pop}</TableCell>
                       <TableCell>{act.tcr}</TableCell>
-                      <TableCell>{act.location || 'N/A'}</TableCell>
+                      <TableCell>{act.riskAssessmentLocation || 'N/A'}</TableCell>
                     </TableRow>
                 ))
               ) : (
