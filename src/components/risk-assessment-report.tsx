@@ -16,6 +16,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -37,8 +44,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { MultiSelectFilter } from './multi-select-filter';
-import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 
 interface RiskAssessment {
@@ -60,18 +65,6 @@ const getRiskLevelProperties = (score: number) => {
     if (score > 0) return { label: 'Baixa', className: 'bg-yellow-400 text-black hover:bg-yellow-500' };
     return { label: 'N/A', className: 'bg-muted text-muted-foreground' };
 };
-
-const riskLevelOptions = [
-    { value: 'alta', label: 'Alta' },
-    { value: 'media', label: 'Média' },
-    { value: 'baixa', label: 'Baixa' },
-];
-
-const situationOptions = [
-    { value: 'pendente', label: 'Pendente' },
-    { value: 'finalizado', label: 'Finalizado' },
-    { value: 'reaberto', label: 'Reaberto' },
-];
 
 const getSituationProperties = (situation: string) => {
     switch (situation) {
@@ -96,17 +89,12 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Filter states
-  const [filterYears, setFilterYears] = useState<string[]>([]);
-  const [filterMonths, setFilterMonths] = useState<string[]>([]);
-  const [filterTypes, setFilterTypes] = useState<string[]>([]);
-  const [filterLocations, setFilterLocations] = useState<string[]>([]);
-  const [filterRiskLevels, setFilterRiskLevels] = useState<string[]>([]);
-  const [filterSituations, setFilterSituations] = useState<string[]>([]);
+  const [filterLocation, setFilterLocation] = useState<string | null>(null);
   
   // Dynamic options for selects
-  const [availableYears, setAvailableYears] = useState<string[]>([]);
-  const [riskTypes, setRiskTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
+
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -114,21 +102,25 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   }, [firestore, user]);
 
   useEffect(() => {
-    const fetchSelectOptions = async (docName: string, setData: (data: string[]) => void, field: 'types' | 'locations') => {
+    const fetchSelectOptions = async (docName: string, setData: (data: string[]) => void, setLoading: (loading: boolean) => void) => {
       const docRef = getSettingsDocRef(docName);
-      if (!docRef) return;
+      if (!docRef) {
+        setLoading(false);
+        return
+      };
       try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setData(data[field] || []);
+          setData(data['locations'] || []);
         }
       } catch (error) {
         console.error(`Error fetching ${docName}:`, error);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchSelectOptions('occurrenceTypes', setRiskTypes, 'types');
-    fetchSelectOptions('locations', setLocations, 'locations');
+    fetchSelectOptions('locations', setLocations, setIsLoadingLocations);
   }, [getSettingsDocRef]);
   
   useEffect(() => {
@@ -150,14 +142,6 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
           assessmentDate,
         } as RiskAssessment;
       });
-
-      const years = new Set(
-        assessmentsData
-          .map(ass => ass.assessmentDate?.getFullYear())
-          .filter((year): year is number => !!year)
-          .map(String)
-      );
-      setAvailableYears(Array.from(years).sort((a, b) => Number(b) - Number(a)));
       
       setAssessments(assessmentsData.sort((a, b) => b.assessmentDate.getTime() - a.assessmentDate.getTime()));
       setIsLoading(false);
@@ -175,36 +159,12 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   }, [user, firestore, toast]);
 
   const filteredAssessments = useMemo(() => {
-    return assessments.filter(ass => {
-      const assDate = ass.assessmentDate;
-      if (!assDate) return false;
+    if (!filterLocation) {
+        return assessments;
+    }
+    return assessments.filter(ass => ass.location === filterLocation);
+  }, [assessments, filterLocation]);
 
-      const yearMatch = filterYears.length === 0 || filterYears.includes(assDate.getFullYear().toString());
-      const monthMatch = filterMonths.length === 0 || filterMonths.includes(assDate.getMonth().toString());
-      const typeMatch = filterTypes.length === 0 || filterTypes.includes(ass.riskType);
-      const locationMatch = filterLocations.length === 0 || filterLocations.includes(ass.location);
-      const situationMatch = filterSituations.length === 0 || filterSituations.includes(ass.situation);
-      
-      const riskLevelMatch = filterRiskLevels.length === 0 || filterRiskLevels.some(level => {
-        const score = ass.riskLevel;
-        if (level === 'alta') return score >= 15;
-        if (level === 'media') return score >= 8 && score < 15;
-        if (level === 'baixa') return score > 0 && score < 8;
-        return false;
-      });
-
-      return yearMatch && monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch;
-    });
-  }, [assessments, filterYears, filterMonths, filterTypes, filterLocations, filterRiskLevels, filterSituations]);
-
-  const clearFilters = () => {
-    setFilterYears([]);
-    setFilterMonths([]);
-    setFilterTypes([]);
-    setFilterLocations([]);
-    setFilterRiskLevels([]);
-    setFilterSituations([]);
-  }
 
   const handleDelete = async (assessmentId: string) => {
     if (!firestore || !user) {
@@ -255,52 +215,41 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         <CardHeader>
           <CardTitle>Relatório de Avaliação de Risco</CardTitle>
           <CardDescription>
-            Filtre e visualize as avaliações de risco registradas no sistema.
+            Filtre as avaliações de risco por local.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Filtrar por Mês</Label>
-            <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
-            <MultiSelectFilter
-              placeholder="Filtrar Ano"
-              options={availableYears.map(y => ({ value: y, label: y }))}
-              selected={filterYears}
-              onChange={setFilterYears}
-              disabled={availableYears.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Tipo de Risco"
-              options={riskTypes.map(t => ({ value: t, label: t }))}
-              selected={filterTypes}
-              onChange={setFilterTypes}
-              disabled={!riskTypes || riskTypes.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Nível de Risco (PxC)"
-              options={riskLevelOptions}
-              selected={filterRiskLevels}
-              onChange={setFilterRiskLevels}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Local"
-              options={locations.map(l => ({ value: l, label: l }))}
-              selected={filterLocations}
-              onChange={setFilterLocations}
-              disabled={!locations || locations.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Situação"
-              options={situationOptions}
-              selected={filterSituations}
-              onChange={setFilterSituations}
-            />
-            
-            <Button onClick={clearFilters} variant="outline" className="w-full">
-              Limpar Filtros
-            </Button>
+          <div className="max-w-sm space-y-2">
+            <Label htmlFor="location-filter">Filtrar por Local</Label>
+             <Select 
+                name="location-filter"
+                disabled={isLoadingLocations || locations.length === 0} 
+                onValueChange={(value) => setFilterLocation(value === "all" ? null : value)}
+                value={filterLocation || 'all'}
+            >
+                <SelectTrigger id="location-filter">
+                  <SelectValue placeholder={
+                    isLoadingLocations ? "Carregando locais..." : 
+                    locations.length === 0 ? "Nenhum local cadastrado" : "Selecione um local"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingLocations ? (
+                    <div className="flex items-center justify-center p-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : (
+                    <>
+                        <SelectItem value="all">Todos os locais</SelectItem>
+                        {locations.map((loc) => (
+                          <SelectItem key={loc} value={loc}>
+                            {loc}
+                          </SelectItem>
+                        ))}
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
           </div>
         </CardContent>
       </Card>
@@ -309,7 +258,10 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         <CardHeader>
           <CardTitle>Resultados</CardTitle>
           <CardDescription>
-            Foram encontradas {filteredAssessments.length} avaliações.
+            {filterLocation 
+                ? `Exibindo ${filteredAssessments.length} avaliações para ${filterLocation}.`
+                : `Exibindo todas as ${filteredAssessments.length} avaliações.`
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -387,7 +339,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
-                    {assessments.length === 0 ? "Nenhuma avaliação registrada ainda." : "Nenhuma avaliação encontrada com os filtros selecionados."}
+                    {assessments.length === 0 ? "Nenhuma avaliação registrada ainda." : "Nenhuma avaliação encontrada para o local selecionado."}
                   </TableCell>
                 </TableRow>
               )}
