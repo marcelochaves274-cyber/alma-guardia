@@ -139,6 +139,18 @@
           "type": "string",
           "description": "A detailed description of the risk and the treatment applied."
         },
+        "probability": {
+          "type": "string",
+          "description": "The probability score (1-5)."
+        },
+        "consequence": {
+          "type": "string",
+          "description": "The consequence score (1-5)."
+        },
+        "riskLevel": {
+          "type": "number",
+          "description": "The calculated risk level (probability * consequence)."
+        },
         "mapMarker": {
           "type": "object",
           "properties": {
@@ -166,7 +178,10 @@
         "treatmentDate",
         "treatmentType",
         "treatmentLocation",
-        "description"
+        "description",
+        "probability",
+        "consequence",
+        "riskLevel"
       ]
     }
   },

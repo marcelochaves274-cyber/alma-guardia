@@ -35,6 +35,7 @@ import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp 
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
+import { Badge } from './ui/badge';
 
 type Marker = { x: number; y: number } | null;
 
@@ -42,6 +43,30 @@ interface RegisterTreatmentProps {
   treatmentToEdit: any | null;
   setPage: (page: string) => void;
 }
+
+const probabilityOptions = [
+  { value: '1', label: '1 - Quase Improvável' },
+  { value: '2', label: '2 - Improvável' },
+  { value: '3', label: '3 - Pouco Provável' },
+  { value: '4', label: '4 - Provável' },
+  { value: '5', label: '5 - Quase Certo' },
+];
+
+const consequenceOptions = [
+  { value: '1', label: '1 - Insignificante' },
+  { value: '2', label: '2 - Baixa' },
+  { value: '3', label: '3 - Moderada' },
+  { value: '4', label: '4 - Alta' },
+  { value: '5', label: '5 - Catastrófica' },
+];
+
+const getRiskLevel = (probability: number, consequence: number) => {
+    const score = probability * consequence;
+    if (score >= 15) return { label: 'Inaceitável', color: 'bg-red-500 text-white', score };
+    if (score >= 8) return { label: 'Moderado', color: 'bg-orange-500 text-white', score };
+    if (score > 0) return { label: 'Tolerável', color: 'bg-yellow-400 text-black', score };
+    return { label: 'Não calculado', color: 'bg-muted text-muted-foreground', score: 0 };
+};
 
 export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmentProps) {
   const isEditing = !!treatmentToEdit;
@@ -52,6 +77,8 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
   const [treatmentType, setTreatmentType] = useState('');
   const [description, setDescription] = useState('');
   const [marker, setMarker] = useState<Marker>(null);
+  const [probability, setProbability] = useState('');
+  const [consequence, setConsequence] = useState('');
 
   // UI/Data loading states
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -77,6 +104,8 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
       setTreatmentLocation(treatmentToEdit.treatmentLocation || '');
       setTreatmentType(treatmentToEdit.treatmentType || '');
       setDescription(treatmentToEdit.description || '');
+      setProbability(treatmentToEdit.probability || '');
+      setConsequence(treatmentToEdit.consequence || '');
       setMarker(treatmentToEdit.mapMarker || null);
     }
   }, [isEditing, treatmentToEdit]);
@@ -149,6 +178,8 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
     setTreatmentLocation('');
     setTreatmentType('');
     setDescription('');
+    setProbability('');
+    setConsequence('');
     setMarker(null);
   }
 
@@ -165,11 +196,16 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
 
     setIsSubmitting(true);
     
+    const riskLevelData = getRiskLevel(Number(probability), Number(consequence));
+
     const treatmentData = {
         treatmentDate: Timestamp.fromDate(treatmentDate),
         treatmentLocation,
         treatmentType,
         description,
+        probability,
+        consequence,
+        riskLevel: riskLevelData.score,
         mapMarker: marker,
         userId: user.uid,
     };
@@ -201,6 +237,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
     }
   };
 
+  const riskLevel = getRiskLevel(Number(probability), Number(consequence));
 
   return (
     <Card className="w-full">
@@ -270,7 +307,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
                 </SelectContent>
               </Select>
             </div>
-             <div className="space-y-2">
+             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="treatment-type">Tipo de Risco</Label>
               <Select name="treatmentType" required disabled={isLoadingTypes || treatmentTypes.length === 0} onValueChange={setTreatmentType} value={treatmentType}>
                 <SelectTrigger id="treatment-type">
@@ -307,6 +344,48 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
+          </div>
+
+          <Separator />
+          
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Nível de Risco (PxC)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div className="space-y-2">
+                    <Label htmlFor="probability">Probabilidade</Label>
+                    <Select name="probability" required onValueChange={setProbability} value={probability}>
+                        <SelectTrigger id="probability">
+                            <SelectValue placeholder="Selecione a probabilidade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {probabilityOptions.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="consequence">Consequência</Label>
+                    <Select name="consequence" required onValueChange={setConsequence} value={consequence}>
+                        <SelectTrigger id="consequence">
+                            <SelectValue placeholder="Selecione a consequência" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {consequenceOptions.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label>Nível de Risco</Label>
+                    <div className="flex items-center h-10">
+                        <Badge className={cn("text-base px-4 py-2", riskLevel.color)}>
+                            {riskLevel.score > 0 ? `${riskLevel.label} (${riskLevel.score})` : riskLevel.label}
+                        </Badge>
+                    </div>
+                </div>
+            </div>
           </div>
           
           <Separator />
