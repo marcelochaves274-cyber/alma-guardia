@@ -52,17 +52,22 @@ export function ViewPops() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          const fetchedDocs = (data.documents || []).map((item: any) => {
+            const fetchedDocs = (data.documents || []).map((item: any): PopDocument => {
+                // Backwards compatibility for old data structure
                 if (typeof item === 'string') {
-                    // Backwards compatibility for old data structure
-                    return { name: item, content: '' };
+                    return { name: item, popContent: '', tcrContent: '' };
+                }
+                 // Compatibility for structure with just 'content'
+                if (item.content && !item.popContent && !item.tcrContent) {
+                    return { name: item.name, popContent: item.content, tcrContent: '' };
                 }
                 return {
                     name: item.name,
-                    content: item.content || '',
+                    popContent: item.popContent || '',
+                    tcrContent: item.tcrContent || '',
                 };
             });
-          setAllDocs(fetchedDocs);
+            setAllDocs(fetchedDocs);
         }
       } catch (error) {
         console.error("Error fetching documents:", error);
@@ -78,12 +83,10 @@ export function ViewPops() {
     fetchDocs();
   }, [getSettingsDocRef, toast]);
 
-  const popDocuments = allDocs; // All documents are available for POPs
-
   const handleSelectPop = (popName: string) => {
     setSelectedPopName(popName);
     const selected = allDocs.find(p => p.name === popName);
-    setPopContent(selected?.content || '');
+    setPopContent(selected?.popContent || '');
     setIsEditing(false); // Reset editing state on new selection
   };
 
@@ -99,9 +102,16 @@ export function ViewPops() {
     setIsSaving(true);
     try {
       const updatedDocs = allDocs.map(p =>
-        p.name === selectedPopName ? { ...p, content: popContent } : p
+        p.name === selectedPopName ? { ...p, popContent: popContent } : p
       );
-      await setDoc(docRef, { documents: updatedDocs });
+      // Ensure all fields are present when saving
+      const docsToSave = updatedDocs.map(d => ({
+            name: d.name,
+            popContent: d.popContent || '',
+            tcrContent: d.tcrContent || '',
+        }));
+
+      await setDoc(docRef, { documents: docsToSave });
       setAllDocs(updatedDocs); // Update local state
       toast({
         title: 'Sucesso!',
@@ -132,12 +142,12 @@ export function ViewPops() {
         <div className="space-y-2">
           <Select
             onValueChange={handleSelectPop}
-            disabled={isLoadingDocs || popDocuments.length === 0}
+            disabled={isLoadingDocs || allDocs.length === 0}
           >
             <SelectTrigger>
               <SelectValue placeholder={
                 isLoadingDocs ? "Carregando POPs..." :
-                popDocuments.length === 0 ? "Nenhum POP cadastrado" : "Selecione um documento"
+                allDocs.length === 0 ? "Nenhum POP cadastrado" : "Selecione um documento"
               } />
             </SelectTrigger>
             <SelectContent>
@@ -146,7 +156,7 @@ export function ViewPops() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 </div>
               ) : (
-                popDocuments.map((pop) => (
+                allDocs.map((pop) => (
                   <SelectItem key={pop.name} value={pop.name}>
                     {pop.name}
                   </SelectItem>

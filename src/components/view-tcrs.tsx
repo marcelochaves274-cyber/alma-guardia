@@ -52,13 +52,19 @@ export function ViewTcrs() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-           const fetchedDocs = (data.documents || []).map((item: any) => {
+           const fetchedDocs = (data.documents || []).map((item: any): PopDocument => {
+                // Backwards compatibility for old data structure
                 if (typeof item === 'string') {
-                    return { name: item, content: '' };
+                    return { name: item, popContent: '', tcrContent: '' };
+                }
+                 // Compatibility for structure with just 'content'
+                if (item.content && !item.popContent && !item.tcrContent) {
+                    return { name: item.name, popContent: item.content, tcrContent: '' };
                 }
                 return {
                     name: item.name,
-                    content: item.content || '',
+                    popContent: item.popContent || '',
+                    tcrContent: item.tcrContent || '',
                 };
             });
           setAllDocs(fetchedDocs);
@@ -77,13 +83,11 @@ export function ViewTcrs() {
     fetchDocs();
   }, [getSettingsDocRef, toast]);
   
-  const tcrDocuments = allDocs; // All documents are available for TCRs
-
 
   const handleSelectTcr = (tcrName: string) => {
     setSelectedTcrName(tcrName);
     const selected = allDocs.find(p => p.name === tcrName);
-    setTcrContent(selected?.content || '');
+    setTcrContent(selected?.tcrContent || '');
     setIsEditing(false);
   };
 
@@ -99,9 +103,16 @@ export function ViewTcrs() {
     setIsSaving(true);
     try {
       const updatedDocs = allDocs.map(p =>
-        p.name === selectedTcrName ? { ...p, content: tcrContent } : p
+        p.name === selectedTcrName ? { ...p, tcrContent: tcrContent } : p
       );
-      await setDoc(docRef, { documents: updatedDocs });
+       // Ensure all fields are present when saving
+      const docsToSave = updatedDocs.map(d => ({
+            name: d.name,
+            popContent: d.popContent || '',
+            tcrContent: d.tcrContent || '',
+        }));
+
+      await setDoc(docRef, { documents: docsToSave });
       setAllDocs(updatedDocs);
       toast({
         title: 'Sucesso!',
@@ -132,12 +143,12 @@ export function ViewTcrs() {
         <div className="space-y-2">
           <Select
             onValueChange={handleSelectTcr}
-            disabled={isLoadingDocs || tcrDocuments.length === 0}
+            disabled={isLoadingDocs || allDocs.length === 0}
           >
             <SelectTrigger>
               <SelectValue placeholder={
                 isLoadingDocs ? "Carregando TCRs..." :
-                tcrDocuments.length === 0 ? "Nenhum TCR cadastrado" : "Selecione um TCR"
+                allDocs.length === 0 ? "Nenhum TCR cadastrado" : "Selecione um TCR"
               } />
             </SelectTrigger>
             <SelectContent>
@@ -146,7 +157,7 @@ export function ViewTcrs() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 </div>
               ) : (
-                tcrDocuments.map((doc) => (
+                allDocs.map((doc) => (
                   <SelectItem key={doc.name} value={doc.name}>
                     {doc.name}
                   </SelectItem>

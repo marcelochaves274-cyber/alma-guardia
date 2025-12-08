@@ -31,7 +31,8 @@ import {
 
 export interface PopDocument {
   name: string;
-  content: string;
+  popContent: string;
+  tcrContent: string;
 }
 
 export function ManagePops() {
@@ -70,14 +71,19 @@ export function ManagePops() {
         if (isMounted) {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            const fetchedDocs = (data.documents || []).map((item: any) => {
+            const fetchedDocs = (data.documents || []).map((item: any): PopDocument => {
+                // Backwards compatibility for old data structure
                 if (typeof item === 'string') {
-                    // Backwards compatibility for old data structure
-                    return { name: item, content: '' };
+                    return { name: item, popContent: '', tcrContent: '' };
+                }
+                 // Compatibility for structure with just 'content'
+                if (item.content && !item.popContent && !item.tcrContent) {
+                    return { name: item.name, popContent: item.content, tcrContent: '' };
                 }
                 return {
                     name: item.name,
-                    content: item.content || '',
+                    popContent: item.popContent || '',
+                    tcrContent: item.tcrContent || '',
                 };
             });
             setDocuments(fetchedDocs);
@@ -115,7 +121,13 @@ export function ManagePops() {
     
     setIsSaving(true);
     try {
-        await setDoc(docRef, { documents: updatedDocs });
+        // Ensure all fields are present when saving
+        const docsToSave = updatedDocs.map(d => ({
+            name: d.name,
+            popContent: d.popContent || '',
+            tcrContent: d.tcrContent || '',
+        }));
+        await setDoc(docRef, { documents: docsToSave });
         return true;
     } catch (error) {
         console.error("Error saving documents:", error);
@@ -141,7 +153,8 @@ export function ManagePops() {
     
     const newDoc: PopDocument = {
         name: finalDocName,
-        content: '',
+        popContent: '',
+        tcrContent: '',
     }
 
     if (documents.some(p => p.name.toLowerCase() === newDoc.name.toLowerCase())) {
@@ -179,7 +192,6 @@ export function ManagePops() {
 
   const handleStartEditing = (doc: PopDocument) => {
     setEditingDoc(doc);
-    // Remove prefix for editing, add it back on save
     setEditingValue(doc.name.replace(/^POP\/TCR\s/, ''));
   };
 
