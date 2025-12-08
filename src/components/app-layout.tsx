@@ -30,6 +30,7 @@ import { ViewPops } from './view-pops';
 import { ViewTcrs } from './view-tcrs';
 import { ViewRame } from './view-rame';
 import { ViewSgsDocs } from './view-sgs-docs';
+import { RegisterEquipment } from './register-equipment';
 
 
 import {
@@ -69,6 +70,7 @@ function MainAppLayout() {
   const [treatmentToEdit, setTreatmentToEdit] = useState<any | null>(null);
   const [faunaFloraGeoToEdit, setFaunaFloraGeoToEdit] = useState<any | null>(null);
   const [assessmentToEdit, setAssessmentToEdit] = useState<any | null>(null);
+  const [equipmentToEdit, setEquipmentToEdit] = useState<any | null>(null);
   const { appName, logoUrl } = useAppSettings();
 
   if (isUserLoading) {
@@ -93,6 +95,9 @@ function MainAppLayout() {
     if (page !== 'register-risk-assessment') {
       setAssessmentToEdit(null);
     }
+    if (page !== 'register-equipment') {
+      setEquipmentToEdit(null);
+    }
     setActivePage(page);
   };
 
@@ -114,6 +119,11 @@ function MainAppLayout() {
   const handleEditAssessment = (assessment: any) => {
     setAssessmentToEdit(assessment);
     setActivePage('register-risk-assessment');
+  }
+
+  const handleEditEquipment = (equipment: any) => {
+    setEquipmentToEdit(equipment);
+    setActivePage('register-equipment');
   }
 
   const renderContent = () => {
@@ -152,6 +162,8 @@ function MainAppLayout() {
         return <RegisterRiskAssessment assessmentToEdit={assessmentToEdit} setPage={handlePageChange} />;
       case 'risk-assessment-report':
         return <RiskAssessmentReport onEdit={handleEditAssessment} />;
+      case 'register-equipment':
+        return <RegisterEquipment equipmentToEdit={equipmentToEdit} setPage={handlePageChange} />;
       case 'view-pops':
         return <ViewPops />;
       case 'view-tcrs':

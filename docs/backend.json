@@ -368,6 +368,86 @@
         "consequence",
         "riskLevel"
       ]
+    },
+    "Equipment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Equipment",
+      "type": "object",
+      "description": "Represents a single piece of equipment.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the equipment."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this equipment record."
+        },
+        "equipmentType": {
+          "type": "string",
+          "description": "The type of equipment."
+        },
+        "brand": {
+          "type": "string",
+          "description": "The brand of the equipment."
+        },
+        "model": {
+          "type": "string",
+          "description": "The model of the equipment."
+        },
+        "lotCaUiaa": {
+          "type": "string",
+          "description": "The lot, CA, or UIAA number."
+        },
+        "manufacturingDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The manufacturing date of the equipment."
+        },
+        "storageLocation": {
+          "type": "string",
+          "description": "The general storage location."
+        },
+        "storageDetails": {
+          "type": "string",
+          "description": "Specific details about the storage location (e.g., shelf, box)."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "operacional",
+            "em manutencao",
+            "descartado"
+          ],
+          "description": "The current status of the equipment."
+        },
+        "lastInspectionDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date of the last inspection."
+        },
+        "nextInspectionDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date for the next scheduled inspection."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "equipmentType",
+        "brand",
+        "manufacturingDate",
+        "status"
+      ]
     }
   },
   "auth": {
@@ -490,6 +570,26 @@
             {
               "name": "assessmentId",
               "description": "Unique identifier for the risk assessment record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/sgs_genius/{userId}/equipments/{equipmentId}",
+        "definition": {
+          "entityName": "Equipment",
+          "schema": {
+            "$ref": "#/backend/entities/Equipment"
+          },
+          "description": "Stores equipment records for a user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Corresponds to the user's UID."
+            },
+            {
+              "name": "equipmentId",
+              "description": "Unique identifier for the equipment record."
             }
           ]
         }

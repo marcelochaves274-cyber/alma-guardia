@@ -13,7 +13,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -78,6 +78,8 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'fauna-flora-geo-map-report': 'fauna-flora-geo',
       'register-risk-assessment': 'risk-assessment',
       'risk-assessment-report': 'risk-assessment',
+      'register-equipment': 'equipamentos',
+      'equipment-report': 'equipamentos',
       'general-settings': 'settings',
       'manage-occurrences': 'settings',
       'manage-locations': 'settings',
@@ -293,6 +295,42 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     onClick={() => handlePageChange('risk-assessment-report')}
                   >
                     Relatório de Avaliação
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('equipamentos')}
+              tooltip={{
+                children: 'Equipamentos',
+              }}
+            >
+              <HardHat />
+              <span className="font-bold">Equipamentos</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'equipamentos' ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenu === 'equipamentos' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    isActive={activePage === 'register-equipment'}
+                    onClick={() => handlePageChange('register-equipment')}
+                  >
+                   Registrar Equipamento
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    isActive={activePage === 'equipment-report'}
+                    onClick={() => handlePageChange('equipment-report')}
+                  >
+                    Relatório de Equipamentos
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
