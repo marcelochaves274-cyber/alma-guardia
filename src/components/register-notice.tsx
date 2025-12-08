@@ -223,17 +223,15 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
               <Input id="collaborator-name" value={collaboratorName} onChange={(e) => setCollaboratorName(e.target.value)} placeholder="Seu nome completo" required />
             </div>
             <div className="space-y-2">
-                <Label htmlFor="weather">Tempo</Label>
+                <Label htmlFor="weather">Clima</Label>
                 <Select name="weather" onValueChange={setWeather} value={weather}>
                     <SelectTrigger id="weather">
-                    <SelectValue placeholder="Selecione o tempo" />
+                    <SelectValue placeholder="Selecione o clima" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="ensolarado">Ensolarado</SelectItem>
                         <SelectItem value="nublado">Nublado</SelectItem>
                         <SelectItem value="chuvoso">Chuvoso</SelectItem>
-                        <SelectItem value="tempestade">Tempestade</SelectItem>
-                        <SelectItem value="neve">Neve</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -329,5 +327,3 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
     </Card>
   );
 }
-
-    
