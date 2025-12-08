@@ -126,7 +126,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
 
   return (
     <>
-      <SidebarHeader>
+      <SidebarHeader className="bg-sidebar-secondary">
         <div className="flex items-center gap-2">
           {isLoading ? (
             <Skeleton className='h-6 w-6 rounded-sm' />
@@ -637,7 +637,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
           )}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="bg-sidebar-secondary">
          <SidebarMenu>
             <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => clearProfile()} tooltip={{children: 'Trocar Perfil'}}>

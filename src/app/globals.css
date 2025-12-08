@@ -32,6 +32,7 @@
     
     /* Sidebar variables now derive from the main theme */
     --sidebar-background: 85 30% 15%;
+    --sidebar-secondary-background: 85 30% 20%;
     --sidebar-foreground: var(--foreground);
     --sidebar-primary: var(--primary);
     --sidebar-primary-foreground: var(--primary-foreground);
@@ -69,6 +70,7 @@
 
     /* Sidebar dark variables now derive from the main dark theme */
     --sidebar-background: 85 10% 12%;
+    --sidebar-secondary-background: 85 10% 17%;
     --sidebar-foreground: var(--foreground);
     --sidebar-primary: var(--primary);
     --sidebar-primary-foreground: var(--primary-foreground);
