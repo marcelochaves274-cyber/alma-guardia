@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -371,7 +372,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     isActive={activePage === 'manage-fauna-flora-geo'}
                     onClick={() => handlePageChange('manage-fauna-flora-geo')}
                   >
-                    Gerenciar Fauna/Flora/Geo
+                    Gerenciar Fa/Fl/Ge
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
