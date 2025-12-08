@@ -16,7 +16,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -77,7 +76,6 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
-  const [filterDescription, setFilterDescription] = useState<string>('');
   const [filterAnalyses, setFilterAnalyses] = useState<string[]>([]);
   
   // Dynamic options for selects
@@ -163,18 +161,16 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(rec.speciesType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(rec.location);
       const analysisMatch = filterAnalyses.length === 0 || filterAnalyses.includes(rec.analysis);
-      const descriptionMatch = !filterDescription || rec.description?.toLowerCase().includes(filterDescription.toLowerCase());
 
-      return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && descriptionMatch;
+      return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch;
     });
-  }, [records, filterYears, filterMonths, filterTypes, filterLocations, filterDescription, filterAnalyses]);
+  }, [records, filterYears, filterMonths, filterTypes, filterLocations, filterAnalyses]);
 
   const clearFilters = () => {
     setFilterYears([]);
     setFilterMonths([]);
     setFilterTypes([]);
     setFilterLocations([]);
-    setFilterDescription('');
     setFilterAnalyses([]);
   }
 
@@ -234,7 +230,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
             <Label>Filtrar por Mês</Label>
             <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
             <MultiSelectFilter
               placeholder="Filtrar Ano"
               options={availableYears.map(y => ({ value: y, label: y }))}
@@ -243,7 +239,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
               disabled={availableYears.length === 0}
             />
             <MultiSelectFilter
-              placeholder="Filtrar por Espécie/Tipo"
+              placeholder="Filtrar Espécie/Tipo"
               options={speciesTypes.map(t => ({ value: t, label: t }))}
               selected={filterTypes}
               onChange={setFilterTypes}
@@ -261,12 +257,6 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
               options={analysisOptions}
               selected={filterAnalyses}
               onChange={setFilterAnalyses}
-            />
-            <Input
-              placeholder="Filtrar por Descrição"
-              value={filterDescription}
-              onChange={(e) => setFilterDescription(e.target.value)}
-              className="lg:col-span-2"
             />
             
             <Button onClick={clearFilters} variant="outline" className="w-full">
