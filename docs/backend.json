@@ -205,6 +205,77 @@
         "consequence",
         "riskLevel"
       ]
+    },
+    "FaunaFloraGeoRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FaunaFloraGeoRecord",
+      "type": "object",
+      "description": "Represents a single Fauna, Flora, or Geo record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who created this record."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date of the record."
+        },
+        "speciesType": {
+          "type": "string",
+          "description": "The species or type being recorded."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the record."
+        },
+        "location": {
+          "type": "string",
+          "description": "The location of the record."
+        },
+        "analysis": {
+          "type": "string",
+          "enum": [
+            "alta",
+            "media",
+            "baixa"
+          ],
+          "description": "The analysis of the situation."
+        },
+        "mapMarker": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "description": "Coordinates of the marker on the map."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "date",
+        "speciesType",
+        "description",
+        "location",
+        "analysis"
+      ]
     }
   },
   "auth": {
@@ -287,6 +358,26 @@
             {
               "name": "riskTreatmentId",
               "description": "Unique identifier for the risk treatment record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/sgs_genius/{userId}/fauna_flora_geo/{recordId}",
+        "definition": {
+          "entityName": "FaunaFloraGeoRecord",
+          "schema": {
+            "$ref": "#/backend/entities/FaunaFloraGeoRecord"
+          },
+          "description": "Stores Fauna, Flora, and Geo records for a user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Corresponds to the user's UID."
+            },
+            {
+              "name": "recordId",
+              "description": "Unique identifier for the record."
             }
           ]
         }

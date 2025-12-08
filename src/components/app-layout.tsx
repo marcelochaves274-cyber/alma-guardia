@@ -19,6 +19,9 @@ import { RegisterTreatment } from '@/components/register-treatment';
 import { TreatmentReport } from '@/components/treatment-report';
 import { TreatmentMapReport } from '@/components/treatment-map-report';
 import { ManageFaunaFloraGeo } from '@/components/manage-fauna-flora-geo';
+import { RegisterFaunaFloraGeo } from '@/components/register-fauna-flora-geo';
+import { FaunaFloraGeoReport } from '@/components/fauna-flora-geo-report';
+import { FaunaFloraGeoMapReport } from '@/components/fauna-flora-geo-map-report';
 
 
 import {
@@ -56,6 +59,7 @@ function MainAppLayout() {
   const [activePage, setActivePage] = useState('reminders');
   const [occurrenceToEdit, setOccurrenceToEdit] = useState<any | null>(null);
   const [treatmentToEdit, setTreatmentToEdit] = useState<any | null>(null);
+  const [faunaFloraGeoToEdit, setFaunaFloraGeoToEdit] = useState<any | null>(null);
   const { appName, logoUrl } = useAppSettings();
 
   if (isUserLoading) {
@@ -74,6 +78,9 @@ function MainAppLayout() {
     if (page !== 'register-treatment') {
       setTreatmentToEdit(null);
     }
+    if (page !== 'register-fauna-flora-geo') {
+      setFaunaFloraGeoToEdit(null);
+    }
     setActivePage(page);
   };
 
@@ -85,6 +92,11 @@ function MainAppLayout() {
   const handleEditTreatment = (treatment: any) => {
     setTreatmentToEdit(treatment);
     setActivePage('register-treatment');
+  }
+  
+  const handleEditFaunaFloraGeo = (record: any) => {
+    setFaunaFloraGeoToEdit(record);
+    setActivePage('register-fauna-flora-geo');
   }
 
   const renderContent = () => {
@@ -111,6 +123,12 @@ function MainAppLayout() {
         return <TreatmentReport onEdit={handleEditTreatment} />;
       case 'treatment-map-report':
         return <TreatmentMapReport />;
+      case 'register-fauna-flora-geo':
+        return <RegisterFaunaFloraGeo recordToEdit={faunaFloraGeoToEdit} setPage={handlePageChange} />;
+      case 'fauna-flora-geo-report':
+        return <FaunaFloraGeoReport onEdit={handleEditFaunaFloraGeo} />;
+      case 'fauna-flora-geo-map-report':
+        return <FaunaFloraGeoMapReport />;
       case 'reminders':
       default:
         return (

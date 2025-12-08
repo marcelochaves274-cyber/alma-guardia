@@ -72,6 +72,9 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'register-treatment': 'tratamento',
       'treatment-report': 'tratamento',
       'treatment-map-report': 'tratamento',
+      'register-fauna-flora-geo': 'fauna-flora-geo',
+      'fauna-flora-geo-report': 'fauna-flora-geo',
+      'fauna-flora-geo-map-report': 'fauna-flora-geo',
       'general-settings': 'settings',
       'manage-occurrences': 'settings',
       'manage-locations': 'settings',
@@ -204,6 +207,50 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                   <SidebarMenuSubButton 
                     isActive={activePage === 'treatment-map-report'}
                     onClick={() => handlePageChange('treatment-map-report')}
+                  >
+                    Relatório de Mapa
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('fauna-flora-geo')}
+              tooltip={{
+                children: 'Fauna Flora Geo',
+              }}
+            >
+              <Sprout />
+              <span className="font-bold">Fauna Flora Geo</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'fauna-flora-geo' ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenu === 'fauna-flora-geo' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'register-fauna-flora-geo'}
+                    onClick={() => handlePageChange('register-fauna-flora-geo')}
+                  >
+                    Registrar
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'fauna-flora-geo-report'}
+                    onClick={() => handlePageChange('fauna-flora-geo-report')}
+                  >
+                    Relatório
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'fauna-flora-geo-map-report'}
+                    onClick={() => handlePageChange('fauna-flora-geo-map-report')}
                   >
                     Relatório de Mapa
                   </SidebarMenuSubButton>

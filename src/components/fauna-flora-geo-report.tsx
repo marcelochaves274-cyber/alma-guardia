@@ -1,0 +1,363 @@
+'use client';
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Skeleton } from './ui/skeleton';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Pencil, Trash2, Loader2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { MultiSelectFilter } from './multi-select-filter';
+import { MonthSelector } from './month-selector';
+import { Label } from './ui/label';
+
+interface FaunaFloraGeoRecord {
+  id: string;
+  date: Date;
+  speciesType: string;
+  location: string;
+  analysis: 'alta' | 'media' | 'baixa';
+  description: string;
+}
+
+interface FaunaFloraGeoReportProps {
+  onEdit: (record: FaunaFloraGeoRecord) => void;
+}
+
+const analysisMapping: Record<string, { label: string, className: string }> = {
+    alta: { label: 'Alta', className: 'bg-red-500 text-white hover:bg-red-600' },
+    media: { label: 'Média', className: 'bg-orange-500 text-white hover:bg-orange-600' },
+    baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
+};
+
+const analysisOptions = Object.entries(analysisMapping).map(([key, { label }]) => ({ value: key, label }));
+
+export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+  
+  const [records, setRecords] = useState<FaunaFloraGeoRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+  // Filter states
+  const [filterYears, setFilterYears] = useState<string[]>([]);
+  const [filterMonths, setFilterMonths] = useState<string[]>([]);
+  const [filterTypes, setFilterTypes] = useState<string[]>([]);
+  const [filterLocations, setFilterLocations] = useState<string[]>([]);
+  const [filterDescription, setFilterDescription] = useState<string>('');
+  const [filterAnalyses, setFilterAnalyses] = useState<string[]>([]);
+  
+  // Dynamic options for selects
+  const [availableYears, setAvailableYears] = useState<string[]>([]);
+  const [speciesTypes, setSpeciesTypes] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
+
+  const getSettingsDocRef = useCallback((collectionName: string) => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'sgs_genius', user.uid, 'settings', collectionName);
+  }, [firestore, user]);
+
+  // Fetch dynamic options for filters
+  useEffect(() => {
+    const fetchSelectOptions = async (docName: string, setData: (data: string[]) => void, field: 'types' | 'locations') => {
+      const docRef = getSettingsDocRef(docName);
+      if (!docRef) return;
+      try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setData(data[field] || []);
+        }
+      } catch (error) {
+        console.error(`Error fetching ${docName}:`, error);
+      }
+    };
+    fetchSelectOptions('faunaFloraGeoTypes', setSpeciesTypes, 'types');
+    fetchSelectOptions('locations', setLocations, 'locations');
+  }, [getSettingsDocRef]);
+  
+  // Fetch all records with real-time updates
+  useEffect(() => {
+    if (!user || !firestore) return;
+    setIsLoading(true);
+
+    const recordsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'fauna_flora_geo');
+    
+    const unsubscribe = onSnapshot(recordsCollectionRef, (querySnapshot) => {
+      const recordsData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        const recordDate = data.date instanceof Timestamp 
+          ? data.date.toDate() 
+          : new Date(); 
+
+        return {
+          id: doc.id,
+          ...data,
+          date: recordDate,
+        } as FaunaFloraGeoRecord;
+      });
+      
+      const years = new Set(
+        recordsData
+          .map(rec => rec.date?.getFullYear())
+          .filter((year): year is number => !!year)
+          .map(String)
+      );
+      setAvailableYears(Array.from(years).sort((a, b) => Number(b) - Number(a)));
+
+      setRecords(recordsData.sort((a, b) => b.date.getTime() - a.date.getTime()));
+      setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching real-time records:", error);
+        toast({
+            variant: "destructive",
+            title: "Erro de conexão",
+            description: "Não foi possível buscar os registros em tempo real."
+        });
+        setIsLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, [user, firestore, toast]);
+
+  const filteredRecords = useMemo(() => {
+    return records.filter(rec => {
+      const recDate = rec.date;
+      if (!recDate) return false;
+
+      const yearMatch = filterYears.length === 0 || filterYears.includes(recDate.getFullYear().toString());
+      const monthMatch = filterMonths.length === 0 || filterMonths.includes(recDate.getMonth().toString());
+      const typeMatch = filterTypes.length === 0 || filterTypes.includes(rec.speciesType);
+      const locationMatch = filterLocations.length === 0 || filterLocations.includes(rec.location);
+      const analysisMatch = filterAnalyses.length === 0 || filterAnalyses.includes(rec.analysis);
+      const descriptionMatch = !filterDescription || rec.description?.toLowerCase().includes(filterDescription.toLowerCase());
+
+      return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && descriptionMatch;
+    });
+  }, [records, filterYears, filterMonths, filterTypes, filterLocations, filterDescription, filterAnalyses]);
+
+  const clearFilters = () => {
+    setFilterYears([]);
+    setFilterMonths([]);
+    setFilterTypes([]);
+    setFilterLocations([]);
+    setFilterDescription('');
+    setFilterAnalyses([]);
+  }
+
+  const handleDelete = async (recordId: string) => {
+    if (!firestore || !user) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.'});
+      return;
+    }
+    setIsDeleting(recordId);
+    try {
+      const docRef = doc(firestore, 'sgs_genius', user.uid, 'fauna_flora_geo', recordId);
+      await deleteDoc(docRef);
+      
+      toast({
+        title: 'Sucesso!',
+        description: 'Registro excluído com sucesso.',
+      });
+    } catch (error) {
+      console.error("Error deleting record:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir',
+        description: 'Não foi possível excluir o registro.',
+      });
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  const handleEdit = (record: FaunaFloraGeoRecord) => {
+    onEdit(record);
+  };
+  
+  const renderSkeletons = () => (
+    Array.from({ length: 5 }).map((_, i) => (
+      <TableRow key={i}>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+      </TableRow>
+    ))
+  );
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Relatório de Fauna, Flora & Geo</CardTitle>
+          <CardDescription>
+            Filtre e visualize os registros do sistema.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Filtrar por Mês</Label>
+            <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+            <MultiSelectFilter
+              placeholder="Filtrar Ano"
+              options={availableYears.map(y => ({ value: y, label: y }))}
+              selected={filterYears}
+              onChange={setFilterYears}
+              disabled={availableYears.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Espécie/Tipo"
+              options={speciesTypes.map(t => ({ value: t, label: t }))}
+              selected={filterTypes}
+              onChange={setFilterTypes}
+              disabled={!speciesTypes || speciesTypes.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Local"
+              options={locations.map(l => ({ value: l, label: l }))}
+              selected={filterLocations}
+              onChange={setFilterLocations}
+              disabled={!locations || locations.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Análise"
+              options={analysisOptions}
+              selected={filterAnalyses}
+              onChange={setFilterAnalyses}
+            />
+            <Input
+              placeholder="Filtrar por Descrição"
+              value={filterDescription}
+              onChange={(e) => setFilterDescription(e.target.value)}
+              className="lg:col-span-2"
+            />
+            
+            <Button onClick={clearFilters} variant="outline" className="w-full">
+              Limpar Filtros
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Resultados</CardTitle>
+          <CardDescription>
+            Foram encontrados {filteredRecords.length} registros.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data</TableHead>
+                <TableHead>Espécie/Tipo</TableHead>
+                <TableHead>Local</TableHead>
+                <TableHead>Análise</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                renderSkeletons()
+              ) : filteredRecords.length > 0 ? (
+                filteredRecords.map((rec) => (
+                  <TableRow key={rec.id}>
+                    <TableCell>{rec.date ? format(rec.date, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
+                    <TableCell>{rec.speciesType}</TableCell>
+                    <TableCell>{rec.location}</TableCell>
+                    <TableCell>
+                      {rec.analysis && analysisMapping[rec.analysis] ? (
+                          <Badge className={cn(analysisMapping[rec.analysis].className)}>
+                              {analysisMapping[rec.analysis].label}
+                          </Badge>
+                      ) : 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar registro" onClick={() => handleEdit(rec)}>
+                          <Pencil className="h-4 w-4" />
+                       </Button>
+                       <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                             <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                aria-label="Excluir registro"
+                                disabled={isDeleting === rec.id}
+                              >
+                                {isDeleting === rec.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                             </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                  Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro de <span className="font-semibold">{rec.speciesType}</span> do dia <span className="font-semibold">{rec.date ? format(rec.date, 'dd/MM/yyyy') : ''}</span>.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                      onClick={() => handleDelete(rec.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                      Sim, excluir
+                                  </AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                       </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    {records.length === 0 ? "Nenhum registro encontrado." : "Nenhum registro encontrado com os filtros selecionados."}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
