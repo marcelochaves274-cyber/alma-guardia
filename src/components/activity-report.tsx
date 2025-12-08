@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, Timestamp, doc, getDoc, query, where, limit, orderBy } from 'firebase/firestore';
