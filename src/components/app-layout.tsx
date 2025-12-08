@@ -35,6 +35,7 @@ import { RegisterActivity } from './register-activity';
 import { ActivityReport } from './activity-report';
 import { Reminders } from './reminders';
 import { RegisterNotice } from './register-notice';
+import { PendingNotices } from './pending-notices';
 
 
 import {
@@ -80,6 +81,7 @@ function MainAppLayout() {
 
   const [activePage, setActivePage] = useState('reminders');
   const [reportFilters, setReportFilters] = useState<ReportFilters | null>(null);
+  const [prefillData, setPrefillData] = useState<any | null>(null);
 
   const [occurrenceToEdit, setOccurrenceToEdit] = useState<any | null>(null);
   const [treatmentToEdit, setTreatmentToEdit] = useState<any | null>(null);
@@ -99,30 +101,22 @@ function MainAppLayout() {
     return <Loader />;
   }
   
-  const handlePageChange = (page: string, filters?: ReportFilters) => {
-    setReportFilters(filters || null);
+  const handlePageChange = (page: string, options?: { filters?: ReportFilters, prefill?: any }) => {
+    setReportFilters(options?.filters || null);
+    setPrefillData(options?.prefill || null);
 
-    if (page !== 'register-occurrence') {
-      setOccurrenceToEdit(null);
+    setOccurrenceToEdit(null);
+    setTreatmentToEdit(null);
+    setFaunaFloraGeoToEdit(null);
+    setAssessmentToEdit(null);
+    setEquipmentToEdit(null);
+    setActivityToEdit(null);
+    setNoticeToEdit(null);
+    
+    if (page !== 'register-occurrence' && page !== 'register-treatment' && page !== 'register-fauna-flora-geo') {
+      setPrefillData(null);
     }
-    if (page !== 'register-treatment') {
-      setTreatmentToEdit(null);
-    }
-    if (page !== 'register-fauna-flora-geo') {
-      setFaunaFloraGeoToEdit(null);
-    }
-    if (page !== 'register-risk-assessment') {
-      setAssessmentToEdit(null);
-    }
-    if (page !== 'register-equipment') {
-      setEquipmentToEdit(null);
-    }
-    if (page !== 'register-activity') {
-      setActivityToEdit(null);
-    }
-    if (page !== 'register-notice') {
-      setNoticeToEdit(null);
-    }
+    
     setActivePage(page);
   };
 
@@ -166,7 +160,7 @@ function MainAppLayout() {
       case 'general-settings':
         return <GeneralSettings />;
       case 'register-occurrence':
-        return <RegisterOccurrence occurrenceToEdit={occurrenceToEdit} setPage={handlePageChange} />;
+        return <RegisterOccurrence occurrenceToEdit={occurrenceToEdit} setPage={handlePageChange} prefillData={prefillData} />;
       case 'occurrence-report':
         return <OccurrenceReport onEdit={handleEditOccurrence} />;
       case 'map-report':
@@ -184,13 +178,13 @@ function MainAppLayout() {
       case 'manage-equipment-and-brands':
         return <ManageEquipmentAndBrands />;
       case 'register-treatment':
-        return <RegisterTreatment treatmentToEdit={treatmentToEdit} setPage={handlePageChange} />;
+        return <RegisterTreatment treatmentToEdit={treatmentToEdit} setPage={handlePageChange} prefillData={prefillData} />;
       case 'treatment-report':
         return <TreatmentReport onEdit={handleEditTreatment} preFilter={reportFilters?.treatmentReport} />;
       case 'treatment-map-report':
         return <TreatmentMapReport />;
       case 'register-fauna-flora-geo':
-        return <RegisterFaunaFloraGeo recordToEdit={faunaFloraGeoToEdit} setPage={handlePageChange} />;
+        return <RegisterFaunaFloraGeo recordToEdit={faunaFloraGeoToEdit} setPage={handlePageChange} prefillData={prefillData} />;
       case 'fauna-flora-geo-report':
         return <FaunaFloraGeoReport onEdit={handleEditFaunaFloraGeo} />;
       case 'fauna-flora-geo-map-report':
@@ -209,6 +203,8 @@ function MainAppLayout() {
         return <ActivityReport onEdit={handleEditActivity} />;
       case 'register-notice':
         return <RegisterNotice noticeToEdit={noticeToEdit} setPage={handlePageChange} />;
+      case 'pending-notices':
+        return <PendingNotices setPage={handlePageChange} />;
       case 'view-pops':
         return <ViewPops />;
       case 'view-tcrs':
@@ -270,5 +266,3 @@ function MainAppLayout() {
 export function AppLayout() {
   return <MainAppLayout />;
 }
-
-    

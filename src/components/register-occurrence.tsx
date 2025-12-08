@@ -42,13 +42,14 @@ type Marker = { x: number; y: number } | null;
 interface RegisterOccurrenceProps {
   occurrenceToEdit: any | null;
   setPage: (page: string) => void;
+  prefillData?: any | null;
 }
 
-export function RegisterOccurrence({ occurrenceToEdit, setPage }: RegisterOccurrenceProps) {
+export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: RegisterOccurrenceProps) {
   const isEditing = !!occurrenceToEdit;
 
   // Form states
-  const [occurrenceDate, setOccurrenceDate] = useState<Date | undefined>();
+  const [occurrenceDate, setOccurrenceDate] = useState<Date | undefined>(prefillData?.date ? (prefillData.date instanceof Timestamp ? prefillData.date.toDate() : prefillData.date) : new Date());
   const [occurrenceLocation, setOccurrenceLocation] = useState('');
   const [occurrenceType, setOccurrenceType] = useState('');
   const [ageGroup, setAgeGroup] = useState('');
@@ -77,6 +78,15 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage }: RegisterOccurr
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (prefillData) {
+      setDescription(prefillData.description || '');
+      setInvolvedPersonName(prefillData.collaboratorName || '');
+      setOccurrenceLocation(prefillData.location || '');
+      setMarker(prefillData.mapMarker || null);
+    }
+  }, [prefillData]);
 
   // Populate form if we are editing
   useEffect(() => {

@@ -41,6 +41,7 @@ type Marker = { x: number; y: number } | null;
 interface RegisterTreatmentProps {
   treatmentToEdit: any | null;
   setPage: (page: string) => void;
+  prefillData?: any | null;
 }
 
 const probabilityOptions = [
@@ -68,11 +69,11 @@ const getRiskLevel = (probability: number, consequence: number) => {
 };
 
 
-export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmentProps) {
+export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: RegisterTreatmentProps) {
   const isEditing = !!treatmentToEdit;
 
   // Form states
-  const [treatmentDate, setTreatmentDate] = useState<Date | undefined>();
+  const [treatmentDate, setTreatmentDate] = useState<Date | undefined>(prefillData?.date ? (prefillData.date instanceof Timestamp ? prefillData.date.toDate() : prefillData.date) : new Date());
   const [treatmentLocation, setTreatmentLocation] = useState('');
   const [treatmentType, setTreatmentType] = useState('');
   const [description, setDescription] = useState('');
@@ -81,7 +82,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
   const [marker, setMarker] = useState<Marker>(null);
   const [probability, setProbability] = useState('');
   const [consequence, setConsequence] = useState('');
-  const [situation, setSituation] = useState(isEditing ? '' : 'finalizado');
+  const [situation, setSituation] = useState(isEditing ? '' : 'pendente');
   const [completionDate, setCompletionDate] = useState<Date | undefined>();
 
 
@@ -101,6 +102,14 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (prefillData) {
+      setDescription(prefillData.description || '');
+      setTreatmentLocation(prefillData.location || '');
+      setMarker(prefillData.mapMarker || null);
+    }
+  }, [prefillData]);
 
   // Populate form if we are editing
   useEffect(() => {

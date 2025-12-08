@@ -41,13 +41,14 @@ type Marker = { x: number; y: number } | null;
 interface RegisterFaunaFloraGeoProps {
   recordToEdit: any | null;
   setPage: (page: string) => void;
+  prefillData?: any | null;
 }
 
-export function RegisterFaunaFloraGeo({ recordToEdit, setPage }: RegisterFaunaFloraGeoProps) {
+export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: RegisterFaunaFloraGeoProps) {
   const isEditing = !!recordToEdit;
 
   // Form states
-  const [date, setDate] = useState<Date | undefined>();
+  const [date, setDate] = useState<Date | undefined>(prefillData?.date ? (prefillData.date instanceof Timestamp ? prefillData.date.toDate() : prefillData.date) : new Date());
   const [location, setLocation] = useState('');
   const [speciesType, setSpeciesType] = useState('');
   const [analysis, setAnalysis] = useState('');
@@ -69,6 +70,14 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage }: RegisterFaunaFl
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (prefillData) {
+      setDescription(prefillData.description || '');
+      setLocation(prefillData.location || '');
+      setMarker(prefillData.mapMarker || null);
+    }
+  }, [prefillData]);
 
   // Populate form if we are editing
   useEffect(() => {
