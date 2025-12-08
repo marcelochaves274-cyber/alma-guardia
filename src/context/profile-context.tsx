@@ -45,9 +45,15 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         if (docSnap.exists()) {
           const data = docSnap.data();
           setPasses({ adminPass: data.adminPass || '', observerPass: data.observerPass || '' });
+        } else {
+          // If the document doesn't exist, it means it's a new user.
+          // Set passes to empty strings.
+          setPasses({ adminPass: '', observerPass: '' });
         }
       } catch (error) {
         console.error("Error fetching profile passes:", error);
+        // In case of error, also default to empty passes to prevent crashes.
+        setPasses({ adminPass: '', observerPass: '' });
       } finally {
         setIsLoadingPasses(false);
       }
@@ -87,7 +93,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   const validatePass = async (profileToValidate: Profile, pass: string): Promise<boolean> => {
     const correctPass = profileToValidate === 'admin' ? passes.adminPass : passes.observerPass;
-    const isValid = correctPass === pass;
+    const isValid = correctPass === pass && correctPass !== '';
     if (isValid) {
       setProfile(profileToValidate);
     }
