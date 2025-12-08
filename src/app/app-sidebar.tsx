@@ -13,7 +13,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -82,6 +82,8 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'equipment-report': 'equipamentos',
       'register-activity': 'atividades',
       'activity-report': 'atividades',
+      'register-notice': 'avisos',
+      'pending-notices': 'avisos',
       'general-settings': 'settings',
       'manage-occurrences': 'settings',
       'manage-locations': 'settings',
@@ -218,6 +220,42 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     onClick={() => handlePageChange('treatment-map-report')}
                   >
                     Relatório de Mapa
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('avisos')}
+              tooltip={{
+                children: 'Central de Avisos',
+              }}
+            >
+              <Megaphone />
+              <span className="font-bold">Central de Avisos</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'avisos' ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenu === 'avisos' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'register-notice'}
+                    onClick={() => handlePageChange('register-notice')}
+                  >
+                    Registrar Aviso
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'pending-notices'}
+                    onClick={() => handlePageChange('pending-notices')}
+                  >
+                    Avisos Pendentes
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
@@ -521,3 +559,5 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     </>
   );
 }
+
+    

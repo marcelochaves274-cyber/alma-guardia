@@ -34,6 +34,7 @@ import { EquipmentReport } from './equipment-report';
 import { RegisterActivity } from './register-activity';
 import { ActivityReport } from './activity-report';
 import { Reminders } from './reminders';
+import { RegisterNotice } from './register-notice';
 
 
 import {
@@ -86,6 +87,7 @@ function MainAppLayout() {
   const [assessmentToEdit, setAssessmentToEdit] = useState<any | null>(null);
   const [equipmentToEdit, setEquipmentToEdit] = useState<any | null>(null);
   const [activityToEdit, setActivityToEdit] = useState<any | null>(null);
+  const [noticeToEdit, setNoticeToEdit] = useState<any | null>(null);
   const { appName, logoUrl } = useAppSettings();
 
   if (isUserLoading) {
@@ -118,6 +120,9 @@ function MainAppLayout() {
     if (page !== 'register-activity') {
       setActivityToEdit(null);
     }
+    if (page !== 'register-notice') {
+      setNoticeToEdit(null);
+    }
     setActivePage(page);
   };
 
@@ -149,6 +154,11 @@ function MainAppLayout() {
   const handleEditActivity = (activity: any) => {
     setActivityToEdit(activity);
     setActivePage('register-activity');
+  }
+
+  const handleEditNotice = (notice: any) => {
+    setNoticeToEdit(notice);
+    setActivePage('register-notice');
   }
 
   const renderContent = () => {
@@ -197,6 +207,8 @@ function MainAppLayout() {
         return <RegisterActivity activityToEdit={activityToEdit} setPage={handlePageChange} />;
       case 'activity-report':
         return <ActivityReport onEdit={handleEditActivity} />;
+      case 'register-notice':
+        return <RegisterNotice noticeToEdit={noticeToEdit} setPage={handlePageChange} />;
       case 'view-pops':
         return <ViewPops />;
       case 'view-tcrs':
@@ -258,3 +270,5 @@ function MainAppLayout() {
 export function AppLayout() {
   return <MainAppLayout />;
 }
+
+    
