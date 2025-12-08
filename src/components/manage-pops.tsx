@@ -144,7 +144,7 @@ export function ManagePops() {
       toast({
         variant: 'destructive',
         title: 'Campo vazio',
-        description: 'Por favor, digite o nome do documento.',
+        description: 'Por favor, digite o nome da atividade.',
       });
       return;
     }
@@ -160,8 +160,8 @@ export function ManagePops() {
     if (documents.some(p => p.name.toLowerCase() === newDoc.name.toLowerCase())) {
       toast({
         variant: 'destructive',
-        title: 'Documento duplicado',
-        description: 'Este documento já existe.',
+        title: 'Atividade duplicada',
+        description: 'Esta atividade já existe.',
       });
       return;
     }
@@ -173,7 +173,7 @@ export function ManagePops() {
         setNewDocName('');
         toast({
             title: 'Sucesso!',
-            description: `O documento "${newDoc.name}" foi adicionado.`,
+            description: `A atividade "${newDocName.trim()}" foi adicionada.`,
         });
     }
   };
@@ -185,7 +185,7 @@ export function ManagePops() {
         setDocuments(newDocs);
         toast({
         title: 'Removido',
-        description: `O documento "${docToRemove.name}" foi removido.`,
+        description: `A atividade "${docToRemove.name}" foi removida.`,
         });
     }
   };
@@ -205,7 +205,7 @@ export function ManagePops() {
       toast({
         variant: 'destructive',
         title: 'Campo vazio',
-        description: 'O nome do documento não pode ser vazio.',
+        description: 'O nome da atividade não pode ser vazio.',
       });
       return;
     }
@@ -214,8 +214,8 @@ export function ManagePops() {
     if (documents.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.name !== editingDoc.name)) {
         toast({
             variant: 'destructive',
-            title: 'Documento duplicado',
-            description: 'Este documento já existe.',
+            title: 'Atividade duplicada',
+            description: 'Esta atividade já existe.',
         });
         return;
     }
@@ -228,7 +228,7 @@ export function ManagePops() {
         setEditingValue('');
         toast({
             title: 'Sucesso!',
-            description: 'O documento foi atualizado.',
+            description: 'A atividade foi atualizada.',
         });
     }
   }
@@ -237,7 +237,7 @@ export function ManagePops() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Gerenciar POP e TCR</CardTitle>
+                <CardTitle>Gerenciar Atividade POP e TCR</CardTitle>
                 <CardDescription>
                   Adicione, renomeie ou exclua os Procedimentos Operacionais Padrão e Termos de Conhecimento de Risco.
                 </CardDescription>
@@ -259,7 +259,7 @@ export function ManagePops() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gerenciar POP e TCR</CardTitle>
+        <CardTitle>Gerenciar Atividade POP e TCR</CardTitle>
         <CardDescription>
           Adicione, renomeie ou exclua os Procedimentos Operacionais Padrão e Termos de Conhecimento de Risco.
         </CardDescription>
@@ -268,7 +268,7 @@ export function ManagePops() {
         <form onSubmit={handleAddDoc} className="flex items-end gap-2">
             <div className="w-full space-y-2">
                 <Label htmlFor="new-doc-name">
-                Novo Documento
+                Nova Atividade
                 </Label>
                 <div className="flex items-center gap-2">
                     <span className="flex h-10 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium text-muted-foreground">
@@ -276,7 +276,7 @@ export function ManagePops() {
                     </span>
                     <Input
                         id="new-doc-name"
-                        placeholder="Ex: Procedimento para Trabalho em Altura"
+                        placeholder="Ex: Trabalho em Altura"
                         value={newDocName}
                         onChange={(e) => setNewDocName(e.target.value)}
                         disabled={isSaving}
@@ -293,7 +293,7 @@ export function ManagePops() {
         <Separator className="my-6" />
 
         <div>
-          <h3 className="mb-4 text-lg font-medium">Documentos Existentes</h3>
+          <h3 className="mb-4 text-lg font-medium">Atividades Existentes</h3>
           {documents.length > 0 ? (
             <ul className="space-y-3">
               {documents.map((doc) => (
@@ -347,7 +347,7 @@ export function ManagePops() {
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o documento "{doc.name}".
+                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente a atividade "{doc.name}".
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -369,7 +369,7 @@ export function ManagePops() {
             </ul>
           ) : (
             <p className="text-center text-sm text-muted-foreground">
-              Nenhum documento cadastrado.
+              Nenhuma atividade cadastrada.
             </p>
           )}
         </div>
