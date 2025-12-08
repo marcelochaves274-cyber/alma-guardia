@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import Image from 'next/image';
@@ -27,6 +28,7 @@ import { RiskAssessmentReport } from './risk-assessment-report';
 import { ManagePops } from './manage-pops';
 import { ViewPops } from './view-pops';
 import { ViewTcrs } from './view-tcrs';
+import { ViewRame } from './view-rame';
 
 
 import {
@@ -153,6 +155,8 @@ function MainAppLayout() {
         return <ViewPops />;
       case 'view-tcrs':
         return <ViewTcrs />;
+      case 'view-rame':
+        return <ViewRame />;
       case 'reminders':
       default:
         return (

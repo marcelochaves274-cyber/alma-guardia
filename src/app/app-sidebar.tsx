@@ -13,7 +13,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -320,6 +320,18 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
             >
               <FileText />
               <span className="font-bold">TCR</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={activePage === 'view-rame'}
+              onClick={() => handlePageChange('view-rame')}
+              tooltip={{
+                children: 'RAME',
+              }}
+            >
+              <HeartPulse />
+              <span className="font-bold">RAME</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
