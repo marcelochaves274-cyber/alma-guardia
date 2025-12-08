@@ -137,7 +137,15 @@
         },
         "description": {
           "type": "string",
-          "description": "A detailed description of the risk and the treatment applied."
+          "description": "A detailed description of the risk."
+        },
+        "proposedTreatment": {
+          "type": "string",
+          "description": "The proposed treatment for the risk."
+        },
+        "actionTaken": {
+          "type": "string",
+          "description": "The action taken to mitigate the risk."
         },
         "probability": {
           "type": "string",

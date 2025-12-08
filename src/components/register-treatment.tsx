@@ -77,6 +77,8 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
   const [treatmentLocation, setTreatmentLocation] = useState('');
   const [treatmentType, setTreatmentType] = useState('');
   const [description, setDescription] = useState('');
+  const [proposedTreatment, setProposedTreatment] = useState('');
+  const [actionTaken, setActionTaken] = useState('');
   const [marker, setMarker] = useState<Marker>(null);
   const [probability, setProbability] = useState('');
   const [consequence, setConsequence] = useState('');
@@ -105,6 +107,8 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
       setTreatmentLocation(treatmentToEdit.treatmentLocation || '');
       setTreatmentType(treatmentToEdit.treatmentType || '');
       setDescription(treatmentToEdit.description || '');
+      setProposedTreatment(treatmentToEdit.proposedTreatment || '');
+      setActionTaken(treatmentToEdit.actionTaken || '');
       setProbability(treatmentToEdit.probability || '');
       setConsequence(treatmentToEdit.consequence || '');
       setMarker(treatmentToEdit.mapMarker || null);
@@ -179,6 +183,8 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
     setTreatmentLocation('');
     setTreatmentType('');
     setDescription('');
+    setProposedTreatment('');
+    setActionTaken('');
     setProbability('');
     setConsequence('');
     setMarker(null);
@@ -204,6 +210,8 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
         treatmentLocation,
         treatmentType,
         description,
+        proposedTreatment,
+        actionTaken,
         probability,
         consequence,
         riskLevel: riskLevelData.score,
@@ -335,11 +343,11 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição do Risco e Ações de Tratamento</Label>
+            <Label htmlFor="description">Descrição do Risco</Label>
             <Textarea
               id="description"
               name="description"
-              placeholder="Descreva o risco identificado e as ações de tratamento aplicadas."
+              placeholder="Descreva o risco identificado."
               className="min-h-[100px]"
               required
               value={description}
@@ -386,6 +394,31 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
                         </Badge>
                     </div>
                 </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="proposed-treatment">Tratamento Proposto</Label>
+              <Textarea
+                id="proposed-treatment"
+                name="proposedTreatment"
+                placeholder="Descreva o tratamento que foi proposto para mitigar o risco."
+                className="min-h-[100px]"
+                value={proposedTreatment}
+                onChange={(e) => setProposedTreatment(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="action-taken">Ação Realizada</Label>
+              <Textarea
+                id="action-taken"
+                name="actionTaken"
+                placeholder="Descreva a ação que foi efetivamente realizada."
+                className="min-h-[100px]"
+                value={actionTaken}
+                onChange={(e) => setActionTaken(e.target.value)}
+              />
             </div>
           </div>
           
