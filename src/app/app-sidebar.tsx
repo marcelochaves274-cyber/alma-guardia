@@ -86,6 +86,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'manage-map': 'settings',
       'manage-pops': 'settings',
       'manage-fauna-flora-geo': 'settings',
+      'manage-equipment-and-brands': 'settings',
     };
 
     const parentMenu = subMenuParents[page];
@@ -447,6 +448,14 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     onClick={() => handlePageChange('manage-fauna-flora-geo')}
                   >
                     Gerenciar Fa/Fl/Ge
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    isActive={activePage === 'manage-equipment-and-brands'}
+                    onClick={() => handlePageChange('manage-equipment-and-brands')}
+                  >
+                    Gerenciar Equip./Marca
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>

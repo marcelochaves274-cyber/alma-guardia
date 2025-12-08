@@ -31,6 +31,7 @@ import { ViewTcrs } from './view-tcrs';
 import { ViewRame } from './view-rame';
 import { ViewSgsDocs } from './view-sgs-docs';
 import { RegisterEquipment } from './register-equipment';
+import { ManageEquipmentAndBrands } from './manage-equipment-and-brands';
 
 
 import {
@@ -146,6 +147,8 @@ function MainAppLayout() {
         return <ManagePops />;
       case 'manage-fauna-flora-geo':
         return <ManageFaunaFloraGeo />;
+      case 'manage-equipment-and-brands':
+        return <ManageEquipmentAndBrands />;
       case 'register-treatment':
         return <RegisterTreatment treatmentToEdit={treatmentToEdit} setPage={handlePageChange} />;
       case 'treatment-report':
