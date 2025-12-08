@@ -230,46 +230,58 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="task-description">Descrição da Tarefa/Atividade</Label>
+            <Label htmlFor="task-description">Etapa da Atividade</Label>
             <Textarea
               id="task-description"
               name="taskDescription"
-              placeholder="Descreva a tarefa ou atividade que está sendo avaliada."
+              placeholder="Descreva a etapa da atividade que está sendo avaliada."
               value={taskDescription}
               onChange={(e) => setTaskDescription(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="risk-source">Risco(s) e Fonte(s) Geradora(s)</Label>
+            <Label htmlFor="risk-source">Causa</Label>
             <Textarea
               id="risk-source"
               name="riskSource"
-              placeholder="Identifique os riscos e suas fontes."
+              placeholder="Identifique a causa."
               value={riskSource}
               onChange={(e) => setRiskSource(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="effects">Efeito(s) / Consequência(s)</Label>
+            <Label htmlFor="effects">Perigo</Label>
             <Textarea
               id="effects"
               name="effects"
-              placeholder="Descreva os possíveis efeitos e consequências."
+              placeholder="Descreva o perigo."
               value={effects}
               onChange={(e) => setEffects(e.target.value)}
             />
           </div>
            
            <div className="space-y-2">
-            <Label htmlFor="existing-controls">Controles Existentes</Label>
+            <Label htmlFor="existing-controls">Dano</Label>
             <Textarea
               id="existing-controls"
               name="existingControls"
-              placeholder="Liste os controles já implementados."
+              placeholder="Liste os danos."
               value={existingControls}
               onChange={(e) => setExistingControls(e.target.value)}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="recommended-controls">Controle Operacional</Label>
+            <Textarea
+              id="recommended-controls"
+              name="recommendedControls"
+              placeholder="Descreva os controles operacionais recomendados."
+              className="min-h-[100px]"
+              value={recommendedControls}
+              onChange={(e) => setRecommendedControls(e.target.value)}
             />
           </div>
 
@@ -314,19 +326,7 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
                 </div>
             </div>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="recommended-controls">Controles Recomendados</Label>
-            <Textarea
-              id="recommended-controls"
-              name="recommendedControls"
-              placeholder="Descreva os controles recomendados para mitigar o risco."
-              className="min-h-[100px]"
-              value={recommendedControls}
-              onChange={(e) => setRecommendedControls(e.target.value)}
-            />
-          </div>
-           
+
             <div className="flex justify-end gap-4 pt-4">
                 {isEditing && (
                     <Button variant="outline" type="button" onClick={() => setPage('risk-assessment-report')}>
