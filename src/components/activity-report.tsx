@@ -25,7 +25,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
-import { collection, onSnapshot, Timestamp, doc, getDoc, query, where, limit } from 'firebase/firestore';
+import { collection, onSnapshot, Timestamp, doc, getDoc, query, where, limit, orderBy } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
@@ -84,6 +84,7 @@ export function ActivityReport() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedContent, setSelectedContent] = useState({ title: '', content: '' });
   const [selectedAssessment, setSelectedAssessment] = useState<RiskAssessment | null>(null);
+  const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
 
   // States to hold the fetched documents content
   const [popTcrDocs, setPopTcrDocs] = useState<PopDocument[]>([]);
@@ -146,7 +147,7 @@ export function ActivityReport() {
     }
   }, [user, firestore, toast, isLoading]);
   
-  const handleOpenModal = (activity: Activity, type: 'pop' | 'tcr') => {
+  const handleOpenPopTcrModal = (activity: Activity, type: 'pop' | 'tcr') => {
     const doc = popTcrDocs.find(d => d.name === activity[type]);
     if (doc) {
       setSelectedContent({
@@ -159,8 +160,12 @@ export function ActivityReport() {
   };
 
   const handleOpenAssessmentModal = (activity: Activity) => {
-    const assessment = riskAssessments.find(ra => ra.location === activity.riskAssessmentLocation);
-    setSelectedAssessment(assessment || null);
+    const assessmentsForLocation = riskAssessments
+        .filter(ra => ra.location === activity.riskAssessmentLocation)
+        .sort((a, b) => b.assessmentDate.getTime() - a.assessmentDate.getTime());
+    
+    setSelectedAssessment(assessmentsForLocation[0] || null);
+    setIsAssessmentModalOpen(true);
   };
 
 
@@ -202,24 +207,22 @@ export function ActivityReport() {
                         <TableCell>{act.activityName.replace(/^POP\/TCR\s/, '')}</TableCell>
                         <TableCell>
                           <DialogTrigger asChild>
-                            <Button variant="link" className="p-0 h-auto" onClick={() => handleOpenModal(act, 'pop')}>
+                            <Button variant="link" className="p-0 h-auto" onClick={() => handleOpenPopTcrModal(act, 'pop')}>
                               {act.pop}
                             </Button>
                           </DialogTrigger>
                         </TableCell>
                         <TableCell>
                            <DialogTrigger asChild>
-                            <Button variant="link" className="p-0 h-auto" onClick={() => handleOpenModal(act, 'tcr')}>
+                            <Button variant="link" className="p-0 h-auto" onClick={() => handleOpenPopTcrModal(act, 'tcr')}>
                               {act.tcr}
                             </Button>
                           </DialogTrigger>
                         </TableCell>
                         <TableCell>
-                           <DialogTrigger asChild>
-                            <Button variant="link" className="p-0 h-auto" onClick={() => handleOpenAssessmentModal(act)}>
+                           <Button variant="link" className="p-0 h-auto" onClick={() => handleOpenAssessmentModal(act)}>
                                 {act.riskAssessmentLocation || 'N/A'}
                             </Button>
-                          </DialogTrigger>
                         </TableCell>
                         </TableRow>
                     ))
@@ -235,7 +238,7 @@ export function ActivityReport() {
             </CardContent>
         </Card>
 
-        {/* Generic Content Modal */}
+        {/* Generic Content Modal for POP/TCR */}
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>{selectedContent.title}</DialogTitle>
@@ -254,12 +257,15 @@ export function ActivityReport() {
       </Dialog>
       
       {/* Specific Risk Assessment Modal */}
-       <Dialog onOpenChange={(open) => !open && setSelectedAssessment(null)}>
+       <Dialog open={isAssessmentModalOpen} onOpenChange={setIsAssessmentModalOpen}>
         <DialogContent className="max-w-2xl">
           {selectedAssessment ? (
             <>
             <DialogHeader>
               <DialogTitle>Detalhes da Avaliação de Risco</DialogTitle>
+              <DialogDescription>
+                Esta é a avaliação de risco mais recente para o local: {selectedAssessment.location}.
+              </DialogDescription>
             </DialogHeader>
             <ScrollArea className="max-h-[70vh] pr-6">
               <div className="space-y-4 py-4">
@@ -324,7 +330,7 @@ export function ActivityReport() {
           ) : (
             <DialogHeader>
                 <DialogTitle>Avaliação de Risco não encontrada</DialogTitle>
-                <p className="py-4">Não foi possível encontrar uma avaliação de risco associada a este local.</p>
+                 <DialogDescription className="py-4">Não foi possível encontrar uma avaliação de risco associada a este local.</DialogDescription>
                  <div className="flex justify-end pt-2">
                     <DialogClose asChild>
                         <Button type="button" variant="secondary">
