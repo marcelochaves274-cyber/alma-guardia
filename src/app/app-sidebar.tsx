@@ -12,7 +12,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, ListPlus, FileText } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -282,7 +282,6 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     isActive={activePage === 'register-risk-assessment'}
                     onClick={() => handlePageChange('register-risk-assessment')}
                   >
-                     <ListPlus className="mr-2 h-4 w-4" />
                     Registrar Avaliação
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
@@ -291,7 +290,6 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     isActive={activePage === 'risk-assessment-report'}
                     onClick={() => handlePageChange('risk-assessment-report')}
                   >
-                    <FileText className="mr-2 h-4 w-4" />
                     Relatório de Avaliação
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
