@@ -62,11 +62,12 @@ const consequenceOptions = [
 
 const getRiskLevel = (probability: number, consequence: number) => {
     const score = probability * consequence;
-    if (score >= 15) return { label: 'Inaceitável', color: 'bg-red-500 text-white', score };
-    if (score >= 8) return { label: 'Moderado', color: 'bg-orange-500 text-white', score };
-    if (score > 0) return { label: 'Tolerável', color: 'bg-yellow-400 text-black', score };
+    if (score >= 15) return { label: 'Alta', color: 'bg-red-600 text-white', score };
+    if (score >= 8) return { label: 'Média', color: 'bg-orange-500 text-white', score };
+    if (score > 0) return { label: 'Baixa', color: 'bg-yellow-400 text-black', score };
     return { label: 'Não calculado', color: 'bg-muted text-muted-foreground', score: 0 };
 };
+
 
 export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmentProps) {
   const isEditing = !!treatmentToEdit;
@@ -381,7 +382,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
                     <Label>Nível de Risco</Label>
                     <div className="flex items-center h-10">
                         <Badge className={cn("text-base px-4 py-2", riskLevel.color)}>
-                            {riskLevel.score > 0 ? `${riskLevel.label} (${riskLevel.score})` : riskLevel.label}
+                            {riskLevel.label}
                         </Badge>
                     </div>
                 </div>

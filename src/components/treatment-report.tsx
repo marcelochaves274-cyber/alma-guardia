@@ -47,30 +47,25 @@ interface Treatment {
   treatmentDate: Date;
   treatmentType: string;
   treatmentLocation: string;
-  involvedPersonName: string;
-  analysis: 'alta' | 'media' | 'baixa';
-  description: string;
-  ageGroup: string;
+  riskLevel: number;
 }
 
 interface TreatmentReportProps {
   onEdit: (treatment: Treatment) => void;
 }
 
-const analysisMapping: Record<string, { label: string, className: string }> = {
-    alta: { label: 'Alta', className: 'bg-red-500 text-white hover:bg-red-600' },
-    media: { label: 'Média', className: 'bg-orange-500 text-white hover:bg-orange-600' },
-    baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
+const getRiskLevelProperties = (score: number) => {
+    if (score >= 15) return { label: 'Alta', className: 'bg-red-600 text-white hover:bg-red-700' };
+    if (score >= 8) return { label: 'Média', className: 'bg-orange-500 text-white hover:bg-orange-600' };
+    if (score > 0) return { label: 'Baixa', className: 'bg-yellow-400 text-black hover:bg-yellow-500' };
+    return { label: 'N/A', className: 'bg-muted text-muted-foreground' };
 };
 
-const analysisOptions = Object.entries(analysisMapping).map(([key, { label }]) => ({ value: key, label }));
-const ageGroupOptions = [
-    { value: 'crianca', label: 'Criança (0-12)' },
-    { value: 'adolescente', label: 'Adolescente (13-17)' },
-    { value: 'adulto1', label: 'Adulto (18-39)' },
-    { value: 'adulto2', label: 'Adulto (40-59)' },
-    { value: 'idoso', label: 'Idoso (60+)' },
-];
+const riskLevelOptions = [
+    { value: 'alta', label: 'Alta' },
+    { value: 'media', label: 'Média' },
+    { value: 'baixa', label: 'Baixa' },
+]
 
 export function TreatmentReport({ onEdit }: TreatmentReportProps) {
   const firestore = useFirestore();
@@ -85,9 +80,7 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
-  const [filterName, setFilterName] = useState<string>('');
-  const [filterAnalyses, setFilterAnalyses] = useState<string[]>([]);
-  const [filterAgeGroups, setFilterAgeGroups] = useState<string[]>([]);
+  const [filterRiskLevels, setFilterRiskLevels] = useState<string[]>([]);
   
   // Dynamic options for selects
   const [treatmentTypes, setTreatmentTypes] = useState<string[]>([]);
@@ -162,21 +155,24 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.treatmentType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.treatmentLocation);
-      const analysisMatch = filterAnalyses.length === 0 || filterAnalyses.includes(occ.analysis);
-      const nameMatch = !filterName || occ.involvedPersonName?.toLowerCase().includes(filterName.toLowerCase());
-      const ageGroupMatch = filterAgeGroups.length === 0 || filterAgeGroups.includes(occ.ageGroup);
+      
+      const riskLevelMatch = filterRiskLevels.length === 0 || filterRiskLevels.some(level => {
+        const score = occ.riskLevel;
+        if (level === 'alta') return score >= 15;
+        if (level === 'media') return score >= 8 && score < 15;
+        if (level === 'baixa') return score > 0 && score < 8;
+        return false;
+      });
 
-      return monthMatch && typeMatch && locationMatch && analysisMatch && nameMatch && ageGroupMatch;
+      return monthMatch && typeMatch && locationMatch && riskLevelMatch;
     });
-  }, [treatments, filterMonths, filterTypes, filterLocations, filterName, filterAnalyses, filterAgeGroups]);
+  }, [treatments, filterMonths, filterTypes, filterLocations, filterRiskLevels]);
 
   const clearFilters = () => {
     setFilterMonths([]);
     setFilterTypes([]);
     setFilterLocations([]);
-    setFilterName('');
-    setFilterAnalyses([]);
-    setFilterAgeGroups([]);
+    setFilterRiskLevels([]);
   }
 
   const handleDelete = async (treatmentId: string) => {
@@ -215,9 +211,7 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
       </TableRow>
     ))
@@ -237,9 +231,9 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
             <Label>Filtrar por Mês</Label>
             <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <MultiSelectFilter
-              placeholder="Filtrar por Tipo"
+              placeholder="Filtrar por Tipo de Risco"
               options={treatmentTypes.map(t => ({ value: t, label: t }))}
               selected={filterTypes}
               onChange={setFilterTypes}
@@ -253,23 +247,10 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
               disabled={!locations || locations.length === 0}
             />
             <MultiSelectFilter
-              placeholder="Filtrar por Análise"
-              options={analysisOptions}
-              selected={filterAnalyses}
-              onChange={setFilterAnalyses}
-            />
-             <MultiSelectFilter
-              placeholder="Filtrar por Faixa Etária"
-              options={ageGroupOptions}
-              selected={filterAgeGroups}
-              onChange={setFilterAgeGroups}
-            />
-            
-            <Input
-              placeholder="Filtrar por Nome"
-              value={filterName}
-              onChange={(e) => setFilterName(e.target.value)}
-              className="lg:col-span-2"
+              placeholder="Filtrar por Nível de Risco"
+              options={riskLevelOptions}
+              selected={filterRiskLevels}
+              onChange={setFilterRiskLevels}
             />
             
             <Button onClick={clearFilters} variant="outline" className="w-full">
@@ -291,11 +272,9 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>
-                <TableHead>Tipo</TableHead>
+                <TableHead>Tipo de Risco</TableHead>
                 <TableHead>Local</TableHead>
-                <TableHead>Envolvido</TableHead>
-                <TableHead>Faixa Etária</TableHead>
-                <TableHead>Análise</TableHead>
+                <TableHead>Nível de Risco</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -303,60 +282,59 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
               {isLoading ? (
                 renderSkeletons()
               ) : filteredTreatments.length > 0 ? (
-                filteredTreatments.map((occ) => (
-                  <TableRow key={occ.id}>
-                    <TableCell>{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
-                    <TableCell>{occ.treatmentType}</TableCell>
-                    <TableCell>{occ.treatmentLocation}</TableCell>
-                    <TableCell>{occ.involvedPersonName}</TableCell>
-                    <TableCell>{ageGroupOptions.find(o => o.value === occ.ageGroup)?.label || occ.ageGroup}</TableCell>
-                    <TableCell>
-                      {occ.analysis && analysisMapping[occ.analysis] ? (
-                          <Badge className={cn(analysisMapping[occ.analysis].className)}>
-                              {analysisMapping[occ.analysis].label}
+                filteredTreatments.map((occ) => {
+                  const riskProps = getRiskLevelProperties(occ.riskLevel);
+                  return (
+                    <TableRow key={occ.id}>
+                      <TableCell>{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
+                      <TableCell>{occ.treatmentType}</TableCell>
+                      <TableCell>{occ.treatmentLocation}</TableCell>
+                      <TableCell>
+                          <Badge className={cn(riskProps.className)}>
+                              {riskProps.label}
                           </Badge>
-                      ) : 'N/A'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar tratamento" onClick={() => handleEdit(occ)}>
-                          <Pencil className="h-4 w-4" />
-                       </Button>
-                       <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                             <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                aria-label="Excluir tratamento"
-                                disabled={isDeleting === occ.id}
-                              >
-                                {isDeleting === occ.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                              <AlertDialogHeader>
-                                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                  Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro do tratamento de <span className="font-semibold">{occ.involvedPersonName}</span> do dia <span className="font-semibold">{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy') : ''}</span>.
-                                  </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                      onClick={() => handleDelete(occ.id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                      Sim, excluir
-                                  </AlertDialogAction>
-                              </AlertDialogFooter>
-                          </AlertDialogContent>
-                       </AlertDialog>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar tratamento" onClick={() => handleEdit(occ)}>
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  aria-label="Excluir tratamento"
+                                  disabled={isDeleting === occ.id}
+                                >
+                                  {isDeleting === occ.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro de tratamento do dia <span className="font-semibold">{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy') : ''}</span>.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                        onClick={() => handleDelete(occ.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                        Sim, excluir
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     {treatments.length === 0 ? "Nenhum tratamento registrado ainda." : "Nenhum tratamento encontrado com os filtros selecionados."}
                   </TableCell>
                 </TableRow>
