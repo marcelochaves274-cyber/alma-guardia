@@ -27,6 +27,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { MultiSelectFilter } from './multi-select-filter';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
+import { cn } from '@/lib/utils';
 
 interface Treatment {
   id: string;
@@ -56,6 +57,14 @@ const situationOptions = [
     { value: 'reaberto', label: 'Reaberto' },
 ];
 
+const YEAR_COLORS = ['fill-red-500', 'fill-blue-500', 'fill-green-500', 'fill-orange-500', 'fill-purple-500', 'fill-yellow-500'];
+
+const getYearColor = (year: number, allYears: string[]) => {
+  const sortedYears = allYears.sort((a,b) => Number(b) - Number(a));
+  const index = sortedYears.indexOf(year.toString());
+  if (index === -1) return 'fill-gray-500'; // Fallback color
+  return YEAR_COLORS[index % YEAR_COLORS.length];
+};
 
 export function TreatmentMapReport() {
   const firestore = useFirestore();
@@ -311,7 +320,11 @@ export function TreatmentMapReport() {
                       className="rounded-md"
                       priority
                     />
-                    {clusters.map((cluster, index) => (
+                    {clusters.map((cluster, index) => {
+                      const clusterYear = cluster.treatments[0]?.treatmentDate.getFullYear();
+                      const pinColorClass = clusterYear ? getYearColor(clusterYear, availableYears) : 'fill-gray-500';
+                      
+                      return (
                         <Popover key={index}>
                             <PopoverTrigger asChild>
                                 <div
@@ -322,7 +335,7 @@ export function TreatmentMapReport() {
                                     transform: 'translate(-50%, -100%)',
                                     }}
                                 >
-                                    <MapPin className="h-8 w-8 fill-blue-500 stroke-white stroke-2 drop-shadow-lg" />
+                                    <MapPin className={cn("h-8 w-8 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
                                     {cluster.treatments.length > 1 && (
                                         <Badge variant="default" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0 bg-blue-600 hover:bg-blue-700">
                                             {cluster.treatments.length}
@@ -352,7 +365,8 @@ export function TreatmentMapReport() {
                                 </div>
                             </PopoverContent>
                         </Popover>
-                    ))}
+                      )
+                    })}
                   </>
                 ) : (
                   <p className="text-muted-foreground text-center p-4">

@@ -27,6 +27,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { MultiSelectFilter } from './multi-select-filter';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
+import { cn } from '@/lib/utils';
 
 interface Occurrence {
   id: string;
@@ -41,6 +42,15 @@ interface Cluster {
   x: number;
   y: number;
 }
+
+const YEAR_COLORS = ['fill-red-500', 'fill-blue-500', 'fill-green-500', 'fill-orange-500', 'fill-purple-500', 'fill-yellow-500'];
+
+const getYearColor = (year: number, allYears: string[]) => {
+  const sortedYears = allYears.sort((a,b) => Number(b) - Number(a));
+  const index = sortedYears.indexOf(year.toString());
+  if (index === -1) return 'fill-gray-500'; // Fallback color
+  return YEAR_COLORS[index % YEAR_COLORS.length];
+};
 
 export function MapReport() {
   const firestore = useFirestore();
@@ -180,6 +190,7 @@ export function MapReport() {
             );
             if (distance < distanceThreshold) {
                 cluster.occurrences.push(point);
+                // Recalculate cluster center
                 cluster.x = cluster.occurrences.reduce((sum, occ) => sum + (occ.mapMarker?.x || 0), 0) / cluster.occurrences.length;
                 cluster.y = cluster.occurrences.reduce((sum, occ) => sum + (occ.mapMarker?.y || 0), 0) / cluster.occurrences.length;
                 foundCluster = true;
@@ -270,7 +281,11 @@ export function MapReport() {
                       className="rounded-md"
                       priority
                     />
-                    {clusters.map((cluster, index) => (
+                    {clusters.map((cluster, index) => {
+                      const clusterYear = cluster.occurrences[0]?.occurrenceDate.getFullYear();
+                      const pinColorClass = clusterYear ? getYearColor(clusterYear, availableYears) : 'fill-gray-500';
+                      
+                      return (
                         <Popover key={index}>
                             <PopoverTrigger asChild>
                                 <div
@@ -281,7 +296,7 @@ export function MapReport() {
                                     transform: 'translate(-50%, -100%)',
                                     }}
                                 >
-                                    <MapPin className="h-8 w-8 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
+                                    <MapPin className={cn("h-8 w-8 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
                                     {cluster.occurrences.length > 1 && (
                                         <Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0">
                                             {cluster.occurrences.length}
@@ -311,7 +326,8 @@ export function MapReport() {
                                 </div>
                             </PopoverContent>
                         </Popover>
-                    ))}
+                      )
+                    })}
                   </>
                 ) : (
                   <p className="text-muted-foreground text-center p-4">

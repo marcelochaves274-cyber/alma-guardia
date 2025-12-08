@@ -96,6 +96,7 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Filter states
+  const [filterYears, setFilterYears] = useState<string[]>([]);
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
@@ -103,6 +104,7 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
   const [filterSituations, setFilterSituations] = useState<string[]>([]);
   
   // Dynamic options for selects
+  const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [treatmentTypes, setTreatmentTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
 
@@ -151,6 +153,14 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
           treatmentDate,
         } as Treatment;
       });
+
+      const years = new Set(
+        treatmentsData
+          .map(occ => occ.treatmentDate?.getFullYear())
+          .filter((year): year is number => !!year)
+          .map(String)
+      );
+      setAvailableYears(Array.from(years).sort((a, b) => Number(b) - Number(a)));
       
       setTreatments(treatmentsData.sort((a, b) => b.treatmentDate.getTime() - a.treatmentDate.getTime()));
       setIsLoading(false);
@@ -172,6 +182,7 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
       const occDate = occ.treatmentDate;
       if (!occDate) return false;
 
+      const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.treatmentType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.treatmentLocation);
@@ -185,11 +196,12 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
         return false;
       });
 
-      return monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch;
+      return yearMatch && monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch;
     });
-  }, [treatments, filterMonths, filterTypes, filterLocations, filterRiskLevels, filterSituations]);
+  }, [treatments, filterYears, filterMonths, filterTypes, filterLocations, filterRiskLevels, filterSituations]);
 
   const clearFilters = () => {
+    setFilterYears([]);
     setFilterMonths([]);
     setFilterTypes([]);
     setFilterLocations([]);
@@ -254,43 +266,42 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
             <Label>Filtrar por Mês</Label>
             <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
-             <div className="lg:col-span-1">
-                <MultiSelectFilter
-                  placeholder="Filtrar por Tipo de Risco"
-                  options={treatmentTypes.map(t => ({ value: t, label: t }))}
-                  selected={filterTypes}
-                  onChange={setFilterTypes}
-                  disabled={!treatmentTypes || treatmentTypes.length === 0}
-                />
-            </div>
-            <div className="lg:col-span-1">
-                <MultiSelectFilter
-                  placeholder="Nível de Risco (PxC)"
-                  options={riskLevelOptions}
-                  selected={filterRiskLevels}
-                  onChange={setFilterRiskLevels}
-                />
-            </div>
-            <div className="lg:col-span-1">
-                <MultiSelectFilter
-                  placeholder="Filtrar por Local"
-                  options={locations.map(l => ({ value: l, label: l }))}
-                  selected={filterLocations}
-                  onChange={setFilterLocations}
-                  disabled={!locations || locations.length === 0}
-                />
-            </div>
-            <div className="lg:col-span-1">
-                <MultiSelectFilter
-                  placeholder="Filtrar por Situação"
-                  options={situationOptions}
-                  selected={filterSituations}
-                  onChange={setFilterSituations}
-                />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+            <MultiSelectFilter
+              placeholder="Filtrar Ano"
+              options={availableYears.map(y => ({ value: y, label: y }))}
+              selected={filterYears}
+              onChange={setFilterYears}
+              disabled={availableYears.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Tipo de Risco"
+              options={treatmentTypes.map(t => ({ value: t, label: t }))}
+              selected={filterTypes}
+              onChange={setFilterTypes}
+              disabled={!treatmentTypes || treatmentTypes.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Nível de Risco (PxC)"
+              options={riskLevelOptions}
+              selected={filterRiskLevels}
+              onChange={setFilterRiskLevels}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Local"
+              options={locations.map(l => ({ value: l, label: l }))}
+              selected={filterLocations}
+              onChange={setFilterLocations}
+              disabled={!locations || locations.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Situação"
+              options={situationOptions}
+              selected={filterSituations}
+              onChange={setFilterSituations}
+            />
             
-            <Button onClick={clearFilters} variant="outline" className="w-full lg:col-span-1">
+            <Button onClick={clearFilters} variant="outline" className="w-full">
               Limpar Filtros
             </Button>
           </div>

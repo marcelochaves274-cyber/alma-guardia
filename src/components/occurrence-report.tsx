@@ -82,6 +82,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Filter states
+  const [filterYears, setFilterYears] = useState<string[]>([]);
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
@@ -90,6 +91,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
   const [filterAgeGroups, setFilterAgeGroups] = useState<string[]>([]);
   
   // Dynamic options for selects
+  const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
 
@@ -138,6 +140,14 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
         } as Occurrence;
       });
       
+      const years = new Set(
+        occurrencesData
+          .map(occ => occ.occurrenceDate?.getFullYear())
+          .filter((year): year is number => !!year)
+          .map(String)
+      );
+      setAvailableYears(Array.from(years).sort((a, b) => Number(b) - Number(a)));
+
       setOccurrences(occurrencesData.sort((a, b) => b.occurrenceDate.getTime() - a.occurrenceDate.getTime()));
       setIsLoading(false);
     }, (error) => {
@@ -158,6 +168,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
       const occDate = occ.occurrenceDate;
       if (!occDate) return false;
 
+      const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.occurrenceType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.occurrenceLocation);
@@ -165,11 +176,12 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
       const nameMatch = !filterName || occ.involvedPersonName?.toLowerCase().includes(filterName.toLowerCase());
       const ageGroupMatch = filterAgeGroups.length === 0 || filterAgeGroups.includes(occ.ageGroup);
 
-      return monthMatch && typeMatch && locationMatch && analysisMatch && nameMatch && ageGroupMatch;
+      return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && nameMatch && ageGroupMatch;
     });
-  }, [occurrences, filterMonths, filterTypes, filterLocations, filterName, filterAnalyses, filterAgeGroups]);
+  }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations, filterName, filterAnalyses, filterAgeGroups]);
 
   const clearFilters = () => {
+    setFilterYears([]);
     setFilterMonths([]);
     setFilterTypes([]);
     setFilterLocations([]);
@@ -237,6 +249,13 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
             <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+            <MultiSelectFilter
+              placeholder="Filtrar Ano"
+              options={availableYears.map(y => ({ value: y, label: y }))}
+              selected={filterYears}
+              onChange={setFilterYears}
+              disabled={availableYears.length === 0}
+            />
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"
               options={occurrenceTypes.map(t => ({ value: t, label: t }))}
