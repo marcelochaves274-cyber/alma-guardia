@@ -12,7 +12,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, ListPlus, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -75,6 +75,8 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'register-fauna-flora-geo': 'fauna-flora-geo',
       'fauna-flora-geo-report': 'fauna-flora-geo',
       'fauna-flora-geo-map-report': 'fauna-flora-geo',
+      'register-risk-assessment': 'risk-assessment',
+      'risk-assessment-report': 'risk-assessment',
       'general-settings': 'settings',
       'manage-occurrences': 'settings',
       'manage-locations': 'settings',
@@ -165,6 +167,44 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     onClick={() => handlePageChange('map-report')}
                   >
                     Relatório de Mapa
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('risk-assessment')}
+              tooltip={{
+                children: 'Avaliação de Riscos',
+              }}
+            >
+              <ClipboardList />
+              <span className="font-bold">Avaliação de Riscos</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'risk-assessment' ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenu === 'risk-assessment' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'register-risk-assessment'}
+                    onClick={() => handlePageChange('register-risk-assessment')}
+                  >
+                     <ListPlus className="mr-2 h-4 w-4" />
+                    Registrar Avaliação
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'risk-assessment-report'}
+                    onClick={() => handlePageChange('risk-assessment-report')}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Relatório de Avaliação
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>

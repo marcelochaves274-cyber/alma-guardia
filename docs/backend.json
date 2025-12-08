@@ -276,6 +276,99 @@
         "location",
         "analysis"
       ]
+    },
+    "RiskAssessment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RiskAssessment",
+      "type": "object",
+      "description": "Represents a single risk assessment record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the risk assessment."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who created this record."
+        },
+        "assessmentDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date of the risk assessment."
+        },
+        "location": {
+          "type": "string",
+          "description": "The location where the risk was assessed."
+        },
+        "riskType": {
+          "type": "string",
+          "description": "The type of risk."
+        },
+        "taskDescription": {
+          "type": "string",
+          "description": "A description of the task or activity being assessed."
+        },
+        "riskSource": {
+          "type": "string",
+          "description": "The risk(s) and their generating source(s)."
+        },
+        "effects": {
+          "type": "string",
+          "description": "The potential effects or consequences of the risk."
+        },
+        "existingControls": {
+          "type": "string",
+          "description": "The existing controls to mitigate the risk."
+        },
+        "recommendedControls": {
+          "type": "string",
+          "description": "The recommended controls to further mitigate the risk."
+        },
+        "probability": {
+          "type": "string",
+          "description": "The probability score (1-5)."
+        },
+        "consequence": {
+          "type": "string",
+          "description": "The consequence score (1-5)."
+        },
+        "riskLevel": {
+          "type": "number",
+          "description": "The calculated risk level (probability * consequence)."
+        },
+        "situation": {
+          "type": "string",
+          "description": "The current status of the assessment.",
+          "enum": [
+            "pendente",
+            "finalizado",
+            "reaberto"
+          ]
+        },
+        "completionDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The due date for the conclusion of recommended controls."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "assessmentDate",
+        "riskType",
+        "location",
+        "probability",
+        "consequence",
+        "riskLevel"
+      ]
     }
   },
   "auth": {
@@ -378,6 +471,26 @@
             {
               "name": "recordId",
               "description": "Unique identifier for the record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/sgs_genius/{userId}/risk_assessments/{assessmentId}",
+        "definition": {
+          "entityName": "RiskAssessment",
+          "schema": {
+            "$ref": "#/backend/entities/RiskAssessment"
+          },
+          "description": "Stores risk assessment records for a user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Corresponds to the user's UID."
+            },
+            {
+              "name": "assessmentId",
+              "description": "Unique identifier for the risk assessment record."
             }
           ]
         }

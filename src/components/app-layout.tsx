@@ -22,6 +22,8 @@ import { ManageFaunaFloraGeo } from '@/components/manage-fauna-flora-geo';
 import { RegisterFaunaFloraGeo } from '@/components/register-fauna-flora-geo';
 import { FaunaFloraGeoReport } from '@/components/fauna-flora-geo-report';
 import { FaunaFloraGeoMapReport } from '@/components/fauna-flora-geo-map-report';
+import { RegisterRiskAssessment } from './register-risk-assessment';
+import { RiskAssessmentReport } from './risk-assessment-report';
 
 
 import {
@@ -60,6 +62,7 @@ function MainAppLayout() {
   const [occurrenceToEdit, setOccurrenceToEdit] = useState<any | null>(null);
   const [treatmentToEdit, setTreatmentToEdit] = useState<any | null>(null);
   const [faunaFloraGeoToEdit, setFaunaFloraGeoToEdit] = useState<any | null>(null);
+  const [assessmentToEdit, setAssessmentToEdit] = useState<any | null>(null);
   const { appName, logoUrl } = useAppSettings();
 
   if (isUserLoading) {
@@ -81,6 +84,9 @@ function MainAppLayout() {
     if (page !== 'register-fauna-flora-geo') {
       setFaunaFloraGeoToEdit(null);
     }
+    if (page !== 'register-risk-assessment') {
+      setAssessmentToEdit(null);
+    }
     setActivePage(page);
   };
 
@@ -97,6 +103,11 @@ function MainAppLayout() {
   const handleEditFaunaFloraGeo = (record: any) => {
     setFaunaFloraGeoToEdit(record);
     setActivePage('register-fauna-flora-geo');
+  }
+
+  const handleEditAssessment = (assessment: any) => {
+    setAssessmentToEdit(assessment);
+    setActivePage('register-risk-assessment');
   }
 
   const renderContent = () => {
@@ -129,6 +140,10 @@ function MainAppLayout() {
         return <FaunaFloraGeoReport onEdit={handleEditFaunaFloraGeo} />;
       case 'fauna-flora-geo-map-report':
         return <FaunaFloraGeoMapReport />;
+      case 'register-risk-assessment':
+        return <RegisterRiskAssessment assessmentToEdit={assessmentToEdit} setPage={handlePageChange} />;
+      case 'risk-assessment-report':
+        return <RiskAssessmentReport onEdit={handleEditAssessment} />;
       case 'reminders':
       default:
         return (
