@@ -145,6 +145,32 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
               <span className="font-bold">Lembretes</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('help')}
+              tooltip={{
+                children: 'Ajuda',
+              }}
+            >
+              <HelpCircle />
+              <span className="font-bold">Ajuda</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'help' ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenu === 'help' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem className="p-2">
+                    <div className="flex items-center justify-between w-full">
+                        <Label htmlFor="help-mode" className="text-sidebar-foreground">Modo Ajuda</Label>
+                        <Switch id="help-mode" checked={helpEnabled} onCheckedChange={setHelpEnabled} />
+                    </div>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => toggleSubMenu('acidentes')}
@@ -468,32 +494,6 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
               <Files />
               <span className="font-bold">Documentos SGS</span>
             </SidebarMenuButton>
-          </SidebarMenuItem>
-           <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => toggleSubMenu('help')}
-              tooltip={{
-                children: 'Ajuda',
-              }}
-            >
-              <HelpCircle />
-              <span className="font-bold">Ajuda</span>
-              <ChevronDown
-                className={`ml-auto h-4 w-4 transition-transform ${
-                  openSubMenu === 'help' ? 'rotate-180' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-            {openSubMenu === 'help' && state === 'expanded' && (
-              <SidebarMenuSub>
-                <SidebarMenuSubItem className="p-2">
-                    <div className="flex items-center justify-between w-full">
-                        <Label htmlFor="help-mode" className="text-sidebar-foreground">Modo Ajuda</Label>
-                        <Switch id="help-mode" checked={helpEnabled} onCheckedChange={setHelpEnabled} />
-                    </div>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
