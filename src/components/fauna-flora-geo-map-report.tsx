@@ -239,7 +239,7 @@ export function FaunaFloraGeoMapReport() {
               disabled={availableYears.length === 0}
             />
             <MultiSelectFilter
-              placeholder="Filtrar por Espécie/Tipo"
+              placeholder="Filtrar Espécie/Tipo"
               options={speciesTypes.map(t => ({ value: t, label: t }))}
               selected={filterTypes}
               onChange={setFilterTypes}

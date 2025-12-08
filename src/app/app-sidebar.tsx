@@ -236,7 +236,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     isActive={activePage === 'register-fauna-flora-geo'}
                     onClick={() => handlePageChange('register-fauna-flora-geo')}
                   >
-                    Registrar
+                    Registrar F/F/G
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
                 <SidebarMenuSubItem>
@@ -244,7 +244,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     isActive={activePage === 'fauna-flora-geo-report'}
                     onClick={() => handlePageChange('fauna-flora-geo-report')}
                   >
-                    Relatório
+                    Relatório F/F/G
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
                 <SidebarMenuSubItem>
