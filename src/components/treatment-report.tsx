@@ -254,35 +254,43 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
             <Label>Filtrar por Mês</Label>
             <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-            <MultiSelectFilter
-              placeholder="Filtrar por Tipo de Risco"
-              options={treatmentTypes.map(t => ({ value: t, label: t }))}
-              selected={filterTypes}
-              onChange={setFilterTypes}
-              disabled={!treatmentTypes || treatmentTypes.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Local"
-              options={locations.map(l => ({ value: l, label: l }))}
-              selected={filterLocations}
-              onChange={setFilterLocations}
-              disabled={!locations || locations.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Nível de Risco (PxC)"
-              options={riskLevelOptions}
-              selected={filterRiskLevels}
-              onChange={setFilterRiskLevels}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Situação"
-              options={situationOptions}
-              selected={filterSituations}
-              onChange={setFilterSituations}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+             <div className="lg:col-span-1">
+                <MultiSelectFilter
+                  placeholder="Filtrar por Tipo de Risco"
+                  options={treatmentTypes.map(t => ({ value: t, label: t }))}
+                  selected={filterTypes}
+                  onChange={setFilterTypes}
+                  disabled={!treatmentTypes || treatmentTypes.length === 0}
+                />
+            </div>
+            <div className="lg:col-span-1">
+                <MultiSelectFilter
+                  placeholder="Filtrar por Nível de Risco (PxC)"
+                  options={riskLevelOptions}
+                  selected={filterRiskLevels}
+                  onChange={setFilterRiskLevels}
+                />
+            </div>
+            <div className="lg:col-span-1">
+                <MultiSelectFilter
+                  placeholder="Filtrar por Local"
+                  options={locations.map(l => ({ value: l, label: l }))}
+                  selected={filterLocations}
+                  onChange={setFilterLocations}
+                  disabled={!locations || locations.length === 0}
+                />
+            </div>
+            <div className="lg:col-span-1">
+                <MultiSelectFilter
+                  placeholder="Filtrar por Situação"
+                  options={situationOptions}
+                  selected={filterSituations}
+                  onChange={setFilterSituations}
+                />
+            </div>
             
-            <Button onClick={clearFilters} variant="outline" className="w-full lg:col-start-4">
+            <Button onClick={clearFilters} variant="outline" className="w-full lg:col-span-1">
               Limpar Filtros
             </Button>
           </div>
