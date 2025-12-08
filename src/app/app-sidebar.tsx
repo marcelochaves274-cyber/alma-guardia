@@ -12,7 +12,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -75,7 +75,8 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'general-settings': 'settings',
       'manage-occurrences': 'settings',
       'manage-locations': 'settings',
-      'manage-map': 'settings'
+      'manage-map': 'settings',
+      'manage-fauna-flora-geo': 'settings',
     };
 
     const parentMenu = subMenuParents[page];
@@ -257,6 +258,14 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     onClick={() => handlePageChange('manage-map')}
                   >
                     Gerenciar Mapa
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    isActive={activePage === 'manage-fauna-flora-geo'}
+                    onClick={() => handlePageChange('manage-fauna-flora-geo')}
+                  >
+                    Gerenciar Fauna/Flora/Geo
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>

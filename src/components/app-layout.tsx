@@ -18,6 +18,7 @@ import { AppSidebar } from '@/app/app-sidebar';
 import { RegisterTreatment } from '@/components/register-treatment';
 import { TreatmentReport } from '@/components/treatment-report';
 import { TreatmentMapReport } from '@/components/treatment-map-report';
+import { ManageFaunaFloraGeo } from '@/components/manage-fauna-flora-geo';
 
 
 import {
@@ -102,6 +103,8 @@ function MainAppLayout() {
         return <ManageLocations />;
       case 'manage-map':
         return <ManageMap />;
+      case 'manage-fauna-flora-geo':
+        return <ManageFaunaFloraGeo />;
       case 'register-treatment':
         return <RegisterTreatment treatmentToEdit={treatmentToEdit} setPage={handlePageChange} />;
       case 'treatment-report':
