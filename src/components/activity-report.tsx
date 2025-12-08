@@ -25,7 +25,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
-import { collection, onSnapshot, Timestamp, doc, getDocs, query, where, limit } from 'firebase/firestore';
+import { collection, onSnapshot, Timestamp, doc, getDoc, query, where, limit } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
@@ -114,13 +114,11 @@ export function ActivityReport() {
     
     // Fetch POP/TCR documents once
     const popDocRef = doc(firestore, 'sgs_genius', user.uid, 'settings', 'pops');
-    getDocs(collection(popDocRef.parent, popDocRef.id)).then(snapshot => {
-        snapshot.forEach(docSnap => {
-            if (docSnap.id === 'pops' && docSnap.exists()) {
-                const data = docSnap.data();
-                setPopTcrDocs((data.documents || []) as PopDocument[]);
-            }
-        });
+    getDoc(popDocRef).then(docSnap => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            setPopTcrDocs((data.documents || []) as PopDocument[]);
+        }
     }).catch(error => console.error("Error fetching POP/TCR docs: ", error));
 
 
