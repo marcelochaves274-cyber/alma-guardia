@@ -23,11 +23,13 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Pencil } from 'lucide-react';
 import type { PopDocument } from './manage-pops';
+import { useProfile } from '@/context/profile-context';
 
 export function ViewTcrs() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { profile } = useProfile();
 
   const [allDocs, setAllDocs] = useState<PopDocument[]>([]);
   const [selectedTcrName, setSelectedTcrName] = useState<string | null>(null);
@@ -183,7 +185,7 @@ export function ViewTcrs() {
           </div>
         )}
       </CardContent>
-      {selectedTcrName && (
+      {selectedTcrName && profile === 'admin' && (
         <CardFooter className="flex justify-end">
            {isEditing ? (
             <div className="flex gap-2">
