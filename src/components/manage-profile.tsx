@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -16,14 +15,62 @@ import { Button } from '@/components/ui/button';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from './ui/separator';
+import { useFirestore, useUser } from '@/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { Skeleton } from './ui/skeleton';
 
 export function ManageProfile() {
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
+
   const [adminPass, setAdminPass] = useState('');
   const [observerPass, setObserverPass] = useState('');
   const [showAdminPass, setShowAdminPass] = useState(false);
   const [showObserverPass, setShowObserverPass] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const getSettingsDocRef = useCallback(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'sgs_genius', user.uid, 'settings', 'profiles');
+  }, [firestore, user]);
+  
+  useEffect(() => {
+    let isMounted = true;
+    if (isUserLoading || !user || !firestore) {
+      if(!isUserLoading) setIsLoading(false);
+      return;
+    }
+
+    const fetchPasses = async () => {
+        const docRef = getSettingsDocRef();
+        if (!docRef) {
+            if(isMounted) setIsLoading(false);
+            return;
+        }
+
+        try {
+            const docSnap = await getDoc(docRef);
+            if (isMounted && docSnap.exists()) {
+                const data = docSnap.data();
+                setAdminPass(data.adminPass || '');
+                setObserverPass(data.observerPass || '');
+            }
+        } catch (error: any) {
+             if (isMounted && error.code !== 'permission-denied') {
+                console.error("Error fetching passes:", error);
+                toast({ variant: "destructive", title: "Erro ao carregar", description: "Não foi possível buscar os passes." });
+             }
+        } finally {
+            if (isMounted) setIsLoading(false);
+        }
+    };
+    
+    fetchPasses();
+    return () => { isMounted = false; }
+  }, [isUserLoading, user, firestore, getSettingsDocRef, toast]);
+
 
   const handlePassChange = (value: string, setter: (val: string) => void) => {
     const numericValue = value.replace(/\D/g, '');
@@ -32,21 +79,43 @@ export function ManageProfile() {
     }
   };
 
-  const handleSave = () => {
-    // Logic to save the passcodes will go here
+  const handleSave = async () => {
+    const docRef = getSettingsDocRef();
+    if (!docRef) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
+      return;
+    }
+
     setIsSaving(true);
-    console.log('Admin Pass:', adminPass);
-    console.log('Observer Pass:', observerPass);
-    
-    // Simulate saving
-    setTimeout(() => {
-        toast({
-            title: 'Em breve!',
-            description: 'A funcionalidade de salvar os passes será implementada em breve.',
-        });
+    try {
+        await setDoc(docRef, { adminPass, observerPass }, { merge: true });
+        toast({ title: 'Sucesso!', description: 'Os passes foram salvos.' });
+    } catch (error) {
+        console.error('Error saving passes:', error);
+        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar os passes.' });
+    } finally {
         setIsSaving(false);
-    }, 1000);
+    }
   };
+
+  if (isLoading) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Gerenciar Perfis</CardTitle>
+                <CardDescription>Defina os passes de 6 dígitos para os perfis de Administrador e Observador.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+                <Skeleton className="h-24 w-full" />
+                <Separator />
+                <Skeleton className="h-24 w-full" />
+            </CardContent>
+            <CardFooter className="flex justify-end">
+                <Skeleton className="h-10 w-32" />
+            </CardFooter>
+        </Card>
+    );
+  }
 
 
   return (

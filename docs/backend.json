@@ -494,6 +494,102 @@
         "riskAssessmentLocation",
         "createdAt"
       ]
+    },
+    "Notice": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Notice",
+      "type": "object",
+      "description": "Represents a single notice or observation record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the notice."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who created this record."
+        },
+        "collaboratorName": {
+          "type": "string",
+          "description": "The name of the collaborator reporting the notice."
+        },
+        "noticeDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time of the observation."
+        },
+        "weather": {
+          "type": "string",
+          "description": "Weather conditions at the time of the notice."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the observation."
+        },
+        "location": {
+          "type": "string",
+          "description": "The general location of the observation."
+        },
+        "mapMarker": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "description": "Coordinates of the marker on the map."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the notice.",
+          "enum": [
+            "pendente",
+            "finalizado"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "collaboratorName",
+        "noticeDate",
+        "description",
+        "location",
+        "status"
+      ]
+    },
+    "ProfilePasses": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ProfilePasses",
+      "type": "object",
+      "description": "Stores the 6-digit numeric passes for Admin and Observer profiles.",
+      "properties": {
+        "adminPass": {
+          "type": "string",
+          "description": "The 6-digit numeric pass for the Administrator profile.",
+          "pattern": "^[0-9]{6}$"
+        },
+        "observerPass": {
+          "type": "string",
+          "description": "The 6-digit numeric pass for the Observer profile.",
+          "pattern": "^[0-9]{6}$"
+        }
+      },
+      "required": [
+        "adminPass",
+        "observerPass"
+      ]
     }
   },
   "auth": {
@@ -656,6 +752,46 @@
             {
               "name": "activityId",
               "description": "Unique identifier for the activity record."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/sgs_genius/{userId}/notices/{noticeId}",
+        "definition": {
+          "entityName": "Notice",
+          "schema": {
+            "$ref": "#/backend/entities/Notice"
+          },
+          "description": "Stores notice records for a user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Corresponds to the user's UID."
+            },
+            {
+              "name": "noticeId",
+              "description": "Unique identifier for the notice record."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/sgs_genius/{userId}/settings/{settingId}",
+        "definition": {
+          "entityName": "ProfilePasses",
+          "schema": {
+            "$ref": "#/backend/entities/ProfilePasses"
+          },
+          "description": "Stores profile passcodes for a user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Corresponds to the user's UID."
+            },
+            {
+              "name": "settingId",
+              "description": "The name of the setting, e.g., 'profiles'."
             }
           ]
         }
