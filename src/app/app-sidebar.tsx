@@ -177,34 +177,36 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
               <span className="font-bold">Ajuda</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
-           <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => toggleSubMenu('informacoes')}
-              tooltip={{
-                children: 'Informações',
-              }}
-            >
-              <Info />
-              <span className="font-bold">Informações</span>
-              <ChevronDown
-                className={`ml-auto h-4 w-4 transition-transform ${
-                  openSubMenu === 'informacoes' ? 'rotate-180' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-            {openSubMenu === 'informacoes' && state === 'expanded' && (
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
-                    isActive={activePage === 'tutorial'}
-                    onClick={() => handlePageChange('tutorial')}
-                  >
-                    Tutorial
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
+          {isAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => toggleSubMenu('informacoes')}
+                tooltip={{
+                  children: 'Informações',
+                }}
+              >
+                <Info />
+                <span className="font-bold">Informações</span>
+                <ChevronDown
+                  className={`ml-auto h-4 w-4 transition-transform ${
+                    openSubMenu === 'informacoes' ? 'rotate-180' : ''
+                  }`}
+                />
+              </SidebarMenuButton>
+              {openSubMenu === 'informacoes' && state === 'expanded' && (
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton 
+                      isActive={activePage === 'tutorial'}
+                      onClick={() => handlePageChange('tutorial')}
+                    >
+                      Tutorial
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              )}
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => toggleSubMenu('acidentes')}

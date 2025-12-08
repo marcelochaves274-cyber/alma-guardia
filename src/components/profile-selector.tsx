@@ -23,13 +23,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from './ui/button';
 import { Loader2, Shield, Users, Eye, EyeOff } from 'lucide-react';
-import { useProfile } from '@/context/profile-context';
+import { useProfile, type Profile } from '@/context/profile-context';
 import { useToast } from '@/hooks/use-toast';
 
 type SelectedProfile = 'admin' | 'observer' | null;
 
 export function ProfileSelector() {
-  const { setProfile, validatePass, isLoadingPasses } = useProfile();
+  const { setProfile, validatePass, isLoadingPasses, passes } = useProfile();
   const { toast } = useToast();
 
   const [selectedProfile, setSelectedProfile] = useState<SelectedProfile>(null);
@@ -43,6 +43,16 @@ export function ProfileSelector() {
 
   const handleProfileSelect = (profile: SelectedProfile) => {
     if (isLoadingPasses) return;
+
+    if (profile === 'admin' && !passes.adminPass && !passes.observerPass) {
+        toast({
+            title: 'Primeiro Acesso de Administrador',
+            description: 'Nenhum passe cadastrado. Entrando como administrador para configuração inicial.'
+        });
+        setProfile('admin');
+        return;
+    }
+    
     setSelectedProfile(profile);
     setPass('');
   };

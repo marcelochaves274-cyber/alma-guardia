@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
-type Profile = 'admin' | 'observer';
+export type Profile = 'admin' | 'observer';
 
 interface ProfileContextType {
   profile: Profile | null;
@@ -14,6 +14,7 @@ interface ProfileContextType {
   validatePass: (profile: Profile, pass: string) => Promise<boolean>;
   isProfileLoading: boolean;
   isLoadingPasses: boolean;
+  passes: { adminPass: string; observerPass: string };
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -101,6 +102,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     validatePass,
     isProfileLoading,
     isLoadingPasses,
+    passes,
   };
 
   return <ProfileContext.Provider value={contextValue}>{children}</ProfileContext.Provider>;
