@@ -65,14 +65,17 @@ export function ProfileSelector() {
     setIsChecking(false);
 
     if (isValid) {
-        setSelectedProfile(null);
+      // On success, the profile is set and the main layout will show.
+      // We can clear the modal state here.
+      setSelectedProfile(null);
     } else {
-        toast({
-            variant: 'destructive',
-            title: 'Passe Inválido',
-            description: 'O passe inserido está incorreto. Tente novamente.'
-        });
-        setPass('');
+      // On failure, show a toast and clear the password field.
+      toast({
+        variant: 'destructive',
+        title: 'Passe Inválido',
+        description: 'O passe inserido está incorreto. Tente novamente.',
+      });
+      setPass('');
     }
   };
 
