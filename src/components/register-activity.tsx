@@ -49,13 +49,19 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
   const { toast } = useToast();
 
   useEffect(() => {
-    if(isEditing && activityToEdit) {
+    if (activityToEdit) {
       setActivityName(activityToEdit.activityName || '');
       setPop(activityToEdit.pop || '');
       setTcr(activityToEdit.tcr || '');
       setRiskAssessmentLocation(activityToEdit.riskAssessmentLocation || '');
+    } else {
+        // Reset form when not in edit mode or when activityToEdit is cleared
+        setActivityName('');
+        setPop('');
+        setTcr('');
+        setRiskAssessmentLocation('');
     }
-  }, [isEditing, activityToEdit]);
+  }, [activityToEdit]);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
