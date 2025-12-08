@@ -125,34 +125,29 @@
         "treatmentDate": {
           "type": "string",
           "format": "date-time",
-          "description": "The date of the risk treatment."
+          "description": "The date of the risk identification."
         },
         "treatmentLocation": {
           "type": "string",
-          "description": "The location where the treatment was applied."
+          "description": "The location where the risk was identified."
         },
         "treatmentType": {
           "type": "string",
-          "description": "The type of risk treatment."
+          "description": "The type of risk."
         },
         "description": {
           "type": "string",
-          "description": "A detailed description of the risk treatment."
-        },
-        "involvedPersonName": {
-          "type": "string",
-          "description": "The name of the person involved or responsible."
-        },
-        "analysis": {
-          "type": "string",
-          "enum": ["alta", "media", "baixa"],
-          "description": "The risk analysis level."
+          "description": "A detailed description of the risk and the treatment applied."
         },
         "mapMarker": {
           "type": "object",
           "properties": {
-            "x": { "type": "number" },
-            "y": { "type": "number" }
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
           },
           "description": "Coordinates of the marker on the map."
         },
@@ -171,9 +166,7 @@
         "treatmentDate",
         "treatmentType",
         "treatmentLocation",
-        "description",
-        "involvedPersonName",
-        "analysis"
+        "description"
       ]
     }
   },

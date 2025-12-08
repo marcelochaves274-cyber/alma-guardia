@@ -26,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Calendar as CalendarIcon, Loader2, MapPin, X } from 'lucide-react';
 import { format } from 'date-fns';
@@ -51,15 +50,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
   const [treatmentDate, setTreatmentDate] = useState<Date | undefined>();
   const [treatmentLocation, setTreatmentLocation] = useState('');
   const [treatmentType, setTreatmentType] = useState('');
-  const [ageGroup, setAgeGroup] = useState('');
-  const [analysis, setAnalysis] = useState('');
   const [description, setDescription] = useState('');
-  const [involvedPersonName, setInvolvedPersonName] = useState('');
-  const [birthDate, setBirthDate] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [phone, setPhone] = useState('');
   const [marker, setMarker] = useState<Marker>(null);
 
   // UI/Data loading states
@@ -85,15 +76,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
       setTreatmentDate(date instanceof Timestamp ? date.toDate() : date);
       setTreatmentLocation(treatmentToEdit.treatmentLocation || '');
       setTreatmentType(treatmentToEdit.treatmentType || '');
-      setAgeGroup(treatmentToEdit.ageGroup || '');
-      setAnalysis(treatmentToEdit.analysis || '');
       setDescription(treatmentToEdit.description || '');
-      setInvolvedPersonName(treatmentToEdit.involvedPersonName || '');
-      setBirthDate(treatmentToEdit.birthDate || '');
-      setCpf(treatmentToEdit.cpf || '');
-      setCity(treatmentToEdit.city || '');
-      setState(treatmentToEdit.state || '');
-      setPhone(treatmentToEdit.phone || '');
       setMarker(treatmentToEdit.mapMarker || null);
     }
   }, [isEditing, treatmentToEdit]);
@@ -128,7 +111,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
         setLoading(false);
       }
     };
-    fetchSelectOptions('occurrenceTypes', setTreatmentTypes, setIsLoadingTypes, 'tipos de tratamento');
+    fetchSelectOptions('occurrenceTypes', setTreatmentTypes, setIsLoadingTypes, 'tipos de risco');
     fetchSelectOptions('locations', setLocations, setIsLoadingLocations, 'locais');
   }, [getSettingsDocRef, toast]);
   
@@ -161,30 +144,11 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
     setMarker({ x, y });
   };
   
-  const handleBirthDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
-    if (value.length > 2) {
-      value = `${value.slice(0, 2)}/${value.slice(2)}`;
-    }
-    if (value.length > 5) {
-      value = `${value.slice(0, 5)}/${value.slice(5)}`;
-    }
-    setBirthDate(value.slice(0, 10)); // Limit to 10 chars (dd/mm/yyyy)
-  };
-  
   const resetForm = () => {
     setTreatmentDate(undefined);
     setTreatmentLocation('');
     setTreatmentType('');
-    setAgeGroup('');
-    setAnalysis('');
     setDescription('');
-    setInvolvedPersonName('');
-    setBirthDate('');
-    setCpf('');
-    setCity('');
-    setState('');
-    setPhone('');
     setMarker(null);
   }
 
@@ -195,11 +159,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
         return;
     }
     if (!treatmentDate) {
-        toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a data do tratamento.' });
-        return;
-    }
-    if (!analysis) {
-        toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a análise do tratamento.' });
+        toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a data da identificação.' });
         return;
     }
 
@@ -209,15 +169,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
         treatmentDate: Timestamp.fromDate(treatmentDate),
         treatmentLocation,
         treatmentType,
-        ageGroup,
         description,
-        involvedPersonName,
-        birthDate,
-        cpf,
-        city,
-        state,
-        phone,
-        analysis,
         mapMarker: marker,
         userId: user.uid,
     };
@@ -237,13 +189,13 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
             ...treatmentData,
             createdAt: serverTimestamp()
         });
-        toast({ title: 'Sucesso!', description: 'Tratamento registrado com sucesso.' });
+        toast({ title: 'Sucesso!', description: 'Tratamento de risco registrado com sucesso.' });
         resetForm();
       }
 
     } catch (error) {
         console.error("Error saving treatment:", error);
-        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar o tratamento.'});
+        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar o tratamento de risco.'});
     } finally {
         setIsSubmitting(false);
     }
@@ -262,7 +214,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
         <CardContent className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="treatment-date">Data do Tratamento</Label>
+              <Label htmlFor="treatment-date">Data da Identificação</Label>
               <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -295,7 +247,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="treatment-location">Local do Tratamento</Label>
+              <Label htmlFor="treatment-location">Local do Risco</Label>
               <Select name="treatmentLocation" required disabled={isLoadingLocations || locations.length === 0} onValueChange={setTreatmentLocation} value={treatmentLocation}>
                 <SelectTrigger id="treatment-location">
                   <SelectValue placeholder={
@@ -319,7 +271,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
               </Select>
             </div>
              <div className="space-y-2">
-              <Label htmlFor="treatment-type">Tipo de Tratamento</Label>
+              <Label htmlFor="treatment-type">Tipo de Risco</Label>
               <Select name="treatmentType" required disabled={isLoadingTypes || treatmentTypes.length === 0} onValueChange={setTreatmentType} value={treatmentType}>
                 <SelectTrigger id="treatment-type">
                   <SelectValue placeholder={
@@ -342,92 +294,19 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Faixa Etária</Label>
-              <Select name="ageGroup" required onValueChange={setAgeGroup} value={ageGroup}>
-                  <SelectTrigger>
-                      <SelectValue placeholder="Selecione a faixa etária" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="crianca">Criança (0-12 anos)</SelectItem>
-                      <SelectItem value="adolescente">Adolescente (13-17 anos)</SelectItem>
-                      <SelectItem value="adulto1">Adulto (18-39 anos)</SelectItem>
-                      <SelectItem value="adulto2">Adulto (40-59 anos)</SelectItem>
-                      <SelectItem value="idoso">Idoso (60+ anos)</SelectItem>
-                  </SelectContent>
-              </Select>
-            </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição do Tratamento</Label>
+            <Label htmlFor="description">Descrição do Risco e Ações de Tratamento</Label>
             <Textarea
               id="description"
               name="description"
-              placeholder="Descreva detalhadamente o que aconteceu."
+              placeholder="Descreva o risco identificado e as ações de tratamento aplicadas."
               className="min-h-[100px]"
               required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
-          </div>
-
-          <Separator />
-          <div className="text-center">
-              <h3 className="text-lg font-semibold text-foreground">Informação da Pessoa Envolvida</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                  <Label htmlFor="full-name">Nome Completo</Label>
-                  <Input name="involvedPersonName" id="full-name" placeholder="Nome completo do envolvido" required value={involvedPersonName} onChange={(e) => setInvolvedPersonName(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                  <Label htmlFor="birth-date">Data de Nascimento</Label>
-                   <Input 
-                    name="birthDate" 
-                    id="birth-date" 
-                    placeholder="dd/mm/aaaa"
-                    value={birthDate}
-                    onChange={handleBirthDateChange}
-                    maxLength={10}
-                  />
-              </div>
-              <div className="space-y-2">
-                  <Label htmlFor="cpf">CPF</Label>
-                  <Input name="cpf" id="cpf" placeholder="000.000.000-00" value={cpf} onChange={(e) => setCpf(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                  <Label htmlFor="city">Cidade</Label>
-                  <Input name="city" id="city" placeholder="Cidade de residência" value={city} onChange={(e) => setCity(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                  <Label htmlFor="state">Estado</Label>
-                  <Input name="state" id="state" placeholder="UF" value={state} onChange={(e) => setState(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                  <Label htmlFor="phone">Fone</Label>
-                  <Input name="phone" id="phone" placeholder="(00) 00000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              </div>
-          </div>
-
-          <Separator />
-          <div className="space-y-3">
-              <Label>Análise do Tratamento</Label>
-              <RadioGroup name="analysis" required className="flex items-center space-x-4 pt-2" onValueChange={setAnalysis} value={analysis}>
-                  <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="alta" id="alta" className="border-red-500 text-red-500 focus:ring-red-500" />
-                      <Label htmlFor="alta" className="font-bold text-red-500">Alta</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="media" id="media" className="border-orange-500 text-orange-500 focus:ring-orange-500" />
-                      <Label htmlFor="media" className="font-bold text-orange-500">Média</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="baixa" id="baixa" className="border-yellow-500 text-yellow-500 focus:ring-yellow-500" />
-                      <Label htmlFor="baixa" className="font-bold text-yellow-500">Baixa</Label>
-                  </div>
-              </RadioGroup>
           </div>
           
           <Separator />
@@ -436,7 +315,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
                   <div>
                       <h3 className="text-lg font-semibold text-foreground">Localização no Mapa</h3>
                       <p className="text-sm text-muted-foreground">
-                          Clique no mapa para marcar o ponto exato do tratamento.
+                          Clique no mapa para marcar o ponto exato da identificação do risco.
                       </p>
                   </div>
                   {marker && (
@@ -447,7 +326,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
                   )}
               </div>
                <p className="text-sm text-destructive">
-                Importante: Se a imagem do mapa for alterada futuramente, as marcações de tratamentos já salvas não serão atualizadas para a nova imagem.
+                Importante: Se a imagem do mapa for alterada futuramente, as marcações de riscos já salvas não serão atualizadas para a nova imagem.
               </p>
               <div
                 ref={mapContainerRef}
@@ -491,7 +370,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
         <CardFooter className="flex flex-col gap-2">
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEditing ? 'Salvar Alterações' : 'Salvar Tratamento'}
+            {isEditing ? 'Salvar Alterações' : 'Salvar Tratamento de Risco'}
           </Button>
            {isEditing && (
             <Button variant="outline" className="w-full" onClick={() => setPage('treatment-report')}>
