@@ -7,8 +7,6 @@ import { useUser } from '@/firebase';
 import { useAppSettings } from '@/context/app-settings-context';
 
 import { GeneralSettings } from '@/components/general-settings';
-import { Chat } from '@/components/chat';
-import { SgsConfiguration } from '@/components/sgs-configuration';
 import { RegisterOccurrence } from '@/components/register-occurrence';
 import { ManageOccurrences } from '@/components/manage-occurrences';
 import { ManageLocations } from '@/components/manage-locations';
@@ -35,6 +33,7 @@ import { ManageEquipmentAndBrands } from './manage-equipment-and-brands';
 import { EquipmentReport } from './equipment-report';
 import { RegisterActivity } from './register-activity';
 import { ActivityReport } from './activity-report';
+import { Reminders } from './reminders';
 
 
 import {
@@ -195,16 +194,7 @@ function MainAppLayout() {
         return <ViewSgsDocs />;
       case 'reminders':
       default:
-        return (
-          <div className="space-y-6">
-            <div className="w-full">
-              <SgsConfiguration />
-            </div>
-            <div className="w-full">
-              <Chat />
-            </div>
-          </div>
-        );
+        return <Reminders setPage={handlePageChange} />;
     }
   };
 
