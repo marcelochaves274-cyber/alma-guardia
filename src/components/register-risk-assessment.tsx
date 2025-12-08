@@ -12,12 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -26,9 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Loader2 } from 'lucide-react';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -69,9 +61,7 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
   const isEditing = !!assessmentToEdit;
 
   // Form states
-  const [assessmentDate, setAssessmentDate] = useState<Date | undefined>();
   const [location, setLocation] = useState('');
-  const [riskType, setRiskType] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [riskSource, setRiskSource] = useState('');
   const [effects, setEffects] = useState('');
@@ -79,16 +69,9 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
   const [recommendedControls, setRecommendedControls] = useState('');
   const [probability, setProbability] = useState('');
   const [consequence, setConsequence] = useState('');
-  const [situation, setSituation] = useState(isEditing ? '' : 'finalizado');
-  const [completionDate, setCompletionDate] = useState<Date | undefined>();
-
 
   // UI/Data loading states
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isCompletionCalendarOpen, setIsCompletionCalendarOpen] = useState(false);
-  const [riskTypes, setRiskTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
-  const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -99,12 +82,7 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
   // Populate form if we are editing
   useEffect(() => {
     if (isEditing && assessmentToEdit) {
-      const date = assessmentToEdit.assessmentDate;
-      const compDate = assessmentToEdit.completionDate;
-      setAssessmentDate(date instanceof Timestamp ? date.toDate() : date);
-      setCompletionDate(compDate instanceof Timestamp ? compDate.toDate() : compDate);
       setLocation(assessmentToEdit.location || '');
-      setRiskType(assessmentToEdit.riskType || '');
       setTaskDescription(assessmentToEdit.taskDescription || '');
       setRiskSource(assessmentToEdit.riskSource || '');
       setEffects(assessmentToEdit.effects || '');
@@ -112,7 +90,6 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
       setRecommendedControls(assessmentToEdit.recommendedControls || '');
       setProbability(assessmentToEdit.probability || '');
       setConsequence(assessmentToEdit.consequence || '');
-      setSituation(assessmentToEdit.situation || 'finalizado');
     }
   }, [isEditing, assessmentToEdit]);
 
@@ -145,14 +122,11 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
         setLoading(false);
       }
     };
-    fetchSelectOptions('occurrenceTypes', setRiskTypes, setIsLoadingTypes, 'types');
     fetchSelectOptions('locations', setLocations, setIsLoadingLocations, 'locations');
   }, [getSettingsDocRef, toast]);
   
   const resetForm = () => {
-    setAssessmentDate(undefined);
     setLocation('');
-    setRiskType('');
     setTaskDescription('');
     setRiskSource('');
     setEffects('');
@@ -160,8 +134,6 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
     setRecommendedControls('');
     setProbability('');
     setConsequence('');
-    setSituation('finalizado');
-    setCompletionDate(undefined);
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -170,19 +142,14 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
         toast({ variant: 'destructive', title: 'Erro', description: 'Você não está autenticado.' });
         return;
     }
-    if (!assessmentDate) {
-        toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a data da avaliação.' });
-        return;
-    }
 
     setIsSubmitting(true);
     
     const riskLevelData = getRiskLevel(Number(probability), Number(consequence));
 
     const assessmentData = {
-        assessmentDate: Timestamp.fromDate(assessmentDate),
+        assessmentDate: serverTimestamp(),
         location,
-        riskType,
         taskDescription,
         riskSource,
         effects,
@@ -192,8 +159,8 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
         consequence,
         riskLevel: riskLevelData.score,
         userId: user.uid,
-        situation,
-        completionDate: completionDate && (situation === 'pendente' || situation === 'reaberto') ? Timestamp.fromDate(completionDate) : null,
+        situation: 'finalizado',
+        completionDate: null,
     };
 
     try {
@@ -236,40 +203,7 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
         </CardHeader>
         <CardContent className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="assessment-date">Data da Avaliação</Label>
-              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={'outline'}
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !assessmentDate && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {assessmentDate ? (
-                      format(assessmentDate, 'dd/MM/yyyy')
-                    ) : (
-                      <span>Escolha uma data</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={assessmentDate}
-                    onSelect={(date) => {
-                        if(date) setAssessmentDate(date);
-                        setIsCalendarOpen(false);
-                    }}
-                    locale={ptBR}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-2">
+            <div className="space-y-2 lg:col-span-3">
               <Label htmlFor="assessment-location">Local</Label>
               <Select name="assessmentLocation" required disabled={isLoadingLocations || locations.length === 0} onValueChange={setLocation} value={location}>
                 <SelectTrigger id="assessment-location">
@@ -287,30 +221,6 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
                     locations.map((loc) => (
                       <SelectItem key={loc} value={loc}>
                         {loc}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="risk-type">Tipo de Risco</Label>
-              <Select name="riskType" required disabled={isLoadingTypes || riskTypes.length === 0} onValueChange={setRiskType} value={riskType}>
-                <SelectTrigger id="risk-type">
-                  <SelectValue placeholder={
-                    isLoadingTypes ? "Carregando..." : 
-                    riskTypes.length === 0 ? "Nenhum tipo cadastrado" : "Selecione o tipo"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingTypes ? (
-                    <div className="flex items-center justify-center p-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    </div>
-                  ) : (
-                    riskTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
                       </SelectItem>
                     ))
                   )}
@@ -417,59 +327,6 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
             />
           </div>
            
-           <Separator/>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-                <div className="space-y-2">
-                    <Label htmlFor="situation">Situação</Label>
-                    <Select name="situation" onValueChange={setSituation} value={situation}>
-                        <SelectTrigger id="situation">
-                            <SelectValue placeholder="Selecione a situação" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="pendente">Pendente</SelectItem>
-                            <SelectItem value="finalizado">Finalizado</SelectItem>
-                            <SelectItem value="reaberto">Reaberto</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                {(situation === 'pendente' || situation === 'reaberto') && (
-                  <div className="space-y-2">
-                      <Label htmlFor="completion-date">Data para Conclusão</Label>
-                      <Popover open={isCompletionCalendarOpen} onOpenChange={setIsCompletionCalendarOpen}>
-                          <PopoverTrigger asChild>
-                          <Button
-                              variant={'outline'}
-                              className={cn(
-                              'w-full justify-start text-left font-normal',
-                              !completionDate && 'text-muted-foreground'
-                              )}
-                          >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {completionDate ? (
-                              format(completionDate, 'dd/MM/yyyy')
-                              ) : (
-                              <span>Selecione a data</span>
-                              )}
-                          </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                          <Calendar
-                              mode="single"
-                              selected={completionDate}
-                              onSelect={(date) => {
-                                  if(date) setCompletionDate(date);
-                                  setIsCompletionCalendarOpen(false);
-                              }}
-                              locale={ptBR}
-                              initialFocus
-                          />
-                          </PopoverContent>
-                      </Popover>
-                  </div>
-                )}
-            </div>
-
             <div className="flex justify-end gap-4 pt-4">
                 {isEditing && (
                     <Button variant="outline" type="button" onClick={() => setPage('risk-assessment-report')}>

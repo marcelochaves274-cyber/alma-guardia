@@ -363,7 +363,6 @@
         "id",
         "userId",
         "assessmentDate",
-        "riskType",
         "location",
         "probability",
         "consequence",
