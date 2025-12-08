@@ -13,7 +13,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -332,6 +332,18 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
             >
               <HeartPulse />
               <span className="font-bold">RAME</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={activePage === 'view-sgs-docs'}
+              onClick={() => handlePageChange('view-sgs-docs')}
+              tooltip={{
+                children: 'Documentos SGS',
+              }}
+            >
+              <Files />
+              <span className="font-bold">Documentos SGS</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>

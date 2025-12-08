@@ -29,6 +29,7 @@ import { ManagePops } from './manage-pops';
 import { ViewPops } from './view-pops';
 import { ViewTcrs } from './view-tcrs';
 import { ViewRame } from './view-rame';
+import { ViewSgsDocs } from './view-sgs-docs';
 
 
 import {
@@ -157,6 +158,8 @@ function MainAppLayout() {
         return <ViewTcrs />;
       case 'view-rame':
         return <ViewRame />;
+      case 'view-sgs-docs':
+        return <ViewSgsDocs />;
       case 'reminders':
       default:
         return (
