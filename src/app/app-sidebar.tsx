@@ -81,6 +81,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'manage-occurrences': 'settings',
       'manage-locations': 'settings',
       'manage-map': 'settings',
+      'manage-pops': 'settings',
       'manage-fauna-flora-geo': 'settings',
     };
 
@@ -343,6 +344,14 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     onClick={() => handlePageChange('manage-map')}
                   >
                     Gerenciar Mapa
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    isActive={activePage === 'manage-pops'}
+                    onClick={() => handlePageChange('manage-pops')}
+                  >
+                    Gerenciar POPs
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
                 <SidebarMenuSubItem>

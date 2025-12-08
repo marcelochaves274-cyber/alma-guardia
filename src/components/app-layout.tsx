@@ -24,6 +24,7 @@ import { FaunaFloraGeoReport } from '@/components/fauna-flora-geo-report';
 import { FaunaFloraGeoMapReport } from '@/components/fauna-flora-geo-map-report';
 import { RegisterRiskAssessment } from './register-risk-assessment';
 import { RiskAssessmentReport } from './risk-assessment-report';
+import { ManagePops } from './manage-pops';
 
 
 import {
@@ -126,6 +127,8 @@ function MainAppLayout() {
         return <ManageLocations />;
       case 'manage-map':
         return <ManageMap />;
+      case 'manage-pops':
+        return <ManagePops />;
       case 'manage-fauna-flora-geo':
         return <ManageFaunaFloraGeo />;
       case 'register-treatment':
