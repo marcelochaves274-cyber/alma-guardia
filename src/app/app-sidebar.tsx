@@ -118,7 +118,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   }
   
   const getProfileName = () => {
-    if (profile === 'admin') return 'Admin';
+    if (profile === 'admin') return 'Administrador';
     if (profile === 'observer') return 'Observador';
     return 'N/D';
   }
@@ -141,7 +141,10 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
             <SgsGeniusLogo className="h-6 w-6 text-primary" />
           )}
           {state === 'expanded' && (
-            <h2 className="text-lg font-semibold truncate" title={appName}>{appName}</h2>
+            <div className="flex flex-col">
+              <h2 className="text-lg font-semibold leading-tight">SGS</h2>
+              <span className="text-sm text-muted-foreground leading-tight">{getProfileName()}</span>
+            </div>
           )}
         </div>
       </SidebarHeader>

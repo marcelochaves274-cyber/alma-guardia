@@ -232,10 +232,10 @@ function MainAppLayout() {
     }
   };
 
-  const getProfileTitle = () => {
-    if (profile === 'admin') return 'SGS - Admin';
-    if (profile === 'observer') return 'SGS - Observador';
-    return 'Sistema de Gestão de Segurança';
+  const getProfileName = () => {
+    if (profile === 'admin') return 'Administrador';
+    if (profile === 'observer') return 'Observador';
+    return '';
   }
 
   return (
@@ -261,13 +261,11 @@ function MainAppLayout() {
               )}
               <div className="flex flex-col items-center justify-center">
                 <span className="font-bold text-xl text-foreground">
-                  {getProfileTitle()}
+                  {appName || 'Sistema de Gestão de Segurança'}
                 </span>
-                {appName && (
-                  <span className="font-bold text-lg text-muted-foreground">
-                    {appName}
-                  </span>
-                )}
+                <span className="font-bold text-lg text-muted-foreground">
+                    {getProfileName()}
+                </span>
               </div>
             </div>
           </header>
