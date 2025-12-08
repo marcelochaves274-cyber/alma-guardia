@@ -33,6 +33,8 @@ interface Treatment {
   treatmentDate: Date;
   treatmentType: string;
   treatmentLocation: string;
+  riskLevel: number;
+  situation: 'pendente' | 'finalizado' | 'reaberto';
   mapMarker?: { x: number; y: number };
 }
 
@@ -41,6 +43,19 @@ interface Cluster {
   x: number;
   y: number;
 }
+
+const riskLevelOptions = [
+    { value: 'alta', label: 'Alta' },
+    { value: 'media', label: 'Média' },
+    { value: 'baixa', label: 'Baixa' },
+];
+
+const situationOptions = [
+    { value: 'pendente', label: 'Pendente' },
+    { value: 'finalizado', label: 'Finalizado' },
+    { value: 'reaberto', label: 'Reaberto' },
+];
+
 
 export function TreatmentMapReport() {
   const firestore = useFirestore();
@@ -57,6 +72,8 @@ export function TreatmentMapReport() {
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
+  const [filterRiskLevels, setFilterRiskLevels] = useState<string[]>([]);
+  const [filterSituations, setFilterSituations] = useState<string[]>([]);
 
   // Dynamic options for selects
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -162,10 +179,19 @@ export function TreatmentMapReport() {
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.treatmentType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.treatmentLocation);
+      const situationMatch = filterSituations.length === 0 || filterSituations.includes(occ.situation);
 
-      return yearMatch && monthMatch && typeMatch && locationMatch && !!occ.mapMarker;
+       const riskLevelMatch = filterRiskLevels.length === 0 || filterRiskLevels.some(level => {
+        const score = occ.riskLevel;
+        if (level === 'alta') return score >= 15;
+        if (level === 'media') return score >= 8 && score < 15;
+        if (level === 'baixa') return score > 0 && score < 8;
+        return false;
+      });
+
+      return yearMatch && monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch && !!occ.mapMarker;
     });
-  }, [treatments, filterYears, filterMonths, filterTypes, filterLocations]);
+  }, [treatments, filterYears, filterMonths, filterTypes, filterLocations, filterRiskLevels, filterSituations]);
 
   const clusters = useMemo(() => {
     const points = filteredTreatments.filter(occ => occ.mapMarker);
@@ -204,6 +230,8 @@ export function TreatmentMapReport() {
     setFilterMonths([]);
     setFilterTypes([]);
     setFilterLocations([]);
+    setFilterRiskLevels([]);
+    setFilterSituations([]);
   }
 
   return (
@@ -220,7 +248,7 @@ export function TreatmentMapReport() {
             <Label>Filtrar por Mês</Label>
             <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
             <MultiSelectFilter
               placeholder="Filtrar por Ano"
               options={availableYears.map(y => ({ value: y, label: y }))}
@@ -229,11 +257,17 @@ export function TreatmentMapReport() {
               disabled={availableYears.length === 0}
             />
             <MultiSelectFilter
-              placeholder="Filtrar por Tipo"
+              placeholder="Filtrar por Tipo de Risco"
               options={treatmentTypes.map(t => ({ value: t, label: t }))}
               selected={filterTypes}
               onChange={setFilterTypes}
               disabled={!treatmentTypes || treatmentTypes.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Nível de Risco (PxC)"
+              options={riskLevelOptions}
+              selected={filterRiskLevels}
+              onChange={setFilterRiskLevels}
             />
             <MultiSelectFilter
               placeholder="Filtrar por Local"
@@ -241,6 +275,12 @@ export function TreatmentMapReport() {
               selected={filterLocations}
               onChange={setFilterLocations}
               disabled={!locations || locations.length === 0}
+            />
+             <MultiSelectFilter
+              placeholder="Filtrar por Situação"
+              options={situationOptions}
+              selected={filterSituations}
+              onChange={setFilterSituations}
             />
             
             <Button onClick={clearFilters} variant="outline" className="w-full">
