@@ -200,7 +200,6 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
     Array.from({ length: 5 }).map((_, i) => (
       <TableRow key={i}>
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
@@ -271,7 +270,6 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Local</TableHead>
-                  <TableHead>Etapa da Atividade</TableHead>
                   <TableHead>Causa</TableHead>
                   <TableHead>Perigo</TableHead>
                   <TableHead>Dano</TableHead>
@@ -288,7 +286,6 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
                     return (
                       <TableRow key={ass.id}>
                         <TableCell>{ass.location}</TableCell>
-                        <TableCell><p className='truncate w-32'>{ass.taskDescription}</p></TableCell>
                         <TableCell><p className='truncate w-32'>{ass.riskSource}</p></TableCell>
                         <TableCell><p className='truncate w-32'>{ass.effects}</p></TableCell>
                         <TableCell><p className='truncate w-32'>{ass.existingControls}</p></TableCell>
@@ -342,7 +339,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                       {assessments.length === 0 ? "Nenhuma avaliação registrada ainda." : "Nenhuma avaliação encontrada para o local selecionado."}
                     </TableCell>
                   </TableRow>
