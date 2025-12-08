@@ -22,7 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from './ui/button';
-import { Loader2, Shield, Users } from 'lucide-react';
+import { Loader2, Shield, Users, Eye, EyeOff } from 'lucide-react';
 import { useProfile } from '@/context/profile-context';
 import { useToast } from '@/hooks/use-toast';
 
@@ -34,6 +34,7 @@ export function ProfileSelector() {
 
   const [selectedProfile, setSelectedProfile] = useState<SelectedProfile>(null);
   const [pass, setPass] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
 
   const handleProfileSelect = (profile: SelectedProfile) => {
@@ -114,21 +115,33 @@ export function ProfileSelector() {
                 </AlertDialogHeader>
                 <div className="space-y-2 py-2">
                     <Label htmlFor="pass-input">Passe</Label>
-                    <Input
-                        id="pass-input"
-                        type="password"
-                        maxLength={6}
-                        value={pass}
-                        onChange={(e) => handlePassChange(e.target.value)}
-                        placeholder="••••••"
-                        autoFocus
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handlePassSubmit();
-                            }
-                        }}
-                    />
+                    <div className="relative">
+                        <Input
+                            id="pass-input"
+                            type={showPass ? 'text' : 'password'}
+                            maxLength={6}
+                            value={pass}
+                            onChange={(e) => handlePassChange(e.target.value)}
+                            placeholder="••••••"
+                            autoFocus
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handlePassSubmit();
+                                }
+                            }}
+                            className="pr-10"
+                        />
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent"
+                            onClick={() => setShowPass((prev) => !prev)}
+                        >
+                            {showPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </Button>
+                    </div>
                 </div>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
