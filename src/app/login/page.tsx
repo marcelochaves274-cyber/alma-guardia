@@ -88,7 +88,7 @@ export default function LoginPage() {
       } else {
         await createUserWithEmailAndPassword(initializedAuth, email, password);
       }
-      router.push('/');
+      // O useEffect cuidará do redirecionamento
     } catch (error: any) {
       toast({
         variant: 'destructive',
