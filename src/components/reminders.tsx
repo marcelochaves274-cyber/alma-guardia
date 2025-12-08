@@ -3,11 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, Timestamp, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldAlert, Wrench } from 'lucide-react';
+import { ShieldAlert, Wrench, Megaphone } from 'lucide-react';
 import { startOfDay, isBefore } from 'date-fns';
 
 interface Treatment {
@@ -20,6 +20,11 @@ interface Equipment {
   nextInspectionDate?: Timestamp;
 }
 
+interface Notice {
+    id: string;
+    status: 'pendente' | 'finalizado';
+}
+
 interface RemindersProps {
   setPage: (page: string, filters?: any) => void;
 }
@@ -30,8 +35,11 @@ export function Reminders({ setPage }: RemindersProps) {
 
   const [pendingTreatments, setPendingTreatments] = useState<number>(0);
   const [overdueEquipments, setOverdueEquipments] = useState<number>(0);
+  const [pendingNotices, setPendingNotices] = useState<number>(0);
+
   const [isLoadingTreatments, setIsLoadingTreatments] = useState(true);
   const [isLoadingEquipments, setIsLoadingEquipments] = useState(true);
+  const [isLoadingNotices, setIsLoadingNotices] = useState(true);
 
   useEffect(() => {
     if (!user || !firestore) return;
@@ -60,30 +68,46 @@ export function Reminders({ setPage }: RemindersProps) {
       setOverdueEquipments(overdue.length);
       setIsLoadingEquipments(false);
     });
+    
+    // Listener for notices
+    const noticesQuery = query(collection(firestore, 'sgs_genius', user.uid, 'notices'), where('status', '==', 'pendente'));
+    const unsubscribeNotices = onSnapshot(noticesQuery, (snapshot) => {
+        setPendingNotices(snapshot.size);
+        setIsLoadingNotices(false);
+    });
 
     return () => {
       unsubscribeTreatments();
       unsubscribeEquipments();
+      unsubscribeNotices();
     };
   }, [user, firestore]);
   
   const handleViewTreatments = () => {
     setPage('treatment-report', {
-        treatmentReport: {
-            situations: ['pendente', 'reaberto']
+        filters: {
+            treatmentReport: {
+                situations: ['pendente', 'reaberto']
+            }
         }
     });
   }
   
   const handleViewEquipments = () => {
     setPage('equipment-report', {
-        equipmentReport: {
-            status: 'overdue'
+        filters: {
+            equipmentReport: {
+                status: 'overdue'
+            }
         }
     })
   }
 
-  const isLoading = isLoadingTreatments || isLoadingEquipments;
+  const handleViewNotices = () => {
+    setPage('pending-notices');
+  }
+
+  const isLoading = isLoadingTreatments || isLoadingEquipments || isLoadingNotices;
 
   return (
     <div>
@@ -91,9 +115,10 @@ export function Reminders({ setPage }: RemindersProps) {
         <h1 className="text-3xl font-bold">Lembretes de Pendências</h1>
         <p className="text-muted-foreground">Resumo de itens que necessitam de sua atenção.</p>
       </div>
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
           <>
+            <ReminderCardSkeleton />
             <ReminderCardSkeleton />
             <ReminderCardSkeleton />
           </>
@@ -126,6 +151,21 @@ export function Reminders({ setPage }: RemindersProps) {
               <CardFooter>
                  <Button className="w-full" onClick={handleViewEquipments} disabled={overdueEquipments === 0}>
                     Ver Equipamentos
+                 </Button>
+              </CardFooter>
+            </Card>
+             <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avisos Pendentes</CardTitle>
+                <Megaphone className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{pendingNotices}</div>
+                <p className="text-xs text-muted-foreground">aguardando ação</p>
+              </CardContent>
+              <CardFooter>
+                 <Button className="w-full" onClick={handleViewNotices} disabled={pendingNotices === 0}>
+                    Ver Avisos
                  </Button>
               </CardFooter>
             </Card>
