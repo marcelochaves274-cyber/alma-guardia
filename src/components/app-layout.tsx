@@ -25,6 +25,7 @@ import { FaunaFloraGeoMapReport } from '@/components/fauna-flora-geo-map-report'
 import { RegisterRiskAssessment } from './register-risk-assessment';
 import { RiskAssessmentReport } from './risk-assessment-report';
 import { ManagePops } from './manage-pops';
+import { ViewPops } from './view-pops';
 
 
 import {
@@ -147,6 +148,8 @@ function MainAppLayout() {
         return <RegisterRiskAssessment assessmentToEdit={assessmentToEdit} setPage={handlePageChange} />;
       case 'risk-assessment-report':
         return <RiskAssessmentReport onEdit={handleEditAssessment} />;
+      case 'view-pops':
+        return <ViewPops />;
       case 'reminders':
       default:
         return (

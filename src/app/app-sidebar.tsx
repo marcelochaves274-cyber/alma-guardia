@@ -12,7 +12,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -261,7 +261,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
               </SidebarMenuSub>
             )}
           </SidebarMenuItem>
-           <SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => toggleSubMenu('risk-assessment')}
               tooltip={{
@@ -279,15 +279,15 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
             {openSubMenu === 'risk-assessment' && state === 'expanded' && (
               <SidebarMenuSub>
                 <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
+                  <SidebarMenuSubButton
                     isActive={activePage === 'register-risk-assessment'}
                     onClick={() => handlePageChange('register-risk-assessment')}
                   >
-                    Registrar Avaliação
+                   Registrar Avaliação
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
                 <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
+                  <SidebarMenuSubButton
                     isActive={activePage === 'risk-assessment-report'}
                     onClick={() => handlePageChange('risk-assessment-report')}
                   >
@@ -296,6 +296,18 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
             )}
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={activePage === 'view-pops'}
+              onClick={() => handlePageChange('view-pops')}
+              tooltip={{
+                children: 'POP',
+              }}
+            >
+              <BookText />
+              <span className="font-bold">POP</span>
+            </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton

@@ -29,16 +29,21 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
+export interface PopDocument {
+  name: string;
+  content: string;
+}
+
 export function ManagePops() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
 
-  const [pops, setPops] = useState<string[]>([]);
-  const [newPop, setNewPop] = useState('');
+  const [pops, setPops] = useState<PopDocument[]>([]);
+  const [newPopName, setNewPopName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [editingPop, setEditingPop] = useState<string | null>(null);
+  const [editingPop, setEditingPop] = useState<PopDocument | null>(null);
   const [editingValue, setEditingValue] = useState('');
 
   const getSettingsDocRef = useCallback(() => {
@@ -65,7 +70,11 @@ export function ManagePops() {
         if (isMounted) {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setPops(data.documents || []);
+            // Ensure data is in the correct PopDocument[] format
+            const fetchedPops = (data.documents || []).map((item: any) => 
+                typeof item === 'string' ? { name: item, content: '' } : item
+            );
+            setPops(fetchedPops);
           } else {
             setPops([]);
           }
@@ -91,7 +100,7 @@ export function ManagePops() {
     return () => { isMounted = false; };
   }, [isUserLoading, user, firestore, getSettingsDocRef, toast]);
   
-  const savePopsToFirestore = async (updatedPops: string[]) => {
+  const savePopsToFirestore = async (updatedPops: PopDocument[]) => {
     const docRef = getSettingsDocRef();
     if (!docRef) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.'});
@@ -113,7 +122,7 @@ export function ManagePops() {
 
   const handleAddPop = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newPop.trim()) {
+    if (!newPopName.trim()) {
       toast({
         variant: 'destructive',
         title: 'Campo vazio',
@@ -121,8 +130,11 @@ export function ManagePops() {
       });
       return;
     }
-    const trimmedPop = `POP: ${newPop.trim()}`;
-    if (pops.map(p => p.toLowerCase()).includes(trimmedPop.toLowerCase())) {
+    const newPop: PopDocument = {
+        name: `POP: ${newPopName.trim()}`,
+        content: '',
+    }
+    if (pops.some(p => p.name.toLowerCase() === newPop.name.toLowerCase())) {
       toast({
         variant: 'destructive',
         title: 'Documento duplicado',
@@ -131,34 +143,33 @@ export function ManagePops() {
       return;
     }
 
-    const newPops = [...pops, trimmedPop];
+    const newPops = [...pops, newPop];
     const success = await savePopsToFirestore(newPops);
     if(success) {
         setPops(newPops);
-        setNewPop('');
+        setNewPopName('');
         toast({
             title: 'Sucesso!',
-            description: `O documento "${trimmedPop}" foi adicionado.`,
+            description: `O documento "${newPop.name}" foi adicionado.`,
         });
     }
   };
 
-  const handleRemovePop = async (popToRemove: string) => {
-    const newPops = pops.filter((pop) => pop !== popToRemove);
+  const handleRemovePop = async (popToRemove: PopDocument) => {
+    const newPops = pops.filter((pop) => pop.name !== popToRemove.name);
     const success = await savePopsToFirestore(newPops);
     if(success) {
         setPops(newPops);
         toast({
         title: 'Removido',
-        description: `O POP "${popToRemove}" foi removido.`,
+        description: `O POP "${popToRemove.name}" foi removido.`,
         });
     }
   };
 
-  const handleStartEditing = (pop: string) => {
+  const handleStartEditing = (pop: PopDocument) => {
     setEditingPop(pop);
-    // Remove "POP: " prefix for editing
-    setEditingValue(pop.replace(/^POP: /, ''));
+    setEditingValue(pop.name.replace(/^POP: /, ''));
   };
 
   const handleCancelEditing = () => {
@@ -176,8 +187,8 @@ export function ManagePops() {
       return;
     }
 
-    const trimmedValue = `POP: ${editingValue.trim()}`;
-    if (pops.map(p => p.toLowerCase()).includes(trimmedValue.toLowerCase()) && trimmedValue.toLowerCase() !== editingPop.toLowerCase()) {
+    const newName = `POP: ${editingValue.trim()}`;
+    if (pops.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.name !== editingPop.name)) {
         toast({
             variant: 'destructive',
             title: 'Documento duplicado',
@@ -186,7 +197,7 @@ export function ManagePops() {
         return;
     }
 
-    const newPops = pops.map(p => (p === editingPop ? trimmedValue : p));
+    const newPops = pops.map(p => (p.name === editingPop.name ? { ...p, name: newName } : p));
     const success = await savePopsToFirestore(newPops);
     if(success) {
         setPops(newPops);
@@ -252,14 +263,14 @@ export function ManagePops() {
                         id="new-pop-document"
                         placeholder="Ex: Procedimento para Trabalho em Altura"
                         className="rounded-l-none"
-                        value={newPop}
-                        onChange={(e) => setNewPop(e.target.value)}
+                        value={newPopName}
+                        onChange={(e) => setNewPopName(e.target.value)}
                         disabled={isSaving}
                     />
                 </div>
             </div>
           </div>
-          <Button type="submit" disabled={isSaving || !newPop.trim()} className='w-full sm:w-auto'>
+          <Button type="submit" disabled={isSaving || !newPopName.trim()} className='w-full sm:w-auto'>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {isSaving ? 'Adicionando...' : 'Adicionar POP'}
           </Button>
@@ -273,10 +284,10 @@ export function ManagePops() {
             <ul className="space-y-3">
               {pops.map((pop) => (
                 <li
-                  key={pop}
+                  key={pop.name}
                   className="flex items-center justify-between rounded-md border bg-card p-3"
                 >
-                  {editingPop === pop ? (
+                  {editingPop?.name === pop.name ? (
                     <div className='flex-1 flex items-center gap-2'>
                         <span className="flex h-8 items-center justify-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm font-medium text-muted-foreground">
                             POP:
@@ -293,7 +304,7 @@ export function ManagePops() {
                     </div>
                   ) : (
                     <>
-                        <span className="text-sm font-medium">{pop}</span>
+                        <span className="text-sm font-medium">{pop.name}</span>
                         <div className="flex items-center">
                             <Button
                                 variant="ghost"
@@ -301,7 +312,7 @@ export function ManagePops() {
                                 onClick={() => handleStartEditing(pop)}
                                 disabled={isSaving}
                                 className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                aria-label={`Editar ${pop}`}
+                                aria-label={`Editar ${pop.name}`}
                             >
                                 <Pencil className="h-4 w-4" />
                             </Button>
@@ -313,7 +324,7 @@ export function ManagePops() {
                                         size="icon"
                                         disabled={isSaving}
                                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                        aria-label={`Remover ${pop}`}
+                                        aria-label={`Remover ${pop.name}`}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -322,7 +333,7 @@ export function ManagePops() {
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o POP "{pop}".
+                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o POP "{pop.name}".
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
