@@ -477,7 +477,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     isActive={activePage === 'manage-pops'}
                     onClick={() => handlePageChange('manage-pops')}
                   >
-                    Gerenciar POP/TCR
+                    Ger. Atividade POP TCR
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
                 <SidebarMenuSubItem>
