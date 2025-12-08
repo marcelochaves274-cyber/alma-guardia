@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -36,6 +37,11 @@ export function HelpPage() {
             />
         </div>
       </CardContent>
+      <CardFooter>
+        <p className='text-sm text-muted-foreground'>
+            O modo ajuda está atualmente <strong>{helpEnabled ? 'ATIVADO' : 'DESATIVADO'}</strong>.
+        </p>
+      </CardFooter>
     </Card>
   );
 }

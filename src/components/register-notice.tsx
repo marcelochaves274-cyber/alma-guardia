@@ -36,6 +36,7 @@ import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp 
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
+import { HelpTooltip } from './ui/help-tooltip';
 
 type Marker = { x: number; y: number } | null;
 
@@ -219,7 +220,10 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
         <CardContent className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="collaborator-name">Nome do Colaborador</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="collaborator-name">Nome do Colaborador</Label>
+                <HelpTooltip content="Seu nome completo para identificação." />
+              </div>
               <Input id="collaborator-name" value={collaboratorName} onChange={(e) => setCollaboratorName(e.target.value)} placeholder="Seu nome completo" required />
             </div>
             <div className="space-y-2">
@@ -259,7 +263,10 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição do que foi observado</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="description">Descrição do que foi observado</Label>
+              <HelpTooltip content="Descreva em detalhes o que você viu, ouviu ou sentiu. Seja o mais específico possível." />
+            </div>
             <Textarea id="description" placeholder="Seja o mais descritivo possível..." className="min-h-[100px]" required value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
 

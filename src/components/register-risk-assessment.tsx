@@ -26,6 +26,7 @@ import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp 
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
+import { HelpTooltip } from './ui/help-tooltip';
 
 interface RegisterRiskAssessmentProps {
   assessmentToEdit: any | null;
@@ -230,7 +231,10 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="task-description">Etapa da Atividade</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="task-description">Etapa da Atividade</Label>
+              <HelpTooltip content="Descreva a tarefa ou etapa específica que está sendo analisada (ex: montagem de andaime, transporte de material)." />
+            </div>
             <Textarea
               id="task-description"
               name="taskDescription"
@@ -241,7 +245,10 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="risk-source">Causa</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="risk-source">Causa</Label>
+              <HelpTooltip content="Qual é a fonte ou origem do risco? (ex: ferramenta defeituosa, piso escorregadio, falta de treinamento)." />
+            </div>
             <Textarea
               id="risk-source"
               name="riskSource"
@@ -252,7 +259,10 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="effects">Perigo</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="effects">Perigo</Label>
+              <HelpTooltip content="Descreva o perigo em si (ex: queda de altura, choque elétrico, exposição a ruído)." />
+            </div>
             <Textarea
               id="effects"
               name="effects"
@@ -263,7 +273,10 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
           </div>
            
            <div className="space-y-2">
-            <Label htmlFor="existing-controls">Dano</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="existing-controls">Dano</Label>
+              <HelpTooltip content="Qual o dano ou consequência potencial? (ex: fratura, queimadura, perda auditiva, fatalidade)." />
+            </div>
             <Textarea
               id="existing-controls"
               name="existingControls"
@@ -274,7 +287,10 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="recommended-controls">Controle Operacional</Label>
+             <div className="flex items-center gap-2">
+              <Label htmlFor="recommended-controls">Controle Operacional</Label>
+              <HelpTooltip content="Quais medidas de controle podem ser implementadas para eliminar ou mitigar o risco? (ex: uso de EPI, isolamento da área, procedimento de bloqueio)." />
+            </div>
             <Textarea
               id="recommended-controls"
               name="recommendedControls"

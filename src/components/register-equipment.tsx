@@ -31,6 +31,7 @@ import { ptBR } from 'date-fns/locale';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { HelpTooltip } from './ui/help-tooltip';
 
 interface RegisterEquipmentProps {
   equipmentToEdit: any | null;
@@ -205,11 +206,17 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="model">Modelo</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="model">Modelo</Label>
+                <HelpTooltip content="Especifique o modelo exato do equipamento." />
+              </div>
               <Input id="model" value={model} onChange={(e) => setModel(e.target.value)} placeholder="Ex: Attache" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lot-ca-uiaa">Lote/CA/UIAA</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="lot-ca-uiaa">Lote/CA/UIAA</Label>
+                <HelpTooltip content="Número de lote de fabricação, Certificado de Aprovação (CA) ou selo UIAA, se aplicável." />
+              </div>
               <Input id="lot-ca-uiaa" value={lotCaUiaa} onChange={(e) => setLotCaUiaa(e.target.value)} placeholder="Ex: 123456" />
             </div>
             <div className="space-y-2">
@@ -238,7 +245,10 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="storage-details">Detalhar local</Label>
+               <div className="flex items-center gap-2">
+                <Label htmlFor="storage-details">Detalhar local</Label>
+                <HelpTooltip content="Seja específico sobre onde o equipamento está guardado (ex: Prateleira 2, Caixa 5)." />
+              </div>
               <Input id="storage-details" value={storageDetails} onChange={(e) => setStorageDetails(e.target.value)} placeholder="Ex: Prateleira 2, Caixa 5" />
             </div>
             <div className="space-y-2">
