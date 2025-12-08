@@ -137,8 +137,10 @@ export function ManagePops() {
       return;
     }
 
+    const finalDocName = `POP/TCR ${newDocName.trim()}`;
+    
     const newDoc: PopDocument = {
-        name: newDocName.trim(),
+        name: finalDocName,
         content: '',
     }
 
@@ -177,7 +179,8 @@ export function ManagePops() {
 
   const handleStartEditing = (doc: PopDocument) => {
     setEditingDoc(doc);
-    setEditingValue(doc.name);
+    // Remove prefix for editing, add it back on save
+    setEditingValue(doc.name.replace(/^POP\/TCR\s/, ''));
   };
 
   const handleCancelEditing = () => {
@@ -194,8 +197,8 @@ export function ManagePops() {
       });
       return;
     }
-
-    const newName = editingValue.trim();
+    
+    const newName = `POP/TCR ${editingValue.trim()}`;
     if (documents.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.name !== editingDoc.name)) {
         toast({
             variant: 'destructive',
@@ -250,23 +253,29 @@ export function ManagePops() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleAddDoc} className="flex items-end gap-4">
-          <div className="w-full space-y-2">
-            <Label htmlFor="new-doc-name">
-              Novo Documento
-            </Label>
-            <Input
-              id="new-doc-name"
-              placeholder="Ex: Procedimento para Trabalho em Altura"
-              value={newDocName}
-              onChange={(e) => setNewDocName(e.target.value)}
-              disabled={isSaving}
-            />
-          </div>
-          <Button type="submit" disabled={isSaving || !newDocName.trim()}>
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-            {isSaving ? 'Adicionando...' : 'Adicionar'}
-          </Button>
+        <form onSubmit={handleAddDoc} className="flex items-end gap-2">
+            <div className="w-full space-y-2">
+                <Label htmlFor="new-doc-name">
+                Novo Documento
+                </Label>
+                <div className="flex items-center gap-2">
+                    <span className="flex h-10 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium text-muted-foreground">
+                        POP/TCR
+                    </span>
+                    <Input
+                        id="new-doc-name"
+                        placeholder="Ex: Procedimento para Trabalho em Altura"
+                        value={newDocName}
+                        onChange={(e) => setNewDocName(e.target.value)}
+                        disabled={isSaving}
+                        className="flex-1"
+                    />
+                </div>
+            </div>
+            <Button type="submit" disabled={isSaving || !newDocName.trim()} className="self-end">
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                {isSaving ? 'Adicionando...' : 'Adicionar'}
+            </Button>
         </form>
 
         <Separator className="my-6" />
@@ -282,10 +291,13 @@ export function ManagePops() {
                 >
                   {editingDoc?.name === doc.name ? (
                     <div className='flex-1 flex items-center gap-2'>
+                        <span className="flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium text-muted-foreground">
+                            POP/TCR
+                        </span>
                         <Input
                             value={editingValue}
                             onChange={(e) => setEditingValue(e.target.value)}
-                            className="h-8"
+                            className="h-8 flex-1"
                             autoFocus
                             onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
                         />
