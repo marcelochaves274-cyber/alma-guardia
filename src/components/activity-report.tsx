@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -18,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, Timestamp, doc, getDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
@@ -29,8 +28,14 @@ interface Activity {
   activityName: string;
   pop: string;
   tcr: string;
-  location: string;
+  riskAssessmentId: string;
   createdAt: Timestamp;
+}
+
+interface RiskAssessment {
+  id: string;
+  taskDescription: string;
+  assessmentDate: Timestamp;
 }
 
 export function ActivityReport() {
@@ -39,13 +44,31 @@ export function ActivityReport() {
   const { toast } = useToast();
   
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [riskAssessments, setRiskAssessments] = useState<Map<string, RiskAssessment>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!user || !firestore) return;
-    setIsLoading(true);
-    const activitiesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'activities');
+
+    // Fetch risk assessments once and map them by ID
+    const fetchAssessments = async () => {
+        try {
+            const assessmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'risk_assessments');
+            const querySnapshot = await getDoc(assessmentsCollectionRef);
+            const assessmentsMap = new Map<string, RiskAssessment>();
+            querySnapshot.docs.forEach(doc => {
+                 assessmentsMap.set(doc.id, { id: doc.id, ...doc.data() } as RiskAssessment);
+            });
+            setRiskAssessments(assessmentsMap);
+        } catch (error) {
+            console.error("Error fetching risk assessments:", error);
+        }
+    };
     
+    fetchAssessments();
+
+    // Listen for real-time activity updates
+    const activitiesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'activities');
     const unsubscribe = onSnapshot(activitiesCollectionRef, (querySnapshot) => {
       const activitiesData = querySnapshot.docs.map(doc => ({
           id: doc.id,
@@ -80,6 +103,12 @@ export function ActivityReport() {
     ))
   );
 
+  const getAssessmentText = (id: string) => {
+    const assessment = riskAssessments.get(id);
+    if (!assessment) return id; // Fallback to ID
+    return `${format(assessment.assessmentDate.toDate(), 'dd/MM/yy', { locale: ptBR })} - ${assessment.taskDescription}`;
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -95,7 +124,7 @@ export function ActivityReport() {
                 <TableHead>Atividade</TableHead>
                 <TableHead>POP</TableHead>
                 <TableHead>TCR</TableHead>
-                <TableHead>Local</TableHead>
+                <TableHead>Avaliação de Risco</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -108,7 +137,7 @@ export function ActivityReport() {
                       <TableCell>{act.activityName.replace(/^POP\/TCR\s/, '')}</TableCell>
                       <TableCell>{act.pop}</TableCell>
                       <TableCell>{act.tcr}</TableCell>
-                      <TableCell>{act.location}</TableCell>
+                      <TableCell>{act.riskAssessmentId ? getAssessmentText(act.riskAssessmentId) : 'N/A'}</TableCell>
                     </TableRow>
                 ))
               ) : (
