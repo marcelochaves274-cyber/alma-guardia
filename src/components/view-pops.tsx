@@ -55,12 +55,11 @@ export function ViewPops() {
           const fetchedDocs = (data.documents || []).map((item: any) => {
                 if (typeof item === 'string') {
                     // Backwards compatibility for old data structure
-                    return { name: item, content: '', type: item.startsWith('POP:') ? 'POP' : 'TCR' };
+                    return { name: item, content: '' };
                 }
                 return {
                     name: item.name,
                     content: item.content || '',
-                    type: item.type || (item.startsWith('POP:') ? 'POP' : 'TCR'),
                 };
             });
           setAllDocs(fetchedDocs);
@@ -79,7 +78,7 @@ export function ViewPops() {
     fetchDocs();
   }, [getSettingsDocRef, toast]);
 
-  const popDocuments = allDocs.filter(doc => doc.type === 'POP');
+  const popDocuments = allDocs; // All documents are available for POPs
 
   const handleSelectPop = (popName: string) => {
     setSelectedPopName(popName);

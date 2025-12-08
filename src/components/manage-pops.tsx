@@ -11,13 +11,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Loader2, Pencil, Check, X } from 'lucide-react';
 import { Separator } from './ui/separator';
@@ -39,7 +32,6 @@ import {
 export interface PopDocument {
   name: string;
   content: string;
-  type: 'POP' | 'TCR';
 }
 
 export function ManagePops() {
@@ -49,7 +41,6 @@ export function ManagePops() {
 
   const [documents, setDocuments] = useState<PopDocument[]>([]);
   const [newDocName, setNewDocName] = useState('');
-  const [newDocType, setNewDocType] = useState<'POP' | 'TCR'>('POP');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [editingDoc, setEditingDoc] = useState<PopDocument | null>(null);
@@ -82,12 +73,11 @@ export function ManagePops() {
             const fetchedDocs = (data.documents || []).map((item: any) => {
                 if (typeof item === 'string') {
                     // Backwards compatibility for old data structure
-                    return { name: item, content: '', type: item.startsWith('POP:') ? 'POP' : 'TCR' };
+                    return { name: item, content: '' };
                 }
                 return {
                     name: item.name,
                     content: item.content || '',
-                    type: item.type || (item.name.startsWith('POP:') ? 'POP' : 'TCR'),
                 };
             });
             setDocuments(fetchedDocs);
@@ -146,11 +136,12 @@ export function ManagePops() {
       });
       return;
     }
+
     const newDoc: PopDocument = {
-        name: `${newDocType}: ${newDocName.trim()}`,
+        name: newDocName.trim(),
         content: '',
-        type: newDocType,
     }
+
     if (documents.some(p => p.name.toLowerCase() === newDoc.name.toLowerCase())) {
       toast({
         variant: 'destructive',
@@ -186,7 +177,7 @@ export function ManagePops() {
 
   const handleStartEditing = (doc: PopDocument) => {
     setEditingDoc(doc);
-    setEditingValue(doc.name.replace(/^(POP: |TCR: )/, ''));
+    setEditingValue(doc.name);
   };
 
   const handleCancelEditing = () => {
@@ -204,7 +195,7 @@ export function ManagePops() {
       return;
     }
 
-    const newName = `${editingDoc.type}: ${editingValue.trim()}`;
+    const newName = editingValue.trim();
     if (documents.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.name !== editingDoc.name)) {
         toast({
             variant: 'destructive',
@@ -259,45 +250,22 @@ export function ManagePops() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleAddDoc} className="space-y-4">
-          <div>
-            <Label htmlFor="new-doc-name" className='text-base font-semibold'>
-              Adicionar Novo Documento
+        <form onSubmit={handleAddDoc} className="flex items-end gap-4">
+          <div className="w-full space-y-2">
+            <Label htmlFor="new-doc-name">
+              Novo Documento
             </Label>
-            <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div className='space-y-2'>
-                    <Label htmlFor="new-doc-type">Tipo</Label>
-                    <Select onValueChange={(value: 'POP' | 'TCR') => setNewDocType(value)} defaultValue={newDocType}>
-                        <SelectTrigger id="new-doc-type">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="POP">POP</SelectItem>
-                            <SelectItem value="TCR">TCR</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="new-doc-name">Nome do Documento</Label>
-                    <div className="flex items-center">
-                        <span className="flex h-10 items-center justify-center rounded-l-md border border-r-0 border-input bg-muted px-3 font-medium text-muted-foreground">
-                            {newDocType}:
-                        </span>
-                        <Input
-                            id="new-doc-name"
-                            placeholder="Ex: Procedimento para Trabalho em Altura"
-                            className="rounded-l-none"
-                            value={newDocName}
-                            onChange={(e) => setNewDocName(e.target.value)}
-                            disabled={isSaving}
-                        />
-                    </div>
-                </div>
-            </div>
+            <Input
+              id="new-doc-name"
+              placeholder="Ex: Procedimento para Trabalho em Altura"
+              value={newDocName}
+              onChange={(e) => setNewDocName(e.target.value)}
+              disabled={isSaving}
+            />
           </div>
-          <Button type="submit" disabled={isSaving || !newDocName.trim()} className='w-full sm:w-auto'>
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4"/>}
-            {isSaving ? 'Adicionando...' : 'Adicionar Documento'}
+          <Button type="submit" disabled={isSaving || !newDocName.trim()}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+            {isSaving ? 'Adicionando...' : 'Adicionar'}
           </Button>
         </form>
 
@@ -314,13 +282,10 @@ export function ManagePops() {
                 >
                   {editingDoc?.name === doc.name ? (
                     <div className='flex-1 flex items-center gap-2'>
-                        <span className="flex h-8 items-center justify-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm font-medium text-muted-foreground">
-                            {editingDoc.type}:
-                        </span>
                         <Input
                             value={editingValue}
                             onChange={(e) => setEditingValue(e.target.value)}
-                            className="h-8 rounded-l-none"
+                            className="h-8"
                             autoFocus
                             onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
                         />

@@ -54,12 +54,11 @@ export function ViewTcrs() {
           const data = docSnap.data();
            const fetchedDocs = (data.documents || []).map((item: any) => {
                 if (typeof item === 'string') {
-                    return { name: item, content: '', type: item.startsWith('POP:') ? 'POP' : 'TCR' };
+                    return { name: item, content: '' };
                 }
                 return {
                     name: item.name,
                     content: item.content || '',
-                    type: item.type || (item.name.startsWith('POP:') ? 'POP' : 'TCR'),
                 };
             });
           setAllDocs(fetchedDocs);
@@ -78,7 +77,7 @@ export function ViewTcrs() {
     fetchDocs();
   }, [getSettingsDocRef, toast]);
   
-  const tcrDocuments = allDocs.filter(doc => doc.type === 'TCR');
+  const tcrDocuments = allDocs; // All documents are available for TCRs
 
 
   const handleSelectTcr = (tcrName: string) => {
