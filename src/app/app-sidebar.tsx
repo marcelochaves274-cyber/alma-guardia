@@ -13,7 +13,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -80,6 +80,8 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'risk-assessment-report': 'risk-assessment',
       'register-equipment': 'equipamentos',
       'equipment-report': 'equipamentos',
+      'register-activity': 'atividades',
+      'activity-report': 'atividades',
       'general-settings': 'settings',
       'manage-occurrences': 'settings',
       'manage-locations': 'settings',
@@ -332,6 +334,42 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     onClick={() => handlePageChange('equipment-report')}
                   >
                     Relatório Equipamentos
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('atividades')}
+              tooltip={{
+                children: 'Atividades',
+              }}
+            >
+              <Route />
+              <span className="font-bold">Atividades</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'atividades' ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenu === 'atividades' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    isActive={activePage === 'register-activity'}
+                    onClick={() => handlePageChange('register-activity')}
+                  >
+                   Registrar Atividade
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    isActive={activePage === 'activity-report'}
+                    onClick={() => handlePageChange('activity-report')}
+                  >
+                    Relatório de Atividade
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>

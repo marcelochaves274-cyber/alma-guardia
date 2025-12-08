@@ -33,6 +33,7 @@ import { ViewSgsDocs } from './view-sgs-docs';
 import { RegisterEquipment } from './register-equipment';
 import { ManageEquipmentAndBrands } from './manage-equipment-and-brands';
 import { EquipmentReport } from './equipment-report';
+import { RegisterActivity } from './register-activity';
 
 
 import {
@@ -170,6 +171,8 @@ function MainAppLayout() {
         return <RegisterEquipment equipmentToEdit={equipmentToEdit} setPage={handlePageChange} />;
       case 'equipment-report':
         return <EquipmentReport onEdit={handleEditEquipment} />;
+      case 'register-activity':
+        return <RegisterActivity />;
       case 'view-pops':
         return <ViewPops />;
       case 'view-tcrs':
