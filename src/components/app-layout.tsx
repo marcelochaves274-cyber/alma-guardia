@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
@@ -98,15 +98,17 @@ function MainAppLayout() {
   const [noticeToEdit, setNoticeToEdit] = useState<any | null>(null);
   const { appName, logoUrl } = useAppSettings();
 
-  if (isUserLoading || isProfileLoading) {
+  useEffect(() => {
+    // This effect handles redirection safely after the component has rendered.
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || isProfileLoading || !user) {
     return <Loader />;
   }
-
-  if (!user) {
-    router.push('/login');
-    return <Loader />;
-  }
-
+  
   if (!profile) {
     return <ProfileSelector />;
   }
@@ -267,7 +269,7 @@ function MainAppLayout() {
                   Sistema de Gestão de Segurança
                 </span>
                 <span className="font-bold text-lg text-muted-foreground">
-                    {appName || getProfileName()}
+                    {appName || 'SGS Genius'}
                 </span>
               </div>
             </div>
