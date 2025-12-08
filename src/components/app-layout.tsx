@@ -38,6 +38,8 @@ import { Reminders } from './reminders';
 import { RegisterNotice } from './register-notice';
 import { PendingNotices } from './pending-notices';
 import { HelpPage } from './help-page';
+import { ProfileSelector } from './profile-selector';
+import { useProfile } from '@/context/profile-context';
 
 
 import {
@@ -79,6 +81,7 @@ type ReportFilters = {
 
 function MainAppLayout() {
   const { user, isUserLoading } = useUser();
+  const { profile, isProfileLoading } = useProfile();
   const router = useRouter();
 
   const [activePage, setActivePage] = useState('reminders');
@@ -94,13 +97,17 @@ function MainAppLayout() {
   const [noticeToEdit, setNoticeToEdit] = useState<any | null>(null);
   const { appName, logoUrl } = useAppSettings();
 
-  if (isUserLoading) {
+  if (isUserLoading || isProfileLoading) {
     return <Loader />;
   }
 
   if (!user) {
     router.push('/login');
     return <Loader />;
+  }
+
+  if (!profile) {
+    return <ProfileSelector />;
   }
   
   const handlePageChange = (page: string, options?: { filters?: ReportFilters, prefill?: any }) => {
