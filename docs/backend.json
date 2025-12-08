@@ -36,7 +36,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ChatMessage",
       "type": "object",
-      "description": "Represents a single chat message within the SGS Genius application.",
+      "description": "Represents a single chat message within the SGS Genius application. This is also used for Occurrences.",
       "properties": {
         "id": {
           "type": "string",
@@ -107,6 +107,74 @@
         "dataType",
         "description"
       ]
+    },
+    "RiskTreatment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RiskTreatment",
+      "type": "object",
+      "description": "Represents a single risk treatment record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the risk treatment."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who created this record."
+        },
+        "treatmentDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date of the risk treatment."
+        },
+        "treatmentLocation": {
+          "type": "string",
+          "description": "The location where the treatment was applied."
+        },
+        "treatmentType": {
+          "type": "string",
+          "description": "The type of risk treatment."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the risk treatment."
+        },
+        "involvedPersonName": {
+          "type": "string",
+          "description": "The name of the person involved or responsible."
+        },
+        "analysis": {
+          "type": "string",
+          "enum": ["alta", "media", "baixa"],
+          "description": "The risk analysis level."
+        },
+        "mapMarker": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" }
+          },
+          "description": "Coordinates of the marker on the map."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "treatmentDate",
+        "treatmentType",
+        "treatmentLocation",
+        "description",
+        "involvedPersonName",
+        "analysis"
+      ]
     }
   },
   "auth": {
@@ -140,7 +208,7 @@
           "schema": {
             "$ref": "#/backend/entities/ChatMessage"
           },
-          "description": "Stores chat messages associated with a specific SGS Genius application.  Includes the sgsGeniusId for relationship.",
+          "description": "Stores chat messages and occurrences associated with a specific SGS Genius application. Includes the sgsGeniusId for relationship.",
           "params": [
             {
               "name": "sgsGeniusId",
@@ -148,7 +216,7 @@
             },
             {
               "name": "chatMessageId",
-              "description": "Unique identifier for the chat message."
+              "description": "Unique identifier for the chat message/occurrence."
             }
           ]
         }
@@ -169,6 +237,26 @@
             {
               "name": "parameterId",
               "description": "Unique identifier for the parameter."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/sgs_genius/{sgsGeniusId}/risk_treatments/{riskTreatmentId}",
+        "definition": {
+          "entityName": "RiskTreatment",
+          "schema": {
+            "$ref": "#/backend/entities/RiskTreatment"
+          },
+          "description": "Stores risk treatment records for a user.",
+          "params": [
+            {
+              "name": "sgsGeniusId",
+              "description": "Corresponds to the user's UID."
+            },
+            {
+              "name": "riskTreatmentId",
+              "description": "Unique identifier for the risk treatment record."
             }
           ]
         }

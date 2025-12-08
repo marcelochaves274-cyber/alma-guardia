@@ -1,0 +1,327 @@
+'use client';
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useFirestore, useUser } from '@/firebase';
+import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
+import { Skeleton } from './ui/skeleton';
+import { Button } from './ui/button';
+import { Loader2, MapPin } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
+import { Badge } from './ui/badge';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { ScrollArea } from './ui/scroll-area';
+import { MultiSelectFilter } from './multi-select-filter';
+import { MonthSelector } from './month-selector';
+import { Label } from './ui/label';
+
+interface Treatment {
+  id: string;
+  treatmentDate: Date;
+  treatmentType: string;
+  treatmentLocation: string;
+  mapMarker?: { x: number; y: number };
+}
+
+interface Cluster {
+  treatments: Treatment[];
+  x: number;
+  y: number;
+}
+
+export function TreatmentMapReport() {
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+  
+  const [treatments, setTreatments] = useState<Treatment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [mapUrl, setMapUrl] = useState<string | null>(null);
+  const [isLoadingMap, setIsLoadingMap] = useState(true);
+
+  // Filter states
+  const [filterYears, setFilterYears] = useState<string[]>([]);
+  const [filterMonths, setFilterMonths] = useState<string[]>([]);
+  const [filterTypes, setFilterTypes] = useState<string[]>([]);
+  const [filterLocations, setFilterLocations] = useState<string[]>([]);
+
+  // Dynamic options for selects
+  const [availableYears, setAvailableYears] = useState<string[]>([]);
+  const [treatmentTypes, setTreatmentTypes] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
+
+  const getSettingsDocRef = useCallback((collectionName: string) => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'sgs_genius', user.uid, 'settings', collectionName);
+  }, [firestore, user]);
+
+  // Fetch dynamic options for filters
+  useEffect(() => {
+    const fetchSelectOptions = async (docName: string, setData: (data: string[]) => void, field: 'types' | 'locations') => {
+      const docRef = getSettingsDocRef(docName);
+      if (!docRef) return;
+      try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setData(data[field] || []);
+        }
+      } catch (error) {
+        console.error(`Error fetching ${docName}:`, error);
+      }
+    };
+    // Re-using occurrence types for now
+    fetchSelectOptions('occurrenceTypes', setTreatmentTypes, 'types');
+    fetchSelectOptions('locations', setLocations, 'locations');
+  }, [getSettingsDocRef]);
+  
+  useEffect(() => {
+    const fetchMap = async () => {
+      const docRef = getSettingsDocRef('mapDetails');
+      if (!docRef) {
+        setIsLoadingMap(false);
+        return;
+      }
+      try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setMapUrl(docSnap.data().mapUrl || null);
+        }
+      } catch (error) {
+        console.error("Error fetching map:", error);
+      } finally {
+        setIsLoadingMap(false);
+      }
+    };
+    fetchMap();
+  }, [getSettingsDocRef]);
+  
+  // Fetch all treatments with real-time updates
+  useEffect(() => {
+    if (!user || !firestore) return;
+    setIsLoading(true);
+
+    const treatmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'risk_treatments');
+    
+    const unsubscribe = onSnapshot(treatmentsCollectionRef, (querySnapshot) => {
+      const treatmentsData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        const treatmentDate = data.treatmentDate instanceof Timestamp 
+          ? data.treatmentDate.toDate() 
+          : new Date();
+
+        return {
+          id: doc.id,
+          ...data,
+          treatmentDate: treatmentDate,
+        } as Treatment;
+      });
+      
+      const years = new Set(
+        treatmentsData
+          .map(occ => occ.treatmentDate?.getFullYear())
+          .filter((year): year is number => !!year)
+          .map(String)
+      );
+      setAvailableYears(Array.from(years).sort((a, b) => Number(b) - Number(a)));
+      
+      setTreatments(treatmentsData);
+      setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching real-time treatments:", error);
+        toast({
+            variant: "destructive",
+            title: "Erro de conexão",
+            description: "Não foi possível buscar os tratamentos em tempo real."
+        });
+        setIsLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, [user, firestore, toast]);
+
+  const filteredTreatments = useMemo(() => {
+    return treatments.filter(occ => {
+      const occDate = occ.treatmentDate;
+      if (!occDate) return false;
+
+      const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
+      const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
+      const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.treatmentType);
+      const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.treatmentLocation);
+
+      return yearMatch && monthMatch && typeMatch && locationMatch && !!occ.mapMarker;
+    });
+  }, [treatments, filterYears, filterMonths, filterTypes, filterLocations]);
+
+  const clusters = useMemo(() => {
+    const points = filteredTreatments.filter(occ => occ.mapMarker);
+    const clusters: Cluster[] = [];
+    const distanceThreshold = 5; 
+
+    points.forEach(point => {
+        let foundCluster = false;
+        for (const cluster of clusters) {
+            const distance = Math.sqrt(
+                Math.pow(cluster.x - (point.mapMarker?.x || 0), 2) +
+                Math.pow(cluster.y - (point.mapMarker?.y || 0), 2)
+            );
+            if (distance < distanceThreshold) {
+                cluster.treatments.push(point);
+                cluster.x = cluster.treatments.reduce((sum, occ) => sum + (occ.mapMarker?.x || 0), 0) / cluster.treatments.length;
+                cluster.y = cluster.treatments.reduce((sum, occ) => sum + (occ.mapMarker?.y || 0), 0) / cluster.treatments.length;
+                foundCluster = true;
+                break;
+            }
+        }
+        if (!foundCluster && point.mapMarker) {
+            clusters.push({
+                treatments: [point],
+                x: point.mapMarker.x,
+                y: point.mapMarker.y,
+            });
+        }
+    });
+
+    return clusters;
+  }, [filteredTreatments]);
+  
+  const clearFilters = () => {
+    setFilterYears([]);
+    setFilterMonths([]);
+    setFilterTypes([]);
+    setFilterLocations([]);
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Relatório de Mapa de Tratamento de Risco</CardTitle>
+          <CardDescription>
+            Filtre e visualize a localização dos tratamentos no mapa.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Filtrar por Mês</Label>
+            <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <MultiSelectFilter
+              placeholder="Filtrar por Ano"
+              options={availableYears.map(y => ({ value: y, label: y }))}
+              selected={filterYears}
+              onChange={setFilterYears}
+              disabled={availableYears.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Tipo"
+              options={treatmentTypes.map(t => ({ value: t, label: t }))}
+              selected={filterTypes}
+              onChange={setFilterTypes}
+              disabled={!treatmentTypes || treatmentTypes.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Local"
+              options={locations.map(l => ({ value: l, label: l }))}
+              selected={filterLocations}
+              onChange={setFilterLocations}
+              disabled={!locations || locations.length === 0}
+            />
+            
+            <Button onClick={clearFilters} variant="outline" className="w-full">
+              Limpar Filtros
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Resultados no Mapa</CardTitle>
+          <CardDescription>
+            {isLoading ? 'Carregando...' : `Foram encontrados ${filteredTreatments.length} tratamentos com marcação no mapa, agrupados em ${clusters.length} pontos.`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+           <div className="relative w-full h-auto min-h-[600px] border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+                {isLoadingMap || isLoading ? (
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                ) : mapUrl ? (
+                  <>
+                    <Image
+                      src={mapUrl}
+                      alt="Mapa de tratamentos"
+                      fill
+                      style={{objectFit:"cover"}}
+                      className="rounded-md"
+                      priority
+                    />
+                    {clusters.map((cluster, index) => (
+                        <Popover key={index}>
+                            <PopoverTrigger asChild>
+                                <div
+                                    className="absolute cursor-pointer"
+                                    style={{
+                                    left: `${cluster.x}%`,
+                                    top: `${cluster.y}%`,
+                                    transform: 'translate(-50%, -100%)',
+                                    }}
+                                >
+                                    <MapPin className="h-8 w-8 fill-blue-500 stroke-white stroke-2 drop-shadow-lg" />
+                                    {cluster.treatments.length > 1 && (
+                                        <Badge variant="default" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0 bg-blue-600 hover:bg-blue-700">
+                                            {cluster.treatments.length}
+                                        </Badge>
+                                    )}
+                                </div>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                                <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <h4 className="font-medium leading-none">{cluster.treatments.length > 1 ? 'Tratamentos Agrupados' : 'Detalhes do Tratamento'}</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        {cluster.treatments.length} tratamento(s) neste local.
+                                    </p>
+                                </div>
+                                <ScrollArea className="h-48">
+                                <div className="grid gap-2 pr-4">
+                                    {cluster.treatments.map(occ => (
+                                        <div key={occ.id} className="text-sm p-2 border rounded-md">
+                                            <p><strong className="font-medium">Data:</strong> {format(occ.treatmentDate, 'dd/MM/yy HH:mm', { locale: ptBR })}</p>
+                                            <p><strong className="font-medium">Tipo:</strong> {occ.treatmentType}</p>
+                                            <p><strong className="font-medium">Local:</strong> {occ.treatmentLocation}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                </ScrollArea>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    ))}
+                  </>
+                ) : (
+                  <p className="text-muted-foreground text-center p-4">
+                    Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
+                  </p>
+                )}
+              </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

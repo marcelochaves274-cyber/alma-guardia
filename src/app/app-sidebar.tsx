@@ -12,7 +12,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -69,6 +69,9 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'register-occurrence': 'acidentes',
       'occurrence-report': 'acidentes',
       'map-report': 'acidentes',
+      'register-treatment': 'tratamento',
+      'treatment-report': 'tratamento',
+      'treatment-map-report': 'tratamento',
       'general-settings': 'settings',
       'manage-occurrences': 'settings',
       'manage-locations': 'settings',
@@ -154,8 +157,52 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                 </SidebarMenuSubItem>
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton 
-                    isActive={activePage === 'map-report'}
+                    isActive={active_page === 'map-report'}
                     onClick={() => handlePageChange('map-report')}
+                  >
+                    Relatório de Mapa
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('tratamento')}
+              tooltip={{
+                children: 'Tratamento de Risco',
+              }}
+            >
+              <ShieldCheck />
+              <span className="font-bold">Tratamento de Risco</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'tratamento' ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenu === 'tratamento' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'register-treatment'}
+                    onClick={() => handlePageChange('register-treatment')}
+                  >
+                    Registrar Tratamento
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'treatment-report'}
+                    onClick={() => handlePageChange('treatment-report')}
+                  >
+                    Relatório de Tratamento
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'treatment-map-report'}
+                    onClick={() => handlePageChange('treatment-map-report')}
                   >
                     Relatório de Mapa
                   </SidebarMenuSubButton>
