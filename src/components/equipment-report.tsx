@@ -1,0 +1,320 @@
+
+'use client';
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { format, differenceInDays, startOfDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Skeleton } from './ui/skeleton';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Pencil, Trash2, Loader2, TriangleAlert } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { MultiSelectFilter } from './multi-select-filter';
+
+interface Equipment {
+  id: string;
+  equipmentType: string;
+  brand: string;
+  model: string;
+  status: 'operacional' | 'em manutencao' | 'descartado';
+  manufacturingDate?: Timestamp;
+  lastInspectionDate?: Timestamp;
+  nextInspectionDate?: Timestamp;
+}
+
+interface EquipmentReportProps {
+  onEdit: (equipment: Equipment) => void;
+}
+
+const statusMapping: Record<string, { label: string, className: string }> = {
+    operacional: { label: 'Operacional', className: 'bg-green-600 text-white' },
+    'em manutencao': { label: 'Em Manutenção', className: 'bg-orange-500 text-white' },
+    descartado: { label: 'Descartado', className: 'bg-muted text-muted-foreground' }
+};
+
+const statusOptions = Object.entries(statusMapping).map(([key, { label }]) => ({ value: key, label }));
+
+const getInspectionStatus = (nextInspectionDate?: Date) => {
+    if (!nextInspectionDate) {
+        return { label: 'Sem data', className: 'bg-gray-400 text-white' };
+    }
+    const today = startOfDay(new Date());
+    const inspectionDay = startOfDay(nextInspectionDate);
+    const daysUntil = differenceInDays(inspectionDay, today);
+
+    if (daysUntil < 0) {
+        return { label: 'Vistoria Atrasada', className: 'bg-red-600 text-white' };
+    }
+    if (daysUntil === 0) {
+        return { label: 'Vistoriar Hoje', className: 'bg-yellow-500 text-black' };
+    }
+    if (daysUntil <= 30) {
+        return { label: `Vence em ${daysUntil} dia(s)`, className: 'bg-orange-500 text-white' };
+    }
+    return { label: `Vence em ${daysUntil} dia(s)`, className: 'bg-green-600 text-white' };
+};
+
+
+export function EquipmentReport({ onEdit }: EquipmentReportProps) {
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+  
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+  // Filter states
+  const [filterTypes, setFilterTypes] = useState<string[]>([]);
+  const [filterBrands, setFilterBrands] = useState<string[]>([]);
+  const [filterStatuses, setFilterStatuses] = useState<string[]>([]);
+  
+  // Dynamic options for selects
+  const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
+  const [brands, setBrands] = useState<string[]>([]);
+  
+  const getSettingsDocRef = useCallback((collectionName: string) => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'sgs_genius', user.uid, 'settings', collectionName);
+  }, [firestore, user]);
+
+  useEffect(() => {
+    const fetchSelectOptions = async (docName: string, setData: (data: string[]) => void, field: 'types' | 'brands') => {
+      const docRef = getSettingsDocRef(docName);
+      if (!docRef) return;
+      try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setData(data[field] || []);
+        }
+      } catch (error) {
+        console.error(`Error fetching ${docName}:`, error);
+      }
+    };
+    fetchSelectOptions('equipmentTypes', setEquipmentTypes, 'types');
+    fetchSelectOptions('equipmentBrands', setBrands, 'brands');
+  }, [getSettingsDocRef]);
+
+  useEffect(() => {
+    if (!user || !firestore) return;
+    setIsLoading(true);
+    const equipmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'equipments');
+    
+    const unsubscribe = onSnapshot(equipmentsCollectionRef, (querySnapshot) => {
+      const equipmentsData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }) as Equipment);
+      
+      setEquipments(equipmentsData);
+      setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching real-time equipment:", error);
+        toast({
+            variant: "destructive",
+            title: "Erro de conexão",
+            description: "Não foi possível buscar os equipamentos em tempo real."
+        });
+        setIsLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, [user, firestore, toast]);
+  
+  const filteredEquipments = useMemo(() => {
+    return equipments.filter(eq => {
+      const typeMatch = filterTypes.length === 0 || filterTypes.includes(eq.equipmentType);
+      const brandMatch = filterBrands.length === 0 || filterBrands.includes(eq.brand);
+      const statusMatch = filterStatuses.length === 0 || filterStatuses.includes(eq.status);
+      return typeMatch && brandMatch && statusMatch;
+    }).sort((a,b) => {
+        const dateA = a.nextInspectionDate?.toDate()?.getTime() || Infinity;
+        const dateB = b.nextInspectionDate?.toDate()?.getTime() || Infinity;
+        return dateA - dateB;
+    });
+  }, [equipments, filterTypes, filterBrands, filterStatuses]);
+
+  const clearFilters = () => {
+    setFilterTypes([]);
+    setFilterBrands([]);
+    setFilterStatuses([]);
+  }
+
+  const handleDelete = async (equipmentId: string) => {
+    if (!firestore || !user) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.'});
+      return;
+    }
+    setIsDeleting(equipmentId);
+    try {
+      const docRef = doc(firestore, 'sgs_genius', user.uid, 'equipments', equipmentId);
+      await deleteDoc(docRef);
+      
+      toast({ title: 'Sucesso!', description: 'Equipamento excluído com sucesso.' });
+    } catch (error) {
+      console.error("Error deleting equipment:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir',
+        description: 'Não foi possível excluir o equipamento.',
+      });
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  const renderSkeletons = () => (
+    Array.from({ length: 5 }).map((_, i) => (
+      <TableRow key={i}>
+        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+      </TableRow>
+    ))
+  );
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Relatório de Equipamentos</CardTitle>
+          <CardDescription>Filtre e visualize os equipamentos registrados no sistema.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <MultiSelectFilter
+              placeholder="Filtrar por Tipo"
+              options={equipmentTypes.map(t => ({ value: t, label: t }))}
+              selected={filterTypes}
+              onChange={setFilterTypes}
+              disabled={equipmentTypes.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Marca"
+              options={brands.map(b => ({ value: b, label: b }))}
+              selected={filterBrands}
+              onChange={setFilterBrands}
+              disabled={brands.length === 0}
+            />
+            <MultiSelectFilter
+              placeholder="Filtrar por Status"
+              options={statusOptions}
+              selected={filterStatuses}
+              onChange={setFilterStatuses}
+            />
+            <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Resultados</CardTitle>
+          <CardDescription>Foram encontrados {filteredEquipments.length} equipamentos.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Marca</TableHead>
+                <TableHead>Modelo</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Inspeção</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                renderSkeletons()
+              ) : filteredEquipments.length > 0 ? (
+                filteredEquipments.map((eq) => {
+                  const statusProps = statusMapping[eq.status] || { label: 'Desconhecido', className: 'bg-gray-400' };
+                  const inspectionStatusProps = getInspectionStatus(eq.nextInspectionDate?.toDate());
+                  
+                  return (
+                    <TableRow key={eq.id}>
+                      <TableCell>{eq.equipmentType}</TableCell>
+                      <TableCell>{eq.brand}</TableCell>
+                      <TableCell>{eq.model}</TableCell>
+                      <TableCell><Badge className={cn(statusProps.className)}>{statusProps.label}</Badge></TableCell>
+                      <TableCell>
+                        <Badge className={cn('flex items-center gap-1.5', inspectionStatusProps.className)}>
+                          {inspectionStatusProps.label === 'Vistoria Atrasada' && <TriangleAlert className="h-3.5 w-3.5" />}
+                          {inspectionStatusProps.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar equipamento" onClick={() => onEdit(eq)}>
+                            <Pencil className="h-4 w-4" />
+                         </Button>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir equipamento" disabled={isDeleting === eq.id}>
+                                  {isDeleting === eq.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                               </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                    <AlertDialogDescription>Esta ação excluirá permanentemente o equipamento {eq.brand} {eq.model}.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(eq.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                        Sim, excluir
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                         </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    {equipments.length === 0 ? "Nenhum equipamento registrado ainda." : "Nenhum equipamento encontrado com os filtros selecionados."}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

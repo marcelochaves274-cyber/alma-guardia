@@ -32,6 +32,7 @@ import { ViewRame } from './view-rame';
 import { ViewSgsDocs } from './view-sgs-docs';
 import { RegisterEquipment } from './register-equipment';
 import { ManageEquipmentAndBrands } from './manage-equipment-and-brands';
+import { EquipmentReport } from './equipment-report';
 
 
 import {
@@ -167,6 +168,8 @@ function MainAppLayout() {
         return <RiskAssessmentReport onEdit={handleEditAssessment} />;
       case 'register-equipment':
         return <RegisterEquipment equipmentToEdit={equipmentToEdit} setPage={handlePageChange} />;
+      case 'equipment-report':
+        return <EquipmentReport onEdit={handleEditEquipment} />;
       case 'view-pops':
         return <ViewPops />;
       case 'view-tcrs':
