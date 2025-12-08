@@ -23,26 +23,18 @@ import { doc, getDoc, addDoc, collection, serverTimestamp, getDocs } from 'fireb
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { PopDocument } from './manage-pops';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-
-interface RiskAssessment {
-  id: string;
-  assessmentDate: { toDate: () => Date };
-  taskDescription: string;
-}
 
 export function RegisterActivity() {
   const [activityName, setActivityName] = useState('');
   const [pop, setPop] = useState('');
   const [tcr, setTcr] = useState('');
-  const [riskAssessmentId, setRiskAssessmentId] = useState('');
+  const [location, setLocation] = useState('');
   
   const [allDocs, setAllDocs] = useState<PopDocument[]>([]);
-  const [riskAssessments, setRiskAssessments] = useState<RiskAssessment[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
 
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
-  const [isLoadingAssessments, setIsLoadingAssessments] = useState(true);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const firestore = useFirestore();
@@ -81,32 +73,34 @@ export function RegisterActivity() {
       }
     };
 
-    const fetchRiskAssessments = async () => {
-        if (!firestore || !user) {
-            setIsLoadingAssessments(false);
-            return;
+    const fetchLocations = async () => {
+      const docRef = getSettingsDocRef('locations');
+      if (!docRef) {
+        setIsLoadingLocations(false);
+        return;
+      }
+      try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setLocations(data.locations || []);
         }
-        try {
-            const collectionRef = collection(firestore, 'sgs_genius', user.uid, 'risk_assessments');
-            const querySnapshot = await getDocs(collectionRef);
-            const assessments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RiskAssessment));
-            setRiskAssessments(assessments);
-        } catch (error) {
-            console.error("Error fetching risk assessments:", error);
-        } finally {
-            setIsLoadingAssessments(false);
-        }
-    }
+      } catch (error) {
+        console.error("Error fetching locations:", error);
+      } finally {
+        setIsLoadingLocations(false);
+      }
+    };
     
     fetchDocs();
-    fetchRiskAssessments();
-  }, [getSettingsDocRef, firestore, user]);
+    fetchLocations();
+  }, [getSettingsDocRef]);
   
   const resetForm = () => {
     setActivityName('');
     setPop('');
     setTcr('');
-    setRiskAssessmentId('');
+    setLocation('');
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -116,7 +110,7 @@ export function RegisterActivity() {
         return;
     }
 
-    if (!activityName || !pop || !tcr || !riskAssessmentId) {
+    if (!activityName || !pop || !tcr || !location) {
         toast({ variant: 'destructive', title: 'Campos obrigatórios', description: 'Por favor, preencha todos os campos.' });
         return;
     }
@@ -128,7 +122,7 @@ export function RegisterActivity() {
         activityName,
         pop,
         tcr,
-        riskAssessmentId,
+        location,
         createdAt: serverTimestamp(),
     };
     
@@ -145,7 +139,7 @@ export function RegisterActivity() {
     }
   };
   
-  const isLoading = isLoadingDocs || isLoadingAssessments;
+  const isLoading = isLoadingDocs || isLoadingLocations;
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -153,7 +147,7 @@ export function RegisterActivity() {
         <CardHeader>
           <CardTitle>Registrar Atividade</CardTitle>
           <CardDescription>
-            Selecione a atividade, POP, TCR e avaliação de risco para registrar.
+            Selecione a atividade, POP, TCR e local para registrar.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -211,15 +205,15 @@ export function RegisterActivity() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="risk-assessment">Avaliação de Risco</Label>
-              <Select name="riskAssessmentId" required disabled={isLoading || riskAssessments.length === 0} onValueChange={setRiskAssessmentId} value={riskAssessmentId}>
-                <SelectTrigger id="risk-assessment">
-                  <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione a avaliação de risco"} />
+              <Label htmlFor="location">Local</Label>
+              <Select name="location" required disabled={isLoading || locations.length === 0} onValueChange={setLocation} value={location}>
+                <SelectTrigger id="location">
+                  <SelectValue placeholder={isLoading ? "Carregando..." : locations.length === 0 ? "Nenhum local cadastrado" : "Selecione o local"} />
                 </SelectTrigger>
                 <SelectContent>
-                    {riskAssessments.map((assessment) => (
-                        <SelectItem key={assessment.id} value={assessment.id}>
-                            {`${format(assessment.assessmentDate.toDate(), 'dd/MM/yy', { locale: ptBR })} - ${assessment.taskDescription}`}
+                    {locations.map((loc) => (
+                        <SelectItem key={loc} value={loc}>
+                            {loc}
                         </SelectItem>
                     ))}
                 </SelectContent>
