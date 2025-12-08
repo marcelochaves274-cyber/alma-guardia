@@ -7,6 +7,7 @@ import { useUser } from '@/firebase';
 import { useAppSettings } from '@/context/app-settings-context';
 
 import { GeneralSettings } from '@/components/general-settings';
+import { ManageProfile } from '@/components/manage-profile';
 import { RegisterOccurrence } from '@/components/register-occurrence';
 import { ManageOccurrences } from '@/components/manage-occurrences';
 import { ManageLocations } from '@/components/manage-locations';
@@ -162,6 +163,8 @@ function MainAppLayout() {
         return <HelpPage />;
       case 'general-settings':
         return <GeneralSettings />;
+      case 'manage-profile':
+        return <ManageProfile />;
       case 'register-occurrence':
         return <RegisterOccurrence occurrenceToEdit={occurrenceToEdit} setPage={handlePageChange} prefillData={prefillData} />;
       case 'occurrence-report':

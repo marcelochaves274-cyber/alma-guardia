@@ -13,7 +13,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -85,6 +85,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'register-notice': 'avisos',
       'pending-notices': 'avisos',
       'general-settings': 'settings',
+      'manage-profile': 'settings',
       'manage-occurrences': 'settings',
       'manage-locations': 'settings',
       'manage-map': 'settings',
@@ -500,6 +501,14 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     onClick={() => handlePageChange('general-settings')}
                   >
                     Configurações gerais
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    isActive={activePage === 'manage-profile'}
+                    onClick={() => handlePageChange('manage-profile')}
+                  >
+                    Gerenciar Perfil
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
                 <SidebarMenuSubItem>
