@@ -13,16 +13,19 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
+import { useHelp } from '@/context/help-context';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getAuth, signOut } from 'firebase/auth';
 import { useFirebaseApp, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 interface AppSidebarProps {
   activePage: string;
@@ -36,6 +39,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   const firebaseApp = useFirebaseApp();
   const router = useRouter();
   const { toast } = useToast();
+  const { helpEnabled, setHelpEnabled } = useHelp();
 
   const [openSubMenu, setOpenSubMenu] = useState<string | null>('reminders');
 
@@ -97,7 +101,11 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     if (parentMenu) {
       setOpenSubMenu(parentMenu);
     } else {
-      setOpenSubMenu(null);
+      // For top-level items, we can decide to close other submenus
+      // or handle as needed. Here we close them.
+      if (!['help'].includes(page)) {
+          setOpenSubMenu(null);
+      }
     }
   }
 
@@ -461,6 +469,32 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
               <span className="font-bold">Documentos SGS</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('help')}
+              tooltip={{
+                children: 'Ajuda',
+              }}
+            >
+              <HelpCircle />
+              <span className="font-bold">Ajuda</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'help' ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenu === 'help' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem className="p-2">
+                    <div className="flex items-center justify-between w-full">
+                        <Label htmlFor="help-mode" className="text-sidebar-foreground">Modo Ajuda</Label>
+                        <Switch id="help-mode" checked={helpEnabled} onCheckedChange={setHelpEnabled} />
+                    </div>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => toggleSubMenu('settings')}
@@ -559,5 +593,3 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     </>
   );
 }
-
-    

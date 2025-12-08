@@ -36,6 +36,7 @@ import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp 
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
+import { HelpTooltip } from './ui/help-tooltip';
 
 type Marker = { x: number; y: number } | null;
 
@@ -369,7 +370,10 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição da Ocorrência</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="description">Descrição da Ocorrência</Label>
+              <HelpTooltip content="Descreva em detalhes o que aconteceu, incluindo a sequência dos eventos, pessoas envolvidas e quaisquer danos materiais." />
+            </div>
             <Textarea
               id="description"
               name="description"

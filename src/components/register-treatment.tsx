@@ -35,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
+import { HelpTooltip } from './ui/help-tooltip';
 
 type Marker = { x: number; y: number } | null;
 
@@ -362,7 +363,10 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição do Risco</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="description">Descrição do Risco</Label>
+              <HelpTooltip content="Descreva o risco que foi identificado, incluindo a fonte geradora, a atividade relacionada e o potencial de dano." />
+            </div>
             <Textarea
               id="description"
               name="description"

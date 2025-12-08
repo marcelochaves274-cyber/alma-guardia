@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AppSettingsProvider } from '@/context/app-settings-context';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { HelpProvider } from '@/context/help-context';
 
 export const metadata: Metadata = {
   title: 'SGS Genius',
@@ -24,7 +25,9 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <FirebaseClientProvider>
           <AppSettingsProvider>
-            {children}
+            <HelpProvider>
+              {children}
+            </HelpProvider>
             <Toaster />
           </AppSettingsProvider>
         </FirebaseClientProvider>
