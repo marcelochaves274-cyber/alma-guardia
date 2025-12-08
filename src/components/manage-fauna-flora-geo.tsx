@@ -56,7 +56,7 @@ export function ManageFaunaFloraGeo() {
     const fetchItemTypes = async () => {
       const docRef = getSettingsDocRef();
       if (!docRef) {
-        setIsLoading(false);
+        if(isMounted) setIsLoading(false);
         return;
       }
 
@@ -67,9 +67,8 @@ export function ManageFaunaFloraGeo() {
             const data = docSnap.data();
             setItemTypes(data.types || []);
           } else {
-            const defaultTypes = ['Árvore Nativa', 'Animal Silvestre', 'Afloramento Rochoso'];
-            // Pre-populate for new users, but don't save until they add something
-            setItemTypes(defaultTypes);
+            // Document doesn't exist, start with an empty array
+            setItemTypes([]);
           }
         }
       } catch (error: any) {
@@ -334,7 +333,7 @@ export function ManageFaunaFloraGeo() {
             </ul>
           ) : (
             <p className="text-center text-sm text-muted-foreground">
-              Nenhum tipo cadastrado.
+              Nenhum tipo cadastrado. Comece adicionando um acima.
             </p>
           )}
         </div>

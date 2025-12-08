@@ -70,7 +70,6 @@ export function ManagePops() {
         if (isMounted) {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            // Ensure data is in the correct PopDocument[] format
             const fetchedPops = (data.documents || []).map((item: any) => 
                 typeof item === 'string' ? { name: item, content: '' } : item
             );
@@ -244,7 +243,7 @@ export function ManagePops() {
       <CardHeader>
         <CardTitle>Gerenciar Documentos POP</CardTitle>
         <CardDescription>
-          Adicione ou edite os Procedimentos Operacionais Padrão.
+          Adicione, renomeie ou exclua os Procedimentos Operacionais Padrão. O conteúdo é editado na tela de visualização de POPs.
         </CardDescription>
       </CardHeader>
       <CardContent>
