@@ -24,12 +24,23 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useFirestore, useUser } from '@/firebase';
-import { collection, onSnapshot, Timestamp, doc, getDoc, query, where, limit, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, Timestamp, doc, getDoc, query, where, limit, orderBy, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Pencil, Trash2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
@@ -45,6 +56,10 @@ interface Activity {
   tcr: string;
   riskAssessmentLocation: string;
   createdAt: Timestamp;
+}
+
+interface ActivityReportProps {
+  onEdit: (activity: Activity) => void;
 }
 
 interface PopDocument {
@@ -75,7 +90,7 @@ const getRiskLevelProperties = (score: number) => {
 };
 
 
-export function ActivityReport() {
+export function ActivityReport({ onEdit }: ActivityReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -85,6 +100,7 @@ export function ActivityReport() {
   const [selectedContent, setSelectedContent] = useState({ title: '', content: '' });
   const [selectedAssessments, setSelectedAssessments] = useState<RiskAssessment[]>([]);
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // States to hold the fetched documents content
   const [popTcrDocs, setPopTcrDocs] = useState<PopDocument[]>([]);
@@ -167,6 +183,29 @@ export function ActivityReport() {
     setSelectedAssessments(assessmentsForLocation);
     setIsAssessmentModalOpen(true);
   };
+  
+  const handleDelete = async (activityId: string) => {
+    if (!firestore || !user) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.'});
+      return;
+    }
+    setIsDeleting(activityId);
+    try {
+      const docRef = doc(firestore, 'sgs_genius', user.uid, 'activities', activityId);
+      await deleteDoc(docRef);
+      
+      toast({ title: 'Sucesso!', description: 'Atividade excluída com sucesso.' });
+    } catch (error) {
+      console.error("Error deleting activity:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir',
+        description: 'Não foi possível excluir a atividade.',
+      });
+    } finally {
+      setIsDeleting(null);
+    }
+  };
 
 
   const renderSkeletons = () => (
@@ -176,6 +215,7 @@ export function ActivityReport() {
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
       </TableRow>
     ))
   );
@@ -196,6 +236,7 @@ export function ActivityReport() {
                     <TableHead>POP</TableHead>
                     <TableHead>TCR</TableHead>
                     <TableHead>Avaliação de Risco</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -224,11 +265,35 @@ export function ActivityReport() {
                                 {act.riskAssessmentLocation || 'N/A'}
                             </Button>
                         </TableCell>
+                         <TableCell className="text-right">
+                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar atividade" onClick={() => onEdit(act)}>
+                              <Pencil className="h-4 w-4" />
+                           </Button>
+                           <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir atividade" disabled={isDeleting === act.id}>
+                                    {isDeleting === act.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                 </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                      <AlertDialogDescription>Esta ação excluirá permanentemente o registro da atividade "{act.activityName.replace(/^POP\/TCR\s/, '')}".</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDelete(act.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                          Sim, excluir
+                                      </AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                           </AlertDialog>
+                        </TableCell>
                         </TableRow>
                     ))
                 ) : (
                     <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                         Nenhuma atividade registrada ainda.
                     </TableCell>
                     </TableRow>
