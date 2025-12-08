@@ -329,22 +329,16 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
             <DialogHeader>
               <DialogTitle>Avaliações de Risco para: {selectedAssessments[0].location}</DialogTitle>
               <p className='text-sm text-muted-foreground'>
-                Exibindo {selectedAssessments.length} avaliação(ões) para este local.
+                Exibindo {selectedAssessments.length} avaliação(ões) para este local, da mais recente para a mais antiga.
               </p>
             </DialogHeader>
             <ScrollArea className="max-h-[70vh] pr-4">
               <div className="space-y-6 py-4">
                 {selectedAssessments.map((assessment) => (
                     <div key={assessment.id} className="space-y-4 rounded-lg border p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <Label className="font-semibold text-muted-foreground">Data da Avaliação</Label>
-                            <p>{format(assessment.assessmentDate, 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}</p>
-                        </div>
-                        <div>
+                        <div className="space-y-2">
                             <Label className="font-semibold text-muted-foreground">Etapa da Atividade</Label>
                             <p>{assessment.taskDescription || 'Não informado'}</p>
-                        </div>
                         </div>
                         <div>
                             <Label className="font-semibold text-muted-foreground">Causa</Label>
