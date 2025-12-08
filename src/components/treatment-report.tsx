@@ -16,7 +16,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -48,6 +47,7 @@ interface Treatment {
   treatmentType: string;
   treatmentLocation: string;
   riskLevel: number;
+  situation: 'pendente' | 'finalizado' | 'reaberto';
 }
 
 interface TreatmentReportProps {
@@ -65,7 +65,26 @@ const riskLevelOptions = [
     { value: 'alta', label: 'Alta' },
     { value: 'media', label: 'Média' },
     { value: 'baixa', label: 'Baixa' },
-]
+];
+
+const situationOptions = [
+    { value: 'pendente', label: 'Pendente' },
+    { value: 'finalizado', label: 'Finalizado' },
+    { value: 'reaberto', label: 'Reaberto' },
+];
+
+const getSituationProperties = (situation: string) => {
+    switch (situation) {
+        case 'pendente':
+            return { label: 'Pendente', className: 'bg-yellow-500 text-black' };
+        case 'finalizado':
+            return { label: 'Finalizado', className: 'bg-green-600 text-white' };
+        case 'reaberto':
+            return { label: 'Reaberto', className: 'bg-blue-600 text-white' };
+        default:
+            return { label: situation, className: 'bg-muted text-muted-foreground' };
+    }
+}
 
 export function TreatmentReport({ onEdit }: TreatmentReportProps) {
   const firestore = useFirestore();
@@ -81,6 +100,7 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
   const [filterRiskLevels, setFilterRiskLevels] = useState<string[]>([]);
+  const [filterSituations, setFilterSituations] = useState<string[]>([]);
   
   // Dynamic options for selects
   const [treatmentTypes, setTreatmentTypes] = useState<string[]>([]);
@@ -155,6 +175,7 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.treatmentType);
       const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.treatmentLocation);
+      const situationMatch = filterSituations.length === 0 || filterSituations.includes(occ.situation);
       
       const riskLevelMatch = filterRiskLevels.length === 0 || filterRiskLevels.some(level => {
         const score = occ.riskLevel;
@@ -164,15 +185,16 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
         return false;
       });
 
-      return monthMatch && typeMatch && locationMatch && riskLevelMatch;
+      return monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch;
     });
-  }, [treatments, filterMonths, filterTypes, filterLocations, filterRiskLevels]);
+  }, [treatments, filterMonths, filterTypes, filterLocations, filterRiskLevels, filterSituations]);
 
   const clearFilters = () => {
     setFilterMonths([]);
     setFilterTypes([]);
     setFilterLocations([]);
     setFilterRiskLevels([]);
+    setFilterSituations([]);
   }
 
   const handleDelete = async (treatmentId: string) => {
@@ -212,6 +234,7 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
       </TableRow>
     ))
@@ -247,13 +270,19 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
               disabled={!locations || locations.length === 0}
             />
             <MultiSelectFilter
-              placeholder="Filtrar por Nível de Risco"
+              placeholder="Filtrar por Nível de Risco (PxC)"
               options={riskLevelOptions}
               selected={filterRiskLevels}
               onChange={setFilterRiskLevels}
             />
+            <MultiSelectFilter
+              placeholder="Filtrar por Situação"
+              options={situationOptions}
+              selected={filterSituations}
+              onChange={setFilterSituations}
+            />
             
-            <Button onClick={clearFilters} variant="outline" className="w-full">
+            <Button onClick={clearFilters} variant="outline" className="w-full lg:col-start-4">
               Limpar Filtros
             </Button>
           </div>
@@ -275,6 +304,7 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
                 <TableHead>Tipo de Risco</TableHead>
                 <TableHead>Local</TableHead>
                 <TableHead>Nível de Risco</TableHead>
+                <TableHead>Situação</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -284,6 +314,7 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
               ) : filteredTreatments.length > 0 ? (
                 filteredTreatments.map((occ) => {
                   const riskProps = getRiskLevelProperties(occ.riskLevel);
+                  const situationProps = getSituationProperties(occ.situation);
                   return (
                     <TableRow key={occ.id}>
                       <TableCell>{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
@@ -292,6 +323,11 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
                       <TableCell>
                           <Badge className={cn(riskProps.className)}>
                               {riskProps.label}
+                          </Badge>
+                      </TableCell>
+                       <TableCell>
+                          <Badge className={cn(situationProps.className)}>
+                              {situationProps.label}
                           </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -334,7 +370,7 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     {treatments.length === 0 ? "Nenhum tratamento registrado ainda." : "Nenhum tratamento encontrado com os filtros selecionados."}
                   </TableCell>
                 </TableRow>
