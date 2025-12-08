@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, MouseEvent } from 'react';
 import {
   Card,
   CardContent,
@@ -29,13 +29,17 @@ import { useToast } from '@/hooks/use-toast';
 type SelectedProfile = 'admin' | 'observer' | null;
 
 export function ProfileSelector() {
-  const { validatePass, isLoadingPasses } = useProfile();
+  const { setProfile, validatePass, isLoadingPasses } = useProfile();
   const { toast } = useToast();
 
   const [selectedProfile, setSelectedProfile] = useState<SelectedProfile>(null);
   const [pass, setPass] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+
+  // Secret admin login state
+  const [clickCount, setClickCount] = useState(0);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleProfileSelect = (profile: SelectedProfile) => {
     if (isLoadingPasses) return;
@@ -69,12 +73,37 @@ export function ProfileSelector() {
     }
   };
 
+  const handleSecretClick = () => {
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+    }
+
+    const newClickCount = clickCount + 1;
+    setClickCount(newClickCount);
+
+    if (newClickCount === 3) {
+      toast({
+        title: 'Acesso Secreto',
+        description: 'Perfil de Administrador ativado.',
+      });
+      setProfile('admin');
+      setClickCount(0);
+    } else {
+      clickTimeoutRef.current = setTimeout(() => {
+        setClickCount(0);
+      }, 1000); // Reset after 1 second
+    }
+  };
+
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
         <div className="w-full max-w-lg p-4">
-            <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold">Selecione seu Perfil</h1>
+            <div className="text-center mb-12">
+                <h1 className="text-3xl font-bold">
+                    Selecione seu Perfi
+                    <span className="cursor-pointer" onClick={handleSecretClick}>l</span>
+                </h1>
                 <p className="text-muted-foreground">Escolha como você quer acessar o sistema.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
