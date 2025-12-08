@@ -11,6 +11,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Loader2, Pencil, Check, X } from 'lucide-react';
 import { Separator } from './ui/separator';
@@ -32,6 +39,7 @@ import {
 export interface PopDocument {
   name: string;
   content: string;
+  type: 'POP' | 'TCR';
 }
 
 export function ManagePops() {
@@ -39,11 +47,12 @@ export function ManagePops() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
 
-  const [pops, setPops] = useState<PopDocument[]>([]);
-  const [newPopName, setNewPopName] = useState('');
+  const [documents, setDocuments] = useState<PopDocument[]>([]);
+  const [newDocName, setNewDocName] = useState('');
+  const [newDocType, setNewDocType] = useState<'POP' | 'TCR'>('POP');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [editingPop, setEditingPop] = useState<PopDocument | null>(null);
+  const [editingDoc, setEditingDoc] = useState<PopDocument | null>(null);
   const [editingValue, setEditingValue] = useState('');
 
   const getSettingsDocRef = useCallback(() => {
@@ -58,7 +67,7 @@ export function ManagePops() {
       return;
     }
     
-    const fetchPops = async () => {
+    const fetchDocs = async () => {
       const docRef = getSettingsDocRef();
       if (!docRef) {
         setIsLoading(false);
@@ -70,21 +79,29 @@ export function ManagePops() {
         if (isMounted) {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            const fetchedPops = (data.documents || []).map((item: any) => 
-                typeof item === 'string' ? { name: item, content: '' } : item
-            );
-            setPops(fetchedPops);
+            const fetchedDocs = (data.documents || []).map((item: any) => {
+                if (typeof item === 'string') {
+                    // Backwards compatibility for old data structure
+                    return { name: item, content: '', type: item.startsWith('POP:') ? 'POP' : 'TCR' };
+                }
+                return {
+                    name: item.name,
+                    content: item.content || '',
+                    type: item.type || (item.name.startsWith('POP:') ? 'POP' : 'TCR'),
+                };
+            });
+            setDocuments(fetchedDocs);
           } else {
-            setPops([]);
+            setDocuments([]);
           }
         }
       } catch (error: any) {
          if (isMounted && error.code !== 'permission-denied') {
-            console.error("Error fetching POPs:", error);
+            console.error("Error fetching documents:", error);
             toast({
                 variant: "destructive",
                 title: "Erro ao carregar",
-                description: "Não foi possível buscar os POPs cadastrados."
+                description: "Não foi possível buscar os documentos cadastrados."
             });
          }
       } finally {
@@ -94,12 +111,12 @@ export function ManagePops() {
       }
     };
 
-    fetchPops();
+    fetchDocs();
     
     return () => { isMounted = false; };
   }, [isUserLoading, user, firestore, getSettingsDocRef, toast]);
   
-  const savePopsToFirestore = async (updatedPops: PopDocument[]) => {
+  const saveDocsToFirestore = async (updatedDocs: PopDocument[]) => {
     const docRef = getSettingsDocRef();
     if (!docRef) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.'});
@@ -108,20 +125,20 @@ export function ManagePops() {
     
     setIsSaving(true);
     try {
-        await setDoc(docRef, { documents: updatedPops });
+        await setDoc(docRef, { documents: updatedDocs });
         return true;
     } catch (error) {
-        console.error("Error saving POPs:", error);
-        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar os POPs.'});
+        console.error("Error saving documents:", error);
+        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar os documentos.'});
         return false;
     } finally {
         setIsSaving(false);
     }
   };
 
-  const handleAddPop = async (e: FormEvent) => {
+  const handleAddDoc = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newPopName.trim()) {
+    if (!newDocName.trim()) {
       toast({
         variant: 'destructive',
         title: 'Campo vazio',
@@ -129,55 +146,56 @@ export function ManagePops() {
       });
       return;
     }
-    const newPop: PopDocument = {
-        name: `POP: ${newPopName.trim()}`,
+    const newDoc: PopDocument = {
+        name: `${newDocType}: ${newDocName.trim()}`,
         content: '',
+        type: newDocType,
     }
-    if (pops.some(p => p.name.toLowerCase() === newPop.name.toLowerCase())) {
+    if (documents.some(p => p.name.toLowerCase() === newDoc.name.toLowerCase())) {
       toast({
         variant: 'destructive',
         title: 'Documento duplicado',
-        description: 'Este POP já existe.',
+        description: 'Este documento já existe.',
       });
       return;
     }
 
-    const newPops = [...pops, newPop];
-    const success = await savePopsToFirestore(newPops);
+    const newDocs = [...documents, newDoc];
+    const success = await saveDocsToFirestore(newDocs);
     if(success) {
-        setPops(newPops);
-        setNewPopName('');
+        setDocuments(newDocs);
+        setNewDocName('');
         toast({
             title: 'Sucesso!',
-            description: `O documento "${newPop.name}" foi adicionado.`,
+            description: `O documento "${newDoc.name}" foi adicionado.`,
         });
     }
   };
 
-  const handleRemovePop = async (popToRemove: PopDocument) => {
-    const newPops = pops.filter((pop) => pop.name !== popToRemove.name);
-    const success = await savePopsToFirestore(newPops);
+  const handleRemoveDoc = async (docToRemove: PopDocument) => {
+    const newDocs = documents.filter((doc) => doc.name !== docToRemove.name);
+    const success = await saveDocsToFirestore(newDocs);
     if(success) {
-        setPops(newPops);
+        setDocuments(newDocs);
         toast({
         title: 'Removido',
-        description: `O POP "${popToRemove.name}" foi removido.`,
+        description: `O documento "${docToRemove.name}" foi removido.`,
         });
     }
   };
 
-  const handleStartEditing = (pop: PopDocument) => {
-    setEditingPop(pop);
-    setEditingValue(pop.name.replace(/^POP: /, ''));
+  const handleStartEditing = (doc: PopDocument) => {
+    setEditingDoc(doc);
+    setEditingValue(doc.name.replace(/^(POP: |TCR: )/, ''));
   };
 
   const handleCancelEditing = () => {
-    setEditingPop(null);
+    setEditingDoc(null);
     setEditingValue('');
   };
   
   const handleSaveEdit = async () => {
-    if (!editingPop || !editingValue.trim()) {
+    if (!editingDoc || !editingValue.trim()) {
       toast({
         variant: 'destructive',
         title: 'Campo vazio',
@@ -186,25 +204,25 @@ export function ManagePops() {
       return;
     }
 
-    const newName = `POP: ${editingValue.trim()}`;
-    if (pops.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.name !== editingPop.name)) {
+    const newName = `${editingDoc.type}: ${editingValue.trim()}`;
+    if (documents.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.name !== editingDoc.name)) {
         toast({
             variant: 'destructive',
             title: 'Documento duplicado',
-            description: 'Este POP já existe.',
+            description: 'Este documento já existe.',
         });
         return;
     }
 
-    const newPops = pops.map(p => (p.name === editingPop.name ? { ...p, name: newName } : p));
-    const success = await savePopsToFirestore(newPops);
+    const newDocs = documents.map(p => (p.name === editingDoc.name ? { ...p, name: newName } : p));
+    const success = await saveDocsToFirestore(newDocs);
     if(success) {
-        setPops(newPops);
-        setEditingPop(null);
+        setDocuments(newDocs);
+        setEditingDoc(null);
         setEditingValue('');
         toast({
             title: 'Sucesso!',
-            description: 'O POP foi atualizado.',
+            description: 'O documento foi atualizado.',
         });
     }
   }
@@ -213,19 +231,13 @@ export function ManagePops() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Gerenciar Documentos POP</CardTitle>
+                <CardTitle>Gerenciar POP e TCR</CardTitle>
                 <CardDescription>
-                  Adicione ou edite os Procedimentos Operacionais Padrão.
+                  Adicione, renomeie ou exclua os Procedimentos Operacionais Padrão e Termos de Conhecimento de Risco.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="flex items-end gap-4">
-                    <div className="w-full space-y-2">
-                        <Skeleton className="h-4 w-1/3" />
-                        <Skeleton className="h-10 w-full" />
-                    </div>
-                     <Skeleton className="h-10 w-32" />
-                </div>
+                <Skeleton className="h-24 w-full" />
                 <Separator />
                 <div className="space-y-3">
                      <Skeleton className="h-5 w-1/4" />
@@ -241,55 +253,69 @@ export function ManagePops() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gerenciar Documentos POP</CardTitle>
+        <CardTitle>Gerenciar POP e TCR</CardTitle>
         <CardDescription>
-          Adicione, renomeie ou exclua os Procedimentos Operacionais Padrão. O conteúdo é editado na tela de visualização de POPs.
+          Adicione, renomeie ou exclua os Procedimentos Operacionais Padrão e Termos de Conhecimento de Risco.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleAddPop} className="space-y-4">
+        <form onSubmit={handleAddDoc} className="space-y-4">
           <div>
-            <Label htmlFor="new-pop-document" className='text-base font-semibold'>
-              Adicionar Novo POP
+            <Label htmlFor="new-doc-name" className='text-base font-semibold'>
+              Adicionar Novo Documento
             </Label>
-            <div className="mt-2 space-y-2">
-                <Label htmlFor="new-pop-document">Nome do Documento</Label>
-                 <div className="flex items-center gap-2">
-                    <span className="flex h-10 items-center justify-center rounded-l-md border border-r-0 border-input bg-muted px-3 font-medium text-muted-foreground">
-                        POP:
-                    </span>
-                    <Input
-                        id="new-pop-document"
-                        placeholder="Ex: Procedimento para Trabalho em Altura"
-                        className="rounded-l-none"
-                        value={newPopName}
-                        onChange={(e) => setNewPopName(e.target.value)}
-                        disabled={isSaving}
-                    />
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className='space-y-2'>
+                    <Label htmlFor="new-doc-type">Tipo</Label>
+                    <Select onValueChange={(value: 'POP' | 'TCR') => setNewDocType(value)} defaultValue={newDocType}>
+                        <SelectTrigger id="new-doc-type">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="POP">POP</SelectItem>
+                            <SelectItem value="TCR">TCR</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="new-doc-name">Nome do Documento</Label>
+                    <div className="flex items-center">
+                        <span className="flex h-10 items-center justify-center rounded-l-md border border-r-0 border-input bg-muted px-3 font-medium text-muted-foreground">
+                            {newDocType}:
+                        </span>
+                        <Input
+                            id="new-doc-name"
+                            placeholder="Ex: Procedimento para Trabalho em Altura"
+                            className="rounded-l-none"
+                            value={newDocName}
+                            onChange={(e) => setNewDocName(e.target.value)}
+                            disabled={isSaving}
+                        />
+                    </div>
                 </div>
             </div>
           </div>
-          <Button type="submit" disabled={isSaving || !newPopName.trim()} className='w-full sm:w-auto'>
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {isSaving ? 'Adicionando...' : 'Adicionar POP'}
+          <Button type="submit" disabled={isSaving || !newDocName.trim()} className='w-full sm:w-auto'>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4"/>}
+            {isSaving ? 'Adicionando...' : 'Adicionar Documento'}
           </Button>
         </form>
 
         <Separator className="my-6" />
 
         <div>
-          <h3 className="mb-4 text-lg font-medium">POPs Existentes</h3>
-          {pops.length > 0 ? (
+          <h3 className="mb-4 text-lg font-medium">Documentos Existentes</h3>
+          {documents.length > 0 ? (
             <ul className="space-y-3">
-              {pops.map((pop) => (
+              {documents.map((doc) => (
                 <li
-                  key={pop.name}
+                  key={doc.name}
                   className="flex items-center justify-between rounded-md border bg-card p-3"
                 >
-                  {editingPop?.name === pop.name ? (
+                  {editingDoc?.name === doc.name ? (
                     <div className='flex-1 flex items-center gap-2'>
                         <span className="flex h-8 items-center justify-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm font-medium text-muted-foreground">
-                            POP:
+                            {editingDoc.type}:
                         </span>
                         <Input
                             value={editingValue}
@@ -303,15 +329,15 @@ export function ManagePops() {
                     </div>
                   ) : (
                     <>
-                        <span className="text-sm font-medium">{pop.name}</span>
+                        <span className="text-sm font-medium">{doc.name}</span>
                         <div className="flex items-center">
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleStartEditing(pop)}
+                                onClick={() => handleStartEditing(doc)}
                                 disabled={isSaving}
                                 className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                aria-label={`Editar ${pop.name}`}
+                                aria-label={`Editar ${doc.name}`}
                             >
                                 <Pencil className="h-4 w-4" />
                             </Button>
@@ -323,7 +349,7 @@ export function ManagePops() {
                                         size="icon"
                                         disabled={isSaving}
                                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                        aria-label={`Remover ${pop.name}`}
+                                        aria-label={`Remover ${doc.name}`}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -332,13 +358,13 @@ export function ManagePops() {
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o POP "{pop.name}".
+                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o documento "{doc.name}".
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                         <AlertDialogAction 
-                                            onClick={() => handleRemovePop(pop)} 
+                                            onClick={() => handleRemoveDoc(doc)} 
                                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                         >
                                             Sim, excluir
@@ -354,7 +380,7 @@ export function ManagePops() {
             </ul>
           ) : (
             <p className="text-center text-sm text-muted-foreground">
-              Nenhum POP cadastrado.
+              Nenhum documento cadastrado.
             </p>
           )}
         </div>

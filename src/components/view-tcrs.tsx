@@ -24,14 +24,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Pencil } from 'lucide-react';
 import type { PopDocument } from './manage-pops';
 
-export function ViewPops() {
+export function ViewTcrs() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
 
   const [allDocs, setAllDocs] = useState<PopDocument[]>([]);
-  const [selectedPopName, setSelectedPopName] = useState<string | null>(null);
-  const [popContent, setPopContent] = useState('');
+  const [selectedTcrName, setSelectedTcrName] = useState<string | null>(null);
+  const [tcrContent, setTcrContent] = useState('');
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -52,15 +52,14 @@ export function ViewPops() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          const fetchedDocs = (data.documents || []).map((item: any) => {
+           const fetchedDocs = (data.documents || []).map((item: any) => {
                 if (typeof item === 'string') {
-                    // Backwards compatibility for old data structure
                     return { name: item, content: '', type: item.startsWith('POP:') ? 'POP' : 'TCR' };
                 }
                 return {
                     name: item.name,
                     content: item.content || '',
-                    type: item.type || (item.startsWith('POP:') ? 'POP' : 'TCR'),
+                    type: item.type || (item.name.startsWith('POP:') ? 'POP' : 'TCR'),
                 };
             });
           setAllDocs(fetchedDocs);
@@ -78,18 +77,19 @@ export function ViewPops() {
     };
     fetchDocs();
   }, [getSettingsDocRef, toast]);
+  
+  const tcrDocuments = allDocs.filter(doc => doc.type === 'TCR');
 
-  const popDocuments = allDocs.filter(doc => doc.type === 'POP');
 
-  const handleSelectPop = (popName: string) => {
-    setSelectedPopName(popName);
-    const selected = allDocs.find(p => p.name === popName);
-    setPopContent(selected?.content || '');
-    setIsEditing(false); // Reset editing state on new selection
+  const handleSelectTcr = (tcrName: string) => {
+    setSelectedTcrName(tcrName);
+    const selected = allDocs.find(p => p.name === tcrName);
+    setTcrContent(selected?.content || '');
+    setIsEditing(false);
   };
 
   const handleSaveContent = async () => {
-    if (!selectedPopName) return;
+    if (!selectedTcrName) return;
 
     const docRef = getSettingsDocRef();
     if (!docRef) {
@@ -100,21 +100,21 @@ export function ViewPops() {
     setIsSaving(true);
     try {
       const updatedDocs = allDocs.map(p =>
-        p.name === selectedPopName ? { ...p, content: popContent } : p
+        p.name === selectedTcrName ? { ...p, content: tcrContent } : p
       );
       await setDoc(docRef, { documents: updatedDocs });
-      setAllDocs(updatedDocs); // Update local state
+      setAllDocs(updatedDocs);
       toast({
         title: 'Sucesso!',
-        description: `Conteúdo do ${selectedPopName} foi salvo.`,
+        description: `Conteúdo do ${selectedTcrName} foi salvo.`,
       });
-      setIsEditing(false); // Exit editing mode on save
+      setIsEditing(false);
     } catch (error) {
-      console.error("Error saving POP content:", error);
+      console.error("Error saving TCR content:", error);
       toast({
         variant: 'destructive',
         title: 'Erro ao salvar',
-        description: 'Não foi possível salvar o conteúdo do POP.',
+        description: 'Não foi possível salvar o conteúdo do TCR.',
       });
     } finally {
       setIsSaving(false);
@@ -124,7 +124,7 @@ export function ViewPops() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Procedimentos Operacionais Padrão (POPs)</CardTitle>
+        <CardTitle>Termo de Conhecimento de Risco (TCR)</CardTitle>
         <CardDescription>
           Selecione um documento para visualizar ou editar seu conteúdo.
         </CardDescription>
@@ -132,13 +132,13 @@ export function ViewPops() {
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Select
-            onValueChange={handleSelectPop}
-            disabled={isLoadingDocs || popDocuments.length === 0}
+            onValueChange={handleSelectTcr}
+            disabled={isLoadingDocs || tcrDocuments.length === 0}
           >
             <SelectTrigger>
               <SelectValue placeholder={
-                isLoadingDocs ? "Carregando POPs..." :
-                popDocuments.length === 0 ? "Nenhum POP cadastrado" : "Selecione um documento"
+                isLoadingDocs ? "Carregando TCRs..." :
+                tcrDocuments.length === 0 ? "Nenhum TCR cadastrado" : "Selecione um TCR"
               } />
             </SelectTrigger>
             <SelectContent>
@@ -147,9 +147,9 @@ export function ViewPops() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 </div>
               ) : (
-                popDocuments.map((pop) => (
-                  <SelectItem key={pop.name} value={pop.name}>
-                    {pop.name}
+                tcrDocuments.map((doc) => (
+                  <SelectItem key={doc.name} value={doc.name}>
+                    {doc.name}
                   </SelectItem>
                 ))
               )}
@@ -157,15 +157,15 @@ export function ViewPops() {
           </Select>
         </div>
 
-        {selectedPopName && (
+        {selectedTcrName && (
           <div className="space-y-4">
              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md border">
               O conteúdo exibido abaixo destina-se à leitura e conferência. O documento original e assinado encontra-se arquivado com o responsável pelo SGS.
             </p>
             <Textarea
-              value={popContent}
-              onChange={(e) => setPopContent(e.target.value)}
-              placeholder={isEditing ? `Digite o conteúdo do ${selectedPopName} aqui...` : 'Selecione um POP para ver seu conteúdo.'}
+              value={tcrContent}
+              onChange={(e) => setTcrContent(e.target.value)}
+              placeholder={isEditing ? `Digite o conteúdo do ${selectedTcrName} aqui...` : 'Selecione um TCR para ver seu conteúdo.'}
               className="min-h-[400px] text-base"
               readOnly={!isEditing}
               disabled={isSaving}
@@ -173,7 +173,7 @@ export function ViewPops() {
           </div>
         )}
       </CardContent>
-      {selectedPopName && (
+      {selectedTcrName && (
         <CardFooter className="flex justify-end">
            {isEditing ? (
             <div className="flex gap-2">

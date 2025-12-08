@@ -26,6 +26,7 @@ import { RegisterRiskAssessment } from './register-risk-assessment';
 import { RiskAssessmentReport } from './risk-assessment-report';
 import { ManagePops } from './manage-pops';
 import { ViewPops } from './view-pops';
+import { ViewTcrs } from './view-tcrs';
 
 
 import {
@@ -150,6 +151,8 @@ function MainAppLayout() {
         return <RiskAssessmentReport onEdit={handleEditAssessment} />;
       case 'view-pops':
         return <ViewPops />;
+      case 'view-tcrs':
+        return <ViewTcrs />;
       case 'reminders':
       default:
         return (

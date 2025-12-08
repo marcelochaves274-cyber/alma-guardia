@@ -13,7 +13,7 @@ import {
   useSidebar,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -312,6 +312,18 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
+              isActive={activePage === 'view-tcrs'}
+              onClick={() => handlePageChange('view-tcrs')}
+              tooltip={{
+                children: 'TCR',
+              }}
+            >
+              <FileText />
+              <span className="font-bold">TCR</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
               onClick={() => toggleSubMenu('settings')}
               tooltip={{
                 children: 'Configurações',
@@ -364,7 +376,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     isActive={activePage === 'manage-pops'}
                     onClick={() => handlePageChange('manage-pops')}
                   >
-                    Gerenciar POPs
+                    Gerenciar POP/TCR
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
                 <SidebarMenuSubItem>
