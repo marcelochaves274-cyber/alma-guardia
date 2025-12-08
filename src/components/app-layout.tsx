@@ -261,10 +261,10 @@ function MainAppLayout() {
               )}
               <div className="flex flex-col items-center justify-center">
                 <span className="font-bold text-xl text-foreground">
-                  {appName || 'Sistema de Gestão de Segurança'}
+                  Sistema de Gestão de Segurança
                 </span>
                 <span className="font-bold text-lg text-muted-foreground">
-                    {getProfileName()}
+                    {appName || getProfileName()}
                 </span>
               </div>
             </div>
