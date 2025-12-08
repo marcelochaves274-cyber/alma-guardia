@@ -7,7 +7,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -82,9 +81,13 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
   const [marker, setMarker] = useState<Marker>(null);
   const [probability, setProbability] = useState('');
   const [consequence, setConsequence] = useState('');
+  const [situation, setSituation] = useState('');
+  const [completionDate, setCompletionDate] = useState<Date | undefined>();
+
 
   // UI/Data loading states
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isCompletionCalendarOpen, setIsCompletionCalendarOpen] = useState(false);
   const [treatmentTypes, setTreatmentTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
@@ -103,7 +106,9 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
   useEffect(() => {
     if (isEditing && treatmentToEdit) {
       const date = treatmentToEdit.treatmentDate;
+      const compDate = treatmentToEdit.completionDate;
       setTreatmentDate(date instanceof Timestamp ? date.toDate() : date);
+      setCompletionDate(compDate instanceof Timestamp ? compDate.toDate() : compDate);
       setTreatmentLocation(treatmentToEdit.treatmentLocation || '');
       setTreatmentType(treatmentToEdit.treatmentType || '');
       setDescription(treatmentToEdit.description || '');
@@ -112,6 +117,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
       setProbability(treatmentToEdit.probability || '');
       setConsequence(treatmentToEdit.consequence || '');
       setMarker(treatmentToEdit.mapMarker || null);
+      setSituation(treatmentToEdit.situation || '');
     }
   }, [isEditing, treatmentToEdit]);
 
@@ -188,6 +194,8 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
     setProbability('');
     setConsequence('');
     setMarker(null);
+    setSituation('');
+    setCompletionDate(undefined);
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -217,6 +225,8 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
         riskLevel: riskLevelData.score,
         mapMarker: marker,
         userId: user.uid,
+        situation,
+        completionDate: completionDate ? Timestamp.fromDate(completionDate) : null,
     };
 
     try {
@@ -396,30 +406,28 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
                 </div>
             </div>
           </div>
-
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="proposed-treatment">Tratamento Proposto</Label>
-              <Textarea
-                id="proposed-treatment"
-                name="proposedTreatment"
-                placeholder="Descreva o tratamento que foi proposto para mitigar o risco."
-                className="min-h-[100px]"
-                value={proposedTreatment}
-                onChange={(e) => setProposedTreatment(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="action-taken">Ação Realizada</Label>
-              <Textarea
-                id="action-taken"
-                name="actionTaken"
-                placeholder="Descreva a ação que foi efetivamente realizada."
-                className="min-h-[100px]"
-                value={actionTaken}
-                onChange={(e) => setActionTaken(e.target.value)}
-              />
-            </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="proposed-treatment">Tratamento Proposto</Label>
+            <Textarea
+              id="proposed-treatment"
+              name="proposedTreatment"
+              placeholder="Descreva o tratamento que foi proposto para mitigar o risco."
+              className="min-h-[100px]"
+              value={proposedTreatment}
+              onChange={(e) => setProposedTreatment(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="action-taken">Ação Realizada</Label>
+            <Textarea
+              id="action-taken"
+              name="actionTaken"
+              placeholder="Descreva a ação que foi efetivamente realizada."
+              className="min-h-[100px]"
+              value={actionTaken}
+              onChange={(e) => setActionTaken(e.target.value)}
+            />
           </div>
           
           <Separator />
@@ -478,19 +486,71 @@ export function RegisterTreatment({ treatmentToEdit, setPage }: RegisterTreatmen
                 )}
               </div>
            </div>
+           
+           <Separator/>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                <div className="space-y-2">
+                    <Label htmlFor="situation">Situação</Label>
+                    <Select name="situation" onValueChange={setSituation} value={situation}>
+                        <SelectTrigger id="situation">
+                            <SelectValue placeholder="Selecione a situação" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="pendente">Pendente</SelectItem>
+                            <SelectItem value="finalizado">Finalizado</SelectItem>
+                            <SelectItem value="reaberto">Reaberto</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="completion-date">Data para Conclusão</Label>
+                     <Popover open={isCompletionCalendarOpen} onOpenChange={setIsCompletionCalendarOpen}>
+                        <PopoverTrigger asChild>
+                        <Button
+                            variant={'outline'}
+                            className={cn(
+                            'w-full justify-start text-left font-normal',
+                            !completionDate && 'text-muted-foreground'
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {completionDate ? (
+                            format(completionDate, 'dd/MM/yyyy')
+                            ) : (
+                            <span>Selecione a data</span>
+                            )}
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                        <Calendar
+                            mode="single"
+                            selected={completionDate}
+                            onSelect={(date) => {
+                                if(date) setCompletionDate(date);
+                                setIsCompletionCalendarOpen(false);
+                            }}
+                            locale={ptBR}
+                            initialFocus
+                        />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+            </div>
+
+            <div className="flex justify-end gap-4 pt-4">
+                {isEditing && (
+                    <Button variant="outline" type="button" onClick={() => setPage('treatment-report')}>
+                    Cancelar
+                    </Button>
+                )}
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isEditing ? 'Salvar Alterações' : 'Salvar Tratamento'}
+                </Button>
+            </div>
 
         </CardContent>
-        <CardFooter className="flex flex-col gap-2">
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEditing ? 'Salvar Alterações' : 'Salvar Tratamento de Risco'}
-          </Button>
-           {isEditing && (
-            <Button variant="outline" className="w-full" onClick={() => setPage('treatment-report')}>
-              Cancelar Edição
-            </Button>
-          )}
-        </CardFooter>
       </form>
     </Card>
   );

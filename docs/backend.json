@@ -171,6 +171,20 @@
           },
           "description": "Coordinates of the marker on the map."
         },
+        "situation": {
+          "type": "string",
+          "description": "The current status of the treatment.",
+          "enum": [
+            "pendente",
+            "finalizado",
+            "reaberto"
+          ]
+        },
+        "completionDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The due date for the treatment conclusion."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
