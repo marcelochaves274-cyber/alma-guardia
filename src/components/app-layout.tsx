@@ -75,6 +75,7 @@ function MainAppLayout() {
   const [faunaFloraGeoToEdit, setFaunaFloraGeoToEdit] = useState<any | null>(null);
   const [assessmentToEdit, setAssessmentToEdit] = useState<any | null>(null);
   const [equipmentToEdit, setEquipmentToEdit] = useState<any | null>(null);
+  const [activityToEdit, setActivityToEdit] = useState<any | null>(null);
   const { appName, logoUrl } = useAppSettings();
 
   if (isUserLoading) {
@@ -102,6 +103,9 @@ function MainAppLayout() {
     if (page !== 'register-equipment') {
       setEquipmentToEdit(null);
     }
+    if (page !== 'register-activity') {
+      setActivityToEdit(null);
+    }
     setActivePage(page);
   };
 
@@ -128,6 +132,11 @@ function MainAppLayout() {
   const handleEditEquipment = (equipment: any) => {
     setEquipmentToEdit(equipment);
     setActivePage('register-equipment');
+  }
+
+  const handleEditActivity = (activity: any) => {
+    setActivityToEdit(activity);
+    setActivePage('register-activity');
   }
 
   const renderContent = () => {
@@ -173,9 +182,9 @@ function MainAppLayout() {
       case 'equipment-report':
         return <EquipmentReport onEdit={handleEditEquipment} />;
       case 'register-activity':
-        return <RegisterActivity />;
+        return <RegisterActivity activityToEdit={activityToEdit} setPage={handlePageChange} />;
       case 'activity-report':
-        return <ActivityReport />;
+        return <ActivityReport onEdit={handleEditActivity} />;
       case 'view-pops':
         return <ViewPops />;
       case 'view-tcrs':

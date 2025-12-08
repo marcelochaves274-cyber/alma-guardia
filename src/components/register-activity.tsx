@@ -19,12 +19,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { PopDocument } from './manage-pops';
 
-export function RegisterActivity() {
+interface RegisterActivityProps {
+  activityToEdit: any | null;
+  setPage: (page: string) => void;
+}
+
+export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityProps) {
+  const isEditing = !!activityToEdit;
+
   const [activityName, setActivityName] = useState('');
   const [pop, setPop] = useState('');
   const [tcr, setTcr] = useState('');
@@ -40,6 +47,15 @@ export function RegisterActivity() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if(isEditing && activityToEdit) {
+      setActivityName(activityToEdit.activityName || '');
+      setPop(activityToEdit.pop || '');
+      setTcr(activityToEdit.tcr || '');
+      setRiskAssessmentLocation(activityToEdit.riskAssessmentLocation || '');
+    }
+  }, [isEditing, activityToEdit]);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -123,17 +139,23 @@ export function RegisterActivity() {
         pop,
         tcr,
         riskAssessmentLocation,
-        createdAt: serverTimestamp(),
     };
     
     try {
+      if (isEditing && activityToEdit) {
+        const docRef = doc(firestore, 'sgs_genius', user.uid, 'activities', activityToEdit.id);
+        await updateDoc(docRef, { ...activityData, updatedAt: serverTimestamp() });
+        toast({ title: 'Sucesso!', description: 'Atividade atualizada com sucesso.' });
+        setPage('activity-report');
+      } else {
         const collectionRef = collection(firestore, 'sgs_genius', user.uid, 'activities');
-        await addDoc(collectionRef, activityData);
+        await addDoc(collectionRef, { ...activityData, createdAt: serverTimestamp() });
         toast({ title: 'Sucesso!', description: 'Atividade registrada com sucesso.' });
         resetForm();
+      }
     } catch (error) {
         console.error("Error saving activity:", error);
-        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível registrar a atividade.'});
+        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar a atividade.'});
     } finally {
         setIsSubmitting(false);
     }
@@ -145,9 +167,9 @@ export function RegisterActivity() {
     <Card className="w-full max-w-2xl mx-auto">
       <form onSubmit={handleSubmit}>
         <CardHeader>
-          <CardTitle>Registrar Atividade</CardTitle>
+          <CardTitle>{isEditing ? 'Editar Atividade' : 'Registrar Atividade'}</CardTitle>
           <CardDescription>
-            Selecione a atividade, POP, TCR e avaliação de risco para registrar.
+            {isEditing ? 'Altere os dados da atividade abaixo.' : 'Selecione a atividade, POP, TCR e avaliação de risco para registrar.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -221,10 +243,15 @@ export function RegisterActivity() {
             </div>
 
         </CardContent>
-        <CardFooter>
-            <Button type="submit" className="w-full" disabled={isSubmitting || isLoading}>
+        <CardFooter className="flex justify-end gap-2">
+            {isEditing && (
+              <Button variant="outline" type="button" onClick={() => setPage('activity-report')}>
+                Cancelar
+              </Button>
+            )}
+            <Button type="submit" disabled={isSubmitting || isLoading}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Registrar
+                {isEditing ? 'Salvar Alterações' : 'Registrar'}
             </Button>
         </CardFooter>
       </form>
