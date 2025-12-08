@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from '@/lib/utils';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { CheckIcon } from 'lucide-react';
 
 interface MultiSelectFilterProps {
