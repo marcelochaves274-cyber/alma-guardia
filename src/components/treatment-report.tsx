@@ -266,7 +266,7 @@ export function TreatmentReport({ onEdit }: TreatmentReportProps) {
             </div>
             <div className="lg:col-span-1">
                 <MultiSelectFilter
-                  placeholder="Filtrar por Nível de Risco (PxC)"
+                  placeholder="Nível de Risco (PxC)"
                   options={riskLevelOptions}
                   selected={filterRiskLevels}
                   onChange={setFilterRiskLevels}
