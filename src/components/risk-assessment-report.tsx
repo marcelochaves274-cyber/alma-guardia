@@ -30,7 +30,7 @@ import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Pencil, Trash2, Loader2, Eye } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,17 +42,31 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from './ui/label';
+import { ScrollArea } from './ui/scroll-area';
 
 interface RiskAssessment {
   id: string;
   assessmentDate: Date;
   location: string;
   taskDescription: string;
+  riskSource: string; // Causa
+  effects: string; // Perigo
+  existingControls: string; // Dano
+  recommendedControls: string; // Controle Operacional
+  probability: string;
+  consequence: string;
   riskLevel: number;
-  situation: 'pendente' | 'finalizado' | 'reaberto';
 }
 
 interface RiskAssessmentReportProps {
@@ -66,32 +80,18 @@ const getRiskLevelProperties = (score: number) => {
     return { label: 'N/A', className: 'bg-muted text-muted-foreground' };
 };
 
-const getSituationProperties = (situation: string) => {
-    switch (situation) {
-        case 'pendente':
-            return { label: 'Pendente', className: 'bg-yellow-500 text-black' };
-        case 'finalizado':
-            return { label: 'Finalizado', className: 'bg-green-600 text-white' };
-        case 'reaberto':
-            return { label: 'Reaberto', className: 'bg-blue-600 text-white' };
-        default:
-            return { label: situation, className: 'bg-muted text-muted-foreground' };
-    }
-}
-
 export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
   
   const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
+  const [selectedAssessment, setSelectedAssessment] = useState<RiskAssessment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  // Filter states
   const [filterLocation, setFilterLocation] = useState<string | null>(null);
   
-  // Dynamic options for selects
   const [locations, setLocations] = useState<string[]>([]);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
 
@@ -199,12 +199,13 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   const renderSkeletons = () => (
     Array.from({ length: 5 }).map((_, i) => (
       <TableRow key={i}>
-        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
       </TableRow>
     ))
   );
@@ -265,86 +266,156 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Local</TableHead>
-                <TableHead>Etapa da Atividade</TableHead>
-                <TableHead>Nível de Risco</TableHead>
-                <TableHead>Situação</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                renderSkeletons()
-              ) : filteredAssessments.length > 0 ? (
-                filteredAssessments.map((ass) => {
-                  const riskProps = getRiskLevelProperties(ass.riskLevel);
-                  const situationProps = getSituationProperties(ass.situation);
-                  return (
-                    <TableRow key={ass.id}>
-                      <TableCell>{ass.assessmentDate ? format(ass.assessmentDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
-                      <TableCell>{ass.location}</TableCell>
-                      <TableCell>{ass.taskDescription}</TableCell>
-                      <TableCell>
-                          <Badge className={cn(riskProps.className)}>
-                              {riskProps.label}
-                          </Badge>
-                      </TableCell>
-                       <TableCell>
-                          <Badge className={cn(situationProps.className)}>
-                              {situationProps.label}
-                          </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar avaliação" onClick={() => handleEdit(ass)}>
-                            <Pencil className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                  aria-label="Excluir avaliação"
-                                  disabled={isDeleting === ass.id}
-                                >
-                                  {isDeleting === ass.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro da avaliação de risco do dia <span className="font-semibold">{ass.assessmentDate ? format(ass.assessmentDate, 'dd/MM/yyyy') : ''}</span>.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction 
-                                        onClick={() => handleDelete(ass.id)}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                        Sim, excluir
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
+          <Dialog>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    {assessments.length === 0 ? "Nenhuma avaliação registrada ainda." : "Nenhuma avaliação encontrada para o local selecionado."}
-                  </TableCell>
+                  <TableHead>Local</TableHead>
+                  <TableHead>Etapa da Atividade</TableHead>
+                  <TableHead>Causa</TableHead>
+                  <TableHead>Perigo</TableHead>
+                  <TableHead>Dano</TableHead>
+                  <TableHead>Nível de Risco</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  renderSkeletons()
+                ) : filteredAssessments.length > 0 ? (
+                  filteredAssessments.map((ass) => {
+                    const riskProps = getRiskLevelProperties(ass.riskLevel);
+                    return (
+                      <TableRow key={ass.id}>
+                        <TableCell>{ass.location}</TableCell>
+                        <TableCell><p className='truncate w-32'>{ass.taskDescription}</p></TableCell>
+                        <TableCell><p className='truncate w-32'>{ass.riskSource}</p></TableCell>
+                        <TableCell><p className='truncate w-32'>{ass.effects}</p></TableCell>
+                        <TableCell><p className='truncate w-32'>{ass.existingControls}</p></TableCell>
+                        <TableCell>
+                            <Badge className={cn(riskProps.className)}>
+                                {riskProps.label}
+                            </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar avaliação" onClick={() => setSelectedAssessment(ass)}>
+                                <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar avaliação" onClick={() => handleEdit(ass)}>
+                              <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                    aria-label="Excluir avaliação"
+                                    disabled={isDeleting === ass.id}
+                                  >
+                                    {isDeleting === ass.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                      Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro da avaliação de risco do dia <span className="font-semibold">{ass.assessmentDate ? format(ass.assessmentDate, 'dd/MM/yyyy') : ''}</span>.
+                                      </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                          onClick={() => handleDelete(ass.id)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                          Sim, excluir
+                                      </AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-24 text-center">
+                      {assessments.length === 0 ? "Nenhuma avaliação registrada ainda." : "Nenhuma avaliação encontrada para o local selecionado."}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+             {selectedAssessment && (
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Detalhes da Avaliação de Risco</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[70vh] pr-6">
+                  <div className="space-y-4 py-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Data da Avaliação</Label>
+                        <p>{format(selectedAssessment.assessmentDate, 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Local</Label>
+                        <p>{selectedAssessment.location}</p>
+                      </div>
+                    </div>
+                     <div>
+                        <Label className="font-semibold text-muted-foreground">Etapa da Atividade</Label>
+                        <p>{selectedAssessment.taskDescription}</p>
+                      </div>
+                       <div>
+                        <Label className="font-semibold text-muted-foreground">Causa</Label>
+                        <p>{selectedAssessment.riskSource}</p>
+                      </div>
+                       <div>
+                        <Label className="font-semibold text-muted-foreground">Perigo</Label>
+                        <p>{selectedAssessment.effects}</p>
+                      </div>
+                       <div>
+                        <Label className="font-semibold text-muted-foreground">Dano</Label>
+                        <p>{selectedAssessment.existingControls}</p>
+                      </div>
+                       <div>
+                        <Label className="font-semibold text-muted-foreground">Controle Operacional</Label>
+                        <p>{selectedAssessment.recommendedControls}</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 mt-4">
+                        <div>
+                           <Label className="font-semibold text-muted-foreground">Probabilidade</Label>
+                           <p>{selectedAssessment.probability}</p>
+                        </div>
+                         <div>
+                           <Label className="font-semibold text-muted-foreground">Consequência</Label>
+                           <p>{selectedAssessment.consequence}</p>
+                        </div>
+                         <div>
+                           <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
+                           <p>
+                              <Badge className={cn(getRiskLevelProperties(selectedAssessment.riskLevel).className)}>
+                                  {getRiskLevelProperties(selectedAssessment.riskLevel).label}
+                              </Badge>
+                           </p>
+                        </div>
+                      </div>
+                  </div>
+                </ScrollArea>
+                 <div className="flex justify-end pt-2">
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">
+                            Fechar
+                        </Button>
+                    </DialogClose>
+                </div>
+              </DialogContent>
+            )}
+          </Dialog>
         </CardContent>
       </Card>
     </div>
