@@ -88,7 +88,7 @@ export function ViewTcrs() {
     const selected = allDocs.find(p => p.name === tcrName);
     if (selected) {
       setSelectedTcrName(tcrName);
-      setTcrContent(selected.tcrContent);
+      setTcrContent(selected.tcrContent || 'Seu texto aqui');
     }
     setIsEditing(false);
   };

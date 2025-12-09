@@ -58,18 +58,17 @@ export function ViewRame() {
       }
       try {
         const docSnap = await getDoc(docRef);
+        let initialContent: RameContent = {
+          peContent: 'Seu texto aqui',
+          paeContent: 'Seu texto aqui'
+        };
         if (docSnap.exists()) {
-          const data = docSnap.data() as RameContent;
-          setDbContent({
-            peContent: data.peContent || 'Seu texto aqui',
-            paeContent: data.paeContent || 'Seu texto aqui'
-          });
-        } else {
-           setDbContent({
-            peContent: 'Seu texto aqui',
-            paeContent: 'Seu texto aqui'
-          });
+          const data = docSnap.data();
+          initialContent.peContent = data.peContent || 'Seu texto aqui';
+          initialContent.paeContent = data.paeContent || 'Seu texto aqui';
         }
+        setDbContent(initialContent);
+
       } catch (error) {
         console.error("Error fetching RAME content:", error);
         toast({

@@ -87,7 +87,7 @@ export function ViewPops() {
     const selected = allDocs.find(p => p.name === popName);
     if (selected) {
         setSelectedPopName(popName);
-        setPopContent(selected.popContent);
+        setPopContent(selected.popContent || 'Seu texto aqui');
     }
     setIsEditing(false);
   };
