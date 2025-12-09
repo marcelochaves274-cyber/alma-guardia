@@ -668,5 +668,3 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     </>
   );
 }
-
-    
