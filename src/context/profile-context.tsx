@@ -26,7 +26,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [isLoadingPasses, setIsLoadingPasses] = useState(true);
 
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const getSettingsDocRef = useCallback(() => {
     if (!firestore || !user) return null;
@@ -46,13 +46,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           const data = docSnap.data();
           setPasses({ adminPass: data.adminPass || '', observerPass: data.observerPass || '' });
         } else {
-          // If the document doesn't exist, it means it's a new user.
-          // Set passes to empty strings.
           setPasses({ adminPass: '', observerPass: '' });
         }
       } catch (error) {
         console.error("Error fetching profile passes:", error);
-        // In case of error, also default to empty passes to prevent crashes.
         setPasses({ adminPass: '', observerPass: '' });
       } finally {
         setIsLoadingPasses(false);
@@ -60,10 +57,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     };
     if(user){
         fetchPasses();
-    } else {
+    } else if (!isUserLoading) {
         setIsLoadingPasses(false);
     }
-  }, [user, getSettingsDocRef]);
+  }, [user, isUserLoading, getSettingsDocRef]);
 
   useEffect(() => {
     try {
@@ -93,7 +90,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   const validatePass = async (profileToValidate: Profile, pass: string): Promise<boolean> => {
     const correctPass = profileToValidate === 'admin' ? passes.adminPass : passes.observerPass;
-    const isValid = correctPass === pass && correctPass !== '';
+    const isValid = correctPass === pass;
     if (isValid) {
       setProfile(profileToValidate);
     }
@@ -106,7 +103,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     setProfile,
     clearProfile,
     validatePass,
-    isProfileLoading,
+    isProfileLoading: isProfileLoading || (user && isLoadingPasses),
     isLoadingPasses,
     passes,
   };

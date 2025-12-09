@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -45,11 +46,15 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isEmailAuthLoading, setIsEmailAuthLoading] = useState(false);
+  const [isAuthInProgress, setIsAuthInProgress] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  
+  // This state will track if we are waiting for a redirect after a successful auth action.
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     if (!isUserLoading && user) {
+      setIsRedirecting(true); // Set redirecting flag
       router.push('/');
     }
   }, [user, isUserLoading, router]);
@@ -81,28 +86,28 @@ export default function LoginPage() {
       });
       return;
     }
-    setIsEmailAuthLoading(true);
+    setIsAuthInProgress(true);
     try {
       if (authAction === 'login') {
         await signInWithEmailAndPassword(initializedAuth, email, password);
       } else {
         await createUserWithEmailAndPassword(initializedAuth, email, password);
       }
-      // O useEffect cuidará do redirecionamento
+      // On success, the useEffect will handle the redirection.
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Erro de Autenticação',
         description: getFriendlyErrorMessage(error.code),
       });
-    } finally {
-      setIsEmailAuthLoading(false);
+      setIsAuthInProgress(false);
     }
+    // Don't set isAuthInProgress to false on success, as the page will redirect.
   };
   
   const handlePasswordReset = async () => {
     if (!initializedAuth || !resetEmail) return;
-    setIsEmailAuthLoading(true);
+    setIsAuthInProgress(true);
     try {
       await sendPasswordResetEmail(initializedAuth, resetEmail);
       toast({
@@ -116,11 +121,11 @@ export default function LoginPage() {
         description: getFriendlyErrorMessage(error.code),
       });
     } finally {
-      setIsEmailAuthLoading(false);
+      setIsAuthInProgress(false);
     }
   };
 
-  if (isUserLoading || (!isUserLoading && user)) {
+  if (isUserLoading || isRedirecting) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -158,7 +163,7 @@ export default function LoginPage() {
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isEmailAuthLoading}
+                disabled={isAuthInProgress}
               />
             </div>
             <div className="space-y-2">
@@ -169,7 +174,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  disabled={isEmailAuthLoading}
+                  disabled={isAuthInProgress}
                   className="pr-10"
                 />
                 <Button
@@ -178,7 +183,7 @@ export default function LoginPage() {
                   size="icon"
                   className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  disabled={isEmailAuthLoading}
+                  disabled={isAuthInProgress}
                   aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -190,19 +195,19 @@ export default function LoginPage() {
               <div className="flex w-full gap-2">
                   <Button
                   onClick={() => handleEmailAuth('login')}
-                  disabled={isEmailAuthLoading || !email || !password}
+                  disabled={isAuthInProgress || !email || !password}
                   className="w-full"
                   >
-                  {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isAuthInProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Entrar
                   </Button>
                   <Button
                   variant="secondary"
                   onClick={() => handleEmailAuth('register')}
-                  disabled={isEmailAuthLoading || !email || !password}
+                  disabled={isAuthInProgress || !email || !password}
                   className="w-full"
                   >
-                  {isEmailAuthLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isAuthInProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Criar Conta
                   </Button>
               </div>
@@ -229,8 +234,8 @@ export default function LoginPage() {
                   </div>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handlePasswordReset} disabled={!resetEmail || isEmailAuthLoading}>
-                      {isEmailAuthLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    <AlertDialogAction onClick={handlePasswordReset} disabled={!resetEmail || isAuthInProgress}>
+                      {isAuthInProgress ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                       Enviar Link
                     </AlertDialogAction>
                   </AlertDialogFooter>
