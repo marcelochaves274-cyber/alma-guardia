@@ -1,31 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { type User, onAuthStateChanged } from 'firebase/auth';
+import { type User, onAuthStateChanged, AuthError } from 'firebase/auth';
 import { useAuth } from '@/firebase';
-import { useRouter } from 'next/navigation';
 
 export function useUser() {
   const auth = useAuth();
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isUserLoading, setIsUserLoading] = useState(true);
+  const [userError, setUserError] = useState<AuthError | null>(null);
 
   useEffect(() => {
-    if (!auth) return;
+    if (!auth) {
+      // Auth service not available yet, wait for it.
+      // The loading state remains true until auth is available.
+      return;
+    }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setIsLoading(false);
-      if (!user) {
-        // To prevent flicker, middleware should handle redirection.
-        // This is a client-side fallback.
-        // router.push('/login');
+    const unsubscribe = onAuthStateChanged(auth, 
+      (user) => {
+        setUser(user);
+        setIsUserLoading(false);
+      },
+      (error) => {
+        console.error("Authentication error in useUser:", error);
+        setUserError(error);
+        setIsUserLoading(false);
       }
-    });
+    );
 
     return () => unsubscribe();
-  }, [auth, router]);
+  }, [auth]);
 
-  return { user, isLoading };
+  return { user, isUserLoading, userError };
 }

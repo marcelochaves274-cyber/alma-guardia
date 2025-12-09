@@ -39,7 +39,7 @@ import {
 
 export default function LoginPage() {
   const { auth: initializedAuth } = initializeFirebase();
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
