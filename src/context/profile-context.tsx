@@ -58,11 +58,12 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           const data = docSnap.data();
           setPasses({ adminPass: data.adminPass || '', observerPass: data.observerPass || '' });
         } else {
-          // If doc doesn't exist, it means no passes are set. This is a valid state.
+          // If doc doesn't exist, it means no passes are set. This is a valid state for a new user.
           setPasses({ adminPass: '', observerPass: '' });
         }
       } catch (error) {
         console.error("Error fetching profile passes:", error);
+        // On error, also default to no passes to avoid breaking the app.
         setPasses({ adminPass: '', observerPass: '' });
       } finally {
         setIsLoadingPasses(false);
@@ -113,7 +114,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     return isValid;
   };
 
-  const contextValue = {
+  const contextValue: ProfileContextType = {
     profile,
     setProfile,
     clearProfile,
@@ -133,4 +134,3 @@ export function useProfile() {
   }
   return context;
 }
-
