@@ -54,6 +54,7 @@ export function ViewPops() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
+          if (data && data.documents) {
             const fetchedDocs = (data.documents || []).map((item: any): PopDocument => {
                 // Backwards compatibility for old data structure
                 if (typeof item === 'string') {
@@ -64,12 +65,13 @@ export function ViewPops() {
                     return { name: item.name, popContent: item.content, tcrContent: '' };
                 }
                 return {
-                    name: item.name,
+                    name: item.name || '',
                     popContent: item.popContent || '',
                     tcrContent: item.tcrContent || '',
                 };
             });
             setAllDocs(fetchedDocs);
+          }
         }
       } catch (error) {
         console.error("Error fetching documents:", error);

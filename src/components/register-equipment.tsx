@@ -176,7 +176,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
     <Card className="w-full">
       <form onSubmit={handleSubmit}>
         <CardHeader>
-          <CardTitle>{isEditing ? 'Editar Equipamento' : 'Novo Equipamento'}</CardTitle>
+          <CardTitle>{isEditing ? 'Editar Equipamento' : 'Registrar Equipamento'}</CardTitle>
           <CardDescription>
             {isEditing ? 'Altere os dados do equipamento abaixo.' : 'Preencha o formulário abaixo para registrar um novo equipamento.'}
           </CardDescription>

@@ -54,22 +54,24 @@ export function ViewTcrs() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-           const fetchedDocs = (data.documents || []).map((item: any): PopDocument => {
-                // Backwards compatibility for old data structure
-                if (typeof item === 'string') {
-                    return { name: item, popContent: '', tcrContent: '' };
-                }
-                 // Compatibility for structure with just 'content'
-                if (item.content && !item.popContent && !item.tcrContent) {
-                    return { name: item.name, popContent: item.content, tcrContent: '' };
-                }
-                return {
-                    name: item.name,
-                    popContent: item.popContent || '',
-                    tcrContent: item.tcrContent || '',
-                };
-            });
-          setAllDocs(fetchedDocs);
+          if (data && data.documents) {
+            const fetchedDocs = (data.documents || []).map((item: any): PopDocument => {
+                  // Backwards compatibility for old data structure
+                  if (typeof item === 'string') {
+                      return { name: item, popContent: '', tcrContent: '' };
+                  }
+                  // Compatibility for structure with just 'content'
+                  if (item.content && !item.popContent && !item.tcrContent) {
+                      return { name: item.name, popContent: item.content, tcrContent: '' };
+                  }
+                  return {
+                      name: item.name || '',
+                      popContent: item.popContent || '',
+                      tcrContent: item.tcrContent || '',
+                  };
+              });
+            setAllDocs(fetchedDocs);
+          }
         }
       } catch (error) {
         console.error("Error fetching documents:", error);
