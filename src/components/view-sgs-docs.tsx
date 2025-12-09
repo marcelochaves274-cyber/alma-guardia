@@ -95,9 +95,19 @@ export function ViewSgsDocs() {
       }
       try {
         const docSnap = await getDoc(docRef);
+        let initialContent: SgsDocsContent = {};
         if (docSnap.exists()) {
-          setDbContent(docSnap.data());
+          initialContent = docSnap.data();
         }
+        
+        // Ensure all sections have at least default text
+        docSections.forEach(section => {
+          if (!initialContent[section.key]) {
+            initialContent[section.key] = 'Seu texto aqui';
+          }
+        });
+        setDbContent(initialContent);
+
       } catch (error) {
         console.error("Error fetching SGS Docs content:", error);
         toast({
@@ -116,7 +126,7 @@ export function ViewSgsDocs() {
   
   const handleSelectSection = (key: SectionKey) => {
     setSelectedSection(key);
-    setContent(dbContent[key] || '');
+    setContent(dbContent[key] || 'Seu texto aqui');
     setIsEditing(false);
   };
 

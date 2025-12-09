@@ -33,7 +33,7 @@ export function ViewPops() {
   const { profile } = useProfile();
 
   const [allDocs, setAllDocs] = useState<PopDocument[]>([]);
-  const [selectedPop, setSelectedPop] = useState<PopDocument | null>(null);
+  const [selectedPopName, setSelectedPopName] = useState<string>("");
   const [popContent, setPopContent] = useState('');
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -58,16 +58,10 @@ export function ViewPops() {
           const data = docSnap.data();
           if (data && data.documents) {
             const fetchedDocs = (data.documents || []).map((item: any): PopDocument => {
-                if (typeof item === 'string') {
-                    return { name: item, popContent: '', tcrContent: '' };
-                }
-                if (item.content && !item.popContent && !item.tcrContent) {
-                    return { name: item.name, popContent: item.content, tcrContent: '' };
-                }
                 return {
                     name: item.name || '',
-                    popContent: item.popContent || '',
-                    tcrContent: item.tcrContent || '',
+                    popContent: item.popContent || 'Seu texto aqui',
+                    tcrContent: item.tcrContent || 'Seu texto aqui',
                 };
             });
             setAllDocs(fetchedDocs);
@@ -92,14 +86,14 @@ export function ViewPops() {
   const handleSelectPop = (popName: string) => {
     const selected = allDocs.find(p => p.name === popName);
     if (selected) {
-        setSelectedPop(selected);
-        setPopContent(selected.popContent || '');
+        setSelectedPopName(popName);
+        setPopContent(selected.popContent);
     }
     setIsEditing(false);
   };
 
   const handleSaveContent = async () => {
-    if (!selectedPop) return;
+    if (!selectedPopName) return;
 
     const docRef = getSettingsDocRef();
     if (!docRef) {
@@ -110,20 +104,14 @@ export function ViewPops() {
     setIsSaving(true);
     try {
       const updatedDocs = allDocs.map(p =>
-        p.name === selectedPop.name ? { ...p, popContent: popContent } : p
+        p.name === selectedPopName ? { ...p, popContent: popContent } : p
       );
       
-      const docsToSave = updatedDocs.map(d => ({
-            name: d.name,
-            popContent: d.popContent || '',
-            tcrContent: d.tcrContent || '',
-        }));
-
-      await setDoc(docRef, { documents: docsToSave });
+      await setDoc(docRef, { documents: updatedDocs });
       setAllDocs(updatedDocs); 
       toast({
         title: 'Sucesso!',
-        description: `Conteúdo do ${selectedPop.name} foi salvo.`,
+        description: `Conteúdo do ${selectedPopName} foi salvo.`,
       });
       setIsEditing(false);
     } catch (error) {
@@ -151,7 +139,7 @@ export function ViewPops() {
           <Select
             onValueChange={handleSelectPop}
             disabled={isLoadingDocs || allDocs.length === 0}
-            value={selectedPop?.name || ""}
+            value={selectedPopName}
           >
             <SelectTrigger>
               <SelectValue placeholder={
@@ -175,7 +163,7 @@ export function ViewPops() {
           </Select>
         </div>
 
-        {selectedPop && (
+        {selectedPopName && (
           <div className="space-y-4">
              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md border">
               O conteúdo exibido abaixo destina-se à leitura e conferência. O documento original e assinado encontra-se arquivado com o responsável pelo SGS.
@@ -183,15 +171,15 @@ export function ViewPops() {
             <Textarea
               value={popContent}
               onChange={(e) => setPopContent(e.target.value)}
-              placeholder={isEditing ? `Digite o conteúdo do ${selectedPop.name} aqui...` : 'Selecione um POP para ver seu conteúdo.'}
+              placeholder={isEditing ? `Digite o conteúdo do ${selectedPopName} aqui...` : 'Selecione um POP para ver seu conteúdo.'}
               className="min-h-[400px] text-base"
               readOnly={!isEditing}
-              disabled={isSaving}
+              disabled={isSaving || isLoadingDocs}
             />
           </div>
         )}
       </CardContent>
-      {selectedPop && profile === 'admin' && (
+      {selectedPopName && profile === 'admin' && (
         <CardFooter className="flex justify-end">
            {isEditing ? (
             <div className="flex gap-2">

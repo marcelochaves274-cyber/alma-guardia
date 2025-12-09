@@ -112,7 +112,7 @@ export function Reminders({ setPage }: RemindersProps) {
   return (
     <div>
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold">Lembretes de Pendências</h1>
+        <h1 className="text-3xl font-bold">Lembretes</h1>
         <p className="text-muted-foreground">Resumo de itens que necessitam de sua atenção.</p>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

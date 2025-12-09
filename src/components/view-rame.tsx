@@ -60,7 +60,15 @@ export function ViewRame() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data() as RameContent;
-          setDbContent(data);
+          setDbContent({
+            peContent: data.peContent || 'Seu texto aqui',
+            paeContent: data.paeContent || 'Seu texto aqui'
+          });
+        } else {
+           setDbContent({
+            peContent: 'Seu texto aqui',
+            paeContent: 'Seu texto aqui'
+          });
         }
       } catch (error) {
         console.error("Error fetching RAME content:", error);

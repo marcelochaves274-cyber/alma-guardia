@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type FormEvent, useEffect, useCallback } from 'react';
@@ -75,16 +76,12 @@ export function ManagePops() {
               const fetchedDocs = (data.documents || []).map((item: any): PopDocument => {
                   // Backwards compatibility for old data structure
                   if (typeof item === 'string') {
-                      return { name: item, popContent: '', tcrContent: '' };
-                  }
-                  // Compatibility for structure with just 'content'
-                  if (item.content && !item.popContent && !item.tcrContent) {
-                      return { name: item.name, popContent: item.content, tcrContent: '' };
+                      return { name: item, popContent: 'Seu texto aqui', tcrContent: 'Seu texto aqui' };
                   }
                   return {
                       name: item.name || '',
-                      popContent: item.popContent || '',
-                      tcrContent: item.tcrContent || '',
+                      popContent: item.popContent || 'Seu texto aqui',
+                      tcrContent: item.tcrContent || 'Seu texto aqui',
                   };
               });
               setDocuments(fetchedDocs);
@@ -123,11 +120,10 @@ export function ManagePops() {
     
     setIsSaving(true);
     try {
-        // Ensure all fields are present when saving
         const docsToSave = updatedDocs.map(d => ({
             name: d.name,
-            popContent: d.popContent || '',
-            tcrContent: d.tcrContent || '',
+            popContent: d.popContent || 'Seu texto aqui',
+            tcrContent: d.tcrContent || 'Seu texto aqui',
         }));
         await setDoc(docRef, { documents: docsToSave });
         return true;
@@ -155,8 +151,8 @@ export function ManagePops() {
     
     const newDoc: PopDocument = {
         name: finalDocName,
-        popContent: '',
-        tcrContent: '',
+        popContent: 'Seu texto aqui',
+        tcrContent: 'Seu texto aqui',
     }
 
     if (documents.some(p => p.name.toLowerCase() === newDoc.name.toLowerCase())) {
@@ -246,7 +242,7 @@ export function ManagePops() {
             </CardHeader>
             <CardContent className="space-y-6">
                 <Skeleton className="h-24 w-full" />
-                <Separator />
+                <Separator className="my-6" />
                 <div className="space-y-3">
                      <Skeleton className="h-5 w-1/4" />
                      <Skeleton className="h-12 w-full" />

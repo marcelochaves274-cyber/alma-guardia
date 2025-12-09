@@ -29,7 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 type SelectedProfile = 'admin' | 'observer' | null;
 
 export function ProfileSelector() {
-  const { setProfile, validatePass, isLoadingPasses, passes } = useProfile();
+  const { setProfile, validatePass, isLoadingPasses } = useProfile();
   const { toast } = useToast();
 
   const [selectedProfile, setSelectedProfile] = useState<SelectedProfile>(null);
@@ -37,22 +37,8 @@ export function ProfileSelector() {
   const [showPass, setShowPass] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
 
-  // Secret admin login state
-  const [clickCount, setClickCount] = useState(0);
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   const handleProfileSelect = (profile: SelectedProfile) => {
     if (isLoadingPasses) return;
-
-    if (profile === 'admin' && !passes.adminPass && !passes.observerPass) {
-        toast({
-            title: 'Primeiro Acesso de Administrador',
-            description: 'Nenhum passe cadastrado. Entrando como administrador para configuração inicial.'
-        });
-        setProfile('admin');
-        return;
-    }
-    
     setSelectedProfile(profile);
     setPass('');
   };
@@ -65,11 +51,8 @@ export function ProfileSelector() {
     setIsChecking(false);
 
     if (isValid) {
-      // On success, the profile is set and the main layout will show.
-      // We can clear the modal state here.
       setSelectedProfile(null);
     } else {
-      // On failure, show a toast and clear the password field.
       toast({
         variant: 'destructive',
         title: 'Passe Inválido',
@@ -86,36 +69,12 @@ export function ProfileSelector() {
     }
   };
 
-  const handleSecretClick = () => {
-    if (clickTimeoutRef.current) {
-      clearTimeout(clickTimeoutRef.current);
-    }
-
-    const newClickCount = clickCount + 1;
-    setClickCount(newClickCount);
-
-    if (newClickCount === 3) {
-      toast({
-        title: 'Acesso Secreto',
-        description: 'Perfil de Administrador ativado.',
-      });
-      setProfile('admin');
-      setClickCount(0);
-    } else {
-      clickTimeoutRef.current = setTimeout(() => {
-        setClickCount(0);
-      }, 1000); // Reset after 1 second
-    }
-  };
-
-
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
         <div className="w-full max-w-lg p-4">
             <div className="text-center mb-12">
                 <h1 className="text-3xl font-bold">
-                    Selecione seu Perfi
-                    <span className="cursor-pointer" onClick={handleSecretClick}>l</span>
+                    Selecione seu Perfil
                 </h1>
                 <p className="text-muted-foreground">Escolha como você quer acessar o sistema.</p>
             </div>

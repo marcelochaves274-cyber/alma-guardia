@@ -33,7 +33,7 @@ export function ViewTcrs() {
   const { profile } = useProfile();
 
   const [allDocs, setAllDocs] = useState<PopDocument[]>([]);
-  const [selectedTcr, setSelectedTcr] = useState<PopDocument | null>(null);
+  const [selectedTcrName, setSelectedTcrName] = useState<string>("");
   const [tcrContent, setTcrContent] = useState('');
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -58,16 +58,10 @@ export function ViewTcrs() {
           const data = docSnap.data();
           if (data && data.documents) {
             const fetchedDocs = (data.documents || []).map((item: any): PopDocument => {
-                  if (typeof item === 'string') {
-                      return { name: item, popContent: '', tcrContent: '' };
-                  }
-                  if (item.content && !item.popContent && !item.tcrContent) {
-                      return { name: item.name, popContent: item.content, tcrContent: '' };
-                  }
                   return {
                       name: item.name || '',
-                      popContent: item.popContent || '',
-                      tcrContent: item.tcrContent || '',
+                      popContent: item.popContent || 'Seu texto aqui',
+                      tcrContent: item.tcrContent || 'Seu texto aqui',
                   };
               });
             setAllDocs(fetchedDocs);
@@ -93,14 +87,14 @@ export function ViewTcrs() {
   const handleSelectTcr = (tcrName: string) => {
     const selected = allDocs.find(p => p.name === tcrName);
     if (selected) {
-      setSelectedTcr(selected);
-      setTcrContent(selected.tcrContent || '');
+      setSelectedTcrName(tcrName);
+      setTcrContent(selected.tcrContent);
     }
     setIsEditing(false);
   };
 
   const handleSaveContent = async () => {
-    if (!selectedTcr) return;
+    if (!selectedTcrName) return;
 
     const docRef = getSettingsDocRef();
     if (!docRef) {
@@ -111,20 +105,14 @@ export function ViewTcrs() {
     setIsSaving(true);
     try {
       const updatedDocs = allDocs.map(p =>
-        p.name === selectedTcr.name ? { ...p, tcrContent: tcrContent } : p
+        p.name === selectedTcrName ? { ...p, tcrContent: tcrContent } : p
       );
       
-      const docsToSave = updatedDocs.map(d => ({
-            name: d.name,
-            popContent: d.popContent || '',
-            tcrContent: d.tcrContent || '',
-        }));
-
-      await setDoc(docRef, { documents: docsToSave });
+      await setDoc(docRef, { documents: updatedDocs });
       setAllDocs(updatedDocs);
       toast({
         title: 'Sucesso!',
-        description: `Conteúdo do ${selectedTcr.name} foi salvo.`,
+        description: `Conteúdo do ${selectedTcrName} foi salvo.`,
       });
       setIsEditing(false);
     } catch (error) {
@@ -152,7 +140,7 @@ export function ViewTcrs() {
           <Select
             onValueChange={handleSelectTcr}
             disabled={isLoadingDocs || allDocs.length === 0}
-            value={selectedTcr?.name || ""}
+            value={selectedTcrName}
           >
             <SelectTrigger>
               <SelectValue placeholder={
@@ -176,7 +164,7 @@ export function ViewTcrs() {
           </Select>
         </div>
 
-        {selectedTcr && (
+        {selectedTcrName && (
           <div className="space-y-4">
              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md border">
               O conteúdo exibido abaixo destina-se à leitura e conferência. O documento original e assinado encontra-se arquivado com o responsável pelo SGS.
@@ -184,15 +172,15 @@ export function ViewTcrs() {
             <Textarea
               value={tcrContent}
               onChange={(e) => setTcrContent(e.target.value)}
-              placeholder={isEditing ? `Digite o conteúdo do ${selectedTcr.name} aqui...` : 'Selecione um TCR para ver seu conteúdo.'}
+              placeholder={isEditing ? `Digite o conteúdo do ${selectedTcrName} aqui...` : 'Selecione um TCR para ver seu conteúdo.'}
               className="min-h-[400px] text-base"
               readOnly={!isEditing}
-              disabled={isSaving}
+              disabled={isSaving || isLoadingDocs}
             />
           </div>
         )}
       </CardContent>
-      {selectedTcr && profile === 'admin' && (
+      {selectedTcrName && profile === 'admin' && (
         <CardFooter className="flex justify-end">
            {isEditing ? (
             <div className="flex gap-2">
