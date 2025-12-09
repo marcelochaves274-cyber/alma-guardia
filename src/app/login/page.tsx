@@ -39,7 +39,7 @@ import {
 
 export default function LoginPage() {
   const { auth: initializedAuth } = initializeFirebase();
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -94,6 +94,8 @@ export default function LoginPage() {
         await createUserWithEmailAndPassword(initializedAuth, email, password);
       }
       // On success, the useEffect will handle the redirection.
+      // We set isRedirecting here to provide immediate feedback to the user.
+      setIsRedirecting(true);
     } catch (error: any) {
       toast({
         variant: 'destructive',
