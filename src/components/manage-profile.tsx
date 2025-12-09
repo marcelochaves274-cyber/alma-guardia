@@ -183,7 +183,8 @@ export function ManageProfile() {
             </div>
         </div>
       </CardContent>
-      <CardFooter className='flex justify-end'>
+      <CardFooter className='flex-col items-end gap-4'>
+        <p className="text-sm text-muted-foreground">Após salvar os passes, atualize sua pagina.</p>
         <Button onClick={handleSave} disabled={isSaving || adminPass.length !== 6 || observerPass.length !== 6}>
            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
            Salvar Passes
