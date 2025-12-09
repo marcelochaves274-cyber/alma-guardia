@@ -50,6 +50,7 @@ export function ViewRame() {
 
   useEffect(() => {
     const fetchContent = async () => {
+      setIsLoading(true);
       const docRef = getSettingsDocRef();
       if (!docRef) {
         setIsLoading(false);
@@ -72,8 +73,10 @@ export function ViewRame() {
         setIsLoading(false);
       }
     };
-    fetchContent();
-  }, [getSettingsDocRef, toast]);
+    if (user) {
+      fetchContent();
+    }
+  }, [getSettingsDocRef, toast, user]);
   
   const handleSelectPlan = (plan: 'pe' | 'pae') => {
     setSelectedPlan(plan);
@@ -129,6 +132,7 @@ export function ViewRame() {
           <Select
             onValueChange={(value: 'pe' | 'pae') => handleSelectPlan(value)}
             disabled={isLoading}
+            value={selectedPlan || ""}
           >
             <SelectTrigger className="max-w-xs">
               <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione um plano"} />

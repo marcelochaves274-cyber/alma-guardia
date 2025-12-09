@@ -87,6 +87,7 @@ export function ViewSgsDocs() {
 
   useEffect(() => {
     const fetchContent = async () => {
+      setIsLoading(true);
       const docRef = getSettingsDocRef();
       if (!docRef) {
         setIsLoading(false);
@@ -108,8 +109,10 @@ export function ViewSgsDocs() {
         setIsLoading(false);
       }
     };
-    fetchContent();
-  }, [getSettingsDocRef, toast]);
+    if (user) {
+      fetchContent();
+    }
+  }, [getSettingsDocRef, toast, user]);
   
   const handleSelectSection = (key: SectionKey) => {
     setSelectedSection(key);
@@ -165,6 +168,7 @@ export function ViewSgsDocs() {
           <Select
             onValueChange={(value: SectionKey) => handleSelectSection(value)}
             disabled={isLoading}
+            value={selectedSection || ""}
           >
             <SelectTrigger className="max-w-sm">
               <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione uma seção"} />
