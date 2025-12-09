@@ -572,7 +572,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                         isActive={activePage === 'general-settings'}
                         onClick={() => handlePageChange('general-settings')}
                     >
-                        Configurações gerais
+                        Configurações Gerais
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
@@ -580,7 +580,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                         isActive={activePage === 'manage-profile'}
                         onClick={() => handlePageChange('manage-profile')}
                     >
-                        Gerenciar Perfil
+                        Gerenciar Perfis
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
