@@ -22,9 +22,9 @@ export function useUser() {
         setUser(user);
         setIsUserLoading(false);
       },
-      (error: AuthError) => {
+      (error: Error) => {
         console.error("Authentication error in useUser:", error);
-        setUserError(error);
+        setUserError(error as AuthError);
         setIsUserLoading(false);
       }
     );
