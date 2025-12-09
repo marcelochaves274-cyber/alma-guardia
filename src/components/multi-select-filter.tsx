@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from '@/lib/utils';
-import { CheckIcon } from 'lucide-react';
+import { CheckIcon, ChevronDown } from 'lucide-react';
 
 interface MultiSelectFilterProps {
   placeholder: string;
@@ -47,6 +47,7 @@ export function MultiSelectFilter({ placeholder, options, selected, onChange, di
           disabled={disabled}
         >
           <span className="truncate">{getButtonText()}</span>
+          <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
@@ -62,6 +63,7 @@ export function MultiSelectFilter({ placeholder, options, selected, onChange, di
                   id={`check-${option.value}-${placeholder}`}
                   checked={selected.includes(option.value)}
                   onCheckedChange={() => handleSelect(option.value)}
+                  className="h-4 w-4"
                 />
                 <label
                   htmlFor={`check-${option.value}-${placeholder}`}
