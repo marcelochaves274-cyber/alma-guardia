@@ -457,7 +457,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                             isActive={activePage === 'equipment-report'}
                             onClick={() => handlePageChange('equipment-report')}
                         >
-                            Relatório de Equipamentos
+                            Relatório Equipamentos
                         </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                     </SidebarMenuSub>
