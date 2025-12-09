@@ -28,7 +28,7 @@ export default function RootLayout({
           <ProfileProvider>
             <AppSettingsProvider>
               <HelpProvider>
-              {children}
+                {children}
               </HelpProvider>
             </AppSettingsProvider>
           </ProfileProvider>

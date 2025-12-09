@@ -11,6 +11,7 @@ import React, {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { useProfile } from './profile-context';
 
 const themes = [
   {
@@ -28,6 +29,7 @@ const themes = [
     input: '85 20% 85%',
     ring: '85 30% 40%',
     sidebar: '85 30% 15%',
+    'sidebar-secondary': '85 30% 20%',
   },
   {
     name: 'oceano',
@@ -44,6 +46,7 @@ const themes = [
     input: '210 30% 85%',
     ring: '210 40% 50%',
     sidebar: '210 40% 15%',
+    'sidebar-secondary': '210 40% 20%',
   },
   {
     name: 'rubi',
@@ -60,6 +63,7 @@ const themes = [
     input: '350 50% 85%',
     ring: '350 60% 50%',
     sidebar: '350 60% 15%',
+    'sidebar-secondary': '350 60% 20%',
   },
   {
     name: 'ambar',
@@ -76,6 +80,7 @@ const themes = [
     input: '35 70% 85%',
     ring: '35 80% 50%',
     sidebar: '35 80% 15%',
+    'sidebar-secondary': '35 80% 20%',
   },
   {
     name: 'violeta',
@@ -92,6 +97,7 @@ const themes = [
     input: '260 50% 85%',
     ring: '260 60% 60%',
     sidebar: '260 60% 20%',
+    'sidebar-secondary': '260 60% 25%',
   },
   {
     name: 'ardosia',
@@ -108,6 +114,7 @@ const themes = [
     input: '220 12% 85%',
     ring: '220 15% 50%',
     sidebar: '220 15% 15%',
+    'sidebar-secondary': '220 15% 20%',
   },
 ];
 
@@ -142,7 +149,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [isSavingLogo, setIsSavingLogo] = useState(false);
 
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser(); // useUser now provides a stable signal.
+  const { isProfileLoading } = useProfile(); // We wait for profile to be loaded.
   const { toast } = useToast();
   
   const getSettingsDocRef = useCallback(() => {
@@ -167,16 +175,18 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       root.style.setProperty('--input', theme.input);
       root.style.setProperty('--ring', theme.ring);
       root.style.setProperty('--sidebar-background', theme.sidebar);
+      root.style.setProperty('--sidebar-secondary-background', theme['sidebar-secondary']);
     }
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    if (isUserLoading || !user || !firestore) {
-      if (!isUserLoading) setIsLoading(false);
+    // We must wait for both the user to be confirmed and the profile to be loaded.
+    if (isProfileLoading || !user) {
+      setIsLoading(true);
       return;
     }
-
+    
+    let isMounted = true;
     const settingsDocRef = getSettingsDocRef();
     if (!settingsDocRef) return;
     
@@ -189,28 +199,23 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             applyTheme(data.theme || 'musgo');
             setLogoUrl(data.logoUrl || null);
           } else {
-             // This is a new user or settings haven't been saved yet.
-             // Apply default theme and clear other settings without showing an error.
              applyTheme('musgo');
              setAppNameState('');
              setLogoUrl(null);
           }
         }
       })
-      .catch((error) => {
-        if (error.code === 'permission-denied') {
-          // This can happen on first load if rules are strict.
-          // We gracefully apply defaults.
-          applyTheme('musgo');
-          setAppNameState('');
-          setLogoUrl(null);
-        } else {
+      .catch((error: any) => {
+        if (error.code !== 'permission-denied') {
           console.error('Error fetching app settings:', error);
           toast({
               variant: 'destructive',
               title: 'Erro ao carregar configurações',
-              description: 'Não foi possível buscar suas configurações salvas.',
+              description: 'Não foi possível buscar suas configurações de aparência.',
           });
+        }
+        // Fallback to defaults on error
+        if (isMounted) {
           applyTheme('musgo');
           setAppNameState('');
           setLogoUrl(null);
@@ -224,7 +229,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       
     return () => { isMounted = false; }
 
-  }, [firestore, user, isUserLoading, toast, applyTheme, getSettingsDocRef]);
+  }, [isProfileLoading, user, getSettingsDocRef, applyTheme, toast]);
   
   const setAppName = async (name: string) => {
     const settingsDocRef = getSettingsDocRef();
@@ -305,7 +310,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setAppName,
     logoUrl,
     setLogoUrl,
-    isLoading: isLoading || isUserLoading,
+    isLoading: isProfileLoading || isLoading,
     themes,
     selectedTheme,
     setSelectedTheme,

@@ -34,60 +34,66 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [firestore, user]);
 
   useEffect(() => {
-    // Only fetch if we have a user.
+    if (isUserLoading) {
+      return; // Wait for the user object to be available.
+    }
+  
+    // If there's no user, we clear profile data and stop loading.
     if (!user) {
-      if (!isUserLoading) {
-        // If user loading is finished and there's no user, we're done.
-        setIsLoadingPasses(false);
-      }
+      setProfileState(null);
+      sessionStorage.removeItem('sgs-profile');
+      setIsProfileLoading(false);
+      setIsLoadingPasses(false);
       return;
     }
   
     // Reset loading state when user changes
+    setIsProfileLoading(true);
     setIsLoadingPasses(true);
 
-    const fetchPasses = async () => {
+    const fetchInitialData = async () => {
+      // 1. Fetch profile from session storage
+      try {
+        const savedProfile = sessionStorage.getItem('sgs-profile') as Profile | null;
+        setProfileState(savedProfile);
+      } catch (error) {
+        console.error("Could not read profile from session storage:", error);
+        setProfileState(null); // Ensure a clean state on error
+      }
+
+      // 2. Fetch passes from Firestore
       const docRef = getSettingsDocRef();
       if (!docRef) {
+        setPasses({ adminPass: '', observerPass: '' });
         setIsLoadingPasses(false);
+        setIsProfileLoading(false);
         return;
       }
+
       try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
           setPasses({ adminPass: data.adminPass || '', observerPass: data.observerPass || '' });
         } else {
-          // If doc doesn't exist, it means no passes are set. This is a valid state for a new user.
+          // Explicitly handle the case for a new user where the doc doesn't exist yet.
           setPasses({ adminPass: '', observerPass: '' });
         }
       } catch (error: any) {
-        // On permission denied or other errors, also default to no passes to avoid breaking the app.
         if (error.code !== 'permission-denied') {
-            console.error("Error fetching profile passes:", error);
+          console.error("Error fetching profile passes:", error);
         }
+        // Ensure a clean state on error
         setPasses({ adminPass: '', observerPass: '' });
       } finally {
+        // Mark both as finished loading
         setIsLoadingPasses(false);
+        setIsProfileLoading(false);
       }
     };
 
-    fetchPasses();
+    fetchInitialData();
   }, [user, isUserLoading, getSettingsDocRef]);
-
-
-  useEffect(() => {
-    try {
-      const savedProfile = sessionStorage.getItem('sgs-profile') as Profile | null;
-      if (savedProfile) {
-        setProfileState(savedProfile);
-      }
-    } catch (error) {
-      console.error("Could not read profile from session storage:", error);
-    } finally {
-      setIsProfileLoading(false);
-    }
-  }, []);
 
   const setProfile = (profile: Profile | null) => {
     setProfileState(profile);
@@ -103,7 +109,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   };
 
   const validatePass = async (profileToValidate: Profile, pass: string): Promise<boolean> => {
-    // If passes are still loading, validation fails.
     if (isLoadingPasses) return false;
 
     const correctPass = profileToValidate === 'admin' ? passes.adminPass : passes.observerPass;
@@ -116,12 +121,15 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     return isValid;
   };
 
+  // The overall loading state is true if any of the critical async operations are running.
+  const isOverallLoading = isUserLoading || isProfileLoading || isLoadingPasses;
+
   const contextValue: ProfileContextType = {
     profile,
     setProfile,
     clearProfile,
     validatePass,
-    isProfileLoading: isUserLoading || isProfileLoading || (!!user && isLoadingPasses),
+    isProfileLoading: isOverallLoading,
     isLoadingPasses,
     passes,
   };

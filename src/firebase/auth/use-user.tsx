@@ -1,36 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { type User, onAuthStateChanged, AuthError } from 'firebase/auth';
-import { useAuth } from '@/firebase';
+import { useContext } from 'react';
+import { FirebaseContext, FirebaseContextState } from '@/firebase/provider';
 
-export function useUser() {
-  const auth = useAuth();
-  const [user, setUser] = useState<User | null>(null);
-  const [isUserLoading, setIsUserLoading] = useState(true);
-  const [userError, setUserError] = useState<AuthError | null>(null);
+// This is the return type for the useUser hook.
+export interface UserHookResult {
+  user: FirebaseContextState['user'];
+  isUserLoading: FirebaseContextState['isUserLoading'];
+  userError: FirebaseContextState['userError'];
+}
 
-  useEffect(() => {
-    if (!auth) {
-      // Auth service not available yet, wait for it.
-      // The loading state remains true until auth is available.
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, 
-      (user) => {
-        setUser(user);
-        setIsUserLoading(false);
-      },
-      (error: Error) => {
-        console.error("Authentication error in useUser:", error);
-        setUserError(error as AuthError);
-        setIsUserLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [auth]);
+/**
+ * Hook specifically for accessing the authenticated user's state.
+ * This provides the User object, loading status, and any auth errors
+ * from the central FirebaseProvider.
+ * @returns {UserHookResult} Object with user, isUserLoading, userError.
+ */
+export function useUser(): UserHookResult {
+  const context = useContext(FirebaseContext);
+  if (context === undefined) {
+    throw new Error('useUser must be used within a FirebaseProvider.');
+  }
+  
+  const { user, isUserLoading, userError } = context;
 
   return { user, isUserLoading, userError };
 }
