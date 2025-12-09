@@ -49,6 +49,7 @@ import {
   SidebarProvider
 } from '@/components/ui/sidebar';
 import { Loader2 } from 'lucide-react';
+import { ScrollArea } from './ui/scroll-area';
 
 function Loader() {
   return (
@@ -270,11 +271,13 @@ function MainAppLayout() {
               </div>
             </div>
           </header>
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-             <div className="w-full space-y-6">
-              {renderContent()}
-            </div>
-          </main>
+          <ScrollArea className="flex-1">
+            <main className="p-4 md:p-6 lg:p-8">
+              <div className="w-full space-y-6">
+                {renderContent()}
+              </div>
+            </main>
+          </ScrollArea>
         </div>
       </SidebarInset>
     </SidebarProvider>
