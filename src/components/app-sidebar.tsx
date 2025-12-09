@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -70,7 +69,6 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   
   const handlePageChange = (page: string) => {
     setActivePage(page);
-    // This logic ensures the correct parent menu is open when a sub-item is clicked.
     const subMenuParents: Record<string, string> = {
       'register-occurrence': 'acidentes',
       'occurrence-report': 'acidentes',
@@ -104,8 +102,6 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     if (parentMenu) {
       setOpenSubMenu(parentMenu);
     } else {
-      // For top-level items, we can decide to close other submenus
-      // or handle as needed. Here we close them.
       if (!['help', 'informacoes'].includes(page)) {
           setOpenSubMenu(null);
       }
@@ -668,5 +664,3 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     </>
   );
 }
-
-    
