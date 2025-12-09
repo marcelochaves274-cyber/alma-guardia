@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from '@/lib/utils';
-import { CheckIcon, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 interface MultiSelectFilterProps {
   placeholder: string;
@@ -60,13 +60,13 @@ export function MultiSelectFilter({ placeholder, options, selected, onChange, di
                 onClick={() => handleSelect(option.value)}
               >
                 <Checkbox
-                  id={`check-${option.value}-${placeholder}`}
+                  id={`check-${option.value}-${placeholder.replace(/\s/g, '')}`}
                   checked={selected.includes(option.value)}
                   onCheckedChange={() => handleSelect(option.value)}
                   className="h-4 w-4"
                 />
                 <label
-                  htmlFor={`check-${option.value}-${placeholder}`}
+                  htmlFor={`check-${option.value}-${placeholder.replace(/\s/g, '')}`}
                   className="w-full text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
                   {option.label}
