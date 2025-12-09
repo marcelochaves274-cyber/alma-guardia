@@ -34,6 +34,18 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [firestore, user]);
 
   useEffect(() => {
+    // Only fetch if we have a user.
+    if (!user) {
+      if (!isUserLoading) {
+        // If user loading is finished and there's no user, we're done.
+        setIsLoadingPasses(false);
+      }
+      return;
+    }
+  
+    // Reset loading state when user changes
+    setIsLoadingPasses(true);
+
     const fetchPasses = async () => {
       const docRef = getSettingsDocRef();
       if (!docRef) {
@@ -46,6 +58,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           const data = docSnap.data();
           setPasses({ adminPass: data.adminPass || '', observerPass: data.observerPass || '' });
         } else {
+          // If doc doesn't exist, it means no passes are set. This is a valid state.
           setPasses({ adminPass: '', observerPass: '' });
         }
       } catch (error) {
@@ -55,12 +68,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         setIsLoadingPasses(false);
       }
     };
-    if(user){
-        fetchPasses();
-    } else if (!isUserLoading) {
-        setIsLoadingPasses(false);
-    }
+
+    fetchPasses();
   }, [user, isUserLoading, getSettingsDocRef]);
+
 
   useEffect(() => {
     try {
@@ -89,21 +100,25 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   };
 
   const validatePass = async (profileToValidate: Profile, pass: string): Promise<boolean> => {
+    // If passes are still loading, validation fails.
+    if (isLoadingPasses) return false;
+
     const correctPass = profileToValidate === 'admin' ? passes.adminPass : passes.observerPass;
     const isValid = correctPass === pass;
+    
     if (isValid) {
       setProfile(profileToValidate);
     }
+    
     return isValid;
   };
-
 
   const contextValue = {
     profile,
     setProfile,
     clearProfile,
     validatePass,
-    isProfileLoading: isProfileLoading || (user && isLoadingPasses),
+    isProfileLoading: isUserLoading || isProfileLoading || (!!user && isLoadingPasses),
     isLoadingPasses,
     passes,
   };
@@ -118,3 +133,4 @@ export function useProfile() {
   }
   return context;
 }
+
