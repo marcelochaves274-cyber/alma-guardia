@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -87,18 +86,26 @@ function MainAppLayout() {
   const { appName, logoUrl } = useAppSettings();
 
   useEffect(() => {
-    // This effect handles redirection safely after the component has rendered.
+    // Redirect if user is not logged in and we are done loading.
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || isProfileLoading || !user) {
+  // Main loading gate. Waits for both user and profile information.
+  if (isUserLoading || isProfileLoading) {
     return <Loader />;
   }
   
-  if (!profile) {
+  // If user is logged in, but no profile is selected, show selector.
+  if (user && !profile) {
     return <ProfileSelector />;
+  }
+
+  // If there's no user and we are past the loading state, redirect has been initiated.
+  // Render a loader to prevent flicker.
+  if (!user) {
+    return <Loader />;
   }
   
   const handlePageChange = (page: string, options?: { filters?: ReportFilters, prefill?: any }) => {
