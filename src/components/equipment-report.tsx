@@ -222,7 +222,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Relatório de Equipamentos</CardTitle>
+          <CardTitle>Relatório Equipamentos</CardTitle>
           <CardDescription>Filtre e visualize os equipamentos registrados no sistema.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
