@@ -61,9 +61,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           // If doc doesn't exist, it means no passes are set. This is a valid state for a new user.
           setPasses({ adminPass: '', observerPass: '' });
         }
-      } catch (error) {
-        console.error("Error fetching profile passes:", error);
-        // On error, also default to no passes to avoid breaking the app.
+      } catch (error: any) {
+        // On permission denied or other errors, also default to no passes to avoid breaking the app.
+        if (error.code !== 'permission-denied') {
+            console.error("Error fetching profile passes:", error);
+        }
         setPasses({ adminPass: '', observerPass: '' });
       } finally {
         setIsLoadingPasses(false);
