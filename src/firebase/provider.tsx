@@ -54,9 +54,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         setUser(firebaseUser);
         setIsUserLoading(false);
       },
-      (error: AuthError) => { // Auth listener error
+      (error: Error) => { // Auth listener error
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
-        setUserError(error);
+        setUserError(error as AuthError);
         setIsUserLoading(false);
       }
     );
@@ -126,3 +126,4 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   
   return memoized;
 }
+
