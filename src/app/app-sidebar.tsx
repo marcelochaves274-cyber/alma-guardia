@@ -32,7 +32,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   const { state } = useSidebar();
-  const { appName, logoUrl, isLoading } = useAppSettings();
+  const { logoUrl, isLoading } = useAppSettings();
   const { user } = useUser();
   const firebaseApp = useFirebaseApp();
   const router = useRouter();
@@ -70,7 +70,6 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   
   const handlePageChange = (page: string) => {
     setActivePage(page);
-    // This logic ensures the correct parent menu is open when a sub-item is clicked.
     const subMenuParents: Record<string, string> = {
       'register-occurrence': 'acidentes',
       'occurrence-report': 'acidentes',
@@ -104,8 +103,6 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     if (parentMenu) {
       setOpenSubMenu(parentMenu);
     } else {
-      // For top-level items, we can decide to close other submenus
-      // or handle as needed. Here we close them.
       if (!['help', 'informacoes'].includes(page)) {
           setOpenSubMenu(null);
       }
@@ -612,7 +609,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                         isActive={activePage === 'manage-pops'}
                         onClick={() => handlePageChange('manage-pops')}
                     >
-                        Ger. Atividade POP TCR
+                        Gerenciar POP/TCR
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
@@ -620,7 +617,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                         isActive={activePage === 'manage-fauna-flora-geo'}
                         onClick={() => handlePageChange('manage-fauna-flora-geo')}
                     >
-                        Gerenciar Fa/Fl/Ge
+                        Gerenciar F/F/G
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
@@ -668,3 +665,5 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     </>
   );
 }
+
+    
