@@ -14,7 +14,7 @@ import { ManageLocations } from '@/components/manage-locations';
 import { ManageMap } from '@/components/manage-map';
 import { OccurrenceReport } from '@/components/occurrence-report';
 import { MapReport } from '@/components/map-report';
-import { AppSidebar } from '@/app/app-sidebar';
+import { AppSidebar } from '@/components/app-sidebar';
 import { RegisterTreatment } from '@/components/register-treatment';
 import { TreatmentReport } from '@/components/treatment-report';
 import { TreatmentMapReport } from '@/components/treatment-map-report';
