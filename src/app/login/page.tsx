@@ -48,8 +48,8 @@ export default function LoginPage() {
   const [isAuthInProgress, setIsAuthInProgress] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
 
-  // Se o usuário já está logado (e não está carregando), a página principal vai redirecioná-lo.
-  // Apenas mostramos um loader aqui para evitar que o formulário pisque na tela.
+  // Se o usuário está logado e tentou acessar /login, ele será redirecionado
+  // pela página principal. Apenas mostramos um loader aqui para a transição.
   if (isUserLoading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">

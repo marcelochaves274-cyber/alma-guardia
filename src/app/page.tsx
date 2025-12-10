@@ -5,6 +5,7 @@ import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useProfile } from '@/context/profile-context';
 
 function Loader() {
   return (
@@ -17,6 +18,7 @@ function Loader() {
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
+  const { isProfileLoading } = useProfile();
   const router = useRouter();
 
   useEffect(() => {
@@ -26,14 +28,14 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // Se o estado do usuário ainda está carregando, exiba um loader para evitar
-  // que o AppLayout seja renderizado prematuramente.
-  if (isUserLoading) {
+  // Exibe o loader enquanto o usuário ou o perfil estiverem carregando.
+  // Isso garante que temos todas as informações antes de tentar renderizar qualquer coisa.
+  if (isUserLoading || isProfileLoading) {
     return <Loader />;
   }
 
-  // Se não houver usuário, o redirecionamento foi acionado, então exiba um loader
-  // para uma transição suave.
+  // Se, após o carregamento, não houver usuário, significa que o redirecionamento
+  // para o login está em andamento. Mostramos o loader para uma transição suave.
   if (!user) {
     return <Loader />;
   }

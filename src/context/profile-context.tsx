@@ -32,11 +32,13 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [firestore, user]);
 
   useEffect(() => {
+    // We can't do anything until the user's auth state is resolved.
     if (isUserLoading) {
       setIsLoadingPasses(true);
       return;
     }
     
+    // If there is no user, clear everything and stop.
     if (!user) {
       setProfileState(null);
       try {
@@ -48,17 +50,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       return;
     }
   
+    // If we have a user, proceed to load their passes and check sessionStorage.
     const fetchInitialData = async () => {
-      try {
-        const savedProfile = sessionStorage.getItem('sgs-profile') as Profile | null;
-        if(savedProfile){
-          setProfileState(savedProfile);
-        }
-      } catch (error) {
-        console.error("Could not read profile from session storage:", error);
-        setProfileState(null);
-      }
-
+      // We start by assuming no profile is selected.
+      setProfileState(null);
+      
       const docRef = getSettingsDocRef();
       if (!docRef) {
         setPasses({ adminPass: '123456', observerPass: '123456' });
@@ -72,11 +68,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           const data = docSnap.data();
           setPasses({ adminPass: data.adminPass || '123456', observerPass: data.observerPass || '123456' });
         } else {
+          // If the document doesn't exist, create it with default passes
           const defaultPasses = { adminPass: '123456', observerPass: '123456' };
           await setDoc(docRef, defaultPasses);
           setPasses(defaultPasses);
         }
       } catch (error: any) {
+        // In case of a permissions error or other issue, use default passes.
+        // This is a failsafe to ensure the app is still usable.
         if (error.code !== 'permission-denied') {
           console.error("Error fetching profile passes:", error);
         }
@@ -123,6 +122,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     return isValid;
   };
 
+  // The profile is considered "loading" if the user is loading OR we are still fetching the passes.
   const contextValue: ProfileContextType = {
     profile,
     setProfile,
