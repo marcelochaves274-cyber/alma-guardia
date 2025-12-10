@@ -70,7 +70,7 @@ type ReportFilters = {
 }
 
 function MainAppLayout() {
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const { profile, isProfileLoading } = useProfile();
   const router = useRouter();
 
@@ -88,14 +88,12 @@ function MainAppLayout() {
   const { appName, logoUrl } = useAppSettings();
 
   useEffect(() => {
-    // Redirect if user is not logged in and we are done loading.
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
+    // The main page already handles redirection if the user is not logged in
+    // after the initial loading is complete.
+  }, [user, router]);
 
   // Main loading gate. Waits for both user and profile information.
-  if (isUserLoading || isProfileLoading) {
+  if (isProfileLoading) {
     return <Loader />;
   }
   
@@ -104,8 +102,8 @@ function MainAppLayout() {
     return <ProfileSelector />;
   }
 
-  // If there's no user and we are past the loading state, redirect has been initiated.
-  // Render a loader to prevent flicker.
+  // If there's no user and we are past the loading state, redirect has been initiated
+  // by the root page.tsx. Render a loader to prevent flicker during redirect.
   if (!user) {
     return <Loader />;
   }

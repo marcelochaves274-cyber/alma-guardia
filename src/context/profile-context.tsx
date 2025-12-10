@@ -20,7 +20,6 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<Profile | null>(null);
-  const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [passes, setPasses] = useState<{ adminPass: string; observerPass: string }>({ adminPass: '', observerPass: '' });
   const [isLoadingPasses, setIsLoadingPasses] = useState(true);
 
@@ -33,18 +32,15 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [firestore, user]);
 
   useEffect(() => {
-    // Start loading whenever the user status is uncertain.
+    // If the main user object is loading, or there's no user, we can't determine profile state yet.
     if (isUserLoading) {
-      setIsProfileLoading(true);
       setIsLoadingPasses(true);
-      return; 
+      return;
     }
-  
-    // If there's no user, we are done. No profile is active.
+    
     if (!user) {
       setProfileState(null);
       sessionStorage.removeItem('sgs-profile');
-      setIsProfileLoading(false);
       setIsLoadingPasses(false);
       return;
     }
@@ -54,7 +50,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       // Optimistically try to load profile from session storage for faster UI response.
       try {
         const savedProfile = sessionStorage.getItem('sgs-profile') as Profile | null;
-        setProfileState(savedProfile);
+        if(savedProfile){
+          setProfileState(savedProfile);
+        }
       } catch (error) {
         console.error("Could not read profile from session storage:", error);
         setProfileState(null);
@@ -64,7 +62,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       if (!docRef) {
         setPasses({ adminPass: '123456', observerPass: '123456' });
         setIsLoadingPasses(false);
-        setIsProfileLoading(false);
         return;
       }
 
@@ -87,9 +84,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         // Fallback to default passes on error.
         setPasses({ adminPass: '123456', observerPass: '123456' });
       } finally {
-        // Mark loading as complete for both passes and the overall profile state.
         setIsLoadingPasses(false);
-        setIsProfileLoading(false);
       }
     };
 
@@ -127,7 +122,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     setProfile,
     clearProfile,
     validatePass,
-    isProfileLoading,
+    // The profile is loading if the user state is loading OR we are still fetching passes.
+    isProfileLoading: isUserLoading || isLoadingPasses,
     isLoadingPasses,
     passes,
   };
