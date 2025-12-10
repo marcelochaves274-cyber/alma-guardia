@@ -59,11 +59,11 @@ export function MultiSelectFilter({
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 max-h-64 overflow-hidden">
         <Command>
             <CommandInput placeholder="Buscar..." />
             <CommandList>
-                <ScrollArea className="max-h-60">
+                <ScrollArea className="max-h-56">
                     <CommandEmpty>Nenhum resultado.</CommandEmpty>
                     <CommandGroup>
                         {options.map((option) => (
@@ -72,7 +72,7 @@ export function MultiSelectFilter({
                             onSelect={() => handleSelect(option.value)}
                             className="cursor-pointer"
                         >
-                            <Check
+                             <Check
                                 className={cn(
                                 "mr-2 h-4 w-4",
                                 selected.includes(option.value) ? "opacity-100" : "opacity-0"
