@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -8,7 +7,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { ChevronDown } from "lucide-react"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 
 interface MultiSelectFilterProps {
   placeholder: string
@@ -62,39 +60,30 @@ export function MultiSelectFilter({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command>
-          <CommandInput placeholder="Pesquisar..." />
-          <CommandList>
-            <CommandEmpty>Nenhum resultado.</CommandEmpty>
-            <CommandGroup>
-              <ScrollArea className="max-h-60">
+        <ScrollArea className="max-h-60">
+            <div className="p-1">
                 {options.map((option) => (
-                    <CommandItem
+                    <div
                         key={option.value}
-                        onSelect={() => handleSelect(option.value)}
-                        className="cursor-pointer"
+                        className="flex items-center space-x-2 p-2 hover:bg-accent rounded-md cursor-pointer"
+                        onClick={() => handleSelect(option.value)}
                     >
                         <Checkbox
                             id={`check-${option.value}-${placeholder.replace(/\s/g, "")}`}
                             checked={selected.includes(option.value)}
                             onCheckedChange={() => handleSelect(option.value)}
-                            className="mr-2 h-4 w-4"
+                            className="h-4 w-4"
                         />
                         <label
-                            htmlFor={`check-${option.value}-${placeholder.replace(
-                                /\s/g,
-                                ""
-                            )}`}
+                            htmlFor={`check-${option.value}-${placeholder.replace(/\s/g, "")}`}
                             className="w-full text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                         >
                             {option.label}
                         </label>
-                    </CommandItem>
+                    </div>
                 ))}
-              </ScrollArea>
-            </CommandGroup>
-          </CommandList>
-        </Command>
+            </div>
+        </ScrollArea>
       </PopoverContent>
     </Popover>
   )
