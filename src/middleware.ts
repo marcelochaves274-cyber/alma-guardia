@@ -4,19 +4,22 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('firebase-auth-token');
 
-  // Se o usuário está tentando acessar a página de login, permita o acesso.
-  if (pathname.startsWith('/login')) {
-    return NextResponse.next();
-  }
-  
-  // Se não houver token e o usuário não estiver na página de login,
-  // redirecione-o para a página de login.
-  if (!token) {
-    const loginUrl = new URL('/login', request.url);
-    return NextResponse.redirect(loginUrl);
+  const isLoginPage = pathname.startsWith('/login');
+
+  // Se o usuário está logado (tem token) e tenta acessar a página de login
+  if (token && isLoginPage) {
+    // Redireciona para a página inicial, quebrando o loop.
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // Se houver um token, permita que a solicitação continue.
+  // Se o usuário não está logado e não está tentando acessar a página de login
+  if (!token && !isLoginPage) {
+    // Redireciona para a página de login.
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Em todos os outros casos (usuário logado acessando outras páginas, ou usuário não logado acessando o login),
+  // permite que a solicitação continue.
   return NextResponse.next();
 }
 
