@@ -1,9 +1,22 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Este middleware está desativado para simplificar a lógica de autenticação
-// e resolver conflitos de carregamento. A verificação de rota agora é 
-// gerenciada no lado do cliente (em page.tsx e login/page.tsx).
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const token = request.cookies.get('firebase-auth-token');
+
+  // Se o usuário está tentando acessar a página de login, permita o acesso.
+  if (pathname.startsWith('/login')) {
+    return NextResponse.next();
+  }
+  
+  // Se não houver token e o usuário não estiver na página de login,
+  // redirecione-o para a página de login.
+  if (!token) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Se houver um token, permita que a solicitação continue.
   return NextResponse.next();
 }
 
