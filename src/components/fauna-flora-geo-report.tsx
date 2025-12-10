@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -231,7 +232,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Relatório de Fauna, Flora & Geo</CardTitle>
+          <CardTitle>Relatório de Fauna, Flora &amp; Geo</CardTitle>
           <CardDescription>
             Filtre e visualize os registros do sistema.
           </CardDescription>

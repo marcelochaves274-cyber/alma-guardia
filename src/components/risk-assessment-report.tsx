@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -394,11 +395,11 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
                         </div>
                          <div>
                            <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
-                           <p>
+                           <div>
                               <Badge className={cn(getRiskLevelProperties(selectedAssessment.riskLevel).className)}>
                                   {getRiskLevelProperties(selectedAssessment.riskLevel).label}
                               </Badge>
-                           </p>
+                           </div>
                         </div>
                       </div>
                   </div>

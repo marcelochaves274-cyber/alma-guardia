@@ -480,11 +480,11 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
                     </div>
                      <div>
                         <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
-                        <p>
+                        <div>
                           <Badge className={cn(getRiskLevelProperties(selectedTreatment.riskLevel).className)}>
                               {getRiskLevelProperties(selectedTreatment.riskLevel).label}
                           </Badge>
-                        </p>
+                        </div>
                     </div>
                  </div>
                  <div>
