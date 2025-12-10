@@ -47,16 +47,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isAuthInProgress, setIsAuthInProgress] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
-  
-  // This state will track if we are waiting for a redirect after a successful auth action.
-  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      setIsRedirecting(true); // Set redirecting flag
-      router.push('/');
-    }
-  }, [user, isUserLoading, router]);
+  // Se o usuário já está logado (e não está carregando), a página principal vai redirecioná-lo.
+  // Apenas mostramos um loader aqui para evitar que o formulário pisque na tela.
+  if (isUserLoading || user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const getFriendlyErrorMessage = (errorCode: string) => {
     switch (errorCode) {
@@ -92,9 +92,10 @@ export default function LoginPage() {
       } else {
         await createUserWithEmailAndPassword(initializedAuth, email, password);
       }
-      // On success, the useEffect will handle the redirection.
-      // We set isRedirecting here to provide immediate feedback to the user.
-      setIsRedirecting(true);
+      // On success, the main page will handle the redirection.
+      // We wait for the useUser hook to update.
+      router.push('/');
+
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -103,7 +104,6 @@ export default function LoginPage() {
       });
       setIsAuthInProgress(false);
     }
-    // Don't set isAuthInProgress to false on success, as the page will redirect.
   };
   
   const handlePasswordReset = async () => {
@@ -125,14 +125,6 @@ export default function LoginPage() {
       setIsAuthInProgress(false);
     }
   };
-
-  if (isUserLoading || isRedirecting) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background lg:grid lg:grid-cols-2">
