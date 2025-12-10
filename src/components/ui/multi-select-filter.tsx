@@ -3,16 +3,10 @@
 import * as React from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import { Check, ChevronsUpDown } from 'lucide-react';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+import { ChevronDown } from "lucide-react"
 
 interface MultiSelectFilterProps {
   placeholder: string
@@ -42,14 +36,14 @@ export function MultiSelectFilter({
   )
 
   const getButtonText = () => {
-    if (selected.length === 0) return placeholder;
-    if (selected.length === options.length) return "Todos selecionados";
+    if (selected.length === 0) return placeholder
+    if (selected.length === options.length) return "Todos selecionados"
     if (selected.length === 1) {
-      const option = options.find((o) => o.value === selected[0]);
-      return option?.label || placeholder;
+      const option = options.find((o) => o.value === selected[0])
+      return option?.label || placeholder
     }
-    return `${selected.length} selecionados`;
-  };
+    return `${selected.length} selecionados`
+  }
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -62,33 +56,37 @@ export function MultiSelectFilter({
           disabled={disabled}
         >
           <span className="truncate">{getButtonText()}</span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-         <Command>
-            <CommandInput placeholder="Pesquisar..." />
-            <CommandList>
-              <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
-              <CommandGroup>
-                {options.map((option) => (
-                    <CommandItem
-                        key={option.value}
-                        onSelect={() => handleSelect(option.value)}
-                        className="cursor-pointer"
-                    >
-                        <Check
-                        className={cn(
-                            'mr-2 h-4 w-4',
-                            selected.includes(option.value) ? 'opacity-100' : 'opacity-0'
-                        )}
-                        />
-                        {option.label}
-                    </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-        </Command>
+        <ScrollArea className="max-h-60">
+          <div className="p-1">
+            {options.map((option) => (
+              <div
+                key={option.value}
+                className="flex items-center space-x-2 p-2 hover:bg-accent rounded-md cursor-pointer"
+                onClick={() => handleSelect(option.value)}
+              >
+                <Checkbox
+                  id={`check-${option.value}-${placeholder.replace(/\s/g, "")}`}
+                  checked={selected.includes(option.value)}
+                  onCheckedChange={() => handleSelect(option.value)}
+                  className="h-4 w-4"
+                />
+                <label
+                  htmlFor={`check-${option.value}-${placeholder.replace(
+                    /\s/g,
+                    ""
+                  )}`}
+                  className="w-full text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  {option.label}
+                </label>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
       </PopoverContent>
     </Popover>
   )
