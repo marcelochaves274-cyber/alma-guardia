@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -23,7 +24,7 @@ import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Pencil, Trash2, Loader2, Eye } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,11 +36,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { MultiSelectFilter } from './multi-select-filter';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
+import { ScrollArea } from './ui/scroll-area';
 
 interface FaunaFloraGeoRecord {
   id: string;
@@ -68,6 +78,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
   const { toast } = useToast();
   
   const [records, setRecords] = useState<FaunaFloraGeoRecord[]>([]);
+  const [selectedRecord, setSelectedRecord] = useState<FaunaFloraGeoRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
@@ -265,89 +276,141 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
           </div>
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Resultados</CardTitle>
-          <CardDescription>
-            Foram encontrados {filteredRecords.length} registros.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Espécie/Tipo</TableHead>
-                <TableHead>Local</TableHead>
-                <TableHead>Análise</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                renderSkeletons()
-              ) : filteredRecords.length > 0 ? (
-                filteredRecords.map((rec) => (
-                  <TableRow key={rec.id}>
-                    <TableCell>{rec.date ? format(rec.date, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
-                    <TableCell>{rec.speciesType}</TableCell>
-                    <TableCell>{rec.location}</TableCell>
-                    <TableCell>
-                      {rec.analysis && analysisMapping[rec.analysis] ? (
-                          <Badge className={cn(analysisMapping[rec.analysis].className)}>
-                              {analysisMapping[rec.analysis].label}
-                          </Badge>
-                      ) : 'N/A'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar registro" onClick={() => handleEdit(rec)}>
-                          <Pencil className="h-4 w-4" />
-                       </Button>
-                       <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                             <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                aria-label="Excluir registro"
-                                disabled={isDeleting === rec.id}
-                              >
-                                {isDeleting === rec.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                              <AlertDialogHeader>
-                                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                  Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro de <span className="font-semibold">{rec.speciesType}</span> do dia <span className="font-semibold">{rec.date ? format(rec.date, 'dd/MM/yyyy') : ''}</span>.
-                                  </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                      onClick={() => handleDelete(rec.id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                      Sim, excluir
-                                  </AlertDialogAction>
-                              </AlertDialogFooter>
-                          </AlertDialogContent>
-                       </AlertDialog>
+      <Dialog>
+        <Card>
+          <CardHeader>
+            <CardTitle>Resultados</CardTitle>
+            <CardDescription>
+              Foram encontrados {filteredRecords.length} registros.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Espécie/Tipo</TableHead>
+                  <TableHead>Local</TableHead>
+                  <TableHead>Análise</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  renderSkeletons()
+                ) : filteredRecords.length > 0 ? (
+                  filteredRecords.map((rec) => (
+                    <TableRow key={rec.id}>
+                      <TableCell>{rec.date ? format(rec.date, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
+                      <TableCell>{rec.speciesType}</TableCell>
+                      <TableCell>{rec.location}</TableCell>
+                      <TableCell>
+                        {rec.analysis && analysisMapping[rec.analysis] ? (
+                            <Badge className={cn(analysisMapping[rec.analysis].className)}>
+                                {analysisMapping[rec.analysis].label}
+                            </Badge>
+                        ) : 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                         <DialogTrigger asChild>
+                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar registro" onClick={() => setSelectedRecord(rec)}>
+                               <Eye className="h-4 w-4" />
+                           </Button>
+                         </DialogTrigger>
+                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar registro" onClick={() => handleEdit(rec)}>
+                            <Pencil className="h-4 w-4" />
+                         </Button>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  aria-label="Excluir registro"
+                                  disabled={isDeleting === rec.id}
+                                >
+                                  {isDeleting === rec.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro de <span className="font-semibold">{rec.speciesType}</span> do dia <span className="font-semibold">{rec.date ? format(rec.date, 'dd/MM/yyyy') : ''}</span>.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                        onClick={() => handleDelete(rec.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                        Sim, excluir
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                         </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      {records.length === 0 ? "Nenhum registro encontrado." : "Nenhum registro encontrado com os filtros selecionados."}
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    {records.length === 0 ? "Nenhum registro encontrado." : "Nenhum registro encontrado com os filtros selecionados."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+        {selectedRecord && (
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Detalhes do Registro</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[70vh] pr-6">
+              <div className="space-y-4 py-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-semibold text-muted-foreground">Data do Registro</Label>
+                      <p>{format(selectedRecord.date, 'dd/MM/yyyy', { locale: ptBR })}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold text-muted-foreground">Local</Label>
+                      <p>{selectedRecord.location}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold text-muted-foreground">Espécie / Tipo</Label>
+                      <p>{selectedRecord.speciesType}</p>
+                    </div>
+                     <div>
+                      <Label className="font-semibold text-muted-foreground">Análise</Label>
+                      <div>
+                        {analysisMapping[selectedRecord.analysis] ? (
+                            <Badge className={cn(analysisMapping[selectedRecord.analysis].className)}>
+                                {analysisMapping[selectedRecord.analysis].label}
+                            </Badge>
+                        ) : 'N/A'}
+                      </div>
+                    </div>
+                 </div>
+                 <div>
+                    <Label className="font-semibold text-muted-foreground">Descrição</Label>
+                    <p className="whitespace-pre-wrap">{selectedRecord.description}</p>
+                 </div>
+              </div>
+            </ScrollArea>
+             <div className="flex justify-end pt-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="secondary">
+                        Fechar
+                    </Button>
+                </DialogClose>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 }
