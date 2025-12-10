@@ -3,10 +3,9 @@
 import * as React from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import { ChevronDown } from "lucide-react"
+import { Check, ChevronDown } from "lucide-react"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 
 interface MultiSelectFilterProps {
@@ -73,11 +72,13 @@ export function MultiSelectFilter({
                             onSelect={() => handleSelect(option.value)}
                             className="cursor-pointer"
                         >
-                            <Checkbox
-                            checked={selected.includes(option.value)}
-                            className="mr-2 h-4 w-4"
+                            <span className="truncate flex-1">{option.label}</span>
+                             <Check
+                                className={cn(
+                                "ml-2 h-4 w-4",
+                                selected.includes(option.value) ? "opacity-100" : "opacity-0"
+                                )}
                             />
-                            <span className="truncate">{option.label}</span>
                         </CommandItem>
                         ))}
                     </CommandGroup>
