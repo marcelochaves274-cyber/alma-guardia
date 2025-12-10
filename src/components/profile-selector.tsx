@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, MouseEvent } from 'react';
@@ -22,15 +21,21 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from './ui/button';
-import { Loader2, Shield, Users, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Shield, Users, Eye, EyeOff, LogOut } from 'lucide-react';
 import { useProfile, type Profile } from '@/context/profile-context';
 import { useToast } from '@/hooks/use-toast';
+import { getAuth, signOut } from 'firebase/auth';
+import { useFirebaseApp } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 type SelectedProfile = 'admin' | 'observer' | null;
 
 export function ProfileSelector() {
-  const { setProfile, validatePass, isLoadingPasses } = useProfile();
+  const { setProfile, validatePass, isLoadingPasses, clearProfile } = useProfile();
   const { toast } = useToast();
+  const firebaseApp = useFirebaseApp();
+  const router = useRouter();
+
 
   const [selectedProfile, setSelectedProfile] = useState<SelectedProfile>(null);
   const [pass, setPass] = useState('');
@@ -66,6 +71,27 @@ export function ProfileSelector() {
     const numericValue = value.replace(/\D/g, '');
     if (numericValue.length <= 6) {
       setPass(numericValue);
+    }
+  };
+  
+  const handleSignOut = async () => {
+    if (!firebaseApp) return;
+    const auth = getAuth(firebaseApp);
+    try {
+      await signOut(auth);
+      clearProfile(); // Clears session storage
+      router.push('/login');
+      toast({
+        title: 'Logout realizado',
+        description: 'Você foi desconectado com sucesso.',
+      })
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível fazer logout.',
+      })
     }
   };
 
@@ -104,6 +130,12 @@ export function ProfileSelector() {
                     <span>Carregando passes...</span>
                 </div>
             )}
+            <div className="mt-8 text-center">
+                <Button variant="ghost" onClick={handleSignOut} className="text-muted-foreground">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sair e trocar de usuário
+                </Button>
+            </div>
         </div>
 
         <AlertDialog open={!!selectedProfile} onOpenChange={() => setSelectedProfile(null)}>
