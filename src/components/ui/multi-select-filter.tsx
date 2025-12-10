@@ -65,9 +65,9 @@ export function MultiSelectFilter({
         <Command>
           <CommandInput placeholder="Pesquisar..." />
           <CommandList>
-            <ScrollArea className="max-h-60">
-                <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                <CommandGroup>
+            <CommandEmpty>Nenhum resultado.</CommandEmpty>
+            <CommandGroup>
+              <ScrollArea className="max-h-60">
                 {options.map((option) => (
                     <CommandItem
                         key={option.value}
@@ -91,8 +91,8 @@ export function MultiSelectFilter({
                         </label>
                     </CommandItem>
                 ))}
-                </CommandGroup>
-            </ScrollArea>
+              </ScrollArea>
+            </CommandGroup>
           </CommandList>
         </Command>
       </PopoverContent>
