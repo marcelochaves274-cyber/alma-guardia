@@ -17,13 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -55,6 +48,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
+import { MultiSelectFilter } from './ui/multi-select-filter';
 
 interface RiskAssessment {
   id: string;
@@ -91,7 +85,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  const [filterLocation, setFilterLocation] = useState<string | null>(null);
+  const [filterLocations, setFilterLocations] = useState<string[]>([]);
   
   const [locations, setLocations] = useState<string[]>([]);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
@@ -160,11 +154,11 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   }, [user, firestore, toast]);
 
   const filteredAssessments = useMemo(() => {
-    if (!filterLocation) {
+    if (filterLocations.length === 0) {
         return assessments;
     }
-    return assessments.filter(ass => ass.location === filterLocation);
-  }, [assessments, filterLocation]);
+    return assessments.filter(ass => filterLocations.includes(ass.location));
+  }, [assessments, filterLocations]);
 
 
   const handleDelete = async (assessmentId: string) => {
@@ -220,37 +214,17 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="max-w-sm space-y-2">
-            <Label htmlFor="location-filter">Filtrar por Local</Label>
-             <Select 
-                name="location-filter"
-                disabled={isLoadingLocations || locations.length === 0} 
-                onValueChange={(value) => setFilterLocation(value === "all" ? null : value)}
-                value={filterLocation || 'all'}
-            >
-                <SelectTrigger id="location-filter">
-                  <SelectValue placeholder={
-                    isLoadingLocations ? "Carregando locais..." : 
-                    locations.length === 0 ? "Nenhum local cadastrado" : "Selecione um local"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingLocations ? (
-                    <div className="flex items-center justify-center p-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    </div>
-                  ) : (
-                    <>
-                        <SelectItem value="all">Todos os locais</SelectItem>
-                        {locations.map((loc) => (
-                          <SelectItem key={loc} value={loc}>
-                            {loc}
-                          </SelectItem>
-                        ))}
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+             <MultiSelectFilter
+                placeholder="Filtrar por Local"
+                options={locations.map(l => ({ value: l, label: l }))}
+                selected={filterLocations}
+                onChange={setFilterLocations}
+                disabled={isLoadingLocations || locations.length === 0}
+            />
+            <Button onClick={() => setFilterLocations([])} variant="outline" className="w-full sm:w-auto">
+              Limpar Filtro
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -259,10 +233,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         <CardHeader>
           <CardTitle>Resultados</CardTitle>
           <CardDescription>
-            {filterLocation 
-                ? `Exibindo ${filteredAssessments.length} avaliações para ${filterLocation}.`
-                : `Exibindo todas as ${filteredAssessments.length} avaliações.`
-            }
+            Exibindo {filteredAssessments.length} avaliações.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -341,7 +312,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      {assessments.length === 0 ? "Nenhuma avaliação registrada ainda." : "Nenhuma avaliação encontrada para o local selecionado."}
+                      {assessments.length === 0 ? "Nenhuma avaliação registrada ainda." : "Nenhuma avaliação encontrada com os filtros selecionados."}
                     </TableCell>
                   </TableRow>
                 )}

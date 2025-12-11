@@ -67,6 +67,10 @@ const statusMapping: Record<string, { label: string, className: string }> = {
 
 const statusOptions = Object.entries(statusMapping).map(([key, { label }]) => ({ value: key, label }));
 
+const inspectionStatusOptions = [
+    { value: 'overdue', label: 'Vistoria Atrasada' }
+];
+
 const getInspectionStatus = (nextInspectionDate?: Date) => {
     if (!nextInspectionDate) {
         return { label: 'Sem data', className: 'bg-gray-400 text-white', isOverdue: false };
@@ -101,14 +105,14 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
   const [filterBrands, setFilterBrands] = useState<string[]>([]);
   const [filterStatuses, setFilterStatuses] = useState<string[]>([]);
-  const [filterOverdue, setFilterOverdue] = useState(preFilter?.status === 'overdue');
+  const [filterInspection, setFilterInspection] = useState<string[]>(preFilter?.status === 'overdue' ? ['overdue'] : []);
   
   // Dynamic options for selects
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   
   useEffect(() => {
-    setFilterOverdue(preFilter?.status === 'overdue');
+    setFilterInspection(preFilter?.status === 'overdue' ? ['overdue'] : []);
   }, [preFilter]);
   
   const getSettingsDocRef = useCallback((collectionName: string) => {
@@ -166,21 +170,22 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(eq.equipmentType);
       const brandMatch = filterBrands.length === 0 || filterBrands.includes(eq.brand);
       const statusMatch = filterStatuses.length === 0 || filterStatuses.includes(eq.status);
-      const overdueMatch = !filterOverdue || (eq.nextInspectionDate && isBefore(eq.nextInspectionDate.toDate(), today));
+      const inspectionMatch = filterInspection.length === 0 || 
+        (filterInspection.includes('overdue') && eq.nextInspectionDate && isBefore(eq.nextInspectionDate.toDate(), today));
 
-      return typeMatch && brandMatch && statusMatch && overdueMatch;
+      return typeMatch && brandMatch && statusMatch && inspectionMatch;
     }).sort((a,b) => {
         const dateA = a.nextInspectionDate?.toDate()?.getTime() || Infinity;
         const dateB = b.nextInspectionDate?.toDate()?.getTime() || Infinity;
         return dateA - dateB;
     });
-  }, [equipments, filterTypes, filterBrands, filterStatuses, filterOverdue]);
+  }, [equipments, filterTypes, filterBrands, filterStatuses, filterInspection]);
 
   const clearFilters = () => {
     setFilterTypes([]);
     setFilterBrands([]);
     setFilterStatuses([]);
-    setFilterOverdue(false);
+    setFilterInspection([]);
   }
 
   const handleDelete = async (equipmentId: string) => {
@@ -227,7 +232,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
           <CardDescription>Filtre e visualize os equipamentos registrados no sistema.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
             <MultiSelectFilter
               placeholder="Filtrar por Tipo"
               options={equipmentTypes.map(t => ({ value: t, label: t }))}
@@ -248,19 +253,13 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
               selected={filterStatuses}
               onChange={setFilterStatuses}
             />
-            <div className="flex items-center space-x-2">
-                <input
-                    type="checkbox"
-                    id="overdue-filter"
-                    checked={filterOverdue}
-                    onChange={(e) => setFilterOverdue(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <label htmlFor="overdue-filter" className="text-sm font-medium text-gray-700">
-                    Apenas vistorias atrasadas
-                </label>
-            </div>
-            <Button onClick={clearFilters} variant="outline" className="w-full lg:col-start-4">Limpar Filtros</Button>
+             <MultiSelectFilter
+              placeholder="Situação da Vistoria"
+              options={inspectionStatusOptions}
+              selected={filterInspection}
+              onChange={setFilterInspection}
+            />
+            <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
           </div>
         </CardContent>
       </Card>
@@ -343,5 +342,3 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     </div>
   );
 }
-
-    
