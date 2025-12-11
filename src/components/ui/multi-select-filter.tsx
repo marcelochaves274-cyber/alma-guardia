@@ -1,5 +1,4 @@
-
-'use client';
+"use client";
 
 import { useState, useCallback } from 'react';
 import {
@@ -9,7 +8,6 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -33,8 +31,8 @@ export function MultiSelectFilter({
   onChange,
   disabled,
 }: MultiSelectFilterProps) {
-  const [tempSelected, setTempSelected] = useState(selected);
   const [isOpen, setIsOpen] = useState(false);
+  const [tempSelected, setTempSelected] = useState(selected);
 
   const handleOpenChange = (open: boolean) => {
     if (open) {
@@ -77,8 +75,10 @@ export function MultiSelectFilter({
           disabled={disabled}
         >
           <span className="truncate">{getButtonText()}</span>
-          <ListFilter className="h-4 w-4 opacity-50" />
-          {selected.length > 0 && <Badge variant="secondary" className='ml-2'>{selected.length}</Badge>}
+          <div className='flex items-center'>
+            {selected.length > 0 && <Badge variant="secondary" className='ml-2'>{selected.length}</Badge>}
+            <ListFilter className="h-4 w-4 opacity-50 ml-2" />
+          </div>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md p-0">
@@ -86,7 +86,9 @@ export function MultiSelectFilter({
           <DialogHeader className="p-4 pb-0">
             <DialogTitle>{placeholder}</DialogTitle>
           </DialogHeader>
-          <CommandInput placeholder="Buscar..." className="mx-4 w-auto" />
+          <div className="p-4 pt-2">
+            <CommandInput placeholder="Buscar..." />
+          </div>
           <CommandList>
             <ScrollArea className="h-64">
                 <CommandEmpty>Nenhum resultado.</CommandEmpty>
@@ -109,8 +111,9 @@ export function MultiSelectFilter({
                 </CommandGroup>
             </ScrollArea>
           </CommandList>
-          <DialogFooter className="p-4 pt-0">
-            <Button type="button" onClick={applyFilter}>Aplicar Filtro</Button>
+          <DialogFooter className="p-4 border-t">
+             <Button variant="ghost" onClick={() => setTempSelected([])}>Limpar</Button>
+             <Button type="button" onClick={applyFilter}>Aplicar Filtro</Button>
           </DialogFooter>
         </Command>
       </DialogContent>

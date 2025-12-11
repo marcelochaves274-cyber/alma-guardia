@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -38,7 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { MultiSelectFilter } from './multi-select-filter';
+import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 
 interface Equipment {
   id: string;
