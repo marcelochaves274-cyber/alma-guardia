@@ -48,11 +48,10 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { MultiSelectFilter } from './multi-select-filter';
+import { MultiSelectFilter } from './ui/multi-select-filter';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { LocationFilterDialog } from './location-filter-dialog';
 
 
 interface Occurrence {
@@ -282,7 +281,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
               onChange={setFilterTypes}
               disabled={!occurrenceTypes || occurrenceTypes.length === 0}
             />
-            <LocationFilterDialog
+            <MultiSelectFilter
                 placeholder="Filtrar por Local"
                 options={locations.map(l => ({ value: l, label: l }))}
                 selected={filterLocations}
