@@ -52,6 +52,8 @@ import { MultiSelectFilter } from './multi-select-filter';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
+import { LocationFilterDialog } from './location-filter-dialog';
+
 
 interface Occurrence {
   id: string;
@@ -280,12 +282,12 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
               onChange={setFilterTypes}
               disabled={!occurrenceTypes || occurrenceTypes.length === 0}
             />
-            <MultiSelectFilter
-              placeholder="Filtrar por Local"
-              options={locations.map(l => ({ value: l, label: l }))}
-              selected={filterLocations}
-              onChange={setFilterLocations}
-              disabled={!locations || locations.length === 0}
+            <LocationFilterDialog
+                placeholder="Filtrar por Local"
+                options={locations.map(l => ({ value: l, label: l }))}
+                selected={filterLocations}
+                onChange={setFilterLocations}
+                disabled={!locations || locations.length === 0}
             />
             <MultiSelectFilter
               placeholder="Filtrar por Análise"
