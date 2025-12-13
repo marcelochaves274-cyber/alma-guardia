@@ -279,7 +279,7 @@ export function MapReport() {
                       alt="Mapa de ocorrências"
                       width={1920}
                       height={1080}
-                      className="w-full h-auto md:h-full md:w-auto object-contain rounded-md"
+                      className="h-full w-auto object-cover md:object-contain rounded-md"
                       priority
                     />
                     {clusters.map((cluster, index) => {
