@@ -141,7 +141,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       setOpenSubMenu(parentMenu);
     } else {
       if (!['help', 'informacoes', 'reminders'].includes(page)) {
-          setOpenSubMenu(null);
+          // Do not close submenus if a top-level item is clicked
       }
     }
   }

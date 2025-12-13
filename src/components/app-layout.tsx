@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -96,8 +97,10 @@ function MainAppLayout() {
 
   useEffect(() => {
     // When profile changes, reset the page to the default for that profile.
-    setActivePage(getDefaultPageForProfile(profile));
-  }, [profile]);
+    if (!isProfileLoading) {
+      setActivePage(getDefaultPageForProfile(profile));
+    }
+  }, [profile, isProfileLoading]);
 
   // Main loading gate. Waits for both user and profile information.
   if (isProfileLoading) {
