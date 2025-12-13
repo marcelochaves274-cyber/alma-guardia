@@ -74,7 +74,14 @@ function MainAppLayout() {
   const { profile, isProfileLoading } = useProfile();
   const router = useRouter();
 
-  const [activePage, setActivePage] = useState('reminders');
+  const getDefaultPageForProfile = (profile: string | null) => {
+    if (profile === 'observer') {
+      return 'register-notice';
+    }
+    return 'reminders';
+  };
+
+  const [activePage, setActivePage] = useState(getDefaultPageForProfile(profile));
   const [reportFilters, setReportFilters] = useState<ReportFilters | null>(null);
   const [prefillData, setPrefillData] = useState<any | null>(null);
 
@@ -86,6 +93,11 @@ function MainAppLayout() {
   const [activityToEdit, setActivityToEdit] = useState<any | null>(null);
   const [noticeToEdit, setNoticeToEdit] = useState<any | null>(null);
   const { appName, logoUrl } = useAppSettings();
+
+  useEffect(() => {
+    // When profile changes, reset the page to the default for that profile.
+    setActivePage(getDefaultPageForProfile(profile));
+  }, [profile]);
 
   // Main loading gate. Waits for both user and profile information.
   if (isProfileLoading) {

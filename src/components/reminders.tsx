@@ -40,6 +40,11 @@ export function Reminders({ setPage }: RemindersProps) {
   const [isLoadingTreatments, setIsLoadingTreatments] = useState(true);
   const [isLoadingEquipments, setIsLoadingEquipments] = useState(true);
   const [isLoadingNotices, setIsLoadingNotices] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     if (!user || !firestore) return;
@@ -107,7 +112,7 @@ export function Reminders({ setPage }: RemindersProps) {
     setPage('pending-notices');
   }
 
-  const isLoading = isLoadingTreatments || isLoadingEquipments || isLoadingNotices;
+  const isLoading = !isClient || isLoadingTreatments || isLoadingEquipments || isLoadingNotices;
 
   return (
     <div>

@@ -71,13 +71,12 @@ const inspectionStatusOptions = [
     { value: 'overdue', label: 'Vistoria Atrasada' }
 ];
 
-const getInspectionStatus = (nextInspectionDate?: Date) => {
+const getInspectionStatus = (nextInspectionDate: Date | null | undefined, clientToday: Date) => {
     if (!nextInspectionDate) {
         return { label: 'Sem data', className: 'bg-gray-400 text-white', isOverdue: false };
     }
-    const today = startOfDay(new Date());
     const inspectionDay = startOfDay(nextInspectionDate);
-    const daysUntil = differenceInDays(inspectionDay, today);
+    const daysUntil = differenceInDays(inspectionDay, clientToday);
 
     if (daysUntil < 0) {
         return { label: 'Vistoria Atrasada', className: 'bg-red-600 text-white', isOverdue: true };
@@ -110,6 +109,12 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   // Dynamic options for selects
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
+  const [clientToday, setClientToday] = useState<Date | null>(null);
+
+  useEffect(() => {
+    // This will only run on the client, after hydration
+    setClientToday(startOfDay(new Date()));
+  }, []);
   
   useEffect(() => {
     setFilterInspection(preFilter?.status === 'overdue' ? ['overdue'] : []);
@@ -165,13 +170,13 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   }, [user, firestore, toast]);
   
   const filteredEquipments = useMemo(() => {
-    const today = startOfDay(new Date());
+    if (!clientToday) return [];
     return equipments.filter(eq => {
       const typeMatch = filterTypes.length === 0 || filterTypes.includes(eq.equipmentType);
       const brandMatch = filterBrands.length === 0 || filterBrands.includes(eq.brand);
       const statusMatch = filterStatuses.length === 0 || filterStatuses.includes(eq.status);
       const inspectionMatch = filterInspection.length === 0 || 
-        (filterInspection.includes('overdue') && eq.nextInspectionDate && isBefore(eq.nextInspectionDate.toDate(), today));
+        (filterInspection.includes('overdue') && eq.nextInspectionDate && isBefore(eq.nextInspectionDate.toDate(), clientToday));
 
       return typeMatch && brandMatch && statusMatch && inspectionMatch;
     }).sort((a,b) => {
@@ -179,7 +184,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
         const dateB = b.nextInspectionDate?.toDate()?.getTime() || Infinity;
         return dateA - dateB;
     });
-  }, [equipments, filterTypes, filterBrands, filterStatuses, filterInspection]);
+  }, [equipments, filterTypes, filterBrands, filterStatuses, filterInspection, clientToday]);
 
   const clearFilters = () => {
     setFilterTypes([]);
@@ -282,12 +287,12 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
+              {isLoading || !clientToday ? (
                 renderSkeletons()
               ) : filteredEquipments.length > 0 ? (
                 filteredEquipments.map((eq) => {
                   const statusProps = statusMapping[eq.status] || { label: 'Desconhecido', className: 'bg-gray-400' };
-                  const inspectionStatusProps = getInspectionStatus(eq.nextInspectionDate?.toDate());
+                  const inspectionStatusProps = getInspectionStatus(eq.nextInspectionDate?.toDate(), clientToday);
                   
                   return (
                     <TableRow key={eq.id}>
