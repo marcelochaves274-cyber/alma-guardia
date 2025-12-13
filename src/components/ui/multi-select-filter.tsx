@@ -21,8 +21,9 @@ export function MultiSelectFilter({ placeholder, options, selected, onChange, di
   const [tempSelected, setTempSelected] = useState<string[]>(selected);
 
   useEffect(() => {
+    // Sincroniza o estado temporário com o externo quando o popover abre ou a seleção externa muda
     setTempSelected(selected);
-  }, [selected, isOpen]); // Reset temp state when popover opens or external state changes
+  }, [selected, isOpen]);
 
   const handleSelect = useCallback((value: string) => {
     setTempSelected(prev => 
