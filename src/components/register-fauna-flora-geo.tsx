@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, type MouseEvent } from 'react';
@@ -367,7 +368,7 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
               <div
                 ref={mapContainerRef}
                 onClick={handleMapClick}
-                className="relative w-full h-auto min-h-[500px] border-2 border-dashed rounded-md cursor-pointer bg-muted/20 flex items-center justify-center overflow-hidden"
+                className="relative w-full min-h-[500px] border-2 border-dashed rounded-md cursor-pointer bg-muted/20 flex items-center justify-center overflow-hidden"
               >
                 {isLoadingMap ? (
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -376,9 +377,9 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
                     <Image
                       src={mapUrl}
                       alt="Mapa de registros"
-                      fill
-                      style={{objectFit:"cover"}}
-                      className="rounded-md"
+                      width={1920}
+                      height={1080}
+                      className="h-full w-full object-contain"
                     />
                     {marker && (
                       <div

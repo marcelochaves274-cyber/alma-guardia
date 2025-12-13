@@ -73,6 +73,11 @@ export function FaunaFloraGeoMapReport() {
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [speciesTypes, setSpeciesTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -164,6 +169,7 @@ export function FaunaFloraGeoMapReport() {
   }, [user, firestore, toast]);
 
   const filteredRecords = useMemo(() => {
+    if (!isClient) return [];
     return records.filter(rec => {
       const recDate = rec.date;
       if (!recDate) return false;
@@ -175,7 +181,7 @@ export function FaunaFloraGeoMapReport() {
 
       return yearMatch && monthMatch && typeMatch && locationMatch && !!rec.mapMarker;
     });
-  }, [records, filterYears, filterMonths, filterTypes, filterLocations]);
+  }, [records, filterYears, filterMonths, filterTypes, filterLocations, isClient]);
 
   const clusters = useMemo(() => {
     const points = filteredRecords.filter(rec => rec.mapMarker);
@@ -221,7 +227,7 @@ export function FaunaFloraGeoMapReport() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Relatório de Mapa - Fauna, Flora & Geo</CardTitle>
+          <CardTitle>Relatório de Mapa - Fauna, Flora &amp; Geo</CardTitle>
           <CardDescription>
             Filtre e visualize a localização dos registros no mapa.
           </CardDescription>
@@ -341,4 +347,3 @@ export function FaunaFloraGeoMapReport() {
     </div>
   );
 }
-

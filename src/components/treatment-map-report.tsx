@@ -89,6 +89,11 @@ export function TreatmentMapReport() {
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [treatmentTypes, setTreatmentTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -181,6 +186,7 @@ export function TreatmentMapReport() {
   }, [user, firestore, toast]);
 
   const filteredTreatments = useMemo(() => {
+    if (!isClient) return [];
     return treatments.filter(occ => {
       const occDate = occ.treatmentDate;
       if (!occDate) return false;
@@ -201,7 +207,7 @@ export function TreatmentMapReport() {
 
       return yearMatch && monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch && !!occ.mapMarker;
     });
-  }, [treatments, filterYears, filterMonths, filterTypes, filterLocations, filterRiskLevels, filterSituations]);
+  }, [treatments, filterYears, filterMonths, filterTypes, filterLocations, filterRiskLevels, filterSituations, isClient]);
 
   const clusters = useMemo(() => {
     const points = filteredTreatments.filter(occ => occ.mapMarker);
@@ -380,4 +386,3 @@ export function TreatmentMapReport() {
     </div>
   );
 }
-

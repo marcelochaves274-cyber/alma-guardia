@@ -73,6 +73,11 @@ export function MapReport() {
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -164,6 +169,7 @@ export function MapReport() {
   }, [user, firestore, toast]);
 
   const filteredOccurrences = useMemo(() => {
+    if (!isClient) return [];
     return occurrences.filter(occ => {
       const occDate = occ.occurrenceDate;
       if (!occDate) return false;
@@ -175,7 +181,7 @@ export function MapReport() {
 
       return yearMatch && monthMatch && typeMatch && locationMatch && !!occ.mapMarker;
     });
-  }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations]);
+  }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations, isClient]);
 
   const clusters = useMemo(() => {
     const points = filteredOccurrences.filter(occ => occ.mapMarker);
@@ -341,6 +347,3 @@ export function MapReport() {
     </div>
   );
 }
-
-
-
