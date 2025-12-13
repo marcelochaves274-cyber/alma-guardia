@@ -78,15 +78,6 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   
   const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
 
-  // Set default open menu based on profile
-  useEffect(() => {
-    if (profile === 'admin') {
-      setOpenSubMenu('reminders');
-    } else if (profile === 'observer') {
-      setOpenSubMenu('avisos');
-    }
-  }, [profile]);
-
   const isAdmin = profile === 'admin';
 
   const toggleSubMenu = (name: string) => {
