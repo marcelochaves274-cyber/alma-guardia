@@ -22,6 +22,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [passes, setPasses] = useState<{ adminPass: string; observerPass: string }>({ adminPass: '', observerPass: '' });
   const [isLoadingPasses, setIsLoadingPasses] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -30,31 +31,36 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (!firestore || !user) return null;
     return doc(firestore, 'sgs_genius', user.uid, 'settings', 'profiles');
   }, [firestore, user]);
+  
+  // This effect runs once on mount to get the profile from sessionStorage
+  useEffect(() => {
+    try {
+        const storedProfile = sessionStorage.getItem('sgs-profile') as Profile | null;
+        if (storedProfile) {
+            setProfileState(storedProfile);
+        }
+    } catch (e) {
+        // sessionStorage is not available
+    }
+    setIsInitialLoad(false);
+  }, []);
 
   useEffect(() => {
-    // We can't do anything until the user's auth state is resolved.
     if (isUserLoading) {
       setIsLoadingPasses(true);
       return;
     }
     
-    // If there is no user, clear everything and stop.
     if (!user) {
       setProfileState(null);
       try {
         sessionStorage.removeItem('sgs-profile');
-      } catch (e) {
-        // ignore session storage errors
-      }
+      } catch (e) {}
       setIsLoadingPasses(false);
       return;
     }
   
-    // If we have a user, proceed to load their passes and check sessionStorage.
     const fetchInitialData = async () => {
-      // We start by assuming no profile is selected.
-      setProfileState(null);
-      
       const docRef = getSettingsDocRef();
       if (!docRef) {
         setPasses({ adminPass: '123456', observerPass: '123456' });
@@ -68,14 +74,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           const data = docSnap.data();
           setPasses({ adminPass: data.adminPass || '123456', observerPass: data.observerPass || '123456' });
         } else {
-          // If the document doesn't exist, create it with default passes
           const defaultPasses = { adminPass: '123456', observerPass: '123456' };
           await setDoc(docRef, defaultPasses);
           setPasses(defaultPasses);
         }
       } catch (error: any) {
-        // In case of a permissions error or other issue, use default passes.
-        // This is a failsafe to ensure the app is still usable.
         if (error.code !== 'permission-denied') {
           console.error("Error fetching profile passes:", error);
         }
@@ -88,20 +91,16 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     fetchInitialData();
   }, [user, isUserLoading, getSettingsDocRef]);
 
-  const setProfile = (profile: Profile | null) => {
-    setProfileState(profile);
-    if (profile) {
-      try {
-        sessionStorage.setItem('sgs-profile', profile);
-      } catch (e) {
-        // ignore session storage errors
-      }
-    } else {
-      try {
-        sessionStorage.removeItem('sgs-profile');
-      } catch (e) {
-        // ignore session storage errors
-      }
+  const setProfile = (profileToSet: Profile | null) => {
+    setProfileState(profileToSet);
+    try {
+        if (profileToSet) {
+            sessionStorage.setItem('sgs-profile', profileToSet);
+        } else {
+            sessionStorage.removeItem('sgs-profile');
+        }
+    } catch(e) {
+        // sessionStorage not available
     }
   };
 
@@ -122,13 +121,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     return isValid;
   };
 
-  // The profile is considered "loading" if the user is loading OR we are still fetching the passes.
+  const isProfileLoading = isUserLoading || isLoadingPasses || isInitialLoad;
+
   const contextValue: ProfileContextType = {
     profile,
     setProfile,
     clearProfile,
     validatePass,
-    isProfileLoading: isUserLoading || isLoadingPasses,
+    isProfileLoading,
     isLoadingPasses,
     passes,
   };
