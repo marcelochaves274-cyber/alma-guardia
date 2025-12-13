@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback } from 'react';
@@ -6,9 +5,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ListFilter } from 'lucide-react';
-import { Badge } from './badge';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './command';
+import { cn } from '@/lib/utils';
+import { ChevronDown } from 'lucide-react';
 
 interface MultiSelectFilterProps {
   placeholder: string;
@@ -18,13 +16,7 @@ interface MultiSelectFilterProps {
   disabled?: boolean;
 }
 
-export function MultiSelectFilter({
-  placeholder,
-  options,
-  selected,
-  onChange,
-  disabled,
-}: MultiSelectFilterProps) {
+export function MultiSelectFilter({ placeholder, options, selected, onChange, disabled }: MultiSelectFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSelect = useCallback((value: string) => {
@@ -36,11 +28,11 @@ export function MultiSelectFilter({
   
   const getButtonText = () => {
     if (selected.length === 0) return placeholder;
-    if (selected.length === options.length) return "Todos selecionados";
     if (selected.length === 1) {
       const option = options.find(o => o.value === selected[0]);
       return option?.label || placeholder;
     }
+    if (selected.length === options.length) return "Todos selecionados";
     return `${selected.length} selecionados`;
   };
 
@@ -55,14 +47,7 @@ export function MultiSelectFilter({
           disabled={disabled}
         >
           <span className="truncate">{getButtonText()}</span>
-          <div className="flex items-center">
-            {selected.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {selected.length}
-              </Badge>
-            )}
-            <ListFilter className="h-4 w-4 opacity-50 ml-2" />
-          </div>
+          <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
