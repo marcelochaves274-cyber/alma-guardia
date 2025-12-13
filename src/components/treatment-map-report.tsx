@@ -78,7 +78,6 @@ export function TreatmentMapReport() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -259,7 +258,7 @@ export function TreatmentMapReport() {
   }
 
   const renderedPins = useMemo(() => {
-    if (!isClient || availableYears.length === 0) {
+    if (!isClient || isLoading) {
       return null;
     }
     return clusters.map((cluster, index) => {
@@ -309,30 +308,8 @@ export function TreatmentMapReport() {
         </Popover>
       )
     })
-  }, [clusters, isClient, availableYears]);
+  }, [clusters, isClient, availableYears, isLoading]);
   
-  const MapView = (
-     <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
-        {isLoadingMap || isLoading ? (
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        ) : mapUrl ? (
-          <>
-            <Image
-              src={mapUrl}
-              alt="Mapa de tratamentos"
-              fill
-              className="object-cover"
-            />
-            {renderedPins}
-          </>
-        ) : (
-          <p className="text-muted-foreground text-center p-4">
-            Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
-          </p>
-        )}
-      </div>
-  );
-
   return (
     <div className="space-y-6">
       <Card>
@@ -353,7 +330,7 @@ export function TreatmentMapReport() {
               options={availableYears.map(y => ({ value: y, label: y }))}
               selected={filterYears}
               onChange={setFilterYears}
-              disabled={availableYears.length === 0}
+              disabled={isLoading || availableYears.length === 0}
             />
             <MultiSelectFilter
               placeholder="Filtrar por Tipo de Risco"
@@ -398,30 +375,32 @@ export function TreatmentMapReport() {
                 {isLoading ? 'Carregando...' : `Foram encontrados ${filteredTreatments.length} tratamentos com marcação no mapa, agrupados em ${clusters.length} pontos.`}
               </CardDescription>
             </div>
-            {isMobile && mapUrl && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <ZoomIn className="h-5 w-5" />
-                    <span className="sr-only">Ampliar Mapa</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-[95vw] h-[90vh] flex flex-col p-2 sm:p-4">
-                   <DialogHeader className="p-2 pb-0">
-                    <DialogTitle>Mapa de Tratamentos de Risco</DialogTitle>
-                  </DialogHeader>
-                  <div className="flex-1 w-full h-full [&_[data-radix-popper-content-wrapper]]:!z-[9999]">
-                    {MapView}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
           </div>
         </CardHeader>
         <CardContent>
-           {!isMobile && MapView}
+           <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+              {isLoadingMap || isLoading ? (
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              ) : mapUrl ? (
+                <>
+                  <Image
+                    src={mapUrl}
+                    alt="Mapa de tratamentos"
+                    fill
+                    className="object-cover"
+                  />
+                  {renderedPins}
+                </>
+              ) : (
+                <p className="text-muted-foreground text-center p-4">
+                  Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
+                </p>
+              )}
+            </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+
+    

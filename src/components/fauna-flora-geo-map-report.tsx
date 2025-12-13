@@ -64,7 +64,6 @@ export function FaunaFloraGeoMapReport() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   
   const [records, setRecords] = useState<FaunaFloraGeoRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -232,7 +231,7 @@ export function FaunaFloraGeoMapReport() {
   }
 
   const renderedPins = useMemo(() => {
-    if (!isClient || availableYears.length === 0) {
+    if (!isClient || isLoading) {
       return null;
     }
     return clusters.map((cluster, index) => {
@@ -282,30 +281,7 @@ export function FaunaFloraGeoMapReport() {
         </Popover>
       )
     });
-  }, [clusters, isClient, availableYears]);
-  
-  const MapView = (
-     <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
-        {isLoadingMap || isLoading ? (
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        ) : mapUrl ? (
-          <>
-            <Image
-              src={mapUrl}
-              alt="Mapa de registros"
-              fill
-              className="object-cover"
-            />
-            {renderedPins}
-          </>
-        ) : (
-          <p className="text-muted-foreground text-center p-4">
-            Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
-          </p>
-        )}
-      </div>
-  );
-
+  }, [clusters, isClient, availableYears, isLoading]);
 
   return (
     <div className="space-y-6">
@@ -327,7 +303,7 @@ export function FaunaFloraGeoMapReport() {
               options={availableYears.map(y => ({ value: y, label: y }))}
               selected={filterYears}
               onChange={setFilterYears}
-              disabled={availableYears.length === 0}
+              disabled={isLoading || availableYears.length === 0}
             />
             <MultiSelectFilter
               placeholder="Filtrar Espécie/Tipo"
@@ -360,30 +336,32 @@ export function FaunaFloraGeoMapReport() {
                 {isLoading ? 'Carregando...' : `Foram encontrados ${filteredRecords.length} registros com marcação no mapa, agrupados em ${clusters.length} pontos.`}
               </CardDescription>
             </div>
-            {isMobile && mapUrl && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <ZoomIn className="h-5 w-5" />
-                    <span className="sr-only">Ampliar Mapa</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-[95vw] h-[90vh] flex flex-col p-2 sm:p-4">
-                   <DialogHeader className="p-2 pb-0">
-                    <DialogTitle>Mapa de Fauna, Flora & Geo</DialogTitle>
-                  </DialogHeader>
-                  <div className="flex-1 w-full h-full [&_[data-radix-popper-content-wrapper]]:!z-[9999]">
-                    {MapView}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
           </div>
         </CardHeader>
         <CardContent>
-           {!isMobile && MapView}
+           <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+              {isLoadingMap || isLoading ? (
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              ) : mapUrl ? (
+                <>
+                  <Image
+                    src={mapUrl}
+                    alt="Mapa de registros"
+                    fill
+                    className="object-cover"
+                  />
+                  {renderedPins}
+                </>
+              ) : (
+                <p className="text-muted-foreground text-center p-4">
+                  Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
+                </p>
+              )}
+            </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+
+    
