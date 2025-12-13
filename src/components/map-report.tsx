@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/popover";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
-import { Skeleton } from './ui/skeleton';
 import { Button } from './ui/button';
 import { Loader2, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -275,7 +274,7 @@ export function MapReport() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-           <div className="relative w-full min-h-[500px] border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+           <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
                 {isLoadingMap || isLoading ? (
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 ) : mapUrl ? (
@@ -283,10 +282,8 @@ export function MapReport() {
                     <Image
                       src={mapUrl}
                       alt="Mapa de ocorrências"
-                      width={1920}
-                      height={1080}
-                      className="h-full w-full object-contain md:object-contain rounded-md"
-                      priority
+                      fill
+                      className="object-cover"
                     />
                     {clusters.map((cluster, index) => {
                       const clusterYear = cluster.occurrences[0]?.occurrenceDate.getFullYear();

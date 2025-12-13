@@ -466,7 +466,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
               <div
                 ref={mapContainerRef}
                 onClick={handleMapClick}
-                className="relative w-full min-h-[500px] border-2 border-dashed rounded-md cursor-pointer bg-muted/20 flex items-center justify-center overflow-hidden"
+                className="relative w-full aspect-video border-2 border-dashed rounded-md cursor-pointer bg-muted/20 flex items-center justify-center overflow-hidden"
               >
                 {isLoadingMap ? (
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -475,9 +475,8 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
                     <Image
                       src={mapUrl}
                       alt="Mapa de ocorrências"
-                      width={1920}
-                      height={1080}
-                      className="h-full w-full object-contain"
+                      fill
+                      className="object-cover"
                     />
                     {marker && (
                       <div
