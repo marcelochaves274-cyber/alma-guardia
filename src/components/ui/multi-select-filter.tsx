@@ -82,10 +82,10 @@ export function MultiSelectFilter({
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md p-0">
-        <Command>
-          <DialogHeader className="p-4 pb-0">
+        <DialogHeader className="p-4 pb-0">
             <DialogTitle>{placeholder}</DialogTitle>
-          </DialogHeader>
+        </DialogHeader>
+        <Command>
           <div className="p-4 pt-2">
             <CommandInput placeholder="Buscar..." />
           </div>
