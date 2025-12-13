@@ -14,10 +14,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Button } from './ui/button';
-import { Loader2, MapPin } from 'lucide-react';
+import { Loader2, MapPin, ZoomIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
@@ -28,6 +35,7 @@ import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Occurrence {
   id: string;
@@ -56,6 +64,7 @@ export function MapReport() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -196,7 +205,6 @@ export function MapReport() {
             );
             if (distance < distanceThreshold) {
                 cluster.occurrences.push(point);
-                // Recalculate cluster center
                 cluster.x = cluster.occurrences.reduce((sum, occ) => sum + (occ.mapMarker?.x || 0), 0) / cluster.occurrences.length;
                 cluster.y = cluster.occurrences.reduce((sum, occ) => sum + (occ.mapMarker?.y || 0), 0) / cluster.occurrences.length;
                 foundCluster = true;
@@ -274,6 +282,28 @@ export function MapReport() {
       )
     });
   }, [clusters, isClient, availableYears]);
+  
+  const MapView = (
+     <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+        {isLoadingMap || isLoading ? (
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        ) : mapUrl ? (
+          <>
+            <Image
+              src={mapUrl}
+              alt="Mapa de ocorrências"
+              fill
+              className="object-cover"
+            />
+            {renderedPins}
+          </>
+        ) : (
+          <p className="text-muted-foreground text-center p-4">
+            Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
+          </p>
+        )}
+      </div>
+  );
 
 
   return (
@@ -322,34 +352,37 @@ export function MapReport() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Resultados no Mapa</CardTitle>
-          <CardDescription>
-            {isLoading ? 'Carregando...' : `Foram encontradas ${filteredOccurrences.length} ocorrências com marcação no mapa, agrupadas em ${clusters.length} pontos.`}
-          </CardDescription>
+          <div className='flex justify-between items-center gap-4'>
+            <div>
+              <CardTitle>Resultados no Mapa</CardTitle>
+              <CardDescription>
+                {isLoading ? 'Carregando...' : `Foram encontradas ${filteredOccurrences.length} ocorrências com marcação no mapa, agrupadas em ${clusters.length} pontos.`}
+              </CardDescription>
+            </div>
+            {isMobile && mapUrl && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <ZoomIn className="h-5 w-5" />
+                    <span className="sr-only">Ampliar Mapa</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-[95vw] h-[90vh] flex flex-col p-2 sm:p-4">
+                   <DialogHeader className="p-2 pb-0">
+                    <DialogTitle>Mapa de Ocorrências</DialogTitle>
+                  </DialogHeader>
+                  <div className="flex-1 w-full h-full [&_[data-radix-popper-content-wrapper]]:!z-[9999]">
+                    {MapView}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-           <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
-                {isLoadingMap || isLoading ? (
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                ) : mapUrl ? (
-                  <>
-                    <Image
-                      src={mapUrl}
-                      alt="Mapa de ocorrências"
-                      fill
-                      className="object-cover"
-                    />
-                    {renderedPins}
-                  </>
-                ) : (
-                  <p className="text-muted-foreground text-center p-4">
-                    Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
-                  </p>
-                )}
-              </div>
+            {!isMobile && MapView}
         </CardContent>
       </Card>
     </div>
   );
 }
-
