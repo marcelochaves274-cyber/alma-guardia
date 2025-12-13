@@ -253,7 +253,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
               options={availableYears.map(y => ({ value: y, label: y }))}
               selected={filterYears}
               onChange={setFilterYears}
-              disabled={availableYears.length === 0}
+              disabled={isLoading || availableYears.length === 0}
             />
             <MultiSelectFilter
               placeholder="Filtrar Espécie/Tipo"
