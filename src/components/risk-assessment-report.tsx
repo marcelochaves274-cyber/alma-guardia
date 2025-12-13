@@ -51,6 +51,7 @@ import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import { MultiSelectFilter } from './multi-select-filter';
 
+
 interface RiskAssessment {
   id: string;
   assessmentDate: Date;
@@ -161,10 +162,10 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
 
   const filteredAssessments = useMemo(() => {
     if (!isClient) return [];
-    if (filterLocation.length === 0) {
-        return assessments;
-    }
-    return assessments.filter(ass => filterLocation.includes(ass.location));
+    return assessments.filter(ass => {
+        const locationMatch = filterLocation.length === 0 || filterLocation.includes(ass.location);
+        return locationMatch;
+    });
   }, [assessments, filterLocation, isClient]);
 
 
@@ -199,16 +200,18 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   };
   
   const renderSkeletons = () => (
-    Array.from({ length: 5 }).map((_, i) => (
-      <TableRow key={i}>
-        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-      </TableRow>
-    ))
+    <>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <TableRow key={i}>
+          <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        </TableRow>
+      ))}
+    </>
   );
 
   return (
