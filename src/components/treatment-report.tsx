@@ -50,7 +50,7 @@ import { cn } from '@/lib/utils';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { MultiSelectFilter } from './multi-select-filter';
 
 interface Treatment {
   id: string;
@@ -118,12 +118,12 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
   const [isClient, setIsClient] = useState(false);
 
   // Filter states
-  const [filterYear, setFilterYear] = useState<string>('');
+  const [filterYear, setFilterYear] = useState<string[]>([]);
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
-  const [filterType, setFilterType] = useState<string>('');
-  const [filterLocation, setFilterLocation] = useState<string>('');
-  const [filterRiskLevel, setFilterRiskLevel] = useState<string>('');
-  const [filterSituation, setFilterSituation] = useState<string>(preFilter?.situations?.[0] || '');
+  const [filterType, setFilterType] = useState<string[]>([]);
+  const [filterLocation, setFilterLocation] = useState<string[]>([]);
+  const [filterRiskLevel, setFilterRiskLevel] = useState<string[]>([]);
+  const [filterSituation, setFilterSituation] = useState<string[]>(preFilter?.situations || []);
   
   // Dynamic options for selects
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -136,7 +136,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
   
   useEffect(() => {
     if (preFilter?.situations) {
-      setFilterSituation(preFilter.situations[0] || '');
+      setFilterSituation(preFilter.situations);
     }
   }, [preFilter]);
 
@@ -214,31 +214,31 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
       const occDate = occ.treatmentDate;
       if (!occDate || !isClient) return false;
 
-      const yearMatch = !filterYear || occDate.getFullYear().toString() === filterYear;
+      const yearMatch = filterYear.length === 0 || filterYear.includes(occDate.getFullYear().toString());
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
-      const typeMatch = !filterType || occ.treatmentType === filterType;
-      const locationMatch = !filterLocation || occ.treatmentLocation === filterLocation;
-      const situationMatch = !filterSituation || occ.situation === filterSituation;
+      const typeMatch = filterType.length === 0 || filterType.includes(occ.treatmentType);
+      const locationMatch = filterLocation.length === 0 || filterLocation.includes(occ.treatmentLocation);
+      const situationMatch = filterSituation.length === 0 || filterSituation.includes(occ.situation);
       
-      const riskLevelMatch = !filterRiskLevel || ((level) => {
+      const riskLevelMatch = filterRiskLevel.length === 0 || filterRiskLevel.some((level) => {
         const score = occ.riskLevel;
         if (level === 'alta') return score >= 15;
         if (level === 'media') return score >= 8 && score < 15;
         if (level === 'baixa') return score > 0 && score < 8;
         return false;
-      })(filterRiskLevel);
+      });
 
       return yearMatch && monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch;
     });
   }, [treatments, filterYear, filterMonths, filterType, filterLocation, filterRiskLevel, filterSituation, isClient]);
 
   const clearFilters = () => {
-    setFilterYear('');
+    setFilterYear([]);
     setFilterMonths([]);
-    setFilterType('');
-    setFilterLocation('');
-    setFilterRiskLevel('');
-    setFilterSituation('');
+    setFilterType([]);
+    setFilterLocation([]);
+    setFilterRiskLevel([]);
+    setFilterSituation([]);
   }
 
   const handleDelete = async (treatmentId: string) => {
@@ -301,48 +301,51 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
                 <Label>Filtrar Ano</Label>
-                <Select value={filterYear} onValueChange={setFilterYear} disabled={isLoading || availableYears.length === 0}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o ano" /></SelectTrigger>
-                    <SelectContent>
-                        {availableYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione o(s) ano(s)'
+                    options={availableYears.map(y => ({ value: y, label: y }))}
+                    selected={filterYear}
+                    onChange={setFilterYear}
+                    disabled={isLoading || availableYears.length === 0}
+                />
             </div>
             <div className="space-y-2">
                 <Label>Filtrar por Tipo de Risco</Label>
-                <Select value={filterType} onValueChange={setFilterType} disabled={!treatmentTypes || treatmentTypes.length === 0}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
-                    <SelectContent>
-                        {treatmentTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione o(s) tipo(s)'
+                    options={treatmentTypes.map(t => ({ value: t, label: t }))}
+                    selected={filterType}
+                    onChange={setFilterType}
+                    disabled={!treatmentTypes || treatmentTypes.length === 0}
+                />
             </div>
              <div className="space-y-2">
                 <Label>Nível de Risco (PxC)</Label>
-                <Select value={filterRiskLevel} onValueChange={setFilterRiskLevel}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o nível" /></SelectTrigger>
-                    <SelectContent>
-                        {riskLevelOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione o(s) nível(is)'
+                    options={riskLevelOptions}
+                    selected={filterRiskLevel}
+                    onChange={setFilterRiskLevel}
+                />
             </div>
             <div className="space-y-2">
                 <Label>Filtrar por Local</Label>
-                <Select value={filterLocation} onValueChange={setFilterLocation} disabled={!locations || locations.length === 0}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o local" /></SelectTrigger>
-                    <SelectContent>
-                        {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione o(s) local(is)'
+                    options={locations.map(l => ({ value: l, label: l }))}
+                    selected={filterLocation}
+                    onChange={setFilterLocation}
+                    disabled={!locations || locations.length === 0}
+                />
             </div>
             <div className="space-y-2">
                 <Label>Filtrar por Situação</Label>
-                <Select value={filterSituation} onValueChange={setFilterSituation}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a situação" /></SelectTrigger>
-                    <SelectContent>
-                        {situationOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                 <MultiSelectFilter
+                    placeholder='Selecione a(s) situação(ões)'
+                    options={situationOptions}
+                    selected={filterSituation}
+                    onChange={setFilterSituation}
+                />
             </div>
             
             <Button onClick={clearFilters} variant="outline" className="w-full">

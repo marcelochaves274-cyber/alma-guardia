@@ -49,7 +49,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { MultiSelectFilter } from './multi-select-filter';
 
 interface RiskAssessment {
   id: string;
@@ -87,7 +87,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
 
-  const [filterLocation, setFilterLocation] = useState<string>('');
+  const [filterLocation, setFilterLocation] = useState<string[]>([]);
   
   const [locations, setLocations] = useState<string[]>([]);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
@@ -161,10 +161,10 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
 
   const filteredAssessments = useMemo(() => {
     if (!isClient) return [];
-    if (!filterLocation) {
+    if (filterLocation.length === 0) {
         return assessments;
     }
-    return assessments.filter(ass => ass.location === filterLocation);
+    return assessments.filter(ass => filterLocation.includes(ass.location));
   }, [assessments, filterLocation, isClient]);
 
 
@@ -221,17 +221,18 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
              <div className="space-y-2">
                 <Label>Filtrar por Local</Label>
-                <Select value={filterLocation} onValueChange={setFilterLocation} disabled={isLoadingLocations || locations.length === 0}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o local" /></SelectTrigger>
-                    <SelectContent>
-                        {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione o(s) local(is)'
+                    options={locations.map(l => ({ value: l, label: l }))}
+                    selected={filterLocation}
+                    onChange={setFilterLocation}
+                    disabled={isLoadingLocations || locations.length === 0}
+                />
              </div>
-            <Button onClick={() => setFilterLocation('')} variant="outline" className="w-full sm:w-auto self-end">
+            <Button onClick={() => setFilterLocation([])} variant="outline" className="w-full sm:w-auto self-end">
               Limpar Filtro
             </Button>
           </div>
@@ -340,7 +341,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label className="font-semibold text-muted-foreground">Data da Avaliação</Label>
-                        <p>{format(selectedAssessment.assessmentDate, 'dd/MM/yyyy \'às\' HH:mm', { locale: ptBR })}</p>
+                        <p>{format(selectedAssessment.assessmentDate, 'dd/MM/yyyy \\'às\\' HH:mm', { locale: ptBR })}</p>
                       </div>
                       <div>
                         <Label className="font-semibold text-muted-foreground">Local</Label>

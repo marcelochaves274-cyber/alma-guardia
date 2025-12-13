@@ -50,7 +50,7 @@ import { cn } from '@/lib/utils';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { MultiSelectFilter } from './multi-select-filter';
 
 
 interface Occurrence {
@@ -99,13 +99,13 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
   const [isClient, setIsClient] = useState(false);
 
   // Filter states
-  const [filterYear, setFilterYear] = useState<string>('');
+  const [filterYear, setFilterYear] = useState<string[]>([]);
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
-  const [filterType, setFilterType] = useState<string>('');
-  const [filterLocation, setFilterLocation] = useState<string>('');
+  const [filterType, setFilterType] = useState<string[]>([]);
+  const [filterLocation, setFilterLocation] = useState<string[]>([]);
   const [filterName, setFilterName] = useState<string>('');
-  const [filterAnalysis, setFilterAnalysis] = useState<string>('');
-  const [filterAgeGroup, setFilterAgeGroup] = useState<string>('');
+  const [filterAnalysis, setFilterAnalysis] = useState<string[]>([]);
+  const [filterAgeGroup, setFilterAgeGroup] = useState<string[]>([]);
   
   // Dynamic options for selects
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -189,26 +189,26 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
       const occDate = occ.occurrenceDate;
       if (!occDate || !isClient) return false;
 
-      const yearMatch = !filterYear || occDate.getFullYear().toString() === filterYear;
+      const yearMatch = filterYear.length === 0 || filterYear.includes(occDate.getFullYear().toString());
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
-      const typeMatch = !filterType || occ.occurrenceType === filterType;
-      const locationMatch = !filterLocation || occ.occurrenceLocation === filterLocation;
-      const analysisMatch = !filterAnalysis || occ.analysis === filterAnalysis;
+      const typeMatch = filterType.length === 0 || filterType.includes(occ.occurrenceType);
+      const locationMatch = filterLocation.length === 0 || filterLocation.includes(occ.occurrenceLocation);
+      const analysisMatch = filterAnalysis.length === 0 || filterAnalysis.includes(occ.analysis);
       const nameMatch = !filterName || occ.involvedPersonName?.toLowerCase().includes(filterName.toLowerCase());
-      const ageGroupMatch = !filterAgeGroup || occ.ageGroup === filterAgeGroup;
+      const ageGroupMatch = filterAgeGroup.length === 0 || filterAgeGroup.includes(occ.ageGroup);
 
       return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && nameMatch && ageGroupMatch;
     });
   }, [occurrences, filterYear, filterMonths, filterType, filterLocation, filterName, filterAnalysis, filterAgeGroup, isClient]);
 
   const clearFilters = () => {
-    setFilterYear('');
+    setFilterYear([]);
     setFilterMonths([]);
-    setFilterType('');
-    setFilterLocation('');
+    setFilterType([]);
+    setFilterLocation([]);
     setFilterName('');
-    setFilterAnalysis('');
-    setFilterAgeGroup('');
+    setFilterAnalysis([]);
+    setFilterAgeGroup([]);
   }
 
   const handleDelete = async (occurrenceId: string) => {
@@ -272,48 +272,51 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
             <div className='space-y-2'>
                 <Label>Filtrar Ano</Label>
-                <Select value={filterYear} onValueChange={setFilterYear} disabled={isLoading || availableYears.length === 0}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o ano" /></SelectTrigger>
-                    <SelectContent>
-                        {availableYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione o(s) ano(s)'
+                    options={availableYears.map(y => ({ value: y, label: y }))}
+                    selected={filterYear}
+                    onChange={setFilterYear}
+                    disabled={isLoading || availableYears.length === 0}
+                />
             </div>
             <div className='space-y-2'>
                 <Label>Filtrar por Tipo</Label>
-                <Select value={filterType} onValueChange={setFilterType} disabled={!occurrenceTypes || occurrenceTypes.length === 0}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
-                    <SelectContent>
-                        {occurrenceTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                 <MultiSelectFilter
+                    placeholder='Selecione o(s) tipo(s)'
+                    options={occurrenceTypes.map(t => ({ value: t, label: t }))}
+                    selected={filterType}
+                    onChange={setFilterType}
+                    disabled={!occurrenceTypes || occurrenceTypes.length === 0}
+                />
             </div>
             <div className='space-y-2'>
                 <Label>Filtrar por Local</Label>
-                <Select value={filterLocation} onValueChange={setFilterLocation} disabled={!locations || locations.length === 0}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o local" /></SelectTrigger>
-                    <SelectContent>
-                        {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione o(s) local(is)'
+                    options={locations.map(l => ({ value: l, label: l }))}
+                    selected={filterLocation}
+                    onChange={setFilterLocation}
+                    disabled={!locations || locations.length === 0}
+                />
             </div>
             <div className='space-y-2'>
                 <Label>Filtrar por Análise</Label>
-                <Select value={filterAnalysis} onValueChange={setFilterAnalysis}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a análise" /></SelectTrigger>
-                    <SelectContent>
-                        {Object.entries(analysisMapping).map(([key, {label}]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione a(s) análise(s)'
+                    options={Object.entries(analysisMapping).map(([key, {label}]) => ({ value: key, label: label }))}
+                    selected={filterAnalysis}
+                    onChange={setFilterAnalysis}
+                />
             </div>
             <div className='space-y-2'>
                 <Label>Filtrar Faixa Etária</Label>
-                <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a faixa etária" /></SelectTrigger>
-                    <SelectContent>
-                        {ageGroupOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                 <MultiSelectFilter
+                    placeholder='Selecione a(s) faixa(s)'
+                    options={ageGroupOptions}
+                    selected={filterAgeGroup}
+                    onChange={setFilterAgeGroup}
+                />
             </div>
             
             <div className="space-y-2 lg:col-span-2">

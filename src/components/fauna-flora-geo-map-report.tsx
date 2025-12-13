@@ -28,7 +28,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { MultiSelectFilter } from './multi-select-filter';
 
 interface FaunaFloraGeoRecord {
   id: string;
@@ -64,10 +64,10 @@ export function FaunaFloraGeoMapReport() {
   const [isLoadingMap, setIsLoadingMap] = useState(true);
 
   // Filter states
-  const [filterYear, setFilterYear] = useState<string>('');
+  const [filterYear, setFilterYear] = useState<string[]>([]);
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
-  const [filterType, setFilterType] = useState<string>('');
-  const [filterLocation, setFilterLocation] = useState<string>('');
+  const [filterType, setFilterType] = useState<string[]>([]);
+  const [filterLocation, setFilterLocation] = useState<string[]>([]);
 
   // Dynamic options for selects
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -174,10 +174,10 @@ export function FaunaFloraGeoMapReport() {
       const recDate = rec.date;
       if (!recDate) return false;
 
-      const yearMatch = !filterYear || recDate.getFullYear().toString() === filterYear;
+      const yearMatch = filterYear.length === 0 || filterYear.includes(recDate.getFullYear().toString());
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(recDate.getMonth().toString());
-      const typeMatch = !filterType || rec.speciesType === filterType;
-      const locationMatch = !filterLocation || rec.location === filterLocation;
+      const typeMatch = filterType.length === 0 || filterType.includes(rec.speciesType);
+      const locationMatch = filterLocation.length === 0 || filterLocation.includes(rec.location);
 
       return yearMatch && monthMatch && typeMatch && locationMatch && !!rec.mapMarker;
     });
@@ -217,10 +217,10 @@ export function FaunaFloraGeoMapReport() {
   }, [filteredRecords]);
   
   const clearFilters = () => {
-    setFilterYear('');
+    setFilterYear([]);
     setFilterMonths([]);
-    setFilterType('');
-    setFilterLocation('');
+    setFilterType([]);
+    setFilterLocation([]);
   }
 
   const renderedPins = useMemo(() => {
@@ -293,30 +293,33 @@ export function FaunaFloraGeoMapReport() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
                 <Label>Filtrar por Ano</Label>
-                <Select value={filterYear} onValueChange={setFilterYear} disabled={isLoading || availableYears.length === 0}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o ano" /></SelectTrigger>
-                    <SelectContent>
-                        {availableYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione o(s) ano(s)'
+                    options={availableYears.map(y => ({ value: y, label: y }))}
+                    selected={filterYear}
+                    onChange={setFilterYear}
+                    disabled={isLoading || availableYears.length === 0}
+                />
             </div>
             <div className="space-y-2">
                 <Label>Filtrar Espécie/Tipo</Label>
-                <Select value={filterType} onValueChange={setFilterType} disabled={!speciesTypes || speciesTypes.length === 0}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
-                    <SelectContent>
-                        {speciesTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                 <MultiSelectFilter
+                    placeholder='Selecione o(s) tipo(s)'
+                    options={speciesTypes.map(t => ({ value: t, label: t }))}
+                    selected={filterType}
+                    onChange={setFilterType}
+                    disabled={!speciesTypes || speciesTypes.length === 0}
+                />
             </div>
             <div className="space-y-2">
                 <Label>Filtrar por Local</Label>
-                <Select value={filterLocation} onValueChange={setFilterLocation} disabled={!locations || locations.length === 0}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o local" /></SelectTrigger>
-                    <SelectContent>
-                        {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione o(s) local(is)'
+                    options={locations.map(l => ({ value: l, label: l }))}
+                    selected={filterLocation}
+                    onChange={setFilterLocation}
+                    disabled={!locations || locations.length === 0}
+                />
             </div>
             
             <Button onClick={clearFilters} variant="outline" className="w-full">

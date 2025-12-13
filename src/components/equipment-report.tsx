@@ -39,8 +39,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
+import { MultiSelectFilter } from './multi-select-filter';
 
 interface Equipment {
   id: string;
@@ -100,10 +100,10 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Filter states
-  const [filterType, setFilterType] = useState<string>('');
-  const [filterBrand, setFilterBrand] = useState<string>('');
-  const [filterStatus, setFilterStatus] = useState<string>('');
-  const [filterInspection, setFilterInspection] = useState<string>(preFilter?.status === 'overdue' ? 'overdue' : '');
+  const [filterType, setFilterType] = useState<string[]>([]);
+  const [filterBrand, setFilterBrand] = useState<string[]>([]);
+  const [filterStatus, setFilterStatus] = useState<string[]>([]);
+  const [filterInspection, setFilterInspection] = useState<string[]>(preFilter?.status === 'overdue' ? ['overdue'] : []);
   
   // Dynamic options for selects
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
@@ -116,7 +116,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   }, []);
   
   useEffect(() => {
-    setFilterInspection(preFilter?.status === 'overdue' ? 'overdue' : '');
+    setFilterInspection(preFilter?.status === 'overdue' ? ['overdue'] : []);
   }, [preFilter]);
   
   const getSettingsDocRef = useCallback((collectionName: string) => {
@@ -171,11 +171,11 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const filteredEquipments = useMemo(() => {
     if (!clientToday) return [];
     return equipments.filter(eq => {
-      const typeMatch = !filterType || eq.equipmentType === filterType;
-      const brandMatch = !filterBrand || eq.brand === filterBrand;
-      const statusMatch = !filterStatus || eq.status === filterStatus;
-      const inspectionMatch = !filterInspection || 
-        (filterInspection === 'overdue' && eq.nextInspectionDate && isBefore(eq.nextInspectionDate.toDate(), clientToday));
+      const typeMatch = filterType.length === 0 || filterType.includes(eq.equipmentType);
+      const brandMatch = filterBrand.length === 0 || filterBrand.includes(eq.brand);
+      const statusMatch = filterStatus.length === 0 || filterStatus.includes(eq.status);
+      const inspectionMatch = filterInspection.length === 0 || 
+        (filterInspection.includes('overdue') && eq.nextInspectionDate && isBefore(eq.nextInspectionDate.toDate(), clientToday));
 
       return typeMatch && brandMatch && statusMatch && inspectionMatch;
     }).sort((a,b) => {
@@ -186,10 +186,10 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   }, [equipments, filterType, filterBrand, filterStatus, filterInspection, clientToday]);
 
   const clearFilters = () => {
-    setFilterType('');
-    setFilterBrand('');
-    setFilterStatus('');
-    setFilterInspection('');
+    setFilterType([]);
+    setFilterBrand([]);
+    setFilterStatus([]);
+    setFilterInspection([]);
   }
 
   const handleDelete = async (equipmentId: string) => {
@@ -239,39 +239,41 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
              <div className="space-y-2">
                 <Label>Filtrar por Tipo</Label>
-                <Select value={filterType} onValueChange={setFilterType} disabled={equipmentTypes.length === 0}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
-                    <SelectContent>
-                        {equipmentTypes.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione o(s) tipo(s)'
+                    options={equipmentTypes.map(o => ({ value: o, label: o }))}
+                    selected={filterType}
+                    onChange={setFilterType}
+                    disabled={equipmentTypes.length === 0}
+                />
             </div>
              <div className="space-y-2">
                 <Label>Filtrar por Marca</Label>
-                <Select value={filterBrand} onValueChange={setFilterBrand} disabled={brands.length === 0}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a marca" /></SelectTrigger>
-                    <SelectContent>
-                         {brands.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione a(s) marca(s)'
+                    options={brands.map(o => ({ value: o, label: o }))}
+                    selected={filterBrand}
+                    onChange={setFilterBrand}
+                    disabled={brands.length === 0}
+                />
             </div>
             <div className="space-y-2">
                 <Label>Filtrar por Status</Label>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger>
-                    <SelectContent>
-                         {Object.entries(statusMapping).map(([key, { label }]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione o(s) status'
+                    options={Object.entries(statusMapping).map(([key, { label }]) => ({ value: key, label: label }))}
+                    selected={filterStatus}
+                    onChange={setFilterStatus}
+                />
             </div>
             <div className="space-y-2">
                 <Label>Situação da Vistoria</Label>
-                <Select value={filterInspection} onValueChange={setFilterInspection}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a situação" /></SelectTrigger>
-                    <SelectContent>
-                        {inspectionStatusOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <MultiSelectFilter
+                    placeholder='Selecione a situação'
+                    options={inspectionStatusOptions}
+                    selected={filterInspection}
+                    onChange={setFilterInspection}
+                />
             </div>
             <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
           </div>
