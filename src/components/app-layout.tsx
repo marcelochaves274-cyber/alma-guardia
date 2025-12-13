@@ -240,11 +240,11 @@ function MainAppLayout() {
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col h-screen">
-          <header className="sticky top-0 z-10 flex h-20 items-center justify-center border-b bg-card px-4 shadow-sm md:px-6">
-            <div className="absolute left-4 flex items-center gap-4">
+          <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b bg-card px-4 shadow-sm md:px-6">
+            <div className="flex items-center gap-4">
               <SidebarTrigger />
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-1 items-center justify-center gap-4 pr-8 md:pr-0">
               {logoUrl && (
                 <Image
                   src={logoUrl}
@@ -255,10 +255,10 @@ function MainAppLayout() {
                 />
               )}
               <div className="flex flex-col items-center justify-center">
-                <span className="font-bold text-xl text-foreground">
+                <span className="text-base md:text-xl font-bold text-foreground text-center">
                   Sistema de Gestão de Segurança
                 </span>
-                <span className="font-bold text-lg text-muted-foreground">
+                <span className="text-sm md:text-lg font-bold text-muted-foreground text-center">
                     {appName || 'SGS Genius'}
                 </span>
               </div>
