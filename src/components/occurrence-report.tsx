@@ -51,6 +51,7 @@ import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import { MultiSelectFilter } from './multi-select-filter';
+import { Combobox } from './ui/combobox';
 
 
 interface Occurrence {
@@ -102,7 +103,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
   const [filterYear, setFilterYear] = useState<string[]>([]);
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
   const [filterType, setFilterType] = useState<string[]>([]);
-  const [filterLocation, setFilterLocation] = useState<string[]>([]);
+  const [filterLocation, setFilterLocation] = useState<string>(''); // Changed for new combobox
   const [filterName, setFilterName] = useState<string>('');
   const [filterAnalysis, setFilterAnalysis] = useState<string[]>([]);
   const [filterAgeGroup, setFilterAgeGroup] = useState<string[]>([]);
@@ -192,7 +193,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
       const yearMatch = filterYear.length === 0 || filterYear.includes(occDate.getFullYear().toString());
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
       const typeMatch = filterType.length === 0 || filterType.includes(occ.occurrenceType);
-      const locationMatch = filterLocation.length === 0 || filterLocation.includes(occ.occurrenceLocation);
+      const locationMatch = !filterLocation || occ.occurrenceLocation === filterLocation; // Updated logic
       const analysisMatch = filterAnalysis.length === 0 || filterAnalysis.includes(occ.analysis);
       const nameMatch = !filterName || occ.involvedPersonName?.toLowerCase().includes(filterName.toLowerCase());
       const ageGroupMatch = filterAgeGroup.length === 0 || filterAgeGroup.includes(occ.ageGroup);
@@ -205,7 +206,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
     setFilterYear([]);
     setFilterMonths([]);
     setFilterType([]);
-    setFilterLocation([]);
+    setFilterLocation('');
     setFilterName('');
     setFilterAnalysis([]);
     setFilterAgeGroup([]);
@@ -271,6 +272,17 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
             <div className='space-y-2'>
+                <Label>Filtrar por Local</Label>
+                <Combobox
+                    options={locations.map(l => ({ value: l, label: l }))}
+                    value={filterLocation}
+                    onChange={setFilterLocation}
+                    placeholder="Selecione um local..."
+                    searchPlaceholder="Buscar local..."
+                    noResultsText="Nenhum local encontrado."
+                />
+            </div>
+            <div className='space-y-2'>
                 <Label>Filtrar Ano</Label>
                 <MultiSelectFilter
                     placeholder='Selecione o(s) ano(s)'
@@ -288,16 +300,6 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
                     selected={filterType}
                     onChange={setFilterType}
                     disabled={!occurrenceTypes || occurrenceTypes.length === 0}
-                />
-            </div>
-            <div className='space-y-2'>
-                <Label>Filtrar por Local</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione o(s) local(is)'
-                    options={locations.map(l => ({ value: l, label: l }))}
-                    selected={filterLocation}
-                    onChange={setFilterLocation}
-                    disabled={!locations || locations.length === 0}
                 />
             </div>
             <div className='space-y-2'>
