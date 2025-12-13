@@ -148,7 +148,7 @@ export function TreatmentMapReport() {
         const data = doc.data();
         const treatmentDate = data.treatmentDate instanceof Timestamp 
           ? data.treatmentDate.toDate() 
-          : new Date();
+          : new Date(0);
 
         return {
           id: doc.id,
@@ -248,7 +248,7 @@ export function TreatmentMapReport() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Relatório de Mapa de Tratamento de Risco</CardTitle>
+          <CardTitle>Relatório de Mapa - Tratamento de Risco</CardTitle>
           <CardDescription>
             Filtre e visualize a localização dos tratamentos no mapa.
           </CardDescription>
@@ -308,7 +308,7 @@ export function TreatmentMapReport() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-           <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+           <div className="relative w-full min-h-[500px] border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
                 {isLoadingMap || isLoading ? (
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 ) : mapUrl ? (
@@ -318,7 +318,7 @@ export function TreatmentMapReport() {
                       alt="Mapa de tratamentos"
                       width={1920}
                       height={1080}
-                      className="h-full w-auto object-cover md:object-contain rounded-md"
+                      className="h-full w-full object-contain md:object-contain rounded-md"
                       priority
                     />
                     {clusters.map((cluster, index) => {
@@ -380,3 +380,4 @@ export function TreatmentMapReport() {
     </div>
   );
 }
+

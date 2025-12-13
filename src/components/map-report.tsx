@@ -131,7 +131,7 @@ export function MapReport() {
         const data = doc.data();
         const occurrenceDate = data.occurrenceDate instanceof Timestamp 
           ? data.occurrenceDate.toDate() 
-          : new Date();
+          : new Date(0);
 
         return {
           id: doc.id,
@@ -221,7 +221,7 @@ export function MapReport() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Relatório de Mapa</CardTitle>
+          <CardTitle>Relatório de Mapa - Acidentes/Incidentes</CardTitle>
           <CardDescription>
             Filtre e visualize a localização das ocorrências no mapa.
           </CardDescription>
@@ -269,7 +269,7 @@ export function MapReport() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-           <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+           <div className="relative w-full min-h-[500px] border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
                 {isLoadingMap || isLoading ? (
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 ) : mapUrl ? (
@@ -279,7 +279,7 @@ export function MapReport() {
                       alt="Mapa de ocorrências"
                       width={1920}
                       height={1080}
-                      className="h-full w-auto object-cover md:object-contain rounded-md"
+                      className="h-full w-full object-contain md:object-contain rounded-md"
                       priority
                     />
                     {clusters.map((cluster, index) => {
@@ -341,5 +341,6 @@ export function MapReport() {
     </div>
   );
 }
+
 
 
