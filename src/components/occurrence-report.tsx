@@ -20,6 +20,14 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Pencil, Trash2, Loader2, Eye } from 'lucide-react';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
