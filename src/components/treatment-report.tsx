@@ -115,6 +115,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
   const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   // Filter states
   const [filterYears, setFilterYears] = useState<string[]>([]);
@@ -128,6 +129,10 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [treatmentTypes, setTreatmentTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   
   useEffect(() => {
     if (preFilter?.situations) {
@@ -207,7 +212,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
   const filteredTreatments = useMemo(() => {
     return treatments.filter(occ => {
       const occDate = occ.treatmentDate;
-      if (!occDate) return false;
+      if (!occDate || !isClient) return false;
 
       const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
@@ -225,7 +230,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
 
       return yearMatch && monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch;
     });
-  }, [treatments, filterYears, filterMonths, filterTypes, filterLocations, filterRiskLevels, filterSituations]);
+  }, [treatments, filterYears, filterMonths, filterTypes, filterLocations, filterRiskLevels, filterSituations, isClient]);
 
   const clearFilters = () => {
     setFilterYears([]);
@@ -431,82 +436,84 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
             </Table>
           </CardContent>
         </Card>
-        {selectedTreatment && (
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Detalhes do Tratamento de Risco</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[70vh] pr-6">
-              <div className="space-y-4 py-4">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="font-semibold text-muted-foreground">Data da Identificação</Label>
-                      <p>{format(selectedTreatment.treatmentDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
-                    </div>
-                    <div>
-                      <Label className="font-semibold text-muted-foreground">Local</Label>
-                      <p>{selectedTreatment.treatmentLocation}</p>
-                    </div>
-                    <div>
-                      <Label className="font-semibold text-muted-foreground">Tipo de Risco</Label>
-                      <p>{selectedTreatment.treatmentType}</p>
-                    </div>
-                     <div>
-                      <Label className="font-semibold text-muted-foreground">Situação</Label>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Tratamento de Risco</DialogTitle>
+          </DialogHeader>
+          {selectedTreatment && (
+            <>
+              <ScrollArea className="max-h-[70vh] pr-6">
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Badge className={cn(getSituationProperties(selectedTreatment.situation).className)}>
-                          {getSituationProperties(selectedTreatment.situation).label}
-                        </Badge>
+                        <Label className="font-semibold text-muted-foreground">Data da Identificação</Label>
+                        <p>{format(selectedTreatment.treatmentDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
                       </div>
-                    </div>
-                     {(selectedTreatment.situation === 'pendente' || selectedTreatment.situation === 'reaberto') && selectedTreatment.completionDate && (
-                       <div>
-                        <Label className="font-semibold text-muted-foreground">Prazo para Conclusão</Label>
-                        <p>{format(selectedTreatment.completionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Local</Label>
+                        <p>{selectedTreatment.treatmentLocation}</p>
                       </div>
-                    )}
-                 </div>
-                 <div>
-                    <Label className="font-semibold text-muted-foreground">Descrição do Risco</Label>
-                    <p className="whitespace-pre-wrap">{selectedTreatment.description || 'Não informado'}</p>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 mt-4">
-                    <div>
-                        <Label className="font-semibold text-muted-foreground">Probabilidade</Label>
-                        <p>{selectedTreatment.probability}</p>
-                    </div>
-                     <div>
-                        <Label className="font-semibold text-muted-foreground">Consequência</Label>
-                        <p>{selectedTreatment.consequence}</p>
-                    </div>
-                     <div>
-                        <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Tipo de Risco</Label>
+                        <p>{selectedTreatment.treatmentType}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Situação</Label>
                         <div>
-                          <Badge className={cn(getRiskLevelProperties(selectedTreatment.riskLevel).className)}>
-                              {getRiskLevelProperties(selectedTreatment.riskLevel).label}
+                          <Badge className={cn(getSituationProperties(selectedTreatment.situation).className)}>
+                            {getSituationProperties(selectedTreatment.situation).label}
                           </Badge>
                         </div>
-                    </div>
-                 </div>
-                 <div>
-                    <Label className="font-semibold text-muted-foreground">Tratamento Proposto</Label>
-                    <p className="whitespace-pre-wrap">{selectedTreatment.proposedTreatment || 'Não informado'}</p>
-                 </div>
-                 <div>
-                    <Label className="font-semibold text-muted-foreground">Ação Realizada</Label>
-                    <p className="whitespace-pre-wrap">{selectedTreatment.actionTaken || 'Não informado'}</p>
-                 </div>
+                      </div>
+                      {(selectedTreatment.situation === 'pendente' || selectedTreatment.situation === 'reaberto') && selectedTreatment.completionDate && (
+                        <div>
+                          <Label className="font-semibold text-muted-foreground">Prazo para Conclusão</Label>
+                          <p>{format(selectedTreatment.completionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                        </div>
+                      )}
+                  </div>
+                  <div>
+                      <Label className="font-semibold text-muted-foreground">Descrição do Risco</Label>
+                      <p className="whitespace-pre-wrap">{selectedTreatment.description || 'Não informado'}</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 mt-4">
+                      <div>
+                          <Label className="font-semibold text-muted-foreground">Probabilidade</Label>
+                          <p>{selectedTreatment.probability}</p>
+                      </div>
+                      <div>
+                          <Label className="font-semibold text-muted-foreground">Consequência</Label>
+                          <p>{selectedTreatment.consequence}</p>
+                      </div>
+                      <div>
+                          <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
+                          <div>
+                            <Badge className={cn(getRiskLevelProperties(selectedTreatment.riskLevel).className)}>
+                                {getRiskLevelProperties(selectedTreatment.riskLevel).label}
+                            </Badge>
+                          </div>
+                      </div>
+                  </div>
+                  <div>
+                      <Label className="font-semibold text-muted-foreground">Tratamento Proposto</Label>
+                      <p className="whitespace-pre-wrap">{selectedTreatment.proposedTreatment || 'Não informado'}</p>
+                  </div>
+                  <div>
+                      <Label className="font-semibold text-muted-foreground">Ação Realizada</Label>
+                      <p className="whitespace-pre-wrap">{selectedTreatment.actionTaken || 'Não informado'}</p>
+                  </div>
+                </div>
+              </ScrollArea>
+              <div className="flex justify-end pt-2">
+                  <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                          Fechar
+                      </Button>
+                  </DialogClose>
               </div>
-            </ScrollArea>
-             <div className="flex justify-end pt-2">
-                <DialogClose asChild>
-                    <Button type="button" variant="secondary">
-                        Fechar
-                    </Button>
-                </DialogClose>
-            </div>
-          </DialogContent>
-        )}
+            </>
+          )}
+        </DialogContent>
       </Dialog>
     </div>
   );

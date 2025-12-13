@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -98,6 +96,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
   const [selectedOccurrence, setSelectedOccurrence] = useState<Occurrence | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   // Filter states
   const [filterYears, setFilterYears] = useState<string[]>([]);
@@ -112,6 +111,10 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -184,7 +187,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
   const filteredOccurrences = useMemo(() => {
     return occurrences.filter(occ => {
       const occDate = occ.occurrenceDate;
-      if (!occDate) return false;
+      if (!occDate || !isClient) return false;
 
       const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
@@ -196,7 +199,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
 
       return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && nameMatch && ageGroupMatch;
     });
-  }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations, filterName, filterAnalyses, filterAgeGroups]);
+  }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations, filterName, filterAnalyses, filterAgeGroups, isClient]);
 
   const clearFilters = () => {
     setFilterYears([]);
@@ -315,7 +318,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
         </CardContent>
       </Card>
 
-      <Dialog>
+      <Dialog onOpenChange={() => setSelectedOccurrence(null)}>
         <Card>
           <CardHeader>
             <CardTitle>Resultados</CardTitle>
@@ -407,82 +410,85 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
             </Table>
           </CardContent>
         </Card>
-        {selectedOccurrence && (
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Detalhes da Ocorrência</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[70vh] pr-6">
-              <div className="space-y-4 py-4">
-                 <div>
-                    <Label className="font-semibold text-muted-foreground">Nome Completo</Label>
-                    <p>{selectedOccurrence.involvedPersonName}</p>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="font-semibold text-muted-foreground">Data da Ocorrência</Label>
-                      <p>{format(selectedOccurrence.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
-                    </div>
-                    <div>
-                      <Label className="font-semibold text-muted-foreground">Local</Label>
-                      <p>{selectedOccurrence.occurrenceLocation}</p>
-                    </div>
-                    <div>
-                      <Label className="font-semibold text-muted-foreground">Tipo de Ocorrência</Label>
-                      <p>{selectedOccurrence.occurrenceType}</p>
-                    </div>
-                     <div>
-                      <Label className="font-semibold text-muted-foreground">Análise</Label>
+        
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Ocorrência</DialogTitle>
+          </DialogHeader>
+          {selectedOccurrence && (
+            <>
+              <ScrollArea className="max-h-[70vh] pr-6">
+                <div className="space-y-4 py-4">
+                  <div>
+                      <Label className="font-semibold text-muted-foreground">Nome Completo</Label>
+                      <p>{selectedOccurrence.involvedPersonName}</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        {analysisMapping[selectedOccurrence.analysis] ? (
-                            <Badge className={cn(analysisMapping[selectedOccurrence.analysis].className)}>
-                                {analysisMapping[selectedOccurrence.analysis].label}
-                            </Badge>
-                        ) : 'N/A'}
+                        <Label className="font-semibold text-muted-foreground">Data da Ocorrência</Label>
+                        <p>{format(selectedOccurrence.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
                       </div>
-                    </div>
-                 </div>
-                 <div>
-                    <Label className="font-semibold text-muted-foreground">Descrição</Label>
-                    <p className="whitespace-pre-wrap">{selectedOccurrence.description}</p>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4 mt-4">
-                    <div>
-                      <Label className="font-semibold text-muted-foreground">CPF</Label>
-                      <p>{selectedOccurrence.cpf || 'Não informado'}</p>
-                    </div>
-                     <div>
-                      <Label className="font-semibold text-muted-foreground">Data de Nascimento</Label>
-                      <p>{selectedOccurrence.birthDate || 'Não informado'}</p>
-                    </div>
-                     <div>
-                      <Label className="font-semibold text-muted-foreground">Faixa Etária</Label>
-                      <p>{ageGroupOptions.find(o => o.value === selectedOccurrence.ageGroup)?.label || selectedOccurrence.ageGroup || 'Não informado'}</p>
-                    </div>
-                     <div>
-                      <Label className="font-semibold text-muted-foreground">Telefone</Label>
-                      <p>{selectedOccurrence.phone || 'Não informado'}</p>
-                    </div>
-                     <div>
-                      <Label className="font-semibold text-muted-foreground">Cidade</Label>
-                      <p>{selectedOccurrence.city || 'Não informado'}</p>
-                    </div>
-                     <div>
-                      <Label className="font-semibold text-muted-foreground">Estado</Label>
-                      <p>{selectedOccurrence.state || 'Não informado'}</p>
-                    </div>
-                 </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Local</Label>
+                        <p>{selectedOccurrence.occurrenceLocation}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Tipo de Ocorrência</Label>
+                        <p>{selectedOccurrence.occurrenceType}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Análise</Label>
+                        <div>
+                          {analysisMapping[selectedOccurrence.analysis] ? (
+                              <Badge className={cn(analysisMapping[selectedOccurrence.analysis].className)}>
+                                  {analysisMapping[selectedOccurrence.analysis].label}
+                              </Badge>
+                          ) : 'N/A'}
+                        </div>
+                      </div>
+                  </div>
+                  <div>
+                      <Label className="font-semibold text-muted-foreground">Descrição</Label>
+                      <p className="whitespace-pre-wrap">{selectedOccurrence.description}</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4 mt-4">
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">CPF</Label>
+                        <p>{selectedOccurrence.cpf || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Data de Nascimento</Label>
+                        <p>{selectedOccurrence.birthDate || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Faixa Etária</Label>
+                        <p>{ageGroupOptions.find(o => o.value === selectedOccurrence.ageGroup)?.label || selectedOccurrence.ageGroup || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Telefone</Label>
+                        <p>{selectedOccurrence.phone || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Cidade</Label>
+                        <p>{selectedOccurrence.city || 'Não informado'}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Estado</Label>
+                        <p>{selectedOccurrence.state || 'Não informado'}</p>
+                      </div>
+                  </div>
+                </div>
+              </ScrollArea>
+              <div className="flex justify-end pt-2">
+                  <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                          Fechar
+                      </Button>
+                  </DialogClose>
               </div>
-            </ScrollArea>
-             <div className="flex justify-end pt-2">
-                <DialogClose asChild>
-                    <Button type="button" variant="secondary">
-                        Fechar
-                    </Button>
-                </DialogClose>
-            </div>
-          </DialogContent>
-        )}
+            </>
+           )}
+        </DialogContent>
       </Dialog>
     </div>
   );

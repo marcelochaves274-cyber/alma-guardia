@@ -82,6 +82,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
   const [selectedRecord, setSelectedRecord] = useState<FaunaFloraGeoRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   // Filter states
   const [filterYears, setFilterYears] = useState<string[]>([]);
@@ -94,6 +95,10 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [speciesTypes, setSpeciesTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -166,7 +171,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
   const filteredRecords = useMemo(() => {
     return records.filter(rec => {
       const recDate = rec.date;
-      if (!recDate) return false;
+      if (!recDate || !isClient) return false;
 
       const yearMatch = filterYears.length === 0 || filterYears.includes(recDate.getFullYear().toString());
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(recDate.getMonth().toString());
@@ -176,7 +181,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
 
       return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch;
     });
-  }, [records, filterYears, filterMonths, filterTypes, filterLocations, filterAnalyses]);
+  }, [records, filterYears, filterMonths, filterTypes, filterLocations, filterAnalyses, isClient]);
 
   const clearFilters = () => {
     setFilterYears([]);
@@ -365,52 +370,54 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
             </Table>
           </CardContent>
         </Card>
-        {selectedRecord && (
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Detalhes do Registro</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[70vh] pr-6">
-              <div className="space-y-4 py-4">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="font-semibold text-muted-foreground">Data do Registro</Label>
-                      <p>{format(selectedRecord.date, 'dd/MM/yyyy', { locale: ptBR })}</p>
-                    </div>
-                    <div>
-                      <Label className="font-semibold text-muted-foreground">Local</Label>
-                      <p>{selectedRecord.location}</p>
-                    </div>
-                    <div>
-                      <Label className="font-semibold text-muted-foreground">Espécie / Tipo</Label>
-                      <p>{selectedRecord.speciesType}</p>
-                    </div>
-                     <div>
-                      <Label className="font-semibold text-muted-foreground">Análise</Label>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Registro</DialogTitle>
+          </DialogHeader>
+          {selectedRecord && (
+            <>
+              <ScrollArea className="max-h-[70vh] pr-6">
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        {analysisMapping[selectedRecord.analysis] ? (
-                            <Badge className={cn(analysisMapping[selectedRecord.analysis].className)}>
-                                {analysisMapping[selectedRecord.analysis].label}
-                            </Badge>
-                        ) : 'N/A'}
+                        <Label className="font-semibold text-muted-foreground">Data do Registro</Label>
+                        <p>{format(selectedRecord.date, 'dd/MM/yyyy', { locale: ptBR })}</p>
                       </div>
-                    </div>
-                 </div>
-                 <div>
-                    <Label className="font-semibold text-muted-foreground">Descrição</Label>
-                    <p className="whitespace-pre-wrap">{selectedRecord.description}</p>
-                 </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Local</Label>
+                        <p>{selectedRecord.location}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Espécie / Tipo</Label>
+                        <p>{selectedRecord.speciesType}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Análise</Label>
+                        <div>
+                          {analysisMapping[selectedRecord.analysis] ? (
+                              <Badge className={cn(analysisMapping[selectedRecord.analysis].className)}>
+                                  {analysisMapping[selectedRecord.analysis].label}
+                              </Badge>
+                          ) : 'N/A'}
+                        </div>
+                      </div>
+                  </div>
+                  <div>
+                      <Label className="font-semibold text-muted-foreground">Descrição</Label>
+                      <p className="whitespace-pre-wrap">{selectedRecord.description}</p>
+                  </div>
+                </div>
+              </ScrollArea>
+              <div className="flex justify-end pt-2">
+                  <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                          Fechar
+                      </Button>
+                  </DialogClose>
               </div>
-            </ScrollArea>
-             <div className="flex justify-end pt-2">
-                <DialogClose asChild>
-                    <Button type="button" variant="secondary">
-                        Fechar
-                    </Button>
-                </DialogClose>
-            </div>
-          </DialogContent>
-        )}
+            </>
+          )}
+        </DialogContent>
       </Dialog>
     </div>
   );

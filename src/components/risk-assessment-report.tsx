@@ -85,11 +85,16 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   const [selectedAssessment, setSelectedAssessment] = useState<RiskAssessment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   const [filterLocations, setFilterLocations] = useState<string[]>([]);
   
   const [locations, setLocations] = useState<string[]>([]);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
@@ -155,11 +160,12 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   }, [user, firestore, toast]);
 
   const filteredAssessments = useMemo(() => {
+    if (!isClient) return [];
     if (filterLocations.length === 0) {
         return assessments;
     }
     return assessments.filter(ass => filterLocations.includes(ass.location));
-  }, [assessments, filterLocations]);
+  }, [assessments, filterLocations, isClient]);
 
 
   const handleDelete = async (assessmentId: string) => {
@@ -230,15 +236,15 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Resultados</CardTitle>
-          <CardDescription>
-            Exibindo {filteredAssessments.length} avaliações.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Dialog>
+      <Dialog>
+        <Card>
+          <CardHeader>
+            <CardTitle>Resultados</CardTitle>
+            <CardDescription>
+              Exibindo {filteredAssessments.length} avaliações.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -319,11 +325,14 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
                 )}
               </TableBody>
             </Table>
-             {selectedAssessment && (
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Detalhes da Avaliação de Risco</DialogTitle>
-                </DialogHeader>
+          </CardContent>
+        </Card>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Avaliação de Risco</DialogTitle>
+          </DialogHeader>
+            {selectedAssessment && (
+              <>
                 <ScrollArea className="max-h-[70vh] pr-6">
                   <div className="space-y-4 py-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -336,58 +345,57 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
                         <p>{selectedAssessment.location}</p>
                       </div>
                     </div>
-                     <div>
+                      <div>
                         <Label className="font-semibold text-muted-foreground">Etapa da Atividade</Label>
                         <p>{selectedAssessment.taskDescription}</p>
                       </div>
-                       <div>
+                      <div>
                         <Label className="font-semibold text-muted-foreground">Causa</Label>
                         <p>{selectedAssessment.riskSource}</p>
                       </div>
-                       <div>
+                      <div>
                         <Label className="font-semibold text-muted-foreground">Perigo</Label>
                         <p>{selectedAssessment.effects}</p>
                       </div>
-                       <div>
+                      <div>
                         <Label className="font-semibold text-muted-foreground">Dano</Label>
                         <p>{selectedAssessment.existingControls}</p>
                       </div>
-                       <div>
+                      <div>
                         <Label className="font-semibold text-muted-foreground">Controle Operacional</Label>
                         <p>{selectedAssessment.recommendedControls}</p>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 mt-4">
                         <div>
-                           <Label className="font-semibold text-muted-foreground">Probabilidade</Label>
-                           <p>{selectedAssessment.probability}</p>
+                            <Label className="font-semibold text-muted-foreground">Probabilidade</Label>
+                            <p>{selectedAssessment.probability}</p>
                         </div>
-                         <div>
-                           <Label className="font-semibold text-muted-foreground">Consequência</Label>
-                           <p>{selectedAssessment.consequence}</p>
+                          <div>
+                            <Label className="font-semibold text-muted-foreground">Consequência</Label>
+                            <p>{selectedAssessment.consequence}</p>
                         </div>
-                         <div>
-                           <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
-                           <div>
+                          <div>
+                            <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
+                            <div>
                               <Badge className={cn(getRiskLevelProperties(selectedAssessment.riskLevel).className)}>
                                   {getRiskLevelProperties(selectedAssessment.riskLevel).label}
                               </Badge>
-                           </div>
+                            </div>
                         </div>
                       </div>
                   </div>
                 </ScrollArea>
-                 <div className="flex justify-end pt-2">
+                <div className="flex justify-end pt-2">
                     <DialogClose asChild>
                         <Button type="button" variant="secondary">
                             Fechar
                         </Button>
                     </DialogClose>
                 </div>
-              </DialogContent>
+              </>
             )}
-          </Dialog>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
