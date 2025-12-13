@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -11,9 +12,10 @@ import {
   SidebarMenuSubButton,
   useSidebar,
   SidebarMenuSubItem,
+  SidebarMenuSkeleton,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info } from 'lucide-react';
-import { useState } from 'react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info, Map } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
 import Image from 'next/image';
@@ -29,16 +31,61 @@ interface AppSidebarProps {
   setActivePage: (page: string) => void;
 }
 
+function SidebarSkeleton() {
+    return (
+        <>
+            <SidebarHeader className="bg-sidebar-secondary">
+                <div className="flex items-center gap-2">
+                    <Skeleton className='h-6 w-6 rounded-sm' />
+                    <div className="flex flex-col">
+                        <Skeleton className='h-5 w-16 mb-1' />
+                        <Skeleton className='h-4 w-24' />
+                    </div>
+                </div>
+            </SidebarHeader>
+            <SidebarContent>
+                <SidebarMenu>
+                    <SidebarMenuSkeleton showIcon />
+                    <SidebarMenuSkeleton showIcon />
+                    <SidebarMenuSkeleton showIcon />
+                    <SidebarMenuSkeleton showIcon />
+                    <SidebarMenuSkeleton showIcon />
+                    <SidebarMenuSkeleton showIcon />
+                    <SidebarMenuSkeleton showIcon />
+                    <SidebarMenuSkeleton showIcon />
+                    <SidebarMenuSkeleton showIcon />
+                    <SidebarMenuSkeleton showIcon />
+                </SidebarMenu>
+            </SidebarContent>
+            <SidebarFooter className="bg-sidebar-secondary">
+                <SidebarMenu>
+                    <SidebarMenuSkeleton showIcon />
+                    <SidebarMenuSkeleton showIcon />
+                </SidebarMenu>
+            </SidebarFooter>
+        </>
+    )
+}
+
 export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   const { state } = useSidebar();
-  const { appName, logoUrl, isLoading } = useAppSettings();
+  const { appName, logoUrl, isLoading: isSettingsLoading } = useAppSettings();
   const { user } = useUser();
   const firebaseApp = useFirebaseApp();
   const router = useRouter();
   const { toast } = useToast();
-  const { profile, clearProfile } = useProfile();
+  const { profile, clearProfile, isProfileLoading } = useProfile();
+  
+  const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
 
-  const [openSubMenu, setOpenSubMenu] = useState<string | null>('reminders');
+  // Set default open menu based on profile
+  useEffect(() => {
+    if (profile === 'admin') {
+      setOpenSubMenu('reminders');
+    } else if (profile === 'observer') {
+      setOpenSubMenu('avisos');
+    }
+  }, [profile]);
 
   const isAdmin = profile === 'admin';
 
@@ -102,7 +149,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     if (parentMenu) {
       setOpenSubMenu(parentMenu);
     } else {
-      if (!['help', 'informacoes'].includes(page)) {
+      if (!['help', 'informacoes', 'reminders'].includes(page)) {
           setOpenSubMenu(null);
       }
     }
@@ -120,11 +167,15 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     return 'N/D';
   }
 
+  if (isProfileLoading || isSettingsLoading) {
+      return <SidebarSkeleton />;
+  }
+
   return (
     <>
       <SidebarHeader className="bg-sidebar-secondary">
         <div className="flex items-center gap-2">
-          {isLoading ? (
+          {isSettingsLoading ? (
             <Skeleton className='h-6 w-6 rounded-sm' />
           ) : logoUrl ? (
              <Image 
@@ -664,3 +715,5 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     </>
   );
 }
+
+    
