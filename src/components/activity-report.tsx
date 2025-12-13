@@ -146,7 +146,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
              const data = doc.data();
              const assessmentDate = data.assessmentDate instanceof Timestamp 
                 ? data.assessmentDate.toDate() 
-                : new Date(); 
+                : new Date(0); // Use a fixed, non-problematic date as a fallback
             return {
                 id: doc.id,
                 ...data,
@@ -404,3 +404,5 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
     </div>
   );
 }
+
+    
