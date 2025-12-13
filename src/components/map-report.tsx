@@ -36,6 +36,7 @@ import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { MultiSelectDropdown } from './ui/multi-select-dropdown';
 
 interface Occurrence {
   id: string;
@@ -311,7 +312,7 @@ export function MapReport() {
               onChange={setFilterTypes}
               disabled={!occurrenceTypes || occurrenceTypes.length === 0}
             />
-            <MultiSelectFilter
+            <MultiSelectDropdown
               placeholder="Filtrar por Local"
               options={locations.map(l => ({ value: l, label: l }))}
               selected={filterLocations}
@@ -362,5 +363,3 @@ export function MapReport() {
     </div>
   );
 }
-
-    
