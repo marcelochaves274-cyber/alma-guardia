@@ -341,3 +341,4 @@ export function MapReport() {
     </div>
   );
 }
+
