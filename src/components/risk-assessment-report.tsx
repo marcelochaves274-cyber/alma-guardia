@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -129,7 +130,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         const data = doc.data();
         const assessmentDate = data.assessmentDate instanceof Timestamp 
           ? data.assessmentDate.toDate() 
-          : new Date(); 
+          : new Date(0); 
 
         return {
           id: doc.id,

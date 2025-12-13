@@ -149,7 +149,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
         const data = doc.data();
         const occurrenceDate = data.occurrenceDate instanceof Timestamp 
           ? data.occurrenceDate.toDate() 
-          : new Date(); 
+          : new Date(0); 
 
         return {
           id: doc.id,

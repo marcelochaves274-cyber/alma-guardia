@@ -131,7 +131,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
         const data = doc.data();
         const recordDate = data.date instanceof Timestamp 
           ? data.date.toDate() 
-          : new Date(); 
+          : new Date(0); 
 
         return {
           id: doc.id,

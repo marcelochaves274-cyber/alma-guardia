@@ -172,7 +172,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
         const data = doc.data();
         const treatmentDate = data.treatmentDate instanceof Timestamp 
           ? data.treatmentDate.toDate() 
-          : new Date(); 
+          : new Date(0); 
 
         return {
           id: doc.id,
