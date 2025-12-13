@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -14,28 +15,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Button } from './ui/button';
-import { Loader2, MapPin, ZoomIn } from 'lucide-react';
+import { Loader2, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from './ui/scroll-area';
-import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface Treatment {
   id: string;
@@ -85,12 +78,12 @@ export function TreatmentMapReport() {
   const [isLoadingMap, setIsLoadingMap] = useState(true);
 
   // Filter states
-  const [filterYears, setFilterYears] = useState<string[]>([]);
+  const [filterYear, setFilterYear] = useState<string>('');
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
-  const [filterTypes, setFilterTypes] = useState<string[]>([]);
-  const [filterLocations, setFilterLocations] = useState<string[]>([]);
-  const [filterRiskLevels, setFilterRiskLevels] = useState<string[]>([]);
-  const [filterSituations, setFilterSituations] = useState<string[]>([]);
+  const [filterType, setFilterType] = useState<string>('');
+  const [filterLocation, setFilterLocation] = useState<string>('');
+  const [filterRiskLevel, setFilterRiskLevel] = useState<string>('');
+  const [filterSituation, setFilterSituation] = useState<string>('');
 
   // Dynamic options for selects
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -198,23 +191,23 @@ export function TreatmentMapReport() {
       const occDate = occ.treatmentDate;
       if (!occDate) return false;
 
-      const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
+      const yearMatch = !filterYear || occDate.getFullYear().toString() === filterYear;
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
-      const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.treatmentType);
-      const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.treatmentLocation);
-      const situationMatch = filterSituations.length === 0 || filterSituations.includes(occ.situation);
+      const typeMatch = !filterType || occ.treatmentType === filterType;
+      const locationMatch = !filterLocation || occ.treatmentLocation === filterLocation;
+      const situationMatch = !filterSituation || occ.situation === filterSituation;
 
-       const riskLevelMatch = filterRiskLevels.length === 0 || filterRiskLevels.some(level => {
+       const riskLevelMatch = !filterRiskLevel || (riskLevel => {
         const score = occ.riskLevel;
-        if (level === 'alta') return score >= 15;
-        if (level === 'media') return score >= 8 && score < 15;
-        if (level === 'baixa') return score > 0 && score < 8;
+        if (riskLevel === 'alta') return score >= 15;
+        if (riskLevel === 'media') return score >= 8 && score < 15;
+        if (riskLevel === 'baixa') return score > 0 && score < 8;
         return false;
-      });
+      })(filterRiskLevel);
 
       return yearMatch && monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch && !!occ.mapMarker;
     });
-  }, [treatments, filterYears, filterMonths, filterTypes, filterLocations, filterRiskLevels, filterSituations, isClient]);
+  }, [treatments, filterYear, filterMonths, filterType, filterLocation, filterRiskLevel, filterSituation, isClient]);
 
   const clusters = useMemo(() => {
     const points = filteredTreatments.filter(occ => occ.mapMarker);
@@ -249,12 +242,12 @@ export function TreatmentMapReport() {
   }, [filteredTreatments]);
   
   const clearFilters = () => {
-    setFilterYears([]);
+    setFilterYear('');
     setFilterMonths([]);
-    setFilterTypes([]);
-    setFilterLocations([]);
-    setFilterRiskLevels([]);
-    setFilterSituations([]);
+    setFilterType('');
+    setFilterLocation('');
+    setFilterRiskLevel('');
+    setFilterSituation('');
   }
 
   const renderedPins = useMemo(() => {
@@ -325,39 +318,51 @@ export function TreatmentMapReport() {
             <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
-            <MultiSelectFilter
-              placeholder="Filtrar por Ano"
-              options={availableYears.map(y => ({ value: y, label: y }))}
-              selected={filterYears}
-              onChange={setFilterYears}
-              disabled={isLoading || availableYears.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Tipo de Risco"
-              options={treatmentTypes.map(t => ({ value: t, label: t }))}
-              selected={filterTypes}
-              onChange={setFilterTypes}
-              disabled={!treatmentTypes || treatmentTypes.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Nível de Risco (PxC)"
-              options={riskLevelOptions}
-              selected={filterRiskLevels}
-              onChange={setFilterRiskLevels}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Local"
-              options={locations.map(l => ({ value: l, label: l }))}
-              selected={filterLocations}
-              onChange={setFilterLocations}
-              disabled={!locations || locations.length === 0}
-            />
-             <MultiSelectFilter
-              placeholder="Filtrar por Situação"
-              options={situationOptions}
-              selected={filterSituations}
-              onChange={setFilterSituations}
-            />
+            <div className="space-y-2">
+                <Label>Filtrar por Ano</Label>
+                <Select value={filterYear} onValueChange={setFilterYear} disabled={isLoading || availableYears.length === 0}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o ano" /></SelectTrigger>
+                    <SelectContent>
+                        {availableYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <Label>Filtrar por Tipo de Risco</Label>
+                <Select value={filterType} onValueChange={setFilterType} disabled={!treatmentTypes || treatmentTypes.length === 0}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                    <SelectContent>
+                        {treatmentTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <Label>Nível de Risco (PxC)</Label>
+                <Select value={filterRiskLevel} onValueChange={setFilterRiskLevel}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o nível" /></SelectTrigger>
+                    <SelectContent>
+                        {riskLevelOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <Label>Filtrar por Local</Label>
+                <Select value={filterLocation} onValueChange={setFilterLocation} disabled={!locations || locations.length === 0}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o local" /></SelectTrigger>
+                    <SelectContent>
+                        {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <Label>Filtrar por Situação</Label>
+                <Select value={filterSituation} onValueChange={setFilterSituation}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a situação" /></SelectTrigger>
+                    <SelectContent>
+                        {situationOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
             
             <Button onClick={clearFilters} variant="outline" className="w-full">
               Limpar Filtros
@@ -402,5 +407,3 @@ export function TreatmentMapReport() {
     </div>
   );
 }
-
-    

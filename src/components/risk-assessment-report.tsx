@@ -49,7 +49,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { MultiSelectFilter } from './ui/multi-select-filter';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface RiskAssessment {
   id: string;
@@ -87,7 +87,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
 
-  const [filterLocations, setFilterLocations] = useState<string[]>([]);
+  const [filterLocation, setFilterLocation] = useState<string>('');
   
   const [locations, setLocations] = useState<string[]>([]);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
@@ -161,11 +161,11 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
 
   const filteredAssessments = useMemo(() => {
     if (!isClient) return [];
-    if (filterLocations.length === 0) {
+    if (!filterLocation) {
         return assessments;
     }
-    return assessments.filter(ass => filterLocations.includes(ass.location));
-  }, [assessments, filterLocations, isClient]);
+    return assessments.filter(ass => ass.location === filterLocation);
+  }, [assessments, filterLocation, isClient]);
 
 
   const handleDelete = async (assessmentId: string) => {
@@ -222,14 +222,16 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-             <MultiSelectFilter
-                placeholder="Filtrar por Local"
-                options={locations.map(l => ({ value: l, label: l }))}
-                selected={filterLocations}
-                onChange={setFilterLocations}
-                disabled={isLoadingLocations || locations.length === 0}
-            />
-            <Button onClick={() => setFilterLocations([])} variant="outline" className="w-full sm:w-auto">
+             <div className="space-y-2">
+                <Label>Filtrar por Local</Label>
+                <Select value={filterLocation} onValueChange={setFilterLocation} disabled={isLoadingLocations || locations.length === 0}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o local" /></SelectTrigger>
+                    <SelectContent>
+                        {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+             </div>
+            <Button onClick={() => setFilterLocation('')} variant="outline" className="w-full sm:w-auto self-end">
               Limpar Filtro
             </Button>
           </div>

@@ -39,7 +39,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Label } from './ui/label';
 
 interface Equipment {
   id: string;
@@ -64,8 +65,6 @@ const statusMapping: Record<string, { label: string, className: string }> = {
     'em manutencao': { label: 'Em Manutenção', className: 'bg-orange-500 text-white' },
     descartado: { label: 'Descartado', className: 'bg-muted text-muted-foreground' }
 };
-
-const statusOptions = Object.entries(statusMapping).map(([key, { label }]) => ({ value: key, label }));
 
 const inspectionStatusOptions = [
     { value: 'overdue', label: 'Vistoria Atrasada' }
@@ -101,10 +100,10 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Filter states
-  const [filterTypes, setFilterTypes] = useState<string[]>([]);
-  const [filterBrands, setFilterBrands] = useState<string[]>([]);
-  const [filterStatuses, setFilterStatuses] = useState<string[]>([]);
-  const [filterInspection, setFilterInspection] = useState<string[]>(preFilter?.status === 'overdue' ? ['overdue'] : []);
+  const [filterType, setFilterType] = useState<string>('');
+  const [filterBrand, setFilterBrand] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterInspection, setFilterInspection] = useState<string>(preFilter?.status === 'overdue' ? 'overdue' : '');
   
   // Dynamic options for selects
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
@@ -117,7 +116,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   }, []);
   
   useEffect(() => {
-    setFilterInspection(preFilter?.status === 'overdue' ? ['overdue'] : []);
+    setFilterInspection(preFilter?.status === 'overdue' ? 'overdue' : '');
   }, [preFilter]);
   
   const getSettingsDocRef = useCallback((collectionName: string) => {
@@ -172,11 +171,11 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const filteredEquipments = useMemo(() => {
     if (!clientToday) return [];
     return equipments.filter(eq => {
-      const typeMatch = filterTypes.length === 0 || filterTypes.includes(eq.equipmentType);
-      const brandMatch = filterBrands.length === 0 || filterBrands.includes(eq.brand);
-      const statusMatch = filterStatuses.length === 0 || filterStatuses.includes(eq.status);
-      const inspectionMatch = filterInspection.length === 0 || 
-        (filterInspection.includes('overdue') && eq.nextInspectionDate && isBefore(eq.nextInspectionDate.toDate(), clientToday));
+      const typeMatch = !filterType || eq.equipmentType === filterType;
+      const brandMatch = !filterBrand || eq.brand === filterBrand;
+      const statusMatch = !filterStatus || eq.status === filterStatus;
+      const inspectionMatch = !filterInspection || 
+        (filterInspection === 'overdue' && eq.nextInspectionDate && isBefore(eq.nextInspectionDate.toDate(), clientToday));
 
       return typeMatch && brandMatch && statusMatch && inspectionMatch;
     }).sort((a,b) => {
@@ -184,13 +183,13 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
         const dateB = b.nextInspectionDate?.toDate()?.getTime() || Infinity;
         return dateA - dateB;
     });
-  }, [equipments, filterTypes, filterBrands, filterStatuses, filterInspection, clientToday]);
+  }, [equipments, filterType, filterBrand, filterStatus, filterInspection, clientToday]);
 
   const clearFilters = () => {
-    setFilterTypes([]);
-    setFilterBrands([]);
-    setFilterStatuses([]);
-    setFilterInspection([]);
+    setFilterType('');
+    setFilterBrand('');
+    setFilterStatus('');
+    setFilterInspection('');
   }
 
   const handleDelete = async (equipmentId: string) => {
@@ -238,32 +237,42 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
-            <MultiSelectFilter
-              placeholder="Filtrar por Tipo"
-              options={equipmentTypes.map(t => ({ value: t, label: t }))}
-              selected={filterTypes}
-              onChange={setFilterTypes}
-              disabled={equipmentTypes.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Marca"
-              options={brands.map(b => ({ value: b, label: b }))}
-              selected={filterBrands}
-              onChange={setFilterBrands}
-              disabled={brands.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Status"
-              options={statusOptions}
-              selected={filterStatuses}
-              onChange={setFilterStatuses}
-            />
-             <MultiSelectFilter
-              placeholder="Situação da Vistoria"
-              options={inspectionStatusOptions}
-              selected={filterInspection}
-              onChange={setFilterInspection}
-            />
+             <div className="space-y-2">
+                <Label>Filtrar por Tipo</Label>
+                <Select value={filterType} onValueChange={setFilterType} disabled={equipmentTypes.length === 0}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                    <SelectContent>
+                        {equipmentTypes.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+             <div className="space-y-2">
+                <Label>Filtrar por Marca</Label>
+                <Select value={filterBrand} onValueChange={setFilterBrand} disabled={brands.length === 0}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a marca" /></SelectTrigger>
+                    <SelectContent>
+                         {brands.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <Label>Filtrar por Status</Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger>
+                    <SelectContent>
+                         {Object.entries(statusMapping).map(([key, { label }]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <Label>Situação da Vistoria</Label>
+                <Select value={filterInspection} onValueChange={setFilterInspection}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a situação" /></SelectTrigger>
+                    <SelectContent>
+                        {inspectionStatusOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
             <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
           </div>
         </CardContent>

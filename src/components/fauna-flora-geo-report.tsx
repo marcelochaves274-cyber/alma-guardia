@@ -47,10 +47,10 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface FaunaFloraGeoRecord {
   id: string;
@@ -71,8 +71,6 @@ const analysisMapping: Record<string, { label: string, className: string }> = {
     baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
-const analysisOptions = Object.entries(analysisMapping).map(([key, { label }]) => ({ value: key, label }));
-
 export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -85,11 +83,11 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
   const [isClient, setIsClient] = useState(false);
 
   // Filter states
-  const [filterYears, setFilterYears] = useState<string[]>([]);
+  const [filterYear, setFilterYear] = useState<string>('');
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
-  const [filterTypes, setFilterTypes] = useState<string[]>([]);
-  const [filterLocations, setFilterLocations] = useState<string[]>([]);
-  const [filterAnalyses, setFilterAnalyses] = useState<string[]>([]);
+  const [filterType, setFilterType] = useState<string>('');
+  const [filterLocation, setFilterLocation] = useState<string>('');
+  const [filterAnalysis, setFilterAnalysis] = useState<string>('');
   
   // Dynamic options for selects
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -173,22 +171,22 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
       const recDate = rec.date;
       if (!recDate || !isClient) return false;
 
-      const yearMatch = filterYears.length === 0 || filterYears.includes(recDate.getFullYear().toString());
+      const yearMatch = !filterYear || recDate.getFullYear().toString() === filterYear;
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(recDate.getMonth().toString());
-      const typeMatch = filterTypes.length === 0 || filterTypes.includes(rec.speciesType);
-      const locationMatch = filterLocations.length === 0 || filterLocations.includes(rec.location);
-      const analysisMatch = filterAnalyses.length === 0 || filterAnalyses.includes(rec.analysis);
+      const typeMatch = !filterType || rec.speciesType === filterType;
+      const locationMatch = !filterLocation || rec.location === filterLocation;
+      const analysisMatch = !filterAnalysis || rec.analysis === filterAnalysis;
 
       return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch;
     });
-  }, [records, filterYears, filterMonths, filterTypes, filterLocations, filterAnalyses, isClient]);
+  }, [records, filterYear, filterMonths, filterType, filterLocation, filterAnalysis, isClient]);
 
   const clearFilters = () => {
-    setFilterYears([]);
+    setFilterYear('');
     setFilterMonths([]);
-    setFilterTypes([]);
-    setFilterLocations([]);
-    setFilterAnalyses([]);
+    setFilterType('');
+    setFilterLocation('');
+    setFilterAnalysis('');
   }
 
   const handleDelete = async (recordId: string) => {
@@ -248,33 +246,42 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
             <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
-            <MultiSelectFilter
-              placeholder="Filtrar Ano"
-              options={availableYears.map(y => ({ value: y, label: y }))}
-              selected={filterYears}
-              onChange={setFilterYears}
-              disabled={isLoading || availableYears.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar Espécie/Tipo"
-              options={speciesTypes.map(t => ({ value: t, label: t }))}
-              selected={filterTypes}
-              onChange={setFilterTypes}
-              disabled={!speciesTypes || speciesTypes.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Local"
-              options={locations.map(l => ({ value: l, label: l }))}
-              selected={filterLocations}
-              onChange={setFilterLocations}
-              disabled={!locations || locations.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Análise"
-              options={analysisOptions}
-              selected={filterAnalyses}
-              onChange={setFilterAnalyses}
-            />
+            <div className='space-y-2'>
+                <Label>Filtrar Ano</Label>
+                <Select value={filterYear} onValueChange={setFilterYear} disabled={isLoading || availableYears.length === 0}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o ano" /></SelectTrigger>
+                    <SelectContent>
+                        {availableYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+             <div className='space-y-2'>
+                <Label>Filtrar Espécie/Tipo</Label>
+                <Select value={filterType} onValueChange={setFilterType} disabled={!speciesTypes || speciesTypes.length === 0}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                    <SelectContent>
+                        {speciesTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+             <div className='space-y-2'>
+                <Label>Filtrar por Local</Label>
+                <Select value={filterLocation} onValueChange={setFilterLocation} disabled={!locations || locations.length === 0}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o local" /></SelectTrigger>
+                    <SelectContent>
+                        {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className='space-y-2'>
+                <Label>Filtrar por Análise</Label>
+                <Select value={filterAnalysis} onValueChange={setFilterAnalysis}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a análise" /></SelectTrigger>
+                    <SelectContent>
+                        {Object.entries(analysisMapping).map(([key, { label }]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
             
             <Button onClick={clearFilters} variant="outline" className="w-full">
               Limpar Filtros

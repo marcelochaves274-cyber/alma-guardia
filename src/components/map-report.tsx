@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -14,29 +15,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Button } from './ui/button';
-import { Loader2, MapPin, ZoomIn } from 'lucide-react';
+import { Loader2, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from './ui/scroll-area';
-import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { MultiSelectDropdown } from './ui/multi-select-dropdown';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface Occurrence {
   id: string;
@@ -72,10 +64,10 @@ export function MapReport() {
   const [isLoadingMap, setIsLoadingMap] = useState(true);
 
   // Filter states
-  const [filterYears, setFilterYears] = useState<string[]>([]);
+  const [filterYear, setFilterYear] = useState<string>('');
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
-  const [filterTypes, setFilterTypes] = useState<string[]>([]);
-  const [filterLocations, setFilterLocations] = useState<string[]>([]);
+  const [filterType, setFilterType] = useState<string>('');
+  const [filterLocation, setFilterLocation] = useState<string>('');
 
   // Dynamic options for selects
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -182,14 +174,14 @@ export function MapReport() {
       const occDate = occ.occurrenceDate;
       if (!occDate) return false;
 
-      const yearMatch = filterYears.length === 0 || filterYears.includes(occDate.getFullYear().toString());
+      const yearMatch = !filterYear || occDate.getFullYear().toString() === filterYear;
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
-      const typeMatch = filterTypes.length === 0 || filterTypes.includes(occ.occurrenceType);
-      const locationMatch = filterLocations.length === 0 || filterLocations.includes(occ.occurrenceLocation);
+      const typeMatch = !filterType || occ.occurrenceType === filterType;
+      const locationMatch = !filterLocation || occ.occurrenceLocation === filterLocation;
 
       return yearMatch && monthMatch && typeMatch && locationMatch && !!occ.mapMarker;
     });
-  }, [occurrences, filterYears, filterMonths, filterTypes, filterLocations, isClient]);
+  }, [occurrences, filterYear, filterMonths, filterType, filterLocation, isClient]);
 
   const clusters = useMemo(() => {
     const points = filteredOccurrences.filter(occ => occ.mapMarker);
@@ -224,10 +216,10 @@ export function MapReport() {
   }, [filteredOccurrences]);
   
   const clearFilters = () => {
-    setFilterYears([]);
+    setFilterYear('');
     setFilterMonths([]);
-    setFilterTypes([]);
-    setFilterLocations([]);
+    setFilterType('');
+    setFilterLocation('');
   }
 
   const renderedPins = useMemo(() => {
@@ -298,27 +290,33 @@ export function MapReport() {
             <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-            <MultiSelectFilter
-              placeholder="Filtrar por Ano"
-              options={availableYears.map(y => ({ value: y, label: y }))}
-              selected={filterYears}
-              onChange={setFilterYears}
-              disabled={isLoading || availableYears.length === 0}
-            />
-            <MultiSelectFilter
-              placeholder="Filtrar por Tipo"
-              options={occurrenceTypes.map(t => ({ value: t, label: t }))}
-              selected={filterTypes}
-              onChange={setFilterTypes}
-              disabled={!occurrenceTypes || occurrenceTypes.length === 0}
-            />
-            <MultiSelectDropdown
-              placeholder="Filtrar por Local"
-              options={locations.map(l => ({ value: l, label: l }))}
-              selected={filterLocations}
-              onChange={setFilterLocations}
-              disabled={!locations || locations.length === 0}
-            />
+            <div className="space-y-2">
+                <Label>Filtrar por Ano</Label>
+                <Select value={filterYear} onValueChange={setFilterYear} disabled={isLoading || availableYears.length === 0}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o ano" /></SelectTrigger>
+                    <SelectContent>
+                        {availableYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <Label>Filtrar por Tipo</Label>
+                <Select value={filterType} onValueChange={setFilterType} disabled={!occurrenceTypes || occurrenceTypes.length === 0}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                    <SelectContent>
+                        {occurrenceTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <Label>Filtrar por Local</Label>
+                 <Select value={filterLocation} onValueChange={setFilterLocation} disabled={!locations || locations.length === 0}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o local" /></SelectTrigger>
+                    <SelectContent>
+                        {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
             
             <Button onClick={clearFilters} variant="outline" className="w-full">
               Limpar Filtros
