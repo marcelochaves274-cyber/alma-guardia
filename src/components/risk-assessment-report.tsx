@@ -103,25 +103,25 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   }, [firestore, user]);
 
   useEffect(() => {
-    const fetchSelectOptions = async (docName: string, setData: (data: string[]) => void, setLoading: (loading: boolean) => void) => {
-      const docRef = getSettingsDocRef(docName);
+    const fetchSelectOptions = async () => {
+      const docRef = getSettingsDocRef('locations');
       if (!docRef) {
-        setLoading(false);
-        return
-      };
+        setIsLoadingLocations(false);
+        return;
+      }
       try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setData(data['locations'] || []);
+          setLocations(data['locations'] || []);
         }
       } catch (error) {
-        console.error(`Error fetching ${docName}:`, error);
+        console.error(`Error fetching locations:`, error);
       } finally {
-        setLoading(false);
+        setIsLoadingLocations(false);
       }
     };
-    fetchSelectOptions('locations', setLocations, setIsLoadingLocations);
+    fetchSelectOptions();
   }, [getSettingsDocRef]);
   
   useEffect(() => {
