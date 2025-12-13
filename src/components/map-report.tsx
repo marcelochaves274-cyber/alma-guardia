@@ -226,9 +226,9 @@ export function MapReport() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Relatório de Mapa - Acidentes/Incidentes</CardTitle>
+          <CardTitle>Mapa de Ocorrências</CardTitle>
           <CardDescription>
-            Filtre e visualize a localização das ocorrências no mapa.
+            Filtre e visualize a localização das ocorrências (acidentes/incidentes) no mapa.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

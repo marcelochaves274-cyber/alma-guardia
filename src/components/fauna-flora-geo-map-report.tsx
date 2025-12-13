@@ -226,9 +226,9 @@ export function FaunaFloraGeoMapReport() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Relatório de Mapa - Fauna, Flora &amp; Geo</CardTitle>
+          <CardTitle>Mapa Fauna, Flora &amp; Geo</CardTitle>
           <CardDescription>
-            Filtre e visualize a localização dos registros no mapa.
+            Filtre e visualize a localização dos registros ambientais no mapa.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

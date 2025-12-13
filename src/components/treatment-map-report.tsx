@@ -253,9 +253,9 @@ export function TreatmentMapReport() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Relatório de Mapa - Tratamento de Risco</CardTitle>
+          <CardTitle>Mapa de Tratamentos</CardTitle>
           <CardDescription>
-            Filtre e visualize a localização dos tratamentos no mapa.
+            Filtre e visualize a localização dos tratamentos de risco no mapa.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
