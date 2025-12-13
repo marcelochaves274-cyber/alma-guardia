@@ -146,7 +146,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
              const data = doc.data();
              const assessmentDate = data.assessmentDate instanceof Timestamp 
                 ? data.assessmentDate.toDate() 
-                : new Date(0); // Use a fixed, non-problematic date as a fallback
+                : new Date(data.assessmentDate); // Fallback for string dates
             return {
                 id: doc.id,
                 ...data,
@@ -324,16 +324,16 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
       {/* Specific Risk Assessment Modal */}
        <Dialog open={isAssessmentModalOpen} onOpenChange={setIsAssessmentModalOpen}>
         <DialogContent className="max-w-4xl">
+           <DialogHeader>
+              <DialogTitle>Avaliações de Risco</DialogTitle>
+           </DialogHeader>
           {selectedAssessments.length > 0 ? (
             <>
-            <DialogHeader>
-              <DialogTitle>Avaliações de Risco para: {selectedAssessments[0].location}</DialogTitle>
-              <p className='text-sm text-muted-foreground'>
-                Exibindo {selectedAssessments.length} avaliação(ões) para este local, da mais recente para a mais antiga.
+              <p className='text-sm text-muted-foreground px-6 -mt-4'>
+                Exibindo {selectedAssessments.length} avaliação(ões) para <strong>{selectedAssessments[0].location}</strong>, da mais recente para a mais antiga.
               </p>
-            </DialogHeader>
             <ScrollArea className="max-h-[70vh] pr-4">
-              <div className="space-y-6 py-4">
+              <div className="space-y-6 p-6">
                 {selectedAssessments.map((assessment) => (
                     <div key={assessment.id} className="space-y-4 rounded-lg border p-4">
                         <div className="space-y-2">
@@ -378,7 +378,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
                 ))}
               </div>
             </ScrollArea>
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-end pt-2 px-6 pb-4">
                 <DialogClose asChild>
                     <Button type="button" variant="secondary">
                         Fechar
@@ -387,8 +387,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
             </div>
             </>
           ) : (
-            <DialogHeader>
-                <DialogTitle>Avaliação de Risco não encontrada</DialogTitle>
+            <div className='p-6'>
                  <p className="py-4 text-sm text-muted-foreground">Não foi possível encontrar uma avaliação de risco associada a este local.</p>
                  <div className="flex justify-end pt-2">
                     <DialogClose asChild>
@@ -397,12 +396,10 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
                         </Button>
                     </DialogClose>
                 </div>
-            </DialogHeader>
+            </div>
           )}
         </DialogContent>
        </Dialog>
     </div>
   );
 }
-
-    
