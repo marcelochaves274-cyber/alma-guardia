@@ -345,7 +345,11 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label className="font-semibold text-muted-foreground">Data da Avaliação</Label>
-                        <p>{format(selectedAssessment.assessmentDate, 'dd/MM/yyyy \\'às\\' HH:mm', { locale: ptBR })}</p>
+                        <p>{format(
+                          selectedAssessment.assessmentDate,
+                          "dd/MM/yyyy 'às' HH:mm",
+                          { locale: ptBR }
+                        )}</p>
                       </div>
                       <div>
                         <Label className="font-semibold text-muted-foreground">Local</Label>
