@@ -245,7 +245,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     isActive={activePage === 'map-report'}
                     onClick={() => handlePageChange('map-report')}
                   >
-                    Relatório de Mapa
+                    Mapa de Ocorrências
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
@@ -293,7 +293,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     isActive={activePage === 'treatment-map-report'}
                     onClick={() => handlePageChange('treatment-map-report')}
                   >
-                    Relatório de Mapa
+                    Mapa de Tratamentos
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
@@ -379,7 +379,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                     isActive={activePage === 'fauna-flora-geo-map-report'}
                     onClick={() => handlePageChange('fauna-flora-geo-map-report')}
                   >
-                    Relatório de Mapa
+                    Mapa Fauna, Flora & Geo
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </SidebarMenuSub>
