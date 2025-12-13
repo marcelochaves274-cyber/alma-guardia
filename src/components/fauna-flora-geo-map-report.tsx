@@ -46,7 +46,7 @@ interface Cluster {
 const YEAR_COLORS = ['fill-red-500', 'fill-blue-500', 'fill-green-500', 'fill-orange-500', 'fill-purple-500', 'fill-yellow-500'];
 
 const getYearColor = (year: number, allYears: string[]) => {
-  const sortedYears = allYears.sort((a,b) => Number(b) - Number(a));
+  const sortedYears = [...allYears].sort((a,b) => Number(b) - Number(a));
   const index = sortedYears.indexOf(year.toString());
   if (index === -1) return 'fill-gray-500'; // Fallback color
   return YEAR_COLORS[index % YEAR_COLORS.length];
@@ -222,11 +222,65 @@ export function FaunaFloraGeoMapReport() {
     setFilterLocations([]);
   }
 
+  const renderedPins = useMemo(() => {
+    if (!isClient || availableYears.length === 0) {
+      return null;
+    }
+    return clusters.map((cluster, index) => {
+      const clusterYear = cluster.records[0]?.date.getFullYear();
+      const pinColorClass = clusterYear ? getYearColor(clusterYear, availableYears) : 'fill-gray-500';
+      
+      return (
+        <Popover key={index}>
+            <PopoverTrigger asChild>
+                <div
+                    className="absolute cursor-pointer"
+                    style={{
+                    left: `${cluster.x}%`,
+                    top: `${cluster.y}%`,
+                    transform: 'translate(-50%, -100%)',
+                    }}
+                >
+                    <MapPin className={cn("h-8 w-8 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
+                    {cluster.records.length > 1 && (
+                        <Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0">
+                            {cluster.records.length}
+                        </Badge>
+                    )}
+                </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+                <div className="grid gap-4">
+                <div className="space-y-2">
+                    <h4 className="font-medium leading-none">{cluster.records.length > 1 ? 'Registros Agrupados' : 'Detalhes do Registro'}</h4>
+                    <p className="text-sm text-muted-foreground">
+                        {cluster.records.length} registro(s) neste local.
+                    </p>
+                </div>
+                <ScrollArea className="h-48">
+                <div className="grid gap-2 pr-4">
+                    {cluster.records.map(rec => (
+                        <div key={rec.id} className="text-sm p-2 border rounded-md">
+                            <p><strong className="font-medium">Data:</strong> {format(rec.date, 'dd/MM/yy HH:mm', { locale: ptBR })}</p>
+                            <p><strong className="font-medium">Tipo:</strong> {rec.speciesType}</p>
+                            <p><strong className="font-medium">Local:</strong> {rec.location}</p>
+                        </div>
+                    ))}
+                </div>
+                </ScrollArea>
+                </div>
+            </PopoverContent>
+        </Popover>
+      )
+    });
+  }, [clusters, isClient, availableYears]);
+
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Mapa Fauna, Flora &amp; Geo</CardTitle>
+          <CardTitle>Mapa Fauna, Flora & Geo</CardTitle>
           <CardDescription>
             Filtre e visualize a localização dos registros ambientais no mapa.
           </CardDescription>
@@ -285,53 +339,7 @@ export function FaunaFloraGeoMapReport() {
                       fill
                       className="object-cover"
                     />
-                    {clusters.map((cluster, index) => {
-                      const clusterYear = cluster.records[0]?.date.getFullYear();
-                      const pinColorClass = clusterYear ? getYearColor(clusterYear, availableYears) : 'fill-gray-500';
-                      
-                      return (
-                        <Popover key={index}>
-                            <PopoverTrigger asChild>
-                                <div
-                                    className="absolute cursor-pointer"
-                                    style={{
-                                    left: `${cluster.x}%`,
-                                    top: `${cluster.y}%`,
-                                    transform: 'translate(-50%, -100%)',
-                                    }}
-                                >
-                                    <MapPin className={cn("h-8 w-8 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
-                                    {cluster.records.length > 1 && (
-                                        <Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0">
-                                            {cluster.records.length}
-                                        </Badge>
-                                    )}
-                                </div>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80">
-                                <div className="grid gap-4">
-                                <div className="space-y-2">
-                                    <h4 className="font-medium leading-none">{cluster.records.length > 1 ? 'Registros Agrupados' : 'Detalhes do Registro'}</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                        {cluster.records.length} registro(s) neste local.
-                                    </p>
-                                </div>
-                                <ScrollArea className="h-48">
-                                <div className="grid gap-2 pr-4">
-                                    {cluster.records.map(rec => (
-                                        <div key={rec.id} className="text-sm p-2 border rounded-md">
-                                            <p><strong className="font-medium">Data:</strong> {format(rec.date, 'dd/MM/yy HH:mm', { locale: ptBR })}</p>
-                                            <p><strong className="font-medium">Tipo:</strong> {rec.speciesType}</p>
-                                            <p><strong className="font-medium">Local:</strong> {rec.location}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                                </ScrollArea>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                      )
-                    })}
+                    {renderedPins}
                   </>
                 ) : (
                   <p className="text-muted-foreground text-center p-4">
