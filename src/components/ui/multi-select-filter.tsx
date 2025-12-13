@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback } from 'react';
@@ -82,11 +83,11 @@ export function MultiSelectFilter({
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md p-0">
-        <DialogHeader className="p-4 pb-0">
-            <DialogTitle>{placeholder}</DialogTitle>
+        <DialogHeader className="p-4 pb-2">
+          <DialogTitle>{placeholder}</DialogTitle>
         </DialogHeader>
         <Command>
-          <div className="p-4 pt-2">
+          <div className="p-4 pt-0">
             <CommandInput placeholder="Buscar..." />
           </div>
           <CommandList>
