@@ -1,31 +1,21 @@
-"use client"
 
-import * as React from "react"
-import { Check, ListFilter } from "lucide-react"
+'use client';
 
-import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { useState, useCallback } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ListFilter } from 'lucide-react';
+import { Badge } from './badge';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './command';
 
 interface MultiSelectFilterProps {
-  placeholder: string
-  options: { value: string; label: string }[]
-  selected: string[]
-  onChange: (selected: string[]) => void
-  disabled?: boolean
+  placeholder: string;
+  options: { value: string; label: string }[];
+  selected: string[];
+  onChange: (selected: string[]) => void;
+  disabled?: boolean;
 }
 
 export function MultiSelectFilter({
@@ -35,32 +25,32 @@ export function MultiSelectFilter({
   onChange,
   disabled,
 }: MultiSelectFilterProps) {
-  const [open, setOpen] = React.useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
-  const handleSelect = (value: string) => {
+  const handleSelect = useCallback((value: string) => {
     const newSelected = selected.includes(value)
-      ? selected.filter((item) => item !== value)
-      : [...selected, value]
-    onChange(newSelected)
-  }
-
+      ? selected.filter(item => item !== value)
+      : [...selected, value];
+    onChange(newSelected);
+  }, [selected, onChange]);
+  
   const getButtonText = () => {
-    if (selected.length === 0) return placeholder
-    if (selected.length === options.length) return "Todos selecionados"
+    if (selected.length === 0) return placeholder;
+    if (selected.length === options.length) return "Todos selecionados";
     if (selected.length === 1) {
-      const option = options.find((o) => o.value === selected[0])
-      return option?.label || placeholder
+      const option = options.find(o => o.value === selected[0]);
+      return option?.label || placeholder;
     }
-    return `${selected.length} selecionados`
-  }
+    return `${selected.length} selecionados`;
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
-          aria-expanded={open}
+          aria-expanded={isOpen}
           className="w-full justify-between"
           disabled={disabled}
         >
@@ -76,32 +66,31 @@ export function MultiSelectFilter({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command>
-          <CommandInput placeholder="Buscar..." />
-          <CommandList>
-            <CommandEmpty>Nenhum resultado.</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  onSelect={() => handleSelect(option.value)}
-                  className="cursor-pointer"
+        <ScrollArea className="max-h-60">
+          <div className="p-1">
+            {options.map((option) => (
+              <div
+                key={option.value}
+                className="flex items-center space-x-2 p-2 hover:bg-accent rounded-md cursor-pointer"
+                onClick={() => handleSelect(option.value)}
+              >
+                <Checkbox
+                  id={`check-${option.value}-${placeholder.replace(/\s/g, '')}`}
+                  checked={selected.includes(option.value)}
+                  onCheckedChange={() => handleSelect(option.value)}
+                  className="h-4 w-4"
+                />
+                <label
+                  htmlFor={`check-${option.value}-${placeholder.replace(/\s/g, '')}`}
+                  className="w-full text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      selected.includes(option.value)
-                        ? "opacity-100"
-                        : "opacity-0"
-                    )}
-                  />
                   {option.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+                </label>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
       </PopoverContent>
     </Popover>
-  )
+  );
 }
