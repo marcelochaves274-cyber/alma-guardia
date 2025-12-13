@@ -14,7 +14,7 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSkeleton,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info, Map } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info, Map, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { SgsGeniusLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -25,6 +25,8 @@ import { useFirebaseApp, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useProfile } from '@/context/profile-context';
+import { Button } from './ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AppSidebarProps {
   activePage: string;
@@ -68,13 +70,14 @@ function SidebarSkeleton() {
 }
 
 export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
   const { appName, logoUrl, isLoading: isSettingsLoading } = useAppSettings();
   const { user } = useUser();
   const firebaseApp = useFirebaseApp();
   const router = useRouter();
   const { toast } = useToast();
   const { profile, clearProfile, isProfileLoading } = useProfile();
+  const isMobile = useIsMobile();
   
   const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
 
@@ -164,7 +167,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
 
   return (
     <>
-      <SidebarHeader className="bg-sidebar-secondary">
+      <SidebarHeader className="bg-sidebar-secondary justify-between">
         <div className="flex items-center gap-2">
           {isSettingsLoading ? (
             <Skeleton className='h-6 w-6 rounded-sm' />
@@ -186,6 +189,12 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
             </div>
           )}
         </div>
+         {isMobile && state === 'expanded' && (
+          <Button variant="ghost" size="icon" onClick={() => setOpenMobile(false)} className="h-8 w-8">
+            <X className="h-5 w-5" />
+            <span className="sr-only">Fechar menu</span>
+          </Button>
+        )}
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
