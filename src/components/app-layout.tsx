@@ -74,7 +74,7 @@ function MainAppLayout() {
   const { profile, isProfileLoading } = useProfile();
   const router = useRouter();
 
-  const [activePage, setActivePage] = useState('');
+  const [activePage, setActivePage] = useState('reminders');
   const [reportFilters, setReportFilters] = useState<ReportFilters | null>(null);
   const [prefillData, setPrefillData] = useState<any | null>(null);
 
@@ -87,15 +87,8 @@ function MainAppLayout() {
   const [noticeToEdit, setNoticeToEdit] = useState<any | null>(null);
   const { appName, logoUrl } = useAppSettings();
 
-  useEffect(() => {
-    if (!isProfileLoading && profile) {
-      const initialPage = profile === 'observer' ? 'register-notice' : 'reminders';
-      setActivePage(initialPage);
-    }
-  }, [profile, isProfileLoading]);
-
   // Main loading gate. Waits for both user and profile information.
-  if (isProfileLoading || !activePage) {
+  if (isProfileLoading) {
     return <Loader />;
   }
   
