@@ -308,7 +308,7 @@ export function TreatmentMapReport() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-           <div className="relative w-full h-auto min-h-[600px] border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+           <div className="relative w-full aspect-video md:aspect-auto md:min-h-[600px] border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
                 {isLoadingMap || isLoading ? (
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 ) : mapUrl ? (
@@ -316,9 +316,9 @@ export function TreatmentMapReport() {
                     <Image
                       src={mapUrl}
                       alt="Mapa de tratamentos"
-                      fill
-                      style={{objectFit:"cover"}}
-                      className="rounded-md"
+                      width={1920}
+                      height={1080}
+                      className="w-full h-full object-contain md:object-cover rounded-md"
                       priority
                     />
                     {clusters.map((cluster, index) => {
