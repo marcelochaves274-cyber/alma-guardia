@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -40,7 +38,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from './ui/label';
-import { MultiSelectFilter } from './multi-select-filter';
+import { SheetFilter } from './sheet-filter';
 
 interface Equipment {
   id: string;
@@ -239,40 +237,44 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
              <div className="space-y-2">
                 <Label>Filtrar por Tipo</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione o(s) tipo(s)'
+                <SheetFilter
+                    title='Filtrar Tipos'
                     options={equipmentTypes.map(o => ({ value: o, label: o }))}
                     selected={filterType}
                     onChange={setFilterType}
                     disabled={equipmentTypes.length === 0}
+                    buttonText='Filtrar por Tipo'
                 />
             </div>
              <div className="space-y-2">
                 <Label>Filtrar por Marca</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione a(s) marca(s)'
+                <SheetFilter
+                    title='Filtrar Marcas'
                     options={brands.map(o => ({ value: o, label: o }))}
                     selected={filterBrand}
                     onChange={setFilterBrand}
                     disabled={brands.length === 0}
+                    buttonText='Filtrar por Marca'
                 />
             </div>
             <div className="space-y-2">
                 <Label>Filtrar por Status</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione o(s) status'
+                <SheetFilter
+                    title='Filtrar Status'
                     options={Object.entries(statusMapping).map(([key, { label }]) => ({ value: key, label: label }))}
                     selected={filterStatus}
                     onChange={setFilterStatus}
+                    buttonText='Filtrar por Status'
                 />
             </div>
             <div className="space-y-2">
                 <Label>Situação da Vistoria</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione a situação'
+                <SheetFilter
+                    title='Filtrar Situação'
                     options={inspectionStatusOptions}
                     selected={filterInspection}
                     onChange={setFilterInspection}
+                    buttonText='Filtrar por Situação'
                 />
             </div>
             <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
@@ -358,5 +360,3 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     </div>
   );
 }
-
-    

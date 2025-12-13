@@ -49,8 +49,7 @@ import { cn } from '@/lib/utils';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { MultiSelectFilter } from './ui/multi-select-filter';
-import { LocationSheetFilter } from './location-sheet-filter';
+import { SheetFilter } from './sheet-filter';
 
 
 interface Occurrence {
@@ -271,50 +270,56 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
             <div className='space-y-2'>
-                <Label>Filtrar Locais</Label>
-                <LocationSheetFilter
+                <Label>Filtrar por Local</Label>
+                <SheetFilter
+                  title='Filtrar Locais'
                   options={locations.map(l => ({ value: l, label: l }))}
                   selected={filterLocation}
                   onChange={setFilterLocation}
                   disabled={locations.length === 0}
+                  buttonText='Filtrar por Local'
                 />
             </div>
             <div className='space-y-2'>
-                <Label>Filtrar Ano</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione o(s) ano(s)'
+                <Label>Filtrar por Ano</Label>
+                <SheetFilter
+                    title='Filtrar Anos'
                     options={availableYears.map(y => ({ value: y, label: y }))}
                     selected={filterYear}
                     onChange={setFilterYear}
                     disabled={isLoading || availableYears.length === 0}
+                    buttonText='Filtrar por Ano'
                 />
             </div>
             <div className='space-y-2'>
                 <Label>Filtrar por Tipo</Label>
-                 <MultiSelectFilter
-                    placeholder='Selecione o(s) tipo(s)'
+                 <SheetFilter
+                    title='Filtrar Tipos'
                     options={occurrenceTypes.map(t => ({ value: t, label: t }))}
                     selected={filterType}
                     onChange={setFilterType}
                     disabled={!occurrenceTypes || occurrenceTypes.length === 0}
+                    buttonText='Filtrar por Tipo'
                 />
             </div>
             <div className='space-y-2'>
                 <Label>Filtrar por Análise</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione a(s) análise(s)'
+                <SheetFilter
+                    title='Filtrar Análises'
                     options={Object.entries(analysisMapping).map(([key, {label}]) => ({ value: key, label: label }))}
                     selected={filterAnalysis}
                     onChange={setFilterAnalysis}
+                    buttonText='Filtrar por Análise'
                 />
             </div>
             <div className='space-y-2'>
                 <Label>Filtrar Faixa Etária</Label>
-                 <MultiSelectFilter
-                    placeholder='Selecione a(s) faixa(s)'
+                 <SheetFilter
+                    title='Filtrar Faixa Etária'
                     options={ageGroupOptions}
                     selected={filterAgeGroup}
                     onChange={setFilterAgeGroup}
+                    buttonText='Filtrar Faixa Etária'
                 />
             </div>
             

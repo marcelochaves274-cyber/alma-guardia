@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -50,7 +48,7 @@ import { cn } from '@/lib/utils';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { MultiSelectFilter } from './multi-select-filter';
+import { SheetFilter } from './sheet-filter';
 
 interface Treatment {
   id: string;
@@ -301,50 +299,55 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
                 <Label>Filtrar Ano</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione o(s) ano(s)'
+                <SheetFilter
+                    title='Filtrar Anos'
                     options={availableYears.map(y => ({ value: y, label: y }))}
                     selected={filterYear}
                     onChange={setFilterYear}
                     disabled={isLoading || availableYears.length === 0}
+                    buttonText='Filtrar por Ano'
                 />
             </div>
             <div className="space-y-2">
                 <Label>Filtrar por Tipo de Risco</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione o(s) tipo(s)'
+                <SheetFilter
+                    title='Filtrar Tipos de Risco'
                     options={treatmentTypes.map(t => ({ value: t, label: t }))}
                     selected={filterType}
                     onChange={setFilterType}
                     disabled={!treatmentTypes || treatmentTypes.length === 0}
+                    buttonText='Filtrar por Tipo'
                 />
             </div>
              <div className="space-y-2">
                 <Label>Nível de Risco (PxC)</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione o(s) nível(is)'
+                <SheetFilter
+                    title='Filtrar Níveis de Risco'
                     options={riskLevelOptions}
                     selected={filterRiskLevel}
                     onChange={setFilterRiskLevel}
+                    buttonText='Filtrar por Nível'
                 />
             </div>
             <div className="space-y-2">
                 <Label>Filtrar por Local</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione o(s) local(is)'
+                <SheetFilter
+                    title='Filtrar Locais'
                     options={locations.map(l => ({ value: l, label: l }))}
                     selected={filterLocation}
                     onChange={setFilterLocation}
                     disabled={!locations || locations.length === 0}
+                    buttonText='Filtrar por Local'
                 />
             </div>
             <div className="space-y-2">
                 <Label>Filtrar por Situação</Label>
-                 <MultiSelectFilter
-                    placeholder='Selecione a(s) situação(ões)'
+                 <SheetFilter
+                    title='Filtrar Situações'
                     options={situationOptions}
                     selected={filterSituation}
                     onChange={setFilterSituation}
+                    buttonText='Filtrar por Situação'
                 />
             </div>
             
@@ -533,5 +536,3 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
     </div>
   );
 }
-
-    

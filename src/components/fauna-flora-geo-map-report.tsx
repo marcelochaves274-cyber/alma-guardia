@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -28,7 +26,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
-import { MultiSelectFilter } from './multi-select-filter';
+import { SheetFilter } from './sheet-filter';
 
 interface FaunaFloraGeoRecord {
   id: string;
@@ -293,32 +291,35 @@ export function FaunaFloraGeoMapReport() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
                 <Label>Filtrar por Ano</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione o(s) ano(s)'
+                <SheetFilter
+                    title='Filtrar Anos'
                     options={availableYears.map(y => ({ value: y, label: y }))}
                     selected={filterYear}
                     onChange={setFilterYear}
                     disabled={isLoading || availableYears.length === 0}
+                    buttonText='Filtrar por Ano'
                 />
             </div>
             <div className="space-y-2">
                 <Label>Filtrar Espécie/Tipo</Label>
-                 <MultiSelectFilter
-                    placeholder='Selecione o(s) tipo(s)'
+                 <SheetFilter
+                    title='Filtrar Espécies/Tipos'
                     options={speciesTypes.map(t => ({ value: t, label: t }))}
                     selected={filterType}
                     onChange={setFilterType}
                     disabled={!speciesTypes || speciesTypes.length === 0}
+                    buttonText='Filtrar por Tipo'
                 />
             </div>
             <div className="space-y-2">
                 <Label>Filtrar por Local</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione o(s) local(is)'
+                <SheetFilter
+                    title='Filtrar Locais'
                     options={locations.map(l => ({ value: l, label: l }))}
                     selected={filterLocation}
                     onChange={setFilterLocation}
                     disabled={!locations || locations.length === 0}
+                    buttonText='Filtrar por Local'
                 />
             </div>
             
@@ -365,5 +366,3 @@ export function FaunaFloraGeoMapReport() {
     </div>
   );
 }
-
-    

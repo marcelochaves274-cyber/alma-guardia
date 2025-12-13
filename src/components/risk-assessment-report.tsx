@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -49,7 +47,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
-import { MultiSelectFilter } from './multi-select-filter';
+import { SheetFilter } from './sheet-filter';
 
 
 interface RiskAssessment {
@@ -229,12 +227,13 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
              <div className="space-y-2">
                 <Label>Filtrar por Local</Label>
-                <MultiSelectFilter
-                    placeholder='Selecione o(s) local(is)'
+                <SheetFilter
+                    title='Filtrar Locais'
                     options={locations.map(l => ({ value: l, label: l }))}
                     selected={filterLocation}
                     onChange={setFilterLocation}
                     disabled={isLoadingLocations || locations.length === 0}
+                    buttonText='Filtrar por Local'
                 />
              </div>
             <Button onClick={() => setFilterLocation([])} variant="outline" className="w-full sm:w-auto self-end">
@@ -411,5 +410,3 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
     </div>
   );
 }
-
-    
