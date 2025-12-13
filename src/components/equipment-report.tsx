@@ -358,3 +358,5 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     </div>
   );
 }
+
+    
