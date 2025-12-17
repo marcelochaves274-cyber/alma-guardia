@@ -31,7 +31,7 @@ import { useRouter } from 'next/navigation';
 type SelectedProfile = 'admin' | 'observer' | null;
 
 export function ProfileSelector() {
-  const { setProfile, validatePass, isLoadingPasses, clearProfile } = useProfile();
+  const { setProfile, validatePass, isLoadingPasses, clearProfile, setProfileAndRedirect } = useProfile();
   const { toast } = useToast();
   const firebaseApp = useFirebaseApp();
   const router = useRouter();
@@ -60,8 +60,9 @@ export function ProfileSelector() {
     setEasterEggClicks(newClickCount);
 
     if (newClickCount === 3) {
-      handleProfileSelect('admin');
-      setEasterEggClicks(0);
+      // Set profile and redirect to manage profiles page
+      setProfileAndRedirect('admin', 'manage-profile');
+      setEasterEggClicks(0); // Reset counter
     } else {
       clickTimeoutRef.current = setTimeout(() => {
         setEasterEggClicks(0);

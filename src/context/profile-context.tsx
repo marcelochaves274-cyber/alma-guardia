@@ -9,6 +9,8 @@ export type Profile = 'admin' | 'observer';
 interface ProfileContextType {
   profile: Profile | null;
   setProfile: (profile: Profile | null) => void;
+  setProfileAndRedirect: (profile: Profile, page: string) => void;
+  getRedirectPage: () => string | null;
   clearProfile: () => void;
   validatePass: (profile: Profile, pass: string) => Promise<boolean>;
   isProfileLoading: boolean;
@@ -23,6 +25,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [passes, setPasses] = useState<{ adminPass: string; observerPass: string }>({ adminPass: '', observerPass: '' });
   const [isLoadingPasses, setIsLoadingPasses] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [redirectPage, setRedirectPage] = useState<string | null>(null);
 
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -92,6 +95,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [user, isUserLoading, getSettingsDocRef]);
 
   const setProfile = (profileToSet: Profile | null) => {
+    setRedirectPage(null); // Reset redirect on normal set
     setProfileState(profileToSet);
     try {
         if (profileToSet) {
@@ -102,6 +106,20 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     } catch(e) {
         // sessionStorage not available
     }
+  };
+
+  const setProfileAndRedirect = (profileToSet: Profile, page: string) => {
+    setRedirectPage(page);
+    setProfileState(profileToSet);
+    try {
+      sessionStorage.setItem('sgs-profile', profileToSet);
+    } catch (e) {}
+  };
+  
+  const getRedirectPage = () => {
+    const page = redirectPage;
+    setRedirectPage(null); // Consume the redirect page
+    return page;
   };
 
   const clearProfile = () => {
@@ -126,6 +144,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const contextValue: ProfileContextType = {
     profile,
     setProfile,
+    setProfileAndRedirect,
+    getRedirectPage,
     clearProfile,
     validatePass,
     isProfileLoading,

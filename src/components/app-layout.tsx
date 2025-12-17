@@ -72,7 +72,7 @@ type ReportFilters = {
 
 function MainAppLayout() {
   const { user } = useUser();
-  const { profile, isProfileLoading } = useProfile();
+  const { profile, isProfileLoading, getRedirectPage } = useProfile();
   const router = useRouter();
 
   const getDefaultPageForProfile = (profile: string | null) => {
@@ -98,9 +98,14 @@ function MainAppLayout() {
   useEffect(() => {
     // When profile changes, reset the page to the default for that profile.
     if (!isProfileLoading) {
-      setActivePage(getDefaultPageForProfile(profile));
+      const redirectPage = getRedirectPage();
+      if (redirectPage) {
+        setActivePage(redirectPage);
+      } else {
+        setActivePage(getDefaultPageForProfile(profile));
+      }
     }
-  }, [profile, isProfileLoading]);
+  }, [profile, isProfileLoading, getRedirectPage]);
 
   // Main loading gate. Waits for both user and profile information.
   if (isProfileLoading) {
