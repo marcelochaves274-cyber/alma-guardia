@@ -41,11 +41,32 @@ export function ProfileSelector() {
   const [pass, setPass] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  
+  const [easterEggClicks, setEasterEggClicks] = useState(0);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleProfileSelect = (profile: SelectedProfile) => {
     if (isLoadingPasses) return;
     setSelectedProfile(profile);
     setPass('');
+  };
+  
+  const handleEasterEggClick = () => {
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+    }
+
+    const newClickCount = easterEggClicks + 1;
+    setEasterEggClicks(newClickCount);
+
+    if (newClickCount === 3) {
+      handleProfileSelect('admin');
+      setEasterEggClicks(0);
+    } else {
+      clickTimeoutRef.current = setTimeout(() => {
+        setEasterEggClicks(0);
+      }, 1000); // Reset after 1 second
+    }
   };
   
   const handlePassSubmit = async () => {
@@ -101,6 +122,7 @@ export function ProfileSelector() {
             <div className="text-center mb-12">
                 <h1 className="text-3xl font-bold">
                     Selecione seu Perfil
+                    <span onClick={handleEasterEggClick} className="cursor-pointer" title="O que será que acontece aqui?">.</span>
                 </h1>
                 <p className="text-muted-foreground">Escolha como você quer acessar o sistema.</p>
             </div>
