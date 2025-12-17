@@ -267,7 +267,7 @@ export function TreatmentMapReport() {
                     transform: 'translate(-50%, -100%)',
                     }}
                 >
-                    <MapPin className={cn("h-7 w-7 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
+                    <MapPin className={cn("h-6 w-6 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
                     {cluster.treatments.length > 1 && (
                         <Badge variant="default" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0 bg-blue-600 hover:bg-blue-700">
                             {cluster.treatments.length}

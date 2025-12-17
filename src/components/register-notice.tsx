@@ -313,7 +313,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
                     <Image src={mapUrl} alt="Mapa de avisos" fill className="object-cover" />
                     {marker && (
                       <div className="absolute pointer-events-none" style={{ left: `${marker.x}%`, top: `${marker.y}%`, transform: 'translate(-50%, -100%)' }} aria-label="Marcador de aviso" >
-                         <MapPin className="h-7 w-7 fill-blue-500 stroke-white stroke-2 drop-shadow-lg" />
+                         <MapPin className="h-6 w-6 fill-blue-500 stroke-white stroke-2 drop-shadow-lg" />
                       </div>
                     )}
                   </>

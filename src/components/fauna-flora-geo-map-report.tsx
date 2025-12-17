@@ -240,7 +240,7 @@ export function FaunaFloraGeoMapReport() {
                     transform: 'translate(-50%, -100%)',
                     }}
                 >
-                    <MapPin className={cn("h-7 w-7 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
+                    <MapPin className={cn("h-6 w-6 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
                     {cluster.records.length > 1 && (
                         <Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0">
                             {cluster.records.length}

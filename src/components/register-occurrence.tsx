@@ -488,7 +488,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
                         }}
                         aria-label="Marcador de ocorrência"
                       >
-                         <MapPin className="h-7 w-7 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
+                         <MapPin className="h-6 w-6 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
                       </div>
                     )}
                   </>
