@@ -189,7 +189,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
             </div>
           )}
         </div>
-         {isMobile && state === 'expanded' && (
+         {isMobile && (
           <Button variant="ghost" size="icon" onClick={() => setOpenMobile(false)} className="h-8 w-8">
             <X className="h-5 w-5" />
             <span className="sr-only">Fechar menu</span>

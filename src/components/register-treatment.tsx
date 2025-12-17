@@ -494,7 +494,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
                         }}
                         aria-label="Marcador de tratamento"
                       >
-                         <MapPin className="h-6 w-6 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
+                         <MapPin className="h-5 w-5 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
                       </div>
                     )}
                   </>

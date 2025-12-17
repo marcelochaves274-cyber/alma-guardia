@@ -390,7 +390,7 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
                         }}
                         aria-label="Marcador de registro"
                       >
-                         <MapPin className="h-6 w-6 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
+                         <MapPin className="h-5 w-5 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
                       </div>
                     )}
                   </>
