@@ -71,7 +71,7 @@ export function SheetFilter({ title, options, selected, onChange, buttonText = "
            <span className='truncate'>{getButtonText()}</span>
         </Button>
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent className="flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>
@@ -79,7 +79,7 @@ export function SheetFilter({ title, options, selected, onChange, buttonText = "
           </SheetDescription>
         </SheetHeader>
         <Separator className='my-4' />
-        <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
+        <ScrollArea className="flex-1 pr-4">
           <div className="flex flex-col gap-4 py-4">
             {options.map((option) => (
               <div key={option.value} className="flex items-center space-x-2">
