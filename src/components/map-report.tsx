@@ -14,10 +14,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Button } from './ui/button';
-import { Loader2, MapPin } from 'lucide-react';
+import { Loader2, MapPin, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
@@ -34,6 +41,15 @@ interface Occurrence {
   occurrenceDate: Date;
   occurrenceType: string;
   occurrenceLocation: string;
+  involvedPersonName: string;
+  analysis: 'alta' | 'media' | 'baixa';
+  description: string;
+  ageGroup: string;
+  birthDate: string;
+  cpf: string;
+  city: string;
+  state: string;
+  phone: string;
   mapMarker?: { x: number; y: number };
 }
 
@@ -52,6 +68,21 @@ const getYearColor = (year: number, allYears: string[]) => {
   return YEAR_COLORS[index % YEAR_COLORS.length];
 };
 
+const analysisMapping: Record<string, { label: string, className: string }> = {
+    alta: { label: 'Alta', className: 'bg-red-500 text-white hover:bg-red-600' },
+    media: { label: 'Média', className: 'bg-orange-500 text-white hover:bg-orange-600' },
+    baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
+};
+
+const ageGroupOptions = [
+    { value: 'crianca', label: 'Criança (0-12)' },
+    { value: 'adolescente', label: 'Adolescente (13-17)' },
+    { value: 'adulto1', label: 'Adulto (18-39)' },
+    { value: 'adulto2', label: 'Adulto (40-59)' },
+    { value: 'idoso', label: 'Idoso (60+)' },
+];
+
+
 export function MapReport() {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -61,6 +92,8 @@ export function MapReport() {
   const [isLoading, setIsLoading] = useState(true);
   const [mapUrl, setMapUrl] = useState<string | null>(null);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
+  const [detailedOccurrence, setDetailedOccurrence] = useState<Occurrence | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
@@ -221,6 +254,11 @@ export function MapReport() {
     setFilterLocation([]);
   }
 
+  const openDetails = (occurrence: Occurrence) => {
+    setDetailedOccurrence(occurrence);
+    setIsDetailModalOpen(true);
+  }
+
   const renderedPins = useMemo(() => {
     if (!isClient || isLoading) {
       return null;
@@ -259,10 +297,15 @@ export function MapReport() {
                 <ScrollArea className="h-48">
                 <div className="grid gap-2 pr-4">
                     {cluster.occurrences.map(occ => (
-                        <div key={occ.id} className="text-sm p-2 border rounded-md">
+                        <div key={occ.id} className="text-sm p-2 border rounded-md flex justify-between items-center">
+                          <div>
                             <p><strong className="font-medium">Data:</strong> {format(occ.occurrenceDate, 'dd/MM/yy HH:mm', { locale: ptBR })}</p>
                             <p><strong className="font-medium">Tipo:</strong> {occ.occurrenceType}</p>
                             <p><strong className="font-medium">Local:</strong> {occ.occurrenceLocation}</p>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openDetails(occ)}>
+                              <Eye className="h-4 w-4" />
+                          </Button>
                         </div>
                     ))}
                 </div>
@@ -363,6 +406,91 @@ export function MapReport() {
               </div>
         </CardContent>
       </Card>
+      
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Ocorrência</DialogTitle>
+          </DialogHeader>
+          {detailedOccurrence && (
+            <>
+              <ScrollArea className="max-h-[70vh] pr-6">
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-foreground">Dados da Ocorrência</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
+                      <div>
+                        <Label className="text-muted-foreground">Data</Label>
+                        <p>{format(detailedOccurrence.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Local</Label>
+                        <p>{detailedOccurrence.occurrenceLocation}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Tipo de Ocorrência</Label>
+                        <p>{detailedOccurrence.occurrenceType}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Análise</Label>
+                        <div>
+                          {analysisMapping[detailedOccurrence.analysis] ? (
+                              <Badge className={cn(analysisMapping[detailedOccurrence.analysis].className)}>
+                                  {analysisMapping[detailedOccurrence.analysis].label}
+                              </Badge>
+                          ) : 'N/A'}
+                        </div>
+                      </div>
+                      <div className="col-span-1 md:col-span-2">
+                        <Label className="text-muted-foreground">Descrição</Label>
+                        <p className="whitespace-pre-wrap">{detailedOccurrence.description}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-foreground">Dados do Envolvido</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
+                        <div>
+                          <Label className="text-muted-foreground">Nome Completo</Label>
+                          <p>{detailedOccurrence.involvedPersonName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">CPF</Label>
+                          <p>{detailedOccurrence.cpf || 'Não informado'}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Data de Nascimento</Label>
+                          <p>{detailedOccurrence.birthDate || 'Não informado'}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Faixa Etária</Label>
+                          <p>{ageGroupOptions.find(o => o.value === detailedOccurrence.ageGroup)?.label || detailedOccurrence.ageGroup || 'Não informado'}</p>
+                        </div>
+                         <div>
+                          <Label className="text-muted-foreground">Telefone</Label>
+                          <p>{detailedOccurrence.phone || 'Não informado'}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Cidade/Estado</Label>
+                          <p>{detailedOccurrence.city || 'Não informado'} / {detailedOccurrence.state || 'N/A'}</p>
+                        </div>
+                    </div>
+                  </div>
+
+                </div>
+              </ScrollArea>
+              <div className="flex justify-end pt-2">
+                  <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                          Fechar
+                      </Button>
+                  </DialogClose>
+              </div>
+            </>
+           )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

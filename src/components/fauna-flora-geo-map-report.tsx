@@ -14,10 +14,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Button } from './ui/button';
-import { Loader2, MapPin } from 'lucide-react';
+import { Loader2, MapPin, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
@@ -34,6 +41,8 @@ interface FaunaFloraGeoRecord {
   date: Date;
   speciesType: string;
   location: string;
+  analysis: 'alta' | 'media' | 'baixa';
+  description: string;
   mapMarker?: { x: number; y: number };
 }
 
@@ -52,6 +61,12 @@ const getYearColor = (year: number, allYears: string[]) => {
   return YEAR_COLORS[index % YEAR_COLORS.length];
 };
 
+const analysisMapping: Record<string, { label: string, className: string }> = {
+    alta: { label: 'Alta', className: 'bg-red-500 text-white hover:bg-red-600' },
+    media: { label: 'Média', className: 'bg-orange-500 text-white hover:bg-orange-600' },
+    baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
+};
+
 export function FaunaFloraGeoMapReport() {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -61,6 +76,8 @@ export function FaunaFloraGeoMapReport() {
   const [isLoading, setIsLoading] = useState(true);
   const [mapUrl, setMapUrl] = useState<string | null>(null);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
+  const [detailedRecord, setDetailedRecord] = useState<FaunaFloraGeoRecord | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
@@ -222,6 +239,11 @@ export function FaunaFloraGeoMapReport() {
     setFilterLocation([]);
   }
 
+  const openDetails = (record: FaunaFloraGeoRecord) => {
+    setDetailedRecord(record);
+    setIsDetailModalOpen(true);
+  }
+
   const renderedPins = useMemo(() => {
     if (!isClient || isLoading) {
       return null;
@@ -260,10 +282,15 @@ export function FaunaFloraGeoMapReport() {
                 <ScrollArea className="h-48">
                 <div className="grid gap-2 pr-4">
                     {cluster.records.map(rec => (
-                        <div key={rec.id} className="text-sm p-2 border rounded-md">
+                        <div key={rec.id} className="text-sm p-2 border rounded-md flex justify-between items-center">
+                          <div>
                             <p><strong className="font-medium">Data:</strong> {format(rec.date, 'dd/MM/yy HH:mm', { locale: ptBR })}</p>
                             <p><strong className="font-medium">Tipo:</strong> {rec.speciesType}</p>
                             <p><strong className="font-medium">Local:</strong> {rec.location}</p>
+                          </div>
+                           <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openDetails(rec)}>
+                              <Eye className="h-4 w-4" />
+                          </Button>
                         </div>
                     ))}
                 </div>
@@ -364,6 +391,57 @@ export function FaunaFloraGeoMapReport() {
             </div>
         </CardContent>
       </Card>
+
+       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Registro</DialogTitle>
+          </DialogHeader>
+          {detailedRecord && (
+            <>
+              <ScrollArea className="max-h-[70vh] pr-6">
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Data do Registro</Label>
+                        <p>{format(detailedRecord.date, 'dd/MM/yyyy', { locale: ptBR })}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Local</Label>
+                        <p>{detailedRecord.location}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Espécie / Tipo</Label>
+                        <p>{detailedRecord.speciesType}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Análise</Label>
+                        <div>
+                          {analysisMapping[detailedRecord.analysis] ? (
+                              <Badge className={cn(analysisMapping[detailedRecord.analysis].className)}>
+                                  {analysisMapping[detailedRecord.analysis].label}
+                              </Badge>
+                          ) : 'N/A'}
+                        </div>
+                      </div>
+                  </div>
+                  <div>
+                      <Label className="font-semibold text-muted-foreground">Descrição</Label>
+                      <p className="whitespace-pre-wrap">{detailedRecord.description}</p>
+                  </div>
+                </div>
+              </ScrollArea>
+              <div className="flex justify-end pt-2">
+                  <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                          Fechar
+                      </Button>
+                  </DialogClose>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

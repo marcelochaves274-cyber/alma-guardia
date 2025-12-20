@@ -14,10 +14,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Button } from './ui/button';
-import { Loader2, MapPin } from 'lucide-react';
+import { Loader2, MapPin, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
@@ -36,6 +43,12 @@ interface Treatment {
   treatmentLocation: string;
   riskLevel: number;
   situation: 'pendente' | 'finalizado' | 'reaberto';
+  description: string;
+  proposedTreatment: string;
+  actionTaken: string;
+  probability: string;
+  consequence: string;
+  completionDate?: Timestamp;
   mapMarker?: { x: number; y: number };
 }
 
@@ -57,6 +70,26 @@ const situationOptions = [
     { value: 'reaberto', label: 'Reaberto' },
 ];
 
+const getRiskLevelProperties = (score: number) => {
+    if (score >= 15) return { label: 'Alta', className: 'bg-red-600 text-white hover:bg-red-700' };
+    if (score >= 8) return { label: 'Média', className: 'bg-orange-500 text-white hover:bg-orange-600' };
+    if (score > 0) return { label: 'Baixa', className: 'bg-yellow-400 text-black hover:bg-yellow-500' };
+    return { label: 'N/A', className: 'bg-muted text-muted-foreground' };
+};
+
+const getSituationProperties = (situation: string) => {
+    switch (situation) {
+        case 'pendente':
+            return { label: 'Pendente', className: 'bg-yellow-500 text-black' };
+        case 'finalizado':
+            return { label: 'Finalizado', className: 'bg-green-600 text-white' };
+        case 'reaberto':
+            return { label: 'Reaberto', className: 'bg-blue-600 text-white' };
+        default:
+            return { label: situation, className: 'bg-muted text-muted-foreground' };
+    }
+}
+
 const YEAR_COLORS = ['fill-red-500', 'fill-blue-500', 'fill-green-500', 'fill-orange-500', 'fill-purple-500', 'fill-yellow-500'];
 
 const getYearColor = (year: number, allYears: string[]) => {
@@ -75,6 +108,8 @@ export function TreatmentMapReport() {
   const [isLoading, setIsLoading] = useState(true);
   const [mapUrl, setMapUrl] = useState<string | null>(null);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
+  const [detailedTreatment, setDetailedTreatment] = useState<Treatment | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
@@ -249,6 +284,11 @@ export function TreatmentMapReport() {
     setFilterSituation([]);
   }
 
+  const openDetails = (treatment: Treatment) => {
+    setDetailedTreatment(treatment);
+    setIsDetailModalOpen(true);
+  }
+
   const renderedPins = useMemo(() => {
     if (!isClient || isLoading) {
       return null;
@@ -286,11 +326,16 @@ export function TreatmentMapReport() {
                 </div>
                 <ScrollArea className="h-48">
                 <div className="grid gap-2 pr-4">
-                    {cluster.treatments.map(occ => (
-                        <div key={occ.id} className="text-sm p-2 border rounded-md">
-                            <p><strong className="font-medium">Data:</strong> {format(occ.treatmentDate, 'dd/MM/yy HH:mm', { locale: ptBR })}</p>
-                            <p><strong className="font-medium">Tipo:</strong> {occ.treatmentType}</p>
-                            <p><strong className="font-medium">Local:</strong> {occ.treatmentLocation}</p>
+                    {cluster.treatments.map(t => (
+                        <div key={t.id} className="text-sm p-2 border rounded-md flex justify-between items-center">
+                          <div>
+                            <p><strong className="font-medium">Data:</strong> {format(t.treatmentDate, 'dd/MM/yy HH:mm', { locale: ptBR })}</p>
+                            <p><strong className="font-medium">Tipo:</strong> {t.treatmentType}</p>
+                            <p><strong className="font-medium">Local:</strong> {t.treatmentLocation}</p>
+                          </div>
+                           <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openDetails(t)}>
+                              <Eye className="h-4 w-4" />
+                          </Button>
                         </div>
                     ))}
                 </div>
@@ -339,7 +384,7 @@ export function TreatmentMapReport() {
                     buttonText='Filtrar por Tipo'
                 />
             </div>
-            <div className="space-y-2">
+             <div className="space-y-2">
                 <Label>Nível de Risco (PxC)</Label>
                 <SheetFilter
                     title='Filtrar Níveis de Risco'
@@ -411,6 +456,87 @@ export function TreatmentMapReport() {
             </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+         <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Tratamento de Risco</DialogTitle>
+          </DialogHeader>
+          {detailedTreatment && (
+            <>
+              <ScrollArea className="max-h-[70vh] pr-6">
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Data da Identificação</Label>
+                        <p>{format(detailedTreatment.treatmentDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Local</Label>
+                        <p>{detailedTreatment.treatmentLocation}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Tipo de Risco</Label>
+                        <p>{detailedTreatment.treatmentType}</p>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-muted-foreground">Situação</Label>
+                        <div>
+                          <Badge className={cn(getSituationProperties(detailedTreatment.situation).className)}>
+                            {getSituationProperties(detailedTreatment.situation).label}
+                          </Badge>
+                        </div>
+                      </div>
+                      {(detailedTreatment.situation === 'pendente' || detailedTreatment.situation === 'reaberto') && detailedTreatment.completionDate && (
+                        <div>
+                          <Label className="font-semibold text-muted-foreground">Prazo para Conclusão</Label>
+                          <p>{format(detailedTreatment.completionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                        </div>
+                      )}
+                  </div>
+                  <div>
+                      <Label className="font-semibold text-muted-foreground">Descrição do Risco</Label>
+                      <p className="whitespace-pre-wrap">{detailedTreatment.description || 'Não informado'}</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 mt-4">
+                      <div>
+                          <Label className="font-semibold text-muted-foreground">Probabilidade</Label>
+                          <p>{detailedTreatment.probability}</p>
+                      </div>
+                      <div>
+                          <Label className="font-semibold text-muted-foreground">Consequência</Label>
+                          <p>{detailedTreatment.consequence}</p>
+                      </div>
+                      <div>
+                          <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
+                          <div>
+                            <Badge className={cn(getRiskLevelProperties(detailedTreatment.riskLevel).className)}>
+                                {getRiskLevelProperties(detailedTreatment.riskLevel).label}
+                            </Badge>
+                          </div>
+                      </div>
+                  </div>
+                  <div>
+                      <Label className="font-semibold text-muted-foreground">Tratamento Proposto</Label>
+                      <p className="whitespace-pre-wrap">{detailedTreatment.proposedTreatment || 'Não informado'}</p>
+                  </div>
+                  <div>
+                      <Label className="font-semibold text-muted-foreground">Ação Realizada</Label>
+                      <p className="whitespace-pre-wrap">{detailedTreatment.actionTaken || 'Não informado'}</p>
+                  </div>
+                </div>
+              </ScrollArea>
+              <div className="flex justify-end pt-2">
+                  <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                          Fechar
+                      </Button>
+                  </DialogClose>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
