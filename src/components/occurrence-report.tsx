@@ -340,7 +340,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
         </CardContent>
       </Card>
 
-      <Dialog onOpenChange={() => setSelectedOccurrence(null)}>
+      <Dialog onOpenChange={(isOpen) => !isOpen && setSelectedOccurrence(null)}>
         <Card>
           <CardHeader>
             <CardTitle>Resultados</CardTitle>
@@ -441,25 +441,24 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
             <>
               <ScrollArea className="max-h-[70vh] pr-6">
                 <div className="space-y-4 py-4">
-                  <div>
-                      <Label className="font-semibold text-muted-foreground">Nome Completo</Label>
-                      <p>{selectedOccurrence.involvedPersonName}</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-foreground">Dados da Ocorrência</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
                       <div>
-                        <Label className="font-semibold text-muted-foreground">Data da Ocorrência</Label>
+                        <Label className="text-muted-foreground">Data</Label>
                         <p>{format(selectedOccurrence.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
                       </div>
                       <div>
-                        <Label className="font-semibold text-muted-foreground">Local</Label>
+                        <Label className="text-muted-foreground">Local</Label>
                         <p>{selectedOccurrence.occurrenceLocation}</p>
                       </div>
                       <div>
-                        <Label className="font-semibold text-muted-foreground">Tipo de Ocorrência</Label>
+                        <Label className="text-muted-foreground">Tipo de Ocorrência</Label>
                         <p>{selectedOccurrence.occurrenceType}</p>
                       </div>
                       <div>
-                        <Label className="font-semibold text-muted-foreground">Análise</Label>
+                        <Label className="text-muted-foreground">Análise</Label>
                         <div>
                           {analysisMapping[selectedOccurrence.analysis] ? (
                               <Badge className={cn(analysisMapping[selectedOccurrence.analysis].className)}>
@@ -468,37 +467,43 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
                           ) : 'N/A'}
                         </div>
                       </div>
+                      <div className="col-span-1 md:col-span-2">
+                        <Label className="text-muted-foreground">Descrição</Label>
+                        <p className="whitespace-pre-wrap">{selectedOccurrence.description}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                      <Label className="font-semibold text-muted-foreground">Descrição</Label>
-                      <p className="whitespace-pre-wrap">{selectedOccurrence.description}</p>
+
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-foreground">Dados do Envolvido</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
+                        <div>
+                          <Label className="text-muted-foreground">Nome Completo</Label>
+                          <p>{selectedOccurrence.involvedPersonName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">CPF</Label>
+                          <p>{selectedOccurrence.cpf || 'Não informado'}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Data de Nascimento</Label>
+                          <p>{selectedOccurrence.birthDate || 'Não informado'}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Faixa Etária</Label>
+                          <p>{ageGroupOptions.find(o => o.value === selectedOccurrence.ageGroup)?.label || selectedOccurrence.ageGroup || 'Não informado'}</p>
+                        </div>
+                         <div>
+                          <Label className="text-muted-foreground">Telefone</Label>
+                          <p>{selectedOccurrence.phone || 'Não informado'}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Cidade/Estado</Label>
+                          <p>{selectedOccurrence.city || 'Não informado'} / {selectedOccurrence.state || 'N/A'}</p>
+                        </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4 mt-4">
-                      <div>
-                        <Label className="font-semibold text-muted-foreground">CPF</Label>
-                        <p>{selectedOccurrence.cpf || 'Não informado'}</p>
-                      </div>
-                      <div>
-                        <Label className="font-semibold text-muted-foreground">Data de Nascimento</Label>
-                        <p>{selectedOccurrence.birthDate || 'Não informado'}</p>
-                      </div>
-                      <div>
-                        <Label className="font-semibold text-muted-foreground">Faixa Etária</Label>
-                        <p>{ageGroupOptions.find(o => o.value === selectedOccurrence.ageGroup)?.label || selectedOccurrence.ageGroup || 'Não informado'}</p>
-                      </div>
-                      <div>
-                        <Label className="font-semibold text-muted-foreground">Telefone</Label>
-                        <p>{selectedOccurrence.phone || 'Não informado'}</p>
-                      </div>
-                      <div>
-                        <Label className="font-semibold text-muted-foreground">Cidade</Label>
-                        <p>{selectedOccurrence.city || 'Não informado'}</p>
-                      </div>
-                      <div>
-                        <Label className="font-semibold text-muted-foreground">Estado</Label>
-                        <p>{selectedOccurrence.state || 'Não informado'}</p>
-                      </div>
-                  </div>
+
                 </div>
               </ScrollArea>
               <div className="flex justify-end pt-2">
