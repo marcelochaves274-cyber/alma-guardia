@@ -54,7 +54,7 @@ interface Activity {
   activityName: string;
   pop: string;
   tcr: string;
-  riskAssessmentLocation: string[];
+  riskAssessmentLocation: string[] | string; // Can be string for old data
   createdAt: Timestamp;
 }
 
@@ -176,8 +176,12 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
   };
 
   const handleOpenAssessmentModal = (activity: Activity) => {
+    const locations = Array.isArray(activity.riskAssessmentLocation) 
+        ? activity.riskAssessmentLocation 
+        : [activity.riskAssessmentLocation];
+
     const assessmentsForLocation = riskAssessments
-        .filter(ra => activity.riskAssessmentLocation.includes(ra.location))
+        .filter(ra => locations.includes(ra.location))
         .sort((a, b) => b.assessmentDate.getTime() - a.assessmentDate.getTime());
     
     setSelectedAssessments(assessmentsForLocation);
@@ -243,62 +247,65 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
                 {isLoading ? (
                     renderSkeletons()
                 ) : activities.length > 0 ? (
-                    activities.map((act) => (
-                        <TableRow key={act.id}>
-                        <TableCell>{act.activityName.replace(/^POP\/TCR\s/, '')}</TableCell>
-                        <TableCell>
-                          <DialogTrigger asChild>
-                            <Button variant="link" className="p-0 h-auto" onClick={() => handleOpenPopTcrModal(act, 'pop')}>
-                              {act.pop}
-                            </Button>
-                          </DialogTrigger>
-                        </TableCell>
-                        <TableCell>
-                           <DialogTrigger asChild>
-                            <Button variant="link" className="p-0 h-auto" onClick={() => handleOpenPopTcrModal(act, 'tcr')}>
-                              {act.tcr}
-                            </Button>
-                          </DialogTrigger>
-                        </TableCell>
-                        <TableCell>
-                           <div className="flex flex-wrap gap-1">
-                                {act.riskAssessmentLocation?.length > 0 ? (
-                                    act.riskAssessmentLocation.map(loc => (
-                                        <Badge key={loc} variant="secondary" className="cursor-pointer" onClick={() => handleOpenAssessmentModal(act)}>
-                                            {loc}
-                                        </Badge>
-                                    ))
-                                ) : (
-                                    <span className="text-muted-foreground text-sm">N/A</span>
-                                )}
-                            </div>
-                        </TableCell>
-                         <TableCell className="text-right">
-                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar atividade" onClick={() => onEdit(act)}>
-                              <Pencil className="h-4 w-4" />
-                           </Button>
-                           <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir atividade" disabled={isDeleting === act.id}>
-                                    {isDeleting === act.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                      <AlertDialogDescription>Esta ação excluirá permanentemente o registro da atividade "{act.activityName.replace(/^POP\/TCR\s/, '')}".</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDelete(act.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                          Sim, excluir
-                                      </AlertDialogAction>
-                                  </AlertDialogFooter>
-                              </AlertDialogContent>
-                           </AlertDialog>
-                        </TableCell>
-                        </TableRow>
-                    ))
+                    activities.map((act) => {
+                        const locations = Array.isArray(act.riskAssessmentLocation) ? act.riskAssessmentLocation : (act.riskAssessmentLocation ? [act.riskAssessmentLocation] : []);
+                        return (
+                            <TableRow key={act.id}>
+                            <TableCell>{act.activityName.replace(/^POP\/TCR\s/, '')}</TableCell>
+                            <TableCell>
+                              <DialogTrigger asChild>
+                                <Button variant="link" className="p-0 h-auto" onClick={() => handleOpenPopTcrModal(act, 'pop')}>
+                                  {act.pop}
+                                </Button>
+                              </DialogTrigger>
+                            </TableCell>
+                            <TableCell>
+                               <DialogTrigger asChild>
+                                <Button variant="link" className="p-0 h-auto" onClick={() => handleOpenPopTcrModal(act, 'tcr')}>
+                                  {act.tcr}
+                                </Button>
+                              </DialogTrigger>
+                            </TableCell>
+                            <TableCell>
+                               <div className="flex flex-wrap gap-1">
+                                    {locations.length > 0 ? (
+                                        locations.map(loc => (
+                                            <Badge key={loc} variant="secondary" className="cursor-pointer" onClick={() => handleOpenAssessmentModal(act)}>
+                                                {loc}
+                                            </Badge>
+                                        ))
+                                    ) : (
+                                        <span className="text-muted-foreground text-sm">N/A</span>
+                                    )}
+                                </div>
+                            </TableCell>
+                             <TableCell className="text-right">
+                               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar atividade" onClick={() => onEdit(act)}>
+                                  <Pencil className="h-4 w-4" />
+                               </Button>
+                               <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir atividade" disabled={isDeleting === act.id}>
+                                        {isDeleting === act.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                     </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                          <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                          <AlertDialogDescription>Esta ação excluirá permanentemente o registro da atividade "{act.activityName.replace(/^POP\/TCR\s/, '')}".</AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => handleDelete(act.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                              Sim, excluir
+                                          </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                  </AlertDialogContent>
+                               </AlertDialog>
+                            </TableCell>
+                            </TableRow>
+                        );
+                    })
                 ) : (
                     <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center">
