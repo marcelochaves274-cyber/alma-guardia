@@ -476,8 +476,11 @@
           "description": "The selected TCR document for the activity."
         },
         "riskAssessmentLocation": {
-          "type": "string",
-          "description": "The location associated with the risk assessment for this activity."
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The locations associated with the risk assessment for this activity."
         },
         "createdAt": {
           "type": "string",

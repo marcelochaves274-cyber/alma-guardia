@@ -54,7 +54,7 @@ interface Activity {
   activityName: string;
   pop: string;
   tcr: string;
-  riskAssessmentLocation: string;
+  riskAssessmentLocation: string[];
   createdAt: Timestamp;
 }
 
@@ -177,7 +177,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
 
   const handleOpenAssessmentModal = (activity: Activity) => {
     const assessmentsForLocation = riskAssessments
-        .filter(ra => ra.location === activity.riskAssessmentLocation)
+        .filter(ra => activity.riskAssessmentLocation.includes(ra.location))
         .sort((a, b) => b.assessmentDate.getTime() - a.assessmentDate.getTime());
     
     setSelectedAssessments(assessmentsForLocation);
@@ -261,9 +261,17 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
                           </DialogTrigger>
                         </TableCell>
                         <TableCell>
-                           <Button variant="link" className="p-0 h-auto" onClick={() => handleOpenAssessmentModal(act)}>
-                                {act.riskAssessmentLocation || 'N/A'}
-                            </Button>
+                           <div className="flex flex-wrap gap-1">
+                                {act.riskAssessmentLocation?.length > 0 ? (
+                                    act.riskAssessmentLocation.map(loc => (
+                                        <Badge key={loc} variant="secondary" className="cursor-pointer" onClick={() => handleOpenAssessmentModal(act)}>
+                                            {loc}
+                                        </Badge>
+                                    ))
+                                ) : (
+                                    <span className="text-muted-foreground text-sm">N/A</span>
+                                )}
+                            </div>
                         </TableCell>
                          <TableCell className="text-right">
                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar atividade" onClick={() => onEdit(act)}>
@@ -330,12 +338,15 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
           {selectedAssessments.length > 0 ? (
             <>
               <p className='text-sm text-muted-foreground px-6 -mt-4'>
-                Exibindo {selectedAssessments.length} avaliação(ões) para <strong>{selectedAssessments[0].location}</strong>, da mais recente para a mais antiga.
+                Exibindo {selectedAssessments.length} avaliação(ões) para os locais selecionados, da mais recente para a mais antiga.
               </p>
             <ScrollArea className="max-h-[70vh] pr-4">
               <div className="space-y-6 p-6">
                 {selectedAssessments.map((assessment) => (
                     <div key={assessment.id} className="space-y-4 rounded-lg border p-4">
+                       <p className='text-sm font-semibold text-primary'>
+                          Local: {assessment.location}
+                        </p>
                         <div className="space-y-2">
                             <Label className="font-semibold text-muted-foreground">Etapa da Atividade</Label>
                             <p>{assessment.taskDescription || 'Não informado'}</p>
@@ -388,7 +399,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
             </>
           ) : (
             <div className='p-6'>
-                 <p className="py-4 text-sm text-muted-foreground">Não foi possível encontrar uma avaliação de risco associada a este local.</p>
+                 <p className="py-4 text-sm text-muted-foreground">Não foi possível encontrar uma avaliação de risco associada a estes locais.</p>
                  <div className="flex justify-end pt-2">
                     <DialogClose asChild>
                         <Button type="button" variant="secondary">

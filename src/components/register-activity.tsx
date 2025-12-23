@@ -23,6 +23,7 @@ import { doc, getDoc, addDoc, collection, serverTimestamp, updateDoc } from 'fir
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { PopDocument } from './manage-pops';
+import { SheetFilter } from './sheet-filter';
 
 interface RegisterActivityProps {
   activityToEdit: any | null;
@@ -35,7 +36,7 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
   const [activityName, setActivityName] = useState('');
   const [pop, setPop] = useState('');
   const [tcr, setTcr] = useState('');
-  const [riskAssessmentLocation, setRiskAssessmentLocation] = useState('');
+  const [riskAssessmentLocations, setRiskAssessmentLocations] = useState<string[]>([]);
   
   const [allDocs, setAllDocs] = useState<PopDocument[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
@@ -53,13 +54,13 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
       setActivityName(activityToEdit.activityName || '');
       setPop(activityToEdit.pop || '');
       setTcr(activityToEdit.tcr || '');
-      setRiskAssessmentLocation(activityToEdit.riskAssessmentLocation || '');
+      setRiskAssessmentLocations(activityToEdit.riskAssessmentLocation || []); // Now an array
     } else {
         // Reset form when not in edit mode or when activityToEdit is cleared
         setActivityName('');
         setPop('');
         setTcr('');
-        setRiskAssessmentLocation('');
+        setRiskAssessmentLocations([]);
     }
   }, [activityToEdit]);
 
@@ -122,7 +123,7 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
     setActivityName('');
     setPop('');
     setTcr('');
-    setRiskAssessmentLocation('');
+    setRiskAssessmentLocations([]);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -132,7 +133,7 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
         return;
     }
 
-    if (!activityName || !pop || !tcr || !riskAssessmentLocation) {
+    if (!activityName || !pop || !tcr || riskAssessmentLocations.length === 0) {
         toast({ variant: 'destructive', title: 'Campos obrigatórios', description: 'Por favor, preencha todos os campos.' });
         return;
     }
@@ -144,7 +145,7 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
         activityName,
         pop,
         tcr,
-        riskAssessmentLocation,
+        riskAssessmentLocation: riskAssessmentLocations,
     };
     
     try {
@@ -233,19 +234,15 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="risk-assessment">Avaliação de Risco</Label>
-              <Select name="riskAssessmentLocation" required disabled={isLoading || locations.length === 0} onValueChange={setRiskAssessmentLocation} value={riskAssessmentLocation}>
-                <SelectTrigger id="risk-assessment">
-                  <SelectValue placeholder={isLoading ? "Carregando..." : locations.length === 0 ? "Nenhuma avaliação cadastrada" : "Selecione o local da avaliação"} />
-                </SelectTrigger>
-                <SelectContent>
-                    {locations.map((loc) => (
-                        <SelectItem key={loc} value={loc}>
-                            {loc}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="risk-assessment">Avaliação de Risco (Locais)</Label>
+                <SheetFilter
+                    title='Selecionar Locais de Risco'
+                    options={locations.map(l => ({ value: l, label: l }))}
+                    selected={riskAssessmentLocations}
+                    onChange={setRiskAssessmentLocations}
+                    disabled={isLoading || locations.length === 0}
+                    buttonText={isLoading ? "Carregando..." : locations.length === 0 ? "Nenhuma avaliação cadastrada" : "Selecione o(s) local(is) da avaliação"}
+                />
             </div>
 
         </CardContent>
