@@ -346,54 +346,45 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
               </p>
             <ScrollArea className="max-h-[70vh] pr-4">
               <div className="space-y-6 p-6">
-                {selectedAssessments.map((assessment) => (
-                    <div key={assessment.id} className="space-y-4 rounded-lg border p-4">
-                       <p className='text-sm font-semibold text-primary'>
-                          Local: {assessment.location}
-                        </p>
-                        <div className="space-y-2">
-                            <Label className="font-semibold text-muted-foreground">Etapa da Atividade</Label>
-                            <p>{assessment.taskDescription || 'Não informado'}</p>
+                {selectedAssessments.map((assessment, index) => (
+                    <div key={assessment.id} className={cn("space-y-4 rounded-lg border p-4", index % 2 === 0 ? "bg-card" : "bg-muted/20")}>
+                        <div className="flex justify-between items-start">
+                          <p className='text-base font-semibold text-primary'>
+                            Local: {assessment.location}
+                          </p>
+                           <Badge className={cn(getRiskLevelProperties(assessment.riskLevel).className)}>
+                              {getRiskLevelProperties(assessment.riskLevel).label}
+                           </Badge>
                         </div>
-                        <div>
-                            <Label className="font-semibold text-muted-foreground">Causa</Label>
-                            <p>{assessment.riskSource  || 'Não informado'}</p>
-                        </div>
+                        <div className="space-y-3 text-sm">
                             <div>
-                            <Label className="font-semibold text-muted-foreground">Perigo</Label>
-                            <p>{assessment.effects  || 'Não informado'}</p>
-                        </div>
-                            <div>
-                            <Label className="font-semibold text-muted-foreground">Dano</Label>
-                            <p>{assessment.existingControls  || 'Não informado'}</p>
-                        </div>
-                            <div>
-                            <Label className="font-semibold text-muted-foreground">Controle Operacional</Label>
-                            <p>{assessment.recommendedControls  || 'Não informado'}</p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 mt-4">
-                            <div>
-                                <Label className="font-semibold text-muted-foreground">Probabilidade</Label>
-                                <p>{assessment.probability}</p>
+                                <Label className="font-semibold text-muted-foreground">Etapa da Atividade</Label>
+                                <p>{assessment.taskDescription || 'Não informado'}</p>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              <div>
+                                  <Label className="font-semibold text-muted-foreground">Causa</Label>
+                                  <p>{assessment.riskSource  || 'Não informado'}</p>
+                              </div>
+                                  <div>
+                                  <Label className="font-semibold text-muted-foreground">Perigo</Label>
+                                  <p>{assessment.effects  || 'Não informado'}</p>
+                              </div>
+                                  <div>
+                                  <Label className="font-semibold text-muted-foreground">Dano</Label>
+                                  <p>{assessment.existingControls  || 'Não informado'}</p>
+                              </div>
                             </div>
                             <div>
-                                <Label className="font-semibold text-muted-foreground">Consequência</Label>
-                                <p>{assessment.consequence}</p>
-                            </div>
-                            <div>
-                                <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
-                                <div>
-                                <Badge className={cn(getRiskLevelProperties(assessment.riskLevel).className)}>
-                                    {getRiskLevelProperties(assessment.riskLevel).label}
-                                </Badge>
-                                </div>
+                                <Label className="font-semibold text-muted-foreground">Controle Operacional</Label>
+                                <p>{assessment.recommendedControls  || 'Não informado'}</p>
                             </div>
                         </div>
                     </div>
                 ))}
               </div>
             </ScrollArea>
-              <div className="flex justify-end pt-2 px-6 pb-4">
+              <div className="flex justify-end pt-2 px-6 pb-4 border-t">
                 <DialogClose asChild>
                     <Button type="button" variant="secondary">
                         Fechar
