@@ -33,7 +33,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, Timestamp, doc, getDoc, query, where, limit, orderBy, deleteDoc } from 'firebase/firestore';
@@ -223,6 +222,15 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
       </TableRow>
     ))
   );
+  
+    const groupedAssessments = selectedAssessments.reduce((acc, assessment) => {
+      const location = assessment.location || 'Sem Local';
+      if (!acc[location]) {
+        acc[location] = [];
+      }
+      acc[location].push(assessment);
+      return acc;
+    }, {} as Record<string, RiskAssessment[]>);
 
   return (
     <div className="space-y-6">
@@ -342,43 +350,46 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
           {selectedAssessments.length > 0 ? (
             <>
               <p className='text-sm text-muted-foreground px-6 -mt-4'>
-                Exibindo {selectedAssessments.length} avaliação(ões) para os locais selecionados, da mais recente para a mais antiga.
+                Exibindo {selectedAssessments.length} avaliação(ões) para os locais selecionados.
               </p>
-            <ScrollArea className="max-h-[70vh] pr-4">
-              <div className="space-y-6 p-6">
-                {selectedAssessments.map((assessment, index) => (
-                    <div key={assessment.id} className={cn("space-y-4 rounded-lg border p-4", index % 2 === 0 ? "bg-card" : "bg-muted/20")}>
-                        <div className="flex justify-between items-start">
-                          <p className='text-base font-semibold text-primary'>
-                            Local: {assessment.location}
-                          </p>
-                           <Badge className={cn(getRiskLevelProperties(assessment.riskLevel).className)}>
-                              {getRiskLevelProperties(assessment.riskLevel).label}
-                           </Badge>
-                        </div>
-                        <div className="space-y-3 text-sm">
-                            <div>
-                                <Label className="font-semibold text-muted-foreground">Etapa da Atividade</Label>
-                                <p>{assessment.taskDescription || 'Não informado'}</p>
+            <ScrollArea className="max-h-[70vh] p-6 pt-2">
+              <div className="space-y-6">
+                {Object.entries(groupedAssessments).map(([location, assessments], index) => (
+                    <div key={location} className={cn("space-y-4 rounded-lg border p-4", index % 2 === 0 ? "bg-card" : "bg-muted/20")}>
+                        <h3 className="text-xl font-bold text-primary text-center">{location}</h3>
+                        <div className="space-y-4">
+                        {assessments.map((assessment) => (
+                            <div key={assessment.id} className="border-t pt-4 first:border-t-0 first:pt-0">
+                                <div className="flex justify-between items-start">
+                                <p className='text-base font-semibold'>
+                                    {assessment.taskDescription}
+                                </p>
+                                <Badge className={cn(getRiskLevelProperties(assessment.riskLevel).className)}>
+                                    {getRiskLevelProperties(assessment.riskLevel).label}
+                                </Badge>
+                                </div>
+                                <div className="mt-2 space-y-3 text-sm">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div>
+                                        <Label className="font-semibold text-muted-foreground">Causa</Label>
+                                        <p>{assessment.riskSource  || 'Não informado'}</p>
+                                    </div>
+                                        <div>
+                                        <Label className="font-semibold text-muted-foreground">Perigo</Label>
+                                        <p>{assessment.effects  || 'Não informado'}</p>
+                                    </div>
+                                        <div>
+                                        <Label className="font-semibold text-muted-foreground">Dano</Label>
+                                        <p>{assessment.existingControls  || 'Não informado'}</p>
+                                    </div>
+                                    </div>
+                                    <div>
+                                        <Label className="font-semibold text-muted-foreground">Controle Operacional</Label>
+                                        <p>{assessment.recommendedControls  || 'Não informado'}</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                              <div>
-                                  <Label className="font-semibold text-muted-foreground">Causa</Label>
-                                  <p>{assessment.riskSource  || 'Não informado'}</p>
-                              </div>
-                                  <div>
-                                  <Label className="font-semibold text-muted-foreground">Perigo</Label>
-                                  <p>{assessment.effects  || 'Não informado'}</p>
-                              </div>
-                                  <div>
-                                  <Label className="font-semibold text-muted-foreground">Dano</Label>
-                                  <p>{assessment.existingControls  || 'Não informado'}</p>
-                              </div>
-                            </div>
-                            <div>
-                                <Label className="font-semibold text-muted-foreground">Controle Operacional</Label>
-                                <p>{assessment.recommendedControls  || 'Não informado'}</p>
-                            </div>
+                        ))}
                         </div>
                     </div>
                 ))}
