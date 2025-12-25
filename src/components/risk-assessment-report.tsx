@@ -158,7 +158,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         return locationMatch;
     });
 
-    return filtered.reduce((acc, assessment) => {
+    const groupedByLocation = filtered.reduce((acc, assessment) => {
       const location = assessment.location || 'Sem Local';
       if (!acc[location]) {
         acc[location] = [];
@@ -166,6 +166,21 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
       acc[location].push(assessment);
       return acc;
     }, {} as Record<string, RiskAssessment[]>);
+
+    // New: Group by taskDescription within each location
+    const finalGroup = Object.entries(groupedByLocation).reduce((acc, [location, assessments]) => {
+        acc[location] = assessments.reduce((taskAcc, assessment) => {
+            const task = assessment.taskDescription || 'Etapa não descrita';
+            if (!taskAcc[task]) {
+                taskAcc[task] = [];
+            }
+            taskAcc[task].push(assessment);
+            return taskAcc;
+        }, {} as Record<string, RiskAssessment[]>);
+        return acc;
+    }, {} as Record<string, Record<string, RiskAssessment[]>>);
+
+    return finalGroup;
   }, [assessments, filterLocation, isClient]);
 
 
@@ -246,68 +261,72 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
             </div>
             </CardContent>
         </Card>
-
+        
         {isLoading ? (
             renderSkeletons()
         ) : Object.keys(filteredAndGroupedAssessments).length > 0 ? (
             <div className="space-y-8">
-            {Object.entries(filteredAndGroupedAssessments).map(([location, locationAssessments], index) => (
+            {Object.entries(filteredAndGroupedAssessments).map(([location, tasks], index) => (
                 <Card key={location} className={cn("overflow-hidden", index % 2 === 0 ? "bg-card" : "bg-muted/30")}>
                     <CardHeader className="bg-muted/50">
                         <CardTitle className="text-xl text-center text-primary">{location}</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-0 p-0">
-                        {locationAssessments.map(ass => {
-                            const riskProps = getRiskLevelProperties(ass.riskLevel);
-                            return (
-                                <div key={ass.id} className="p-4 border-b last:border-b-0">
-                                    <div className="flex justify-between items-start gap-4">
-                                        <div className='flex-1 space-y-1'>
-                                            <p className='text-base font-semibold'>{ass.taskDescription || 'Etapa não descrita'}</p>
-                                            <p className='text-xs text-muted-foreground'>{format(ass.assessmentDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
-                                        </div>
-                                        <div className="flex items-center shrink-0 -mr-2">
-                                            <DialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar avaliação" onClick={() => setSelectedAssessment(ass)}>
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                            </DialogTrigger>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar avaliação" onClick={() => handleEdit(ass)}>
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir avaliação" disabled={isDeleting === ass.id}>
-                                                        {isDeleting === ass.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                                        <AlertDialogDescription>Esta ação excluirá permanentemente esta avaliação de risco.</AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(ass.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                                            Sim, excluir
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                    </div>
-                                    <div className='mt-3 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm'>
-                                        <div><strong className='text-muted-foreground'>Causa:</strong> <p>{ass.riskSource}</p></div>
-                                        <div><strong className='text-muted-foreground'>Perigo:</strong> <p>{ass.effects}</p></div>
-                                        <div><strong className='text-muted-foreground'>Dano:</strong> <p>{ass.existingControls}</p></div>
-                                        <div>
-                                            <strong className='text-muted-foreground'>Nível de Risco:</strong>
-                                            <div><Badge className={cn(riskProps.className)}>{riskProps.label}</Badge></div>
-                                        </div>
-                                    </div>
+                    <CardContent className="p-4 space-y-6">
+                        {Object.entries(tasks).map(([task, taskAssessments]) => (
+                            <div key={task} className="border border-border/50 rounded-lg p-4">
+                                <h4 className="text-lg font-semibold mb-3 border-b pb-2">{task}</h4>
+                                <div className="space-y-4">
+                                    {taskAssessments.map(ass => {
+                                        const riskProps = getRiskLevelProperties(ass.riskLevel);
+                                        return (
+                                            <div key={ass.id} className="border-b last:border-b-0 pb-4 last:pb-0">
+                                                <div className="flex justify-between items-start gap-4">
+                                                    <p className='text-xs text-muted-foreground'>{format(ass.assessmentDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                                                    <div className="flex items-center shrink-0 -mr-2">
+                                                        <DialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar avaliação" onClick={() => setSelectedAssessment(ass)}>
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar avaliação" onClick={() => handleEdit(ass)}>
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir avaliação" disabled={isDeleting === ass.id}>
+                                                                    {isDeleting === ass.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>Esta ação excluirá permanentemente esta avaliação de risco.</AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDelete(ass.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                                                        Sim, excluir
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
+                                                </div>
+                                                <div className='mt-2 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm'>
+                                                    <div><strong className='text-muted-foreground'>Causa:</strong> <p>{ass.riskSource}</p></div>
+                                                    <div><strong className='text-muted-foreground'>Perigo:</strong> <p>{ass.effects}</p></div>
+                                                    <div><strong className='text-muted-foreground'>Dano:</strong> <p>{ass.existingControls}</p></div>
+                                                    <div>
+                                                        <strong className='text-muted-foreground'>Nível de Risco:</strong>
+                                                        <div><Badge className={cn(riskProps.className)}>{riskProps.label}</Badge></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
                                 </div>
-                            )
-                        })}
+                            </div>
+                        ))}
                     </CardContent>
                 </Card>
             ))}
