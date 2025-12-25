@@ -40,6 +40,7 @@ import { cn } from '@/lib/utils';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import { SheetFilter } from './sheet-filter';
+import { Separator } from './ui/separator';
 
 
 interface RiskAssessment {
@@ -251,21 +252,21 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         ) : Object.keys(filteredAndGroupedAssessments).length > 0 ? (
             <div className="space-y-8">
             {Object.entries(filteredAndGroupedAssessments).map(([location, locationAssessments], index) => (
-                <Card key={location} className={cn(index % 2 === 0 ? "bg-card" : "bg-muted/40")}>
+                <Card key={location} className={cn(index % 2 === 0 ? "bg-card" : "bg-muted/20")}>
                     <CardHeader>
-                        <CardTitle className="text-xl">{location}</CardTitle>
+                        <CardTitle className="text-xl text-center">{location}</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-0 p-0">
                         {locationAssessments.map(ass => {
                             const riskProps = getRiskLevelProperties(ass.riskLevel);
                             return (
-                                <div key={ass.id} className="rounded-lg border bg-background p-4 space-y-3">
-                                    <div className="flex justify-between items-start">
-                                        <div className='space-y-1'>
+                                <div key={ass.id} className="p-4 border-b last:border-b-0">
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className='flex-1 space-y-1'>
                                             <p className='text-sm font-semibold'>{ass.taskDescription || 'Etapa não descrita'}</p>
                                             <p className='text-xs text-muted-foreground'>{format(ass.assessmentDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
                                         </div>
-                                        <div className="flex items-center shrink-0">
+                                        <div className="flex items-center shrink-0 -mr-2">
                                             <DialogTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar avaliação" onClick={() => setSelectedAssessment(ass)}>
                                                     <Eye className="h-4 w-4" />
@@ -295,7 +296,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
                                             </AlertDialog>
                                         </div>
                                     </div>
-                                    <div className='grid grid-cols-1 md:grid-cols-4 gap-4 text-sm'>
+                                    <div className='mt-3 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm'>
                                         <div><strong className='text-muted-foreground'>Causa:</strong> <p>{ass.riskSource}</p></div>
                                         <div><strong className='text-muted-foreground'>Perigo:</strong> <p>{ass.effects}</p></div>
                                         <div><strong className='text-muted-foreground'>Dano:</strong> <p>{ass.existingControls}</p></div>
