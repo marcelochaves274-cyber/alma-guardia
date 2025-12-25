@@ -270,7 +270,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
                                 {locations.length > 0 ? (
                                     <Button variant="secondary" size="sm" onClick={() => handleOpenAssessmentModal(act)}>
                                         <Eye className="mr-2 h-4 w-4" />
-                                        Visualizar ({locations.length})
+                                        Visualizar
                                     </Button>
                                 ) : (
                                     <span className="text-muted-foreground text-sm">N/A</span>
