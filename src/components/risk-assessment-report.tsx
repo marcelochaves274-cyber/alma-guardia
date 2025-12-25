@@ -252,9 +252,9 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         ) : Object.keys(filteredAndGroupedAssessments).length > 0 ? (
             <div className="space-y-8">
             {Object.entries(filteredAndGroupedAssessments).map(([location, locationAssessments], index) => (
-                <Card key={location} className={cn(index % 2 === 0 ? "bg-card" : "bg-muted/20")}>
-                    <CardHeader>
-                        <CardTitle className="text-xl text-center">{location}</CardTitle>
+                <Card key={location} className={cn("overflow-hidden", index % 2 === 0 ? "bg-card" : "bg-muted/30")}>
+                    <CardHeader className="bg-muted/50">
+                        <CardTitle className="text-xl text-center text-primary">{location}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-0 p-0">
                         {locationAssessments.map(ass => {
@@ -263,7 +263,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
                                 <div key={ass.id} className="p-4 border-b last:border-b-0">
                                     <div className="flex justify-between items-start gap-4">
                                         <div className='flex-1 space-y-1'>
-                                            <p className='text-sm font-semibold'>{ass.taskDescription || 'Etapa não descrita'}</p>
+                                            <p className='text-base font-semibold'>{ass.taskDescription || 'Etapa não descrita'}</p>
                                             <p className='text-xs text-muted-foreground'>{format(ass.assessmentDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
                                         </div>
                                         <div className="flex items-center shrink-0 -mr-2">
@@ -302,7 +302,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
                                         <div><strong className='text-muted-foreground'>Dano:</strong> <p>{ass.existingControls}</p></div>
                                         <div>
                                             <strong className='text-muted-foreground'>Nível de Risco:</strong>
-                                            <p><Badge className={cn(riskProps.className)}>{riskProps.label}</Badge></p>
+                                            <div><Badge className={cn(riskProps.className)}>{riskProps.label}</Badge></div>
                                         </div>
                                     </div>
                                 </div>
