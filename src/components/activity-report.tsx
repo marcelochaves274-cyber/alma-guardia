@@ -21,7 +21,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
 import {
@@ -40,7 +39,7 @@ import { collection, onSnapshot, Timestamp, doc, getDoc, query, where, limit, or
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
-import { Loader2, Pencil, Trash2 } from 'lucide-react';
+import { Loader2, Pencil, Trash2, Eye } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
@@ -178,7 +177,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
   const handleOpenAssessmentModal = (activity: Activity) => {
     const locations = Array.isArray(activity.riskAssessmentLocation) 
         ? activity.riskAssessmentLocation 
-        : [activity.riskAssessmentLocation];
+        : (activity.riskAssessmentLocation ? [activity.riskAssessmentLocation] : []);
 
     const assessmentsForLocation = riskAssessments
         .filter(ra => locations.includes(ra.location))
@@ -267,17 +266,14 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
                               </DialogTrigger>
                             </TableCell>
                             <TableCell>
-                               <div className="flex flex-wrap gap-1">
-                                    {locations.length > 0 ? (
-                                        locations.map(loc => (
-                                            <Badge key={loc} variant="secondary" className="cursor-pointer" onClick={() => handleOpenAssessmentModal(act)}>
-                                                {loc}
-                                            </Badge>
-                                        ))
-                                    ) : (
-                                        <span className="text-muted-foreground text-sm">N/A</span>
-                                    )}
-                                </div>
+                                {locations.length > 0 ? (
+                                    <Button variant="secondary" size="sm" onClick={() => handleOpenAssessmentModal(act)}>
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        Visualizar ({locations.length})
+                                    </Button>
+                                ) : (
+                                    <span className="text-muted-foreground text-sm">N/A</span>
+                                )}
                             </TableCell>
                              <TableCell className="text-right">
                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar atividade" onClick={() => onEdit(act)}>
@@ -340,7 +336,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
        <Dialog open={isAssessmentModalOpen} onOpenChange={setIsAssessmentModalOpen}>
         <DialogContent className="max-w-4xl">
            <DialogHeader>
-              <DialogTitle>Avaliações de Risco</DialogTitle>
+              <DialogTitle>Avaliações de Risco Associadas</DialogTitle>
            </DialogHeader>
           {selectedAssessments.length > 0 ? (
             <>
