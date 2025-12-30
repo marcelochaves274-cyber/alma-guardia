@@ -92,7 +92,7 @@ export function ManagePopsAndActivities() {
             toast({
                 variant: "destructive",
                 title: "Erro ao carregar",
-                description: "Não foi possível buscar as atividades e POPs cadastrados."
+                description: "Não foi possível buscar os POPs cadastrados."
             });
          }
       } finally {
@@ -125,7 +125,7 @@ export function ManagePopsAndActivities() {
         return true;
     } catch (error) {
         console.error("Error saving POP documents:", error);
-        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar as atividades e POPs.'});
+        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar os POPs.'});
         return false;
     } finally {
         setIsSaving(false);
@@ -139,12 +139,12 @@ export function ManagePopsAndActivities() {
       toast({
         variant: 'destructive',
         title: 'Campo vazio',
-        description: 'Por favor, digite o nome da atividade.',
+        description: 'Por favor, digite o nome do POP.',
       });
       return;
     }
     
-    const finalDocName = `Atividade ${newDocName.trim()}`;
+    const finalDocName = newDocName.trim();
     const newDoc: PopDocument = {
         name: finalDocName,
         popContent: 'Seu texto aqui',
@@ -154,8 +154,8 @@ export function ManagePopsAndActivities() {
     if (documents.some(p => p.name.toLowerCase() === newDoc.name.toLowerCase())) {
       toast({
         variant: 'destructive',
-        title: 'Atividade duplicada',
-        description: 'Esta atividade já existe.',
+        title: 'POP duplicado',
+        description: 'Este POP já existe.',
       });
       return;
     }
@@ -167,7 +167,7 @@ export function ManagePopsAndActivities() {
         setNewDocName('');
         toast({
             title: 'Sucesso!',
-            description: `A atividade "${newDocName.trim()}" foi adicionada.`,
+            description: `O POP "${finalDocName}" foi adicionado.`,
         });
     }
   };
@@ -179,14 +179,14 @@ export function ManagePopsAndActivities() {
         setDocuments(newDocs);
         toast({
         title: 'Removido',
-        description: `A atividade "${docToRemove.name}" foi removida.`,
+        description: `O POP "${docToRemove.name}" foi removido.`,
         });
     }
   };
 
   const handleStartEditing = (doc: PopDocument) => {
     setEditingDoc(doc);
-    setEditingValue(doc.name.replace(/^Atividade\s/, ''));
+    setEditingValue(doc.name);
   };
 
   const handleCancelEditing = () => {
@@ -199,17 +199,17 @@ export function ManagePopsAndActivities() {
       toast({
         variant: 'destructive',
         title: 'Campo vazio',
-        description: 'O nome da atividade não pode ser vazio.',
+        description: 'O nome do POP não pode ser vazio.',
       });
       return;
     }
     
-    const newName = `Atividade ${editingValue.trim()}`;
+    const newName = editingValue.trim();
     if (documents.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.name !== editingDoc.name)) {
         toast({
             variant: 'destructive',
-            title: 'Atividade duplicada',
-            description: 'Esta atividade já existe.',
+            title: 'POP duplicado',
+            description: 'Este POP já existe.',
         });
         return;
     }
@@ -222,7 +222,7 @@ export function ManagePopsAndActivities() {
         setEditingValue('');
         toast({
             title: 'Sucesso!',
-            description: 'A atividade foi atualizada.',
+            description: 'O POP foi atualizado.',
         });
     }
   }
@@ -231,9 +231,9 @@ export function ManagePopsAndActivities() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Gerenciar Atividades e POPs</CardTitle>
+                <CardTitle>Gerenciar POPs</CardTitle>
                 <CardDescription>
-                  Adicione, renomeie ou exclua as atividades e seus respectivos POPs (Procedimentos Operacionais Padrão).
+                  Adicione, renomeie ou exclua os POPs (Procedimentos Operacionais Padrão).
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -253,30 +253,25 @@ export function ManagePopsAndActivities() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gerenciar Atividades e POPs</CardTitle>
+        <CardTitle>Gerenciar POPs</CardTitle>
         <CardDescription>
-          Adicione, renomeie ou exclua as atividades e seus respectivos POPs (Procedimentos Operacionais Padrão).
+          Adicione, renomeie ou exclua os POPs (Procedimentos Operacionais Padrão).
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleAddDoc} className="flex items-end gap-2">
             <div className="w-full space-y-2">
                 <Label htmlFor="new-doc-name">
-                Nova Atividade
+                Novo POP
                 </Label>
-                <div className="flex items-center gap-2">
-                    <span className="flex h-10 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium text-muted-foreground">
-                        Atividade
-                    </span>
-                    <Input
-                        id="new-doc-name"
-                        placeholder="Ex: Trilha da Montanha"
-                        value={newDocName}
-                        onChange={(e) => setNewDocName(e.target.value)}
-                        disabled={isSaving}
-                        className="flex-1"
-                    />
-                </div>
+                <Input
+                    id="new-doc-name"
+                    placeholder="Ex: Trilha da Montanha"
+                    value={newDocName}
+                    onChange={(e) => setNewDocName(e.target.value)}
+                    disabled={isSaving}
+                    className="flex-1"
+                />
             </div>
             <Button type="submit" disabled={isSaving || !newDocName.trim()} className="self-end">
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
@@ -287,7 +282,7 @@ export function ManagePopsAndActivities() {
         <Separator className="my-6" />
 
         <div>
-          <h3 className="mb-4 text-lg font-medium">Atividades Existentes</h3>
+          <h3 className="mb-4 text-lg font-medium">POPs Existentes</h3>
           {documents.length > 0 ? (
             <ul className="space-y-3">
               {documents.map((doc) => (
@@ -297,9 +292,6 @@ export function ManagePopsAndActivities() {
                 >
                   {editingDoc?.name === doc.name ? (
                     <div className='flex-1 flex items-center gap-2'>
-                        <span className="flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium text-muted-foreground">
-                            Atividade
-                        </span>
                         <Input
                             value={editingValue}
                             onChange={(e) => setEditingValue(e.target.value)}
@@ -341,7 +333,7 @@ export function ManagePopsAndActivities() {
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente a atividade "{doc.name}" e seu POP associado.
+                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o POP "{doc.name}".
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -363,7 +355,7 @@ export function ManagePopsAndActivities() {
             </ul>
           ) : (
             <p className="text-center text-sm text-muted-foreground">
-              Nenhuma atividade cadastrada.
+              Nenhum POP cadastrado.
             </p>
           )}
         </div>

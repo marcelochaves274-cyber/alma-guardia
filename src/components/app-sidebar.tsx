@@ -660,7 +660,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                         isActive={activePage === 'manage-pops'}
                         onClick={() => handlePageChange('manage-pops')}
                     >
-                        Ger. Atividades e POPs
+                        Gerenciar POPs
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                      <SidebarMenuSubItem>
