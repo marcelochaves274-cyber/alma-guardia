@@ -284,7 +284,7 @@ export function FaunaFloraGeoMapReport() {
                     {cluster.records.map(rec => (
                         <div key={rec.id} className="text-sm p-2 border rounded-md flex justify-between items-center">
                           <div>
-                            <p><strong className="font-medium">Data:</strong> {format(rec.date, 'dd/MM/yy HH:mm', { locale: ptBR })}</p>
+                            <p><strong className="font-medium">Data:</strong> {format(rec.date, 'dd/MM/yyyy', { locale: ptBR })}</p>
                             <p><strong className="font-medium">Tipo:</strong> {rec.speciesType}</p>
                             <p><strong className="font-medium">Local:</strong> {rec.location}</p>
                           </div>

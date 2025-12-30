@@ -299,7 +299,7 @@ export function MapReport() {
                     {cluster.occurrences.map(occ => (
                         <div key={occ.id} className="text-sm p-2 border rounded-md flex justify-between items-center">
                           <div>
-                            <p><strong className="font-medium">Data:</strong> {format(occ.occurrenceDate, 'dd/MM/yy HH:mm', { locale: ptBR })}</p>
+                            <p><strong className="font-medium">Data:</strong> {format(occ.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
                             <p><strong className="font-medium">Tipo:</strong> {occ.occurrenceType}</p>
                             <p><strong className="font-medium">Local:</strong> {occ.occurrenceLocation}</p>
                           </div>

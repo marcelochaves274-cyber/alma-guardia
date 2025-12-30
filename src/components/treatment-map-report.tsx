@@ -329,7 +329,7 @@ export function TreatmentMapReport() {
                     {cluster.treatments.map(t => (
                         <div key={t.id} className="text-sm p-2 border rounded-md flex justify-between items-center">
                           <div>
-                            <p><strong className="font-medium">Data:</strong> {format(t.treatmentDate, 'dd/MM/yy HH:mm', { locale: ptBR })}</p>
+                            <p><strong className="font-medium">Data:</strong> {format(t.treatmentDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
                             <p><strong className="font-medium">Tipo:</strong> {t.treatmentType}</p>
                             <p><strong className="font-medium">Local:</strong> {t.treatmentLocation}</p>
                           </div>
