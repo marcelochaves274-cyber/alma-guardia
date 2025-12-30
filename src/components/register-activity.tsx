@@ -186,7 +186,7 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
   const isLoading = isLoadingPops || isLoadingTcrs || isLoadingLocations;
 
   const popOptions = allPops.map(doc => ({
-    label: doc.name.replace(/^Atividade\s/, ''),
+    label: doc.name.replace(/^POP\s/, ''),
     value: doc.name
   }));
 

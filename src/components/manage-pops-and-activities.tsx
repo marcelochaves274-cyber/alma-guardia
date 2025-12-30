@@ -33,7 +33,7 @@ import {
 export interface PopDocument {
   name: string;
   popContent: string;
-  tcrContent: string; // This will now be managed separately but we keep the field for compatibility
+  tcrContent: string;
 }
 
 export function ManagePopsAndActivities() {
@@ -77,7 +77,7 @@ export function ManagePopsAndActivities() {
                   return {
                       name: item.name || '',
                       popContent: item.popContent || 'Seu texto aqui',
-                      tcrContent: item.tcrContent || 'Seu texto aqui', // Keep for compatibility
+                      tcrContent: item.tcrContent || 'Seu texto aqui',
                   };
               });
               setDocuments(fetchedDocs);
@@ -119,7 +119,7 @@ export function ManagePopsAndActivities() {
         const docsToSave = updatedDocs.map(d => ({
             name: d.name,
             popContent: d.popContent || 'Seu texto aqui',
-            tcrContent: d.tcrContent || 'Seu texto aqui', // Keep for compatibility
+            tcrContent: d.tcrContent || 'Seu texto aqui',
         }));
         await setDoc(docRef, { documents: docsToSave });
         return true;
@@ -144,11 +144,11 @@ export function ManagePopsAndActivities() {
       return;
     }
     
-    const finalDocName = newDocName.trim();
+    const finalDocName = `POP ${newDocName.trim()}`;
     const newDoc: PopDocument = {
         name: finalDocName,
         popContent: 'Seu texto aqui',
-        tcrContent: 'Seu texto aqui', // Default content
+        tcrContent: 'Seu texto aqui',
     }
 
     if (documents.some(p => p.name.toLowerCase() === newDoc.name.toLowerCase())) {
@@ -167,7 +167,7 @@ export function ManagePopsAndActivities() {
         setNewDocName('');
         toast({
             title: 'Sucesso!',
-            description: `O POP "${finalDocName}" foi adicionado.`,
+            description: `O POP "${newDocName.trim()}" foi adicionado.`,
         });
     }
   };
@@ -186,7 +186,7 @@ export function ManagePopsAndActivities() {
 
   const handleStartEditing = (doc: PopDocument) => {
     setEditingDoc(doc);
-    setEditingValue(doc.name);
+    setEditingValue(doc.name.replace(/^POP\s/, ''));
   };
 
   const handleCancelEditing = () => {
@@ -204,7 +204,7 @@ export function ManagePopsAndActivities() {
       return;
     }
     
-    const newName = editingValue.trim();
+    const newName = `POP ${editingValue.trim()}`;
     if (documents.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.name !== editingDoc.name)) {
         toast({
             variant: 'destructive',
@@ -264,14 +264,19 @@ export function ManagePopsAndActivities() {
                 <Label htmlFor="new-doc-name">
                 Novo POP
                 </Label>
-                <Input
-                    id="new-doc-name"
-                    placeholder="Ex: Trilha da Montanha"
-                    value={newDocName}
-                    onChange={(e) => setNewDocName(e.target.value)}
-                    disabled={isSaving}
-                    className="flex-1"
-                />
+                <div className="flex items-center gap-2">
+                    <span className="flex h-10 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium text-muted-foreground">
+                        POP
+                    </span>
+                    <Input
+                        id="new-doc-name"
+                        placeholder="Ex: Trilha da Montanha"
+                        value={newDocName}
+                        onChange={(e) => setNewDocName(e.target.value)}
+                        disabled={isSaving}
+                        className="flex-1"
+                    />
+                </div>
             </div>
             <Button type="submit" disabled={isSaving || !newDocName.trim()} className="self-end">
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
@@ -292,6 +297,9 @@ export function ManagePopsAndActivities() {
                 >
                   {editingDoc?.name === doc.name ? (
                     <div className='flex-1 flex items-center gap-2'>
+                        <span className="flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium text-muted-foreground">
+                            POP
+                        </span>
                         <Input
                             value={editingValue}
                             onChange={(e) => setEditingValue(e.target.value)}
