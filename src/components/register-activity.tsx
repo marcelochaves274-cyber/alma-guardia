@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -22,7 +23,8 @@ import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import type { PopDocument } from './manage-pops';
+import type { PopDocument } from './manage-pops-and-activities';
+import type { TcrDocument } from './manage-tcrs';
 import { SheetFilter } from './sheet-filter';
 
 interface RegisterActivityProps {
@@ -38,10 +40,12 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
   const [tcr, setTcr] = useState('');
   const [riskAssessmentLocations, setRiskAssessmentLocations] = useState<string[]>([]);
   
-  const [allDocs, setAllDocs] = useState<PopDocument[]>([]);
+  const [allPops, setAllPops] = useState<PopDocument[]>([]);
+  const [allTcrs, setAllTcrs] = useState<TcrDocument[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
 
-  const [isLoadingDocs, setIsLoadingDocs] = useState(true);
+  const [isLoadingPops, setIsLoadingPops] = useState(true);
+  const [isLoadingTcrs, setIsLoadingTcrs] = useState(true);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -54,7 +58,7 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
       setActivityName(activityToEdit.activityName || '');
       setPop(activityToEdit.pop || '');
       setTcr(activityToEdit.tcr || '');
-      setRiskAssessmentLocations(activityToEdit.riskAssessmentLocation || []); // Now an array
+      setRiskAssessmentLocations(Array.isArray(activityToEdit.riskAssessmentLocation) ? activityToEdit.riskAssessmentLocation : []);
     } else {
         // Reset form when not in edit mode or when activityToEdit is cleared
         setActivityName('');
@@ -70,31 +74,42 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
   }, [firestore, user]);
 
   useEffect(() => {
-    const fetchDocs = async () => {
+    const fetchPops = async () => {
       const docRef = getSettingsDocRef('pops');
       if (!docRef) {
-        setIsLoadingDocs(false);
+        setIsLoadingPops(false);
         return;
       }
       try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          const data = docSnap.data();
-          const fetchedDocs = (data.documents || []).map((item: any): PopDocument => {
-            return {
-              name: item.name || '',
-              popContent: item.popContent || '',
-              tcrContent: item.tcrContent || '',
-            };
-          });
-          setAllDocs(fetchedDocs);
+          setAllPops((docSnap.data().documents || []) as PopDocument[]);
         }
       } catch (error) {
-        console.error("Error fetching documents:", error);
+        console.error("Error fetching POPs:", error);
       } finally {
-        setIsLoadingDocs(false);
+        setIsLoadingPops(false);
       }
     };
+    
+    const fetchTcrs = async () => {
+      const docRef = getSettingsDocRef('tcrs');
+      if (!docRef) {
+        setIsLoadingTcrs(false);
+        return;
+      }
+      try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setAllTcrs((docSnap.data().documents || []) as TcrDocument[]);
+        }
+      } catch (error) {
+        console.error("Error fetching TCRs:", error);
+      } finally {
+        setIsLoadingTcrs(false);
+      }
+    };
+
 
     const fetchLocations = async () => {
       const docRef = getSettingsDocRef('locations');
@@ -105,8 +120,7 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
       try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          const data = docSnap.data();
-          setLocations(data.locations || []);
+          setLocations(docSnap.data().locations || []);
         }
       } catch (error) {
         console.error("Error fetching locations:", error);
@@ -115,7 +129,8 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
       }
     };
     
-    fetchDocs();
+    fetchPops();
+    fetchTcrs();
     fetchLocations();
   }, [getSettingsDocRef]);
   
@@ -168,7 +183,12 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
     }
   };
   
-  const isLoading = isLoadingDocs || isLoadingLocations;
+  const isLoading = isLoadingPops || isLoadingTcrs || isLoadingLocations;
+
+  const popOptions = allPops.map(doc => ({
+    label: doc.name.replace(/^Atividade\s/, ''),
+    value: doc.name
+  }));
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -187,19 +207,19 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
                     required
                     onValueChange={setActivityName}
                     value={activityName}
-                    disabled={isLoading || allDocs.length === 0}
+                    disabled={isLoadingPops || allPops.length === 0}
                 >
                     <SelectTrigger id="activity-name">
                     <SelectValue placeholder={
-                        isLoading ? "Carregando..." : 
-                        allDocs.length === 0 ? "Nenhuma atividade cadastrada" : "Selecione a atividade"
+                        isLoadingPops ? "Carregando..." : 
+                        allPops.length === 0 ? "Nenhuma atividade cadastrada" : "Selecione a atividade"
                     } />
                     </SelectTrigger>
                     <SelectContent>
-                        {allDocs.map((doc) => (
-                        <SelectItem key={doc.name} value={doc.name}>
-                            {doc.name.replace(/^POP\/TCR\s/, '')}
-                        </SelectItem>
+                        {popOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
@@ -207,12 +227,12 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
             
             <div className="space-y-2">
                 <Label htmlFor="pop">POP</Label>
-                <Select name="pop" required onValueChange={setPop} value={pop} disabled={isLoading || allDocs.length === 0}>
+                <Select name="pop" required onValueChange={setPop} value={pop} disabled={isLoadingPops || allPops.length === 0}>
                     <SelectTrigger id="pop">
-                    <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o POP"} />
+                    <SelectValue placeholder={isLoadingPops ? "Carregando..." : "Selecione o POP"} />
                     </SelectTrigger>
                     <SelectContent>
-                        {allDocs.map((doc) => (
+                        {allPops.map((doc) => (
                             <SelectItem key={doc.name} value={doc.name}>{doc.name}</SelectItem>
                         ))}
                     </SelectContent>
@@ -221,12 +241,12 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
             
             <div className="space-y-2">
                 <Label htmlFor="tcr">TCR</Label>
-                <Select name="tcr" required onValueChange={setTcr} value={tcr} disabled={isLoading || allDocs.length === 0}>
+                <Select name="tcr" required onValueChange={setTcr} value={tcr} disabled={isLoadingTcrs || allTcrs.length === 0}>
                     <SelectTrigger id="tcr">
-                    <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o TCR"} />
+                    <SelectValue placeholder={isLoadingTcrs ? "Carregando..." : "Selecione o TCR"} />
                     </SelectTrigger>
                     <SelectContent>
-                        {allDocs.map((doc) => (
+                        {allTcrs.map((doc) => (
                             <SelectItem key={doc.name} value={doc.name}>{doc.name}</SelectItem>
                         ))}
                     </SelectContent>

@@ -24,7 +24,8 @@ import { FaunaFloraGeoReport } from '@/components/fauna-flora-geo-report';
 import { FaunaFloraGeoMapReport } from '@/components/fauna-flora-geo-map-report';
 import { RegisterRiskAssessment } from './register-risk-assessment';
 import { RiskAssessmentReport } from './risk-assessment-report';
-import { ManagePops } from './manage-pops';
+import { ManagePopsAndActivities } from './manage-pops-and-activities';
+import { ManageTcrs } from './manage-tcrs';
 import { ViewPops } from './view-pops';
 import { ViewTcrs } from './view-tcrs';
 import { ViewRame } from './view-rame';
@@ -200,7 +201,9 @@ function MainAppLayout() {
       case 'manage-map':
         return <ManageMap />;
       case 'manage-pops':
-        return <ManagePops />;
+        return <ManagePopsAndActivities />;
+      case 'manage-tcrs':
+        return <ManageTcrs />;
       case 'manage-fauna-flora-geo':
         return <ManageFaunaFloraGeo />;
       case 'manage-equipment-and-brands':

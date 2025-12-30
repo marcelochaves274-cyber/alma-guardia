@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "SgsGenius": {
@@ -476,8 +477,11 @@
           "description": "The selected TCR document for the activity."
         },
         "riskAssessmentLocation": {
-          "type": "string",
-          "description": "The location associated with the risk assessment for this activity."
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The locations associated with the risk assessment for this activity."
         },
         "createdAt": {
           "type": "string",
@@ -567,6 +571,28 @@
         "description",
         "location",
         "status"
+      ]
+    },
+    "ProfilePasses": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ProfilePasses",
+      "type": "object",
+      "description": "Stores the 6-digit numeric passes for Admin and Observer profiles.",
+      "properties": {
+        "adminPass": {
+          "type": "string",
+          "description": "The 6-digit numeric pass for the Administrator profile.",
+          "pattern": "^[0-9]{6}$"
+        },
+        "observerPass": {
+          "type": "string",
+          "description": "The 6-digit numeric pass for the Observer profile.",
+          "pattern": "^[0-9]{6}$"
+        }
+      },
+      "required": [
+        "adminPass",
+        "observerPass"
       ]
     }
   },
@@ -753,10 +779,28 @@
             }
           ]
         }
+      },
+       {
+        "path": "/sgs_genius/{userId}/settings/{settingId}",
+        "definition": {
+          "entityName": "ProfilePasses",
+          "schema": {
+            "$ref": "#/backend/entities/ProfilePasses"
+          },
+          "description": "Stores profile passcodes for a user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Corresponds to the user's UID."
+            },
+            {
+              "name": "settingId",
+              "description": "The name of the setting, e.g., 'profiles'."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed to support the SGS Genius application, focusing on chat interactions with an AI and parameter adjustments. It provides a secure and scalable data model, suitable for the app's collaborative and iterative development process. The structure prioritizes Authorization Independence through denormalization, simplifies security rules via Structural Segregation, and standardizes access patterns using Access Modeling. This design supports atomic operations and efficient `list` operations while upholding data integrity.\n\nAuthorization Independence:\nAuthorization independence is achieved by avoiding hierarchical authorization dependencies. There are no `get()` calls in the security rules. Every collection has all of the authorization information needed in the document itself.\n\nQAPs (Rules are not Filters):\nThe structure is designed to support secure `list` operations. This is accomplished by segregating data based on access requirements and using membership maps to define access rights. Segregation means that rules do not have to filter based on document content and membership maps mean that list access can be controlled."
   }
 }
-
-    

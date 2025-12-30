@@ -23,7 +23,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Pencil } from 'lucide-react';
-import type { PopDocument } from './manage-pops';
+import type { TcrDocument } from './manage-tcrs';
 import { useProfile } from '@/context/profile-context';
 
 export function ViewTcrs() {
@@ -32,7 +32,7 @@ export function ViewTcrs() {
   const { toast } = useToast();
   const { profile } = useProfile();
 
-  const [allDocs, setAllDocs] = useState<PopDocument[]>([]);
+  const [allDocs, setAllDocs] = useState<TcrDocument[]>([]);
   const [selectedTcrName, setSelectedTcrName] = useState<string>("");
   const [tcrContent, setTcrContent] = useState('');
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
@@ -41,7 +41,7 @@ export function ViewTcrs() {
 
   const getSettingsDocRef = useCallback(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'sgs_genius', user.uid, 'settings', 'pops');
+    return doc(firestore, 'sgs_genius', user.uid, 'settings', 'tcrs');
   }, [firestore, user]);
 
   useEffect(() => {
@@ -57,10 +57,9 @@ export function ViewTcrs() {
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (data && data.documents) {
-            const fetchedDocs = (data.documents || []).map((item: any): PopDocument => {
+            const fetchedDocs = (data.documents || []).map((item: any): TcrDocument => {
                   return {
                       name: item.name || '',
-                      popContent: item.popContent || 'Seu texto aqui',
                       tcrContent: item.tcrContent || 'Seu texto aqui',
                   };
               });

@@ -134,6 +134,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'manage-locations': 'settings',
       'manage-map': 'settings',
       'manage-pops': 'settings',
+      'manage-tcrs': 'settings',
       'manage-fauna-flora-geo': 'settings',
       'manage-equipment-and-brands': 'settings',
       'tutorial': 'informacoes',
@@ -659,7 +660,15 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                         isActive={activePage === 'manage-pops'}
                         onClick={() => handlePageChange('manage-pops')}
                     >
-                        Ger. Atividade POP TCR
+                        Ger. Atividades e POPs
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        isActive={activePage === 'manage-tcrs'}
+                        onClick={() => handlePageChange('manage-tcrs')}
+                    >
+                        Gerenciar TCRs
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>

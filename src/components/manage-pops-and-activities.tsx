@@ -33,10 +33,10 @@ import {
 export interface PopDocument {
   name: string;
   popContent: string;
-  tcrContent: string;
+  tcrContent: string; // This will now be managed separately but we keep the field for compatibility
 }
 
-export function ManagePops() {
+export function ManagePopsAndActivities() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -74,14 +74,10 @@ export function ManagePops() {
             const data = docSnap.data();
             if (data && data.documents) {
               const fetchedDocs = (data.documents || []).map((item: any): PopDocument => {
-                  // Backwards compatibility for old data structure
-                  if (typeof item === 'string') {
-                      return { name: item, popContent: 'Seu texto aqui', tcrContent: 'Seu texto aqui' };
-                  }
                   return {
                       name: item.name || '',
                       popContent: item.popContent || 'Seu texto aqui',
-                      tcrContent: item.tcrContent || 'Seu texto aqui',
+                      tcrContent: item.tcrContent || 'Seu texto aqui', // Keep for compatibility
                   };
               });
               setDocuments(fetchedDocs);
@@ -92,11 +88,11 @@ export function ManagePops() {
         }
       } catch (error: any) {
          if (isMounted && error.code !== 'permission-denied') {
-            console.error("Error fetching documents:", error);
+            console.error("Error fetching POP documents:", error);
             toast({
                 variant: "destructive",
                 title: "Erro ao carregar",
-                description: "Não foi possível buscar os documentos cadastrados."
+                description: "Não foi possível buscar as atividades e POPs cadastrados."
             });
          }
       } finally {
@@ -123,18 +119,19 @@ export function ManagePops() {
         const docsToSave = updatedDocs.map(d => ({
             name: d.name,
             popContent: d.popContent || 'Seu texto aqui',
-            tcrContent: d.tcrContent || 'Seu texto aqui',
+            tcrContent: d.tcrContent || 'Seu texto aqui', // Keep for compatibility
         }));
         await setDoc(docRef, { documents: docsToSave });
         return true;
     } catch (error) {
-        console.error("Error saving documents:", error);
-        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar os documentos.'});
+        console.error("Error saving POP documents:", error);
+        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar as atividades e POPs.'});
         return false;
     } finally {
         setIsSaving(false);
     }
   };
+
 
   const handleAddDoc = async (e: FormEvent) => {
     e.preventDefault();
@@ -146,13 +143,12 @@ export function ManagePops() {
       });
       return;
     }
-
-    const finalDocName = `POP/TCR ${newDocName.trim()}`;
     
+    const finalDocName = `Atividade ${newDocName.trim()}`;
     const newDoc: PopDocument = {
         name: finalDocName,
         popContent: 'Seu texto aqui',
-        tcrContent: 'Seu texto aqui',
+        tcrContent: 'Seu texto aqui', // Default content
     }
 
     if (documents.some(p => p.name.toLowerCase() === newDoc.name.toLowerCase())) {
@@ -190,7 +186,7 @@ export function ManagePops() {
 
   const handleStartEditing = (doc: PopDocument) => {
     setEditingDoc(doc);
-    setEditingValue(doc.name.replace(/^POP\/TCR\s/, ''));
+    setEditingValue(doc.name.replace(/^Atividade\s/, ''));
   };
 
   const handleCancelEditing = () => {
@@ -208,7 +204,7 @@ export function ManagePops() {
       return;
     }
     
-    const newName = `POP/TCR ${editingValue.trim()}`;
+    const newName = `Atividade ${editingValue.trim()}`;
     if (documents.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.name !== editingDoc.name)) {
         toast({
             variant: 'destructive',
@@ -235,9 +231,9 @@ export function ManagePops() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Gerenciar Atividade POP e TCR</CardTitle>
+                <CardTitle>Gerenciar Atividades e POPs</CardTitle>
                 <CardDescription>
-                  Adicione, renomeie ou exclua os Procedimentos Operacionais Padrão e Termos de Conhecimento de Risco.
+                  Adicione, renomeie ou exclua as atividades e seus respectivos POPs (Procedimentos Operacionais Padrão).
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -257,9 +253,9 @@ export function ManagePops() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gerenciar Atividade POP e TCR</CardTitle>
+        <CardTitle>Gerenciar Atividades e POPs</CardTitle>
         <CardDescription>
-          Adicione, renomeie ou exclua os Procedimentos Operacionais Padrão e Termos de Conhecimento de Risco.
+          Adicione, renomeie ou exclua as atividades e seus respectivos POPs (Procedimentos Operacionais Padrão).
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -270,11 +266,11 @@ export function ManagePops() {
                 </Label>
                 <div className="flex items-center gap-2">
                     <span className="flex h-10 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium text-muted-foreground">
-                        POP/TCR
+                        Atividade
                     </span>
                     <Input
                         id="new-doc-name"
-                        placeholder="Ex: Trabalho em Altura"
+                        placeholder="Ex: Trilha da Montanha"
                         value={newDocName}
                         onChange={(e) => setNewDocName(e.target.value)}
                         disabled={isSaving}
@@ -302,7 +298,7 @@ export function ManagePops() {
                   {editingDoc?.name === doc.name ? (
                     <div className='flex-1 flex items-center gap-2'>
                         <span className="flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium text-muted-foreground">
-                            POP/TCR
+                            Atividade
                         </span>
                         <Input
                             value={editingValue}
@@ -345,7 +341,7 @@ export function ManagePops() {
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente a atividade "{doc.name}".
+                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente a atividade "{doc.name}" e seu POP associado.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
