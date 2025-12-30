@@ -152,9 +152,10 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   }, [user, firestore, toast]);
 
   const filteredAndGroupedAssessments = useMemo(() => {
-    if (!isClient) return {};
+    if (!isClient || filterLocation.length === 0) return {};
+
     const filtered = assessments.filter(ass => {
-        const locationMatch = filterLocation.length === 0 || filterLocation.includes(ass.location);
+        const locationMatch = filterLocation.includes(ass.location);
         return locationMatch;
     });
 
@@ -167,7 +168,6 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
       return acc;
     }, {} as Record<string, RiskAssessment[]>);
 
-    // New: Group by taskDescription within each location
     const finalGroup = Object.entries(groupedByLocation).reduce((acc, [location, assessments]) => {
         acc[location] = assessments.reduce((taskAcc, assessment) => {
             const task = assessment.taskDescription || 'Etapa não descrita';
@@ -239,7 +239,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
             <CardHeader>
             <CardTitle>Relatório de Avaliação de Risco</CardTitle>
             <CardDescription>
-                Filtre as avaliações de risco por local.
+                Filtre as avaliações de risco por local. Os resultados aparecerão abaixo após selecionar um filtro.
             </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -264,17 +264,17 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         
         {isLoading ? (
             renderSkeletons()
-        ) : Object.keys(filteredAndGroupedAssessments).length > 0 ? (
+        ) : filterLocation.length > 0 && Object.keys(filteredAndGroupedAssessments).length > 0 ? (
             <div className="space-y-8">
             {Object.entries(filteredAndGroupedAssessments).map(([location, tasks], index) => (
                 <Card key={location} className={cn("overflow-hidden", index % 2 === 0 ? "bg-card" : "bg-muted/30")}>
                     <CardHeader className="bg-muted/50">
-                        <CardTitle className="text-xl text-center text-primary">{location}</CardTitle>
+                        <CardTitle className="text-xl text-center font-bold text-primary">{location}</CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 space-y-6">
                         {Object.entries(tasks).map(([task, taskAssessments]) => (
                             <div key={task} className="border border-border/50 rounded-lg p-4">
-                                <h4 className="text-lg font-semibold mb-3 border-b pb-2">{task}</h4>
+                                <h4 className="text-lg font-semibold mb-3 border-b pb-2 text-center text-foreground">{task}</h4>
                                 <div className="space-y-4">
                                     {taskAssessments.map(ass => {
                                         const riskProps = getRiskLevelProperties(ass.riskLevel);
@@ -334,7 +334,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         ) : (
             <Card>
                 <CardContent className="p-10 text-center text-muted-foreground">
-                    {assessments.length === 0 ? "Nenhuma avaliação de risco registrada ainda." : "Nenhuma avaliação encontrada com os filtros selecionados."}
+                  {filterLocation.length > 0 ? "Nenhuma avaliação encontrada para o(s) local(is) selecionado(s)." : "Selecione um local para ver as avaliações de risco."}
                 </CardContent>
             </Card>
         )}
