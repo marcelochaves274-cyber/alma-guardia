@@ -23,7 +23,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import type { PopDocument } from './manage-pops-and-activities';
+import type { PopDocument } from './manage-pops';
 import type { TcrDocument } from './manage-tcrs';
 import { SheetFilter } from './sheet-filter';
 
@@ -205,7 +205,13 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
                 <Select
                     name="activityName"
                     required
-                    onValueChange={setActivityName}
+                    onValueChange={(value) => {
+                      const selectedPop = allPops.find(p => p.name === value);
+                      if(selectedPop) {
+                        setActivityName(selectedPop.name);
+                        setPop(selectedPop.name);
+                      }
+                    }}
                     value={activityName}
                     disabled={isLoadingPops || allPops.length === 0}
                 >

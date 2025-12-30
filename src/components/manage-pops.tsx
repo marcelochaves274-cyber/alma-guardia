@@ -36,7 +36,7 @@ export interface PopDocument {
   tcrContent: string;
 }
 
-export function ManagePopsAndActivities() {
+export function ManagePops() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
