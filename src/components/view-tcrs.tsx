@@ -155,7 +155,7 @@ export function ViewTcrs() {
               ) : (
                 allDocs.map((doc) => (
                   <SelectItem key={doc.name} value={doc.name}>
-                    {doc.name}
+                    {doc.name.replace(/^TCR\s/, '')}
                   </SelectItem>
                 ))
               )}
