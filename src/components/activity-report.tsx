@@ -65,6 +65,9 @@ interface ActivityReportProps {
 interface PopDocument {
     name: string;
     popContent: string;
+}
+interface TcrDocument {
+    name: string;
     tcrContent: string;
 }
 
@@ -103,13 +106,13 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // States to hold the fetched documents content
-  const [popTcrDocs, setPopTcrDocs] = useState<PopDocument[]>([]);
+  const [popDocs, setPopDocs] = useState<PopDocument[]>([]);
+  const [tcrDocs, setTcrDocs] = useState<TcrDocument[]>([]);
   const [riskAssessments, setRiskAssessments] = useState<RiskAssessment[]>([]);
 
   useEffect(() => {
     if (!user || !firestore) return;
 
-    // Listen for real-time activity updates
     const activitiesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'activities');
     const unsubscribeActivities = onSnapshot(activitiesCollectionRef, (querySnapshot) => {
       const activitiesData = querySnapshot.docs.map(doc => ({
@@ -129,17 +132,22 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
         setIsLoading(false);
     });
     
-    // Fetch POP/TCR documents once
     const popDocRef = doc(firestore, 'sgs_genius', user.uid, 'settings', 'pops');
     getDoc(popDocRef).then(docSnap => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            setPopTcrDocs((data.documents || []) as PopDocument[]);
+            setPopDocs((data.documents || []) as PopDocument[]);
         }
-    }).catch(error => console.error("Error fetching POP/TCR docs: ", error));
+    }).catch(error => console.error("Error fetching POP docs: ", error));
 
+    const tcrDocRef = doc(firestore, 'sgs_genius', user.uid, 'settings', 'tcrs');
+    getDoc(tcrDocRef).then(docSnap => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            setTcrDocs((data.documents || []) as TcrDocument[]);
+        }
+    }).catch(error => console.error("Error fetching TCR docs: ", error));
 
-    // Fetch all risk assessments
     const assessmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'risk_assessments');
     const unsubscribeAssessments = onSnapshot(assessmentsCollectionRef, (querySnapshot) => {
         const assessmentData = querySnapshot.docs.map(doc => {
@@ -164,11 +172,21 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
   }, [user, firestore, toast, isLoading]);
   
   const handleOpenPopTcrModal = (activity: Activity, type: 'pop' | 'tcr') => {
-    const doc = popTcrDocs.find(d => d.name === activity[type]);
+    let doc;
+    let content;
+
+    if (type === 'pop') {
+      doc = popDocs.find(d => d.name === activity.pop);
+      content = doc?.popContent;
+    } else { // type === 'tcr'
+      doc = tcrDocs.find(d => d.name === activity.tcr);
+      content = doc?.tcrContent;
+    }
+    
     if (doc) {
       setSelectedContent({
         title: type.toUpperCase(),
-        content: type === 'pop' ? doc.popContent : doc.tcrContent
+        content: content || "Nenhum conteúdo definido para este documento."
       });
     } else {
       setSelectedContent({ title: 'Não encontrado', content: 'O documento correspondente não foi encontrado.'});
@@ -260,7 +278,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
                         const locations = Array.isArray(act.riskAssessmentLocation) ? act.riskAssessmentLocation : (act.riskAssessmentLocation ? [act.riskAssessmentLocation] : []);
                         return (
                             <TableRow key={act.id}>
-                            <TableCell>{act.activityName.replace(/^POP\/TCR\s/, '')}</TableCell>
+                            <TableCell>{act.activityName.replace(/^POP\s/, '')}</TableCell>
                             <TableCell>
                               <DialogTrigger asChild>
                                 <Button variant="link" className="p-0 h-auto" onClick={() => handleOpenPopTcrModal(act, 'pop')}>
@@ -298,7 +316,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
                                   <AlertDialogContent>
                                       <AlertDialogHeader>
                                           <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                          <AlertDialogDescription>Esta ação excluirá permanentemente o registro da atividade "{act.activityName.replace(/^POP\/TCR\s/, '')}".</AlertDialogDescription>
+                                          <AlertDialogDescription>Esta ação excluirá permanentemente o registro da atividade "{act.activityName.replace(/^POP\s/, '')}".</AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
                                           <AlertDialogCancel>Cancelar</AlertDialogCancel>

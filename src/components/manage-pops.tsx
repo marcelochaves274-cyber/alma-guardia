@@ -33,7 +33,6 @@ import {
 export interface PopDocument {
   name: string;
   popContent: string;
-  tcrContent: string;
 }
 
 export function ManagePops() {
@@ -77,7 +76,6 @@ export function ManagePops() {
                   return {
                       name: item.name || '',
                       popContent: item.popContent || 'Seu texto aqui',
-                      tcrContent: item.tcrContent || 'Seu texto aqui',
                   };
               });
               setDocuments(fetchedDocs);
@@ -119,7 +117,6 @@ export function ManagePops() {
         const docsToSave = updatedDocs.map(d => ({
             name: d.name,
             popContent: d.popContent || 'Seu texto aqui',
-            tcrContent: d.tcrContent || 'Seu texto aqui',
         }));
         await setDoc(docRef, { documents: docsToSave });
         return true;
@@ -148,7 +145,6 @@ export function ManagePops() {
     const newDoc: PopDocument = {
         name: finalDocName,
         popContent: 'Seu texto aqui',
-        tcrContent: 'Seu texto aqui',
     }
 
     if (documents.some(p => p.name.toLowerCase() === newDoc.name.toLowerCase())) {
