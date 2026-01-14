@@ -61,7 +61,6 @@ export function ViewPops() {
                 return {
                     name: item.name || '',
                     popContent: item.popContent || 'Seu texto aqui',
-                    tcrContent: item.tcrContent || 'Seu texto aqui',
                 };
             });
             setAllDocs(fetchedDocs);
