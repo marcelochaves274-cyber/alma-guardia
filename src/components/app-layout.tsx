@@ -42,7 +42,6 @@ import { HelpPage } from './help-page';
 import { ProfileSelector } from './profile-selector';
 import { useProfile } from '@/context/profile-context';
 import { TutorialPage } from './tutorial-page';
-import { ViewRame } from './view-rame';
 
 
 import {
@@ -241,8 +240,6 @@ function MainAppLayout() {
         return <ViewPops />;
       case 'view-tcrs':
         return <ViewTcrs />;
-      case 'view-rame':
-        return <ViewRame />;
       case 'view-sgs-docs':
         return <ViewSgsDocs />;
       case 'reminders':
