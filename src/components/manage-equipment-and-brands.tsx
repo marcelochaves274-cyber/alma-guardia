@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type FormEvent, useEffect, useCallback, useRef } from 'react';
@@ -222,6 +223,7 @@ export function ManageEquipmentAndBrands() {
     Papa.parse(file, {
       header: false,
       skipEmptyLines: true,
+      encoding: "ISO-8859-1",
       complete: async (results) => {
         const data = results.data as string[][];
         if (data.length === 0) {
