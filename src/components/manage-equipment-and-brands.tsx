@@ -1,22 +1,21 @@
 'use client';
 
-import { useState, type FormEvent, useEffect, useCallback, ChangeEvent } from 'react';
+import { useState, type FormEvent, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Loader2, Pencil, Check, X, Upload } from 'lucide-react';
+import { Plus, Trash2, Loader2, Pencil, Check, X } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, setDoc, addDoc, collection, Timestamp, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
 import {
   AlertDialog,
@@ -28,8 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { parse } from 'date-fns';
+} from "@/components/ui/alert-dialog"
 
 type ManagedItem = {
   items: string[];
@@ -51,8 +49,6 @@ export function ManageEquipmentAndBrands() {
     equipmentTypes: { items: [], newItem: '', editingItem: null, editingValue: '', isLoading: true, isSaving: false },
     equipmentBrands: { items: [], newItem: '', editingItem: null, editingValue: '', isLoading: true, isSaving: false },
   });
-  
-  const [isImporting, setIsImporting] = useState(false);
 
   const getSettingsDocRef = useCallback((docName: ItemType) => {
     if (!firestore || !user) return null;
@@ -120,81 +116,6 @@ export function ManageEquipmentAndBrands() {
     } finally {
         setState(s => ({ ...s, [itemType]: { ...s[itemType], isSaving: false } }));
     }
-  };
-  
-    const handleFileImport = (event: ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files || event.target.files.length === 0) {
-      return;
-    }
-    const file = event.target.files[0];
-    const reader = new FileReader();
-
-    reader.onload = async (e) => {
-      const text = e.target?.result as string;
-      if (!text) {
-        toast({ variant: 'destructive', title: 'Erro', description: 'Arquivo vazio ou inválido.' });
-        return;
-      }
-      
-      setIsImporting(true);
-      
-      try {
-        const lines = text.split('\n').filter(line => line.trim() !== '');
-        const headers = lines.shift()?.trim().split(',') || [];
-        
-        if (!firestore || !user) throw new Error("Usuário não autenticado.");
-
-        const batch = writeBatch(firestore);
-        const equipmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'equipments');
-
-        let importedCount = 0;
-        lines.forEach((line, index) => {
-          const data = line.trim().split(',');
-          const equipment: any = {};
-          
-          headers.forEach((header, i) => {
-             const key = header.trim();
-             const value = data[i]?.trim();
-             if(value) {
-                if (key.toLowerCase().includes('date')) {
-                   const parsedDate = parse(value, 'dd/MM/yyyy', new Date());
-                   if(!isNaN(parsedDate.getTime())) {
-                       equipment[key] = Timestamp.fromDate(parsedDate);
-                   }
-                } else {
-                   equipment[key] = value;
-                }
-             }
-          });
-
-          // Only add if there is some data
-          if (Object.keys(equipment).length > 0) {
-            const docRef = doc(equipmentsCollectionRef);
-            batch.set(docRef, { ...equipment, userId: user.uid, createdAt: Timestamp.now() });
-            importedCount++;
-          }
-        });
-        
-        if (importedCount > 0) {
-            await batch.commit();
-            toast({ title: 'Importação Concluída', description: `${importedCount} equipamentos foram importados com sucesso.` });
-        } else {
-            toast({ variant: 'destructive', title: 'Nenhum dado importado', description: 'O arquivo não continha dados válidos para importar.' });
-        }
-
-      } catch (error) {
-        console.error("Error importing data:", error);
-        toast({ variant: 'destructive', title: 'Erro de Importação', description: 'Ocorreu um erro ao processar o arquivo. Verifique o formato e tente novamente.' });
-      } finally {
-        setIsImporting(false);
-        // Reset file input
-        if (event.target) {
-          event.target.value = '';
-        }
-      }
-    };
-    
-    reader.readAsText(file);
   };
 
   const handleAddItem = async (e: FormEvent, itemType: ItemType) => {
@@ -343,40 +264,16 @@ export function ManageEquipmentAndBrands() {
   
 
   return (
-    <div className='space-y-6'>
-        <Card>
-            <CardHeader>
-                <CardTitle>Importar Equipamentos em Massa</CardTitle>
-                <CardDescription>
-                Faça o upload de um arquivo CSV para adicionar múltiplos equipamentos de uma vez.
-                A ordem das colunas no seu arquivo CSV deve ser: `equipmentType,brand,model,lotCaUiaa,manufacturingDate,storageLocation,storageDetails,status,lastInspectionDate,nextInspectionDate`
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Label htmlFor="csv-import" className="sr-only">Importar arquivo CSV</Label>
-                <Input id="csv-import" type="file" accept=".csv" onChange={handleFileImport} className='max-w-xs' disabled={isImporting} />
-            </CardContent>
-             {isImporting && (
-                <CardFooter>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Importando, por favor aguarde...</span>
-                    </div>
-                </CardFooter>
-            )}
-        </Card>
-
-        <Card>
-        <CardHeader>
-            <CardTitle>Gerenciar Equipamentos e Marcas</CardTitle>
-            <CardDescription>Adicione ou remova os tipos de equipamentos e as marcas que aparecerão no formulário de registro.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-12">
-            {renderSection('equipmentTypes', 'Tipos de Equipamento', 'Ex: Mosquetão')}
-            <Separator />
-            {renderSection('equipmentBrands', 'Marcas de Equipamento', 'Ex: Petzl')}
-        </CardContent>
-        </Card>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Gerenciar Equipamentos e Marcas</CardTitle>
+        <CardDescription>Adicione ou remova os tipos de equipamentos e as marcas que aparecerão no formulário de registro.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-12">
+        {renderSection('equipmentTypes', 'Tipos de Equipamento', 'Ex: Mosquetão')}
+        <Separator />
+        {renderSection('equipmentBrands', 'Marcas de Equipamento', 'Ex: Petzl')}
+      </CardContent>
+    </Card>
   );
 }
