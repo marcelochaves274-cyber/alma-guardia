@@ -177,6 +177,12 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
 
       return typeMatch && brandMatch && statusMatch && inspectionMatch;
     }).sort((a,b) => {
+        if (a.status === 'descartado' && b.status !== 'descartado') {
+          return 1;
+        }
+        if (a.status !== 'descartado' && b.status === 'descartado') {
+          return -1;
+        }
         const dateA = a.nextInspectionDate?.toDate()?.getTime() || Infinity;
         const dateB = b.nextInspectionDate?.toDate()?.getTime() || Infinity;
         return dateA - dateB;
@@ -308,13 +314,13 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                   const inspectionStatusProps = getInspectionStatus(eq.nextInspectionDate?.toDate(), clientToday);
                   
                   return (
-                    <TableRow key={eq.id}>
+                    <TableRow key={eq.id} className={cn(eq.status === 'descartado' && 'bg-destructive/10 hover:bg-destructive/20')}>
                       <TableCell>{eq.equipmentType}</TableCell>
                       <TableCell>{eq.brand}</TableCell>
                       <TableCell>{eq.model}</TableCell>
                       <TableCell><Badge className={cn(statusProps.className)}>{statusProps.label}</Badge></TableCell>
                       <TableCell>
-                        <Badge className={cn('flex items-center gap-1.5', inspectionStatusProps.className)}>
+                        <Badge className={cn('flex items-center gap-1.5', inspectionStatusProps.label)}>
                           {inspectionStatusProps.label === 'Vistoria Atrasada' && <TriangleAlert className="h-3.5 w-3.5" />}
                           {inspectionStatusProps.label}
                         </Badge>
