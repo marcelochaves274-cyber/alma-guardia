@@ -1,21 +1,22 @@
 'use client';
 
-import { useState, type FormEvent, useEffect, useCallback } from 'react';
+import { useState, type FormEvent, useEffect, useCallback, useRef } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Loader2, Pencil, Check, X } from 'lucide-react';
+import { Plus, Trash2, Loader2, Pencil, Check, X, Upload } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, writeBatch, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
 import {
   AlertDialog,
@@ -28,6 +29,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { useProfile } from '@/context/profile-context';
+import Papa from 'papaparse';
 
 type ManagedItem = {
   items: string[];
@@ -44,6 +47,10 @@ export function ManageEquipmentAndBrands() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
+  const { profile } = useProfile();
+  const isAdmin = profile === 'admin';
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const [state, setState] = useState<{ [key in ItemType]: ManagedItem }>({
     equipmentTypes: { items: [], newItem: '', editingItem: null, editingValue: '', isLoading: true, isSaving: false },
@@ -177,6 +184,72 @@ export function ManageEquipmentAndBrands() {
     }
   }
 
+  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !firestore || !user) {
+      return;
+    }
+
+    setIsImporting(true);
+    Papa.parse(file, {
+      header: false,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const data = results.data as string[][];
+        if (data.length === 0) {
+          toast({ variant: 'destructive', title: 'Arquivo vazio', description: 'O arquivo CSV não contém dados.' });
+          setIsImporting(false);
+          return;
+        }
+
+        try {
+          const batch = writeBatch(firestore);
+          const equipmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'equipments');
+
+          data.forEach(row => {
+            const newDocRef = doc(equipmentsCollectionRef);
+            const [
+              equipmentType, brand, model, lotCaUiaa, manufacturingDate,
+              storageLocation, storageDetails, status, lastInspectionDate, nextInspectionDate
+            ] = row;
+            
+            const equipmentData = {
+              userId: user.uid,
+              equipmentType: equipmentType || '',
+              brand: brand || '',
+              model: model || '',
+              lotCaUiaa: lotCaUiaa || '',
+              manufacturingDate: manufacturingDate ? Timestamp.fromDate(new Date(manufacturingDate)) : null,
+              storageLocation: storageLocation || '',
+              storageDetails: storageDetails || '',
+              status: ['operacional', 'em manutencao', 'descartado'].includes(status) ? status : 'operacional',
+              lastInspectionDate: lastInspectionDate ? Timestamp.fromDate(new Date(lastInspectionDate)) : null,
+              nextInspectionDate: nextInspectionDate ? Timestamp.fromDate(new Date(nextInspectionDate)) : null,
+              createdAt: serverTimestamp(),
+            };
+            batch.set(newDocRef, equipmentData);
+          });
+          
+          await batch.commit();
+          toast({ title: 'Importação Concluída!', description: `${data.length} equipamentos foram importados com sucesso.` });
+        } catch (error) {
+          console.error("Error importing data:", error);
+          toast({ variant: 'destructive', title: 'Erro na Importação', description: 'Não foi possível importar os dados. Verifique o formato do arquivo e os dados.' });
+        } finally {
+          setIsImporting(false);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+        }
+      },
+      error: (error) => {
+        console.error("CSV parsing error:", error);
+        toast({ variant: 'destructive', title: 'Erro de Leitura', description: 'Não foi possível ler o arquivo CSV.' });
+        setIsImporting(false);
+      }
+    });
+  };
+
   const renderSection = (itemType: ItemType, title: string, placeholder: string) => {
     const current = state[itemType];
 
@@ -264,16 +337,54 @@ export function ManageEquipmentAndBrands() {
   
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Gerenciar Equipamentos e Marcas</CardTitle>
-        <CardDescription>Adicione ou remova os tipos de equipamentos e as marcas que aparecerão no formulário de registro.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-12">
-        {renderSection('equipmentTypes', 'Tipos de Equipamento', 'Ex: Mosquetão')}
-        <Separator />
-        {renderSection('equipmentBrands', 'Marcas de Equipamento', 'Ex: Petzl')}
-      </CardContent>
-    </Card>
+    <div className="space-y-12">
+      <Card>
+        <CardHeader>
+          <CardTitle>Gerenciar Equipamentos e Marcas</CardTitle>
+          <CardDescription>Adicione ou remova os tipos de equipamentos e as marcas que aparecerão no formulário de registro.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-12">
+          {renderSection('equipmentTypes', 'Tipos de Equipamento', 'Ex: Mosquetão')}
+          <Separator />
+          {renderSection('equipmentBrands', 'Marcas de Equipamento', 'Ex: Petzl')}
+        </CardContent>
+      </Card>
+      
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Importar Equipamentos em Lote</CardTitle>
+            <CardDescription>
+              Faça o upload de um arquivo CSV para registrar múltiplos equipamentos de uma só vez.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className='p-4 border-dashed border-2 border-muted-foreground/50 rounded-lg bg-muted/20'>
+              <p className="text-sm font-semibold text-foreground mb-2">Instruções:</p>
+              <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                <li>O arquivo deve estar no formato CSV (valores separados por vírgula).</li>
+                <li>Não inclua uma linha de cabeçalho no arquivo.</li>
+                <li>A ordem das colunas deve ser exatamente: <br /> <code className="text-xs bg-card p-1 rounded-sm">equipmentType, brand, model, lotCaUiaa, manufacturingDate, storageLocation, storageDetails, status, lastInspectionDate, nextInspectionDate</code></li>
+                <li>Datas devem estar no formato <code className='text-xs bg-card p-1 rounded-sm'>AAAA-MM-DD</code>.</li>
+                <li>O status deve ser <code className='text-xs bg-card p-1 rounded-sm'>operacional</code>, <code className='text-xs bg-card p-1 rounded-sm'>em manutencao</code>, ou <code className='text-xs bg-card p-1 rounded-sm'>descartado</code>.</li>
+              </ul>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
+              {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+              {isImporting ? 'Importando...' : 'Carregar Arquivo CSV'}
+            </Button>
+            <Input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileImport}
+              accept=".csv"
+            />
+          </CardFooter>
+        </Card>
+      )}
+    </div>
   );
 }
