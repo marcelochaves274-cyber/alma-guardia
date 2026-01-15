@@ -311,7 +311,9 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
               ) : filteredEquipments.length > 0 ? (
                 filteredEquipments.map((eq) => {
                   const statusProps = statusMapping[eq.status] || { label: 'Desconhecido', className: 'bg-gray-400' };
-                  const inspectionStatusProps = getInspectionStatus(eq.nextInspectionDate?.toDate(), clientToday);
+                  const inspectionStatusProps = eq.status === 'descartado' 
+                    ? { label: 'Sem vistoria', className: 'bg-muted text-muted-foreground' }
+                    : getInspectionStatus(eq.nextInspectionDate?.toDate(), clientToday);
                   
                   return (
                     <TableRow key={eq.id} className={cn(eq.status === 'descartado' && 'bg-destructive/10 hover:bg-destructive/20')}>
@@ -320,7 +322,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                       <TableCell>{eq.model}</TableCell>
                       <TableCell><Badge className={cn(statusProps.className)}>{statusProps.label}</Badge></TableCell>
                       <TableCell>
-                        <Badge className={cn('flex items-center gap-1.5', inspectionStatusProps.label)}>
+                        <Badge className={cn('flex items-center gap-1.5', inspectionStatusProps.className)}>
                           {inspectionStatusProps.label === 'Vistoria Atrasada' && <TriangleAlert className="h-3.5 w-3.5" />}
                           {inspectionStatusProps.label}
                         </Badge>
