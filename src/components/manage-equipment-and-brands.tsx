@@ -70,7 +70,7 @@ export function ManageEquipmentAndBrands() {
   useEffect(() => {
     if (isUserLoading || !user || !firestore) {
         Object.keys(state).forEach(key => {
-            setState(s => ({ ...s, [key]: { ...s[key as ItemType], isLoading: false } }));
+            setState(s => ({ ...s, [key as ItemType]: { ...s[key as ItemType], isLoading: false } }));
         })
       return;
     }
@@ -186,26 +186,28 @@ export function ManageEquipmentAndBrands() {
 
   const parseDateString = (dateString: string): Date | null => {
     if (!dateString || typeof dateString !== 'string') return null;
-
+  
     // Matches DD/MM/YYYY or YYYY-MM-DD
     const parts = dateString.match(/(\d+)/g);
     if (!parts || parts.length < 3) return null;
     
     let year, month, day;
-
+  
     if (dateString.includes('/')) {
-        // DD/MM/YYYY
-        [day, month, year] = parts.map(Number);
+      // DD/MM/YYYY
+      [day, month, year] = parts.map(Number);
+    } else if (dateString.includes('-')) {
+      // YYYY-MM-DD
+      [year, month, day] = parts.map(Number);
     } else {
-        // YYYY-MM-DD
-        [year, month, day] = parts.map(Number);
+        return null; // Unsupported format
     }
-
+  
     // Basic validation
     if (year < 1000 || year > 3000 || month < 1 || month > 12 || day < 1 || day > 31) {
-        return null;
+      return null;
     }
-
+  
     // JS months are 0-indexed
     return new Date(year, month - 1, day);
   };
@@ -247,7 +249,7 @@ export function ManageEquipmentAndBrands() {
               const lowerS = (s || '').toLowerCase().trim();
               if (lowerS.startsWith('operacion')) return 'operacional';
               if (['operacional', 'em manutencao', 'descartado'].includes(lowerS)) {
-                return lowerS;
+                return lowerS as 'operacional' | 'em manutencao' | 'descartado';
               }
               return 'operacional'; // Default
             };
