@@ -52,8 +52,7 @@ export function ManageEquipmentAndBrands() {
   const isAdmin = profile === 'admin';
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
-  const [isDeletingAll, setIsDeletingAll] = useState(false);
-
+  
   const [state, setState] = useState<{ [key in ItemType]: ManagedItem }>({
     equipmentTypes: { items: [], newItem: '', editingItem: null, editingValue: '', isLoading: true, isSaving: false },
     equipmentBrands: { items: [], newItem: '', editingItem: null, editingValue: '', isLoading: true, isSaving: false },
@@ -290,32 +289,6 @@ export function ManageEquipmentAndBrands() {
     });
   };
 
-   const handleDeleteAll = async () => {
-    if (!firestore || !user) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
-      return;
-    }
-    setIsDeletingAll(true);
-    try {
-      const equipmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'equipments');
-      const querySnapshot = await getDocs(equipmentsCollectionRef);
-      const batch = writeBatch(firestore);
-      
-      querySnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-
-      await batch.commit();
-      toast({ title: 'Sucesso!', description: 'Todos os equipamentos foram excluídos.' });
-    } catch (error) {
-      console.error("Error deleting all equipment:", error);
-      toast({ variant: 'destructive', title: 'Erro ao Excluir', description: 'Não foi possível excluir todos os equipamentos.' });
-    } finally {
-      setIsDeletingAll(false);
-    }
-  };
-
-
   const renderSection = (itemType: ItemType, title: string, placeholder: string) => {
     const current = state[itemType];
 
@@ -432,14 +405,15 @@ export function ManageEquipmentAndBrands() {
                         <li>O arquivo deve estar no formato CSV (valores separados por vírgula).</li>
                         <li>Não inclua uma linha de cabeçalho no arquivo.</li>
                         <li>A ordem das colunas deve ser exatamente: <br /> <code className="text-xs bg-card p-1 rounded-sm">equipmentType, brand, model, lotCaUiaa, manufacturingDate, storageLocation, storageDetails, status, lastInspectionDate, nextInspectionDate</code></li>
-                        <li>Datas devem estar no formato <code className='text-xs bg-card p-1 rounded-sm'>DD/MM/AAAA</code>.</li>
+                        <li>Datas devem estar no formato <code className='text-xs bg-card p-1 rounded-sm'>DD/MM/AAAA</code> ou <code className='text-xs bg-card p-1 rounded-sm'>AAAA-MM-DD</code>.</li>
                         <li>O status deve ser <code className='text-xs bg-card p-1 rounded-sm'>operacional</code>, <code className='text-xs bg-card p-1 rounded-sm'>em manutencao</code>, ou <code className='text-xs bg-card p-1 rounded-sm'>descartado</code>.</li>
+                         <li>Para arquivos salvos no Excel, pode ser necessário usar a codificação <code className='text-xs bg-card p-1 rounded-sm'>ISO-8859-1</code> para caracteres especiais (ç, ã, etc.).</li>
                     </ul>
                 </div>
                  <div className="!mt-6">
                     <p className="text-sm font-semibold text-foreground mb-2">Correção de Dados:</p>
                     <p className="text-sm text-muted-foreground">
-                        Se a importação anterior resultou em dados com caracteres errados, primeiro limpe os dados antigos usando o botão "Limpar Todos os Equipamentos" abaixo antes de importar o arquivo CSV corrigido.
+                        Se a importação anterior resultou em dados com caracteres errados, primeiro limpe os dados antigos (manualmente, se necessário) antes de importar o arquivo CSV corrigido.
                     </p>
                 </div>
             </div>
@@ -456,31 +430,6 @@ export function ManageEquipmentAndBrands() {
               onChange={handleFileImport}
               accept=".csv"
             />
-            <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="destructive" disabled={isDeletingAll}>
-                        {isDeletingAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                        Limpar Todos os Equipamentos
-                    </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2"><TriangleAlert className="text-destructive h-6 w-6"/>Atenção! Ação Irreversível</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Você tem certeza que deseja excluir TODOS os equipamentos cadastrados? Esta ação não pode ser desfeita e todos os dados de equipamentos serão perdidos permanentemente.
-                    </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                        className="bg-destructive hover:bg-destructive/90"
-                        onClick={handleDeleteAll}
-                    >
-                        Sim, excluir tudo
-                    </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
           </CardFooter>
         </Card>
       )}
