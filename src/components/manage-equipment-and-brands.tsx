@@ -184,6 +184,32 @@ export function ManageEquipmentAndBrands() {
     }
   }
 
+  const parseDateString = (dateString: string): Date | null => {
+    if (!dateString || typeof dateString !== 'string') return null;
+
+    // Matches DD/MM/YYYY or YYYY-MM-DD
+    const parts = dateString.match(/(\d+)/g);
+    if (!parts || parts.length < 3) return null;
+    
+    let year, month, day;
+
+    if (dateString.includes('/')) {
+        // DD/MM/YYYY
+        [day, month, year] = parts.map(Number);
+    } else {
+        // YYYY-MM-DD
+        [year, month, day] = parts.map(Number);
+    }
+
+    // Basic validation
+    if (year < 1000 || year > 3000 || month < 1 || month > 12 || day < 1 || day > 31) {
+        return null;
+    }
+
+    // JS months are 0-indexed
+    return new Date(year, month - 1, day);
+  };
+  
   const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !firestore || !user) {
@@ -209,22 +235,35 @@ export function ManageEquipmentAndBrands() {
           data.forEach(row => {
             const newDocRef = doc(equipmentsCollectionRef);
             const [
-              equipmentType, brand, model, lotCaUiaa, manufacturingDate,
-              storageLocation, storageDetails, status, lastInspectionDate, nextInspectionDate
+              equipmentType, brand, model, lotCaUiaa, manufacturingDateStr,
+              storageLocation, storageDetails, statusStr, lastInspectionDateStr, nextInspectionDateStr
             ] = row;
             
+            const manufacturingDate = parseDateString(manufacturingDateStr);
+            const lastInspectionDate = parseDateString(lastInspectionDateStr);
+            const nextInspectionDate = parseDateString(nextInspectionDateStr);
+
+            const getSanitizedStatus = (s: string) => {
+              const lowerS = (s || '').toLowerCase().trim();
+              if (lowerS.startsWith('operacion')) return 'operacional';
+              if (['operacional', 'em manutencao', 'descartado'].includes(lowerS)) {
+                return lowerS;
+              }
+              return 'operacional'; // Default
+            };
+
             const equipmentData = {
               userId: user.uid,
               equipmentType: equipmentType || '',
               brand: brand || '',
               model: model || '',
               lotCaUiaa: lotCaUiaa || '',
-              manufacturingDate: manufacturingDate ? Timestamp.fromDate(new Date(manufacturingDate)) : null,
+              manufacturingDate: manufacturingDate ? Timestamp.fromDate(manufacturingDate) : null,
               storageLocation: storageLocation || '',
               storageDetails: storageDetails || '',
-              status: ['operacional', 'em manutencao', 'descartado'].includes(status) ? status : 'operacional',
-              lastInspectionDate: lastInspectionDate ? Timestamp.fromDate(new Date(lastInspectionDate)) : null,
-              nextInspectionDate: nextInspectionDate ? Timestamp.fromDate(new Date(nextInspectionDate)) : null,
+              status: getSanitizedStatus(statusStr),
+              lastInspectionDate: lastInspectionDate ? Timestamp.fromDate(lastInspectionDate) : null,
+              nextInspectionDate: nextInspectionDate ? Timestamp.fromDate(nextInspectionDate) : null,
               createdAt: serverTimestamp(),
             };
             batch.set(newDocRef, equipmentData);
@@ -365,7 +404,7 @@ export function ManageEquipmentAndBrands() {
                 <li>O arquivo deve estar no formato CSV (valores separados por vírgula).</li>
                 <li>Não inclua uma linha de cabeçalho no arquivo.</li>
                 <li>A ordem das colunas deve ser exatamente: <br /> <code className="text-xs bg-card p-1 rounded-sm">equipmentType, brand, model, lotCaUiaa, manufacturingDate, storageLocation, storageDetails, status, lastInspectionDate, nextInspectionDate</code></li>
-                <li>Datas devem estar no formato <code className='text-xs bg-card p-1 rounded-sm'>AAAA-MM-DD</code>.</li>
+                <li>Datas devem estar no formato <code className='text-xs bg-card p-1 rounded-sm'>AAAA-MM-DD</code> ou <code className='text-xs bg-card p-1 rounded-sm'>DD/MM/AAAA</code>.</li>
                 <li>O status deve ser <code className='text-xs bg-card p-1 rounded-sm'>operacional</code>, <code className='text-xs bg-card p-1 rounded-sm'>em manutencao</code>, ou <code className='text-xs bg-card p-1 rounded-sm'>descartado</code>.</li>
               </ul>
             </div>
