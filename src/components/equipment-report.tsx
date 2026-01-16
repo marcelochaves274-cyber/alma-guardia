@@ -116,10 +116,12 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const [filterBrand, setFilterBrand] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterInspection, setFilterInspection] = useState<string[]>(preFilter?.status === 'overdue' ? ['overdue'] : []);
+  const [filterStorageLocation, setFilterStorageLocation] = useState<string[]>([]);
   
   // Dynamic options for selects
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
   const [clientToday, setClientToday] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -137,7 +139,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   }, [firestore, user]);
 
   useEffect(() => {
-    const fetchSelectOptions = async (docName: string, setData: (data: string[]) => void, field: 'types' | 'brands') => {
+    const fetchSelectOptions = async (docName: string, setData: (data: string[]) => void, field: 'types' | 'brands' | 'locations') => {
       const docRef = getSettingsDocRef(docName);
       if (!docRef) return;
       try {
@@ -152,6 +154,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     };
     fetchSelectOptions('equipmentTypes', setEquipmentTypes, 'types');
     fetchSelectOptions('equipmentBrands', setBrands, 'brands');
+    fetchSelectOptions('locations', setLocations, 'locations');
   }, [getSettingsDocRef]);
 
   useEffect(() => {
@@ -195,8 +198,9 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
         }
         return false;
       });
+      const storageLocationMatch = filterStorageLocation.length === 0 || filterStorageLocation.includes(eq.storageLocation);
 
-      return typeMatch && brandMatch && statusMatch && inspectionMatch;
+      return typeMatch && brandMatch && statusMatch && inspectionMatch && storageLocationMatch;
     }).sort((a,b) => {
         if (a.status === 'descartado' && b.status !== 'descartado') {
           return 1;
@@ -208,13 +212,14 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
         const dateB = b.nextInspectionDate?.toDate()?.getTime() || Infinity;
         return dateA - dateB;
     });
-  }, [equipments, filterType, filterBrand, filterStatus, filterInspection, clientToday]);
+  }, [equipments, filterType, filterBrand, filterStatus, filterInspection, filterStorageLocation, clientToday]);
 
   const clearFilters = () => {
     setFilterType([]);
     setFilterBrand([]);
     setFilterStatus([]);
     setFilterInspection([]);
+    setFilterStorageLocation([]);
   }
 
   const handleDelete = async (equipmentId: string) => {
@@ -332,7 +337,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
             <CardDescription>Filtre e visualize os equipamentos registrados no sistema.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
                <div className="space-y-2">
                   <Label>Filtrar por Tipo</Label>
                   <SheetFilter
@@ -373,6 +378,17 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                       selected={filterInspection}
                       onChange={setFilterInspection}
                       buttonText='Filtrar por Situação'
+                  />
+              </div>
+              <div className="space-y-2">
+                  <Label>Local de Armazenamento</Label>
+                   <SheetFilter
+                      title='Filtrar por Local'
+                      options={locations.map(o => ({ value: o, label: o }))}
+                      selected={filterStorageLocation}
+                      onChange={setFilterStorageLocation}
+                      disabled={locations.length === 0}
+                      buttonText='Filtrar por Local'
                   />
               </div>
               <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
