@@ -65,7 +65,8 @@ const statusMapping: Record<string, { label: string, className: string }> = {
 };
 
 const inspectionStatusOptions = [
-    { value: 'overdue', label: 'Vistoria Atrasada' }
+    { value: 'overdue', label: 'Vistoria Atrasada' },
+    { value: 'no_inspection', label: 'Sem Vistoria' },
 ];
 
 const getInspectionStatus = (nextInspectionDate: Date | null | undefined, clientToday: Date) => {
@@ -172,8 +173,15 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
       const typeMatch = filterType.length === 0 || filterType.includes(eq.equipmentType);
       const brandMatch = filterBrand.length === 0 || filterBrand.includes(eq.brand);
       const statusMatch = filterStatus.length === 0 || filterStatus.includes(eq.status);
-      const inspectionMatch = filterInspection.length === 0 || 
-        (filterInspection.includes('overdue') && eq.nextInspectionDate && isBefore(eq.nextInspectionDate.toDate(), clientToday));
+      const inspectionMatch = filterInspection.length === 0 || filterInspection.some(filter => {
+        if (filter === 'overdue') {
+          return eq.status !== 'descartado' && !!eq.nextInspectionDate && isBefore(eq.nextInspectionDate.toDate(), clientToday);
+        }
+        if (filter === 'no_inspection') {
+          return eq.status === 'descartado';
+        }
+        return false;
+      });
 
       return typeMatch && brandMatch && statusMatch && inspectionMatch;
     }).sort((a,b) => {
