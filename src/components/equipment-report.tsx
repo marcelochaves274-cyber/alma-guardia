@@ -23,7 +23,7 @@ import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Pencil, Trash2, Loader2, TriangleAlert } from 'lucide-react';
+import { Pencil, Trash2, Loader2, TriangleAlert, FileDown } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -227,6 +227,76 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     }
   };
 
+  const handleExportToWord = () => {
+    if (filteredEquipments.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Nenhum dado para exportar',
+        description: 'A lista filtrada está vazia.',
+      });
+      return;
+    }
+
+    const getInspectionStatusLabel = (equipment: Equipment) => {
+      if (equipment.status === 'descartado') {
+        return 'Sem vistoria';
+      }
+      if (!clientToday) return 'Calculando...';
+      const status = getInspectionStatus(equipment.nextInspectionDate?.toDate(), clientToday);
+      return status.label;
+    };
+
+    const tableHtml = `
+      <table border="1" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif;">
+        <thead>
+          <tr style="background-color: #f2f2f2;">
+            <th style="padding: 8px; text-align: left;">Tipo</th>
+            <th style="padding: 8px; text-align: left;">Marca</th>
+            <th style="padding: 8px; text-align: left;">Modelo</th>
+            <th style="padding: 8px; text-align: left;">Status</th>
+            <th style="padding: 8px; text-align: left;">Inspeção</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredEquipments.map(eq => `
+            <tr>
+              <td style="padding: 8px;">${eq.equipmentType || ''}</td>
+              <td style="padding: 8px;">${eq.brand || ''}</td>
+              <td style="padding: 8px;">${eq.model || ''}</td>
+              <td style="padding: 8px;">${statusMapping[eq.status]?.label || 'Desconhecido'}</td>
+              <td style="padding: 8px;">${getInspectionStatusLabel(eq)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Relatório de Equipamentos</title>
+      </head>
+      <body>
+        <h1>Relatório de Equipamentos</h1>
+        <p>Exportado em: ${new Date().toLocaleString('pt-BR')}</p>
+        <p>Total de equipamentos na lista: ${filteredEquipments.length}</p>
+        <br/>
+        ${tableHtml}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([html], { type: 'application/msword' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'relatorio_equipamentos.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const renderSkeletons = () => (
     Array.from({ length: 5 }).map((_, i) => (
       <TableRow key={i}>
@@ -298,8 +368,16 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
       
       <Card>
         <CardHeader>
-          <CardTitle>Resultados</CardTitle>
-          <CardDescription>Foram encontrados {filteredEquipments.length} equipamentos.</CardDescription>
+          <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Resultados</CardTitle>
+                <CardDescription>Foram encontrados {filteredEquipments.length} equipamentos.</CardDescription>
+              </div>
+              <Button onClick={handleExportToWord} disabled={filteredEquipments.length === 0}>
+                  <FileDown className="mr-2" />
+                  Exportar
+              </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
