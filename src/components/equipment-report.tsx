@@ -25,6 +25,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
+import { useProfile } from '@/context/profile-context';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { format, differenceInDays, startOfDay, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -105,6 +106,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { profile } = useProfile();
   
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
@@ -463,28 +465,32 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                                   <Eye className="h-4 w-4" />
                               </Button>
                            </DialogTrigger>
-                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar equipamento" onClick={() => onEdit(eq)}>
-                              <Pencil className="h-4 w-4" />
-                           </Button>
-                           <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir equipamento" disabled={isDeleting === eq.id}>
+                           {profile === 'admin' && (
+                            <>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar equipamento" onClick={() => onEdit(eq)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir equipamento" disabled={isDeleting === eq.id}>
                                     {isDeleting === eq.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
                                   <AlertDialogHeader>
-                                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                      <AlertDialogDescription>Esta ação excluirá permanentemente o equipamento {eq.brand} {eq.model}.</AlertDialogDescription>
+                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                    <AlertDialogDescription>Esta ação excluirá permanentemente o equipamento {eq.brand} {eq.model}.</AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDelete(eq.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                          Sim, excluir
-                                      </AlertDialogAction>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(eq.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                      Sim, excluir
+                                    </AlertDialogAction>
                                   </AlertDialogFooter>
-                              </AlertDialogContent>
-                           </AlertDialog>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                           )}
                         </TableCell>
                       </TableRow>
                     );
