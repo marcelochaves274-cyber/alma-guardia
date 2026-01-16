@@ -52,6 +52,7 @@ export function ManageEquipmentAndBrands() {
   const isAdmin = profile === 'admin';
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
   
   const [state, setState] = useState<{ [key in ItemType]: ManagedItem }>({
     equipmentTypes: { items: [], newItem: '', editingItem: null, editingValue: '', isLoading: true, isSaving: false },
@@ -289,6 +290,38 @@ export function ManageEquipmentAndBrands() {
     });
   };
 
+  const handleDeleteAllEquipments = async () => {
+    if (!firestore || !user) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
+      return;
+    }
+
+    setIsDeletingAll(true);
+    try {
+      const equipmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'equipments');
+      const querySnapshot = await getDocs(equipmentsCollectionRef);
+      
+      if (querySnapshot.empty) {
+        toast({ title: 'Nada a excluir', description: 'Não há equipamentos para excluir.' });
+        setIsDeletingAll(false);
+        return;
+      }
+
+      const batch = writeBatch(firestore);
+      querySnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      toast({ title: 'Sucesso!', description: `Todos os ${querySnapshot.size} equipamentos foram excluídos.` });
+    } catch (error) {
+      console.error("Error deleting all equipments:", error);
+      toast({ variant: 'destructive', title: 'Erro na Exclusão', description: 'Não foi possível excluir todos os equipamentos.' });
+    } finally {
+      setIsDeletingAll(false);
+    }
+  };
+
   const renderSection = (itemType: ItemType, title: string, placeholder: string) => {
     const current = state[itemType];
 
@@ -392,9 +425,9 @@ export function ManageEquipmentAndBrands() {
       {isAdmin && (
         <Card>
           <CardHeader>
-            <CardTitle>Importar Equipamentos em Lote</CardTitle>
+            <CardTitle>Importar / Excluir Equipamentos em Lote</CardTitle>
             <CardDescription>
-              Faça o upload de um arquivo CSV para registrar múltiplos equipamentos de uma só vez.
+              Faça o upload de um arquivo CSV para registrar múltiplos equipamentos ou exclua todos os registros existentes.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -430,6 +463,28 @@ export function ManageEquipmentAndBrands() {
               onChange={handleFileImport}
               accept=".csv"
             />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isDeletingAll}>
+                  {isDeletingAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                  Excluir Todos os Lançamentos
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação é irreversível e excluirá PERMANENTEMENTE todos os equipamentos registrados. Não será possível recuperar esses dados.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAllEquipments} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Sim, excluir tudo
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardFooter>
         </Card>
       )}

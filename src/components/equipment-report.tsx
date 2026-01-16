@@ -111,7 +111,6 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Filter states
   const [filterType, setFilterType] = useState<string[]>([]);
@@ -223,29 +222,6 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     setFilterInspection([]);
     setFilterStorageLocation([]);
   }
-
-  const handleDelete = async (equipmentId: string) => {
-    if (!firestore || !user) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.'});
-      return;
-    }
-    setIsDeleting(equipmentId);
-    try {
-      const docRef = doc(firestore, 'sgs_genius', user.uid, 'equipments', equipmentId);
-      await deleteDoc(docRef);
-      
-      toast({ title: 'Sucesso!', description: 'Equipamento excluído com sucesso.' });
-    } catch (error) {
-      console.error("Error deleting equipment:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao excluir',
-        description: 'Não foi possível excluir o equipamento.',
-      });
-    } finally {
-      setIsDeleting(null);
-    }
-  };
 
   const handleExportToWord = () => {
     if (filteredEquipments.length === 0) {
@@ -466,30 +442,9 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                               </Button>
                            </DialogTrigger>
                            {profile === 'admin' && (
-                            <>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar equipamento" onClick={() => onEdit(eq)}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir equipamento" disabled={isDeleting === eq.id}>
-                                    {isDeleting === eq.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                    <AlertDialogDescription>Esta ação excluirá permanentemente o equipamento {eq.brand} {eq.model}.</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(eq.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                      Sim, excluir
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar equipamento" onClick={() => onEdit(eq)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
                            )}
                         </TableCell>
                       </TableRow>
