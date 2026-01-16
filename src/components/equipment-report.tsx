@@ -431,7 +431,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                 <TableRow>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Marca</TableHead>
-                  <TableHead>Modelo</TableHead>
+                  <TableHead>Local</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Inspeção</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -451,7 +451,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                       <TableRow key={eq.id} className={cn(eq.status === 'descartado' && 'bg-destructive/10 hover:bg-destructive/20')}>
                         <TableCell>{eq.equipmentType}</TableCell>
                         <TableCell>{eq.brand}</TableCell>
-                        <TableCell>{eq.model}</TableCell>
+                        <TableCell>{eq.storageLocation}</TableCell>
                         <TableCell><Badge className={cn(statusProps.className)}>{statusProps.label}</Badge></TableCell>
                         <TableCell>
                           <Badge className={cn('flex items-center gap-1.5', inspectionStatusProps.className)}>
