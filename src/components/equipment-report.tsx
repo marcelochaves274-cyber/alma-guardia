@@ -255,61 +255,45 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
       return;
     }
 
-    const equipmentsHtml = filteredEquipments.map(eq => {
-      const mfgDate = eq.manufacturingDate ? format(eq.manufacturingDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado';
-      const lastInspDate = eq.lastInspectionDate ? format(eq.lastInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado';
-      const nextInspDate = eq.nextInspectionDate ? format(eq.nextInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado';
+    // Group equipments by type
+    const groupedByType = filteredEquipments.reduce((acc, eq) => {
+      const type = eq.equipmentType || 'Sem Tipo';
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(eq);
+      return acc;
+    }, {} as Record<string, Equipment[]>);
+
+
+    const equipmentsHtml = Object.entries(groupedByType).map(([type, equipments]) => {
+      const itemsHtml = equipments.map(eq => {
+          return `
+            <div style="border-bottom: 1px solid #eee; padding: 10px 0; margin-bottom: 10px; font-family: Arial, sans-serif; font-size: 14px; page-break-inside: avoid;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tbody>
+                        <tr>
+                            <td style="padding: 4px; width: 25%;"><strong>Marca:</strong> ${eq.brand || 'N/A'}</td>
+                            <td style="padding: 4px; width: 25%;"><strong>Modelo:</strong> ${eq.model || 'N/A'}</td>
+                            <td style="padding: 4px; width: 25%;"><strong>Lote/CA:</strong> ${eq.lotCaUiaa || 'N/A'}</td>
+                            <td style="padding: 4px; width: 25%;"><strong>Status:</strong> ${statusMapping[eq.status]?.label || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="padding: 4px;"><strong>Detalhe Local:</strong> ${eq.storageDetails || 'N/A'}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+          `;
+      }).join('');
 
       return `
-          <div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; page-break-inside: avoid; font-family: Arial, sans-serif;">
-              <h3 style="font-size: 16px; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-                  ${eq.equipmentType || 'Equipamento'} - ${eq.brand || ''} ${eq.model || ''}
-              </h3>
-              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                  <tbody style="vertical-align: top;">
-                      <tr>
-                          <td style="padding: 6px; width: 35%;"><strong>Tipo:</strong></td>
-                          <td style="padding: 6px;">${eq.equipmentType || 'Não informado'}</td>
-                      </tr>
-                      <tr>
-                          <td style="padding: 6px;"><strong>Marca:</strong></td>
-                          <td style="padding: 6px;">${eq.brand || 'Não informado'}</td>
-                      </tr>
-                      <tr>
-                          <td style="padding: 6px;"><strong>Modelo:</strong></td>
-                          <td style="padding: 6px;">${eq.model || 'Não informado'}</td>
-                      </tr>
-                      <tr>
-                          <td style="padding: 6px;"><strong>Lote/CA/UIAA:</strong></td>
-                          <td style="padding: 6px;">${eq.lotCaUiaa || 'Não informado'}</td>
-                      </tr>
-                      <tr>
-                          <td style="padding: 6px;"><strong>Data de Fabricação:</strong></td>
-                          <td style="padding: 6px;">${mfgDate}</td>
-                      </tr>
-                      <tr>
-                          <td style="padding: 6px;"><strong>Local Armazenado:</strong></td>
-                          <td style="padding: 6px;">${eq.storageLocation || 'Não informado'}</td>
-                      </tr>
-                      <tr>
-                          <td style="padding: 6px;"><strong>Detalhes do Local:</strong></td>
-                          <td style="padding: 6px;">${eq.storageDetails || 'Não informado'}</td>
-                      </tr>
-                      <tr>
-                          <td style="padding: 6px;"><strong>Status:</strong></td>
-                          <td style="padding: 6px;">${statusMapping[eq.status]?.label || 'Desconhecido'}</td>
-                      </tr>
-                      <tr>
-                          <td style="padding: 6px;"><strong>Última Inspeção:</strong></td>
-                          <td style="padding: 6px;">${lastInspDate}</td>
-                      </tr>
-                      <tr>
-                          <td style="padding: 6px;"><strong>Próxima Inspeção:</strong></td>
-                          <td style="padding: 6px;">${nextInspDate}</td>
-                      </tr>
-                  </tbody>
-              </table>
-          </div>
+        <div style="margin-bottom: 25px; page-break-before: auto; page-break-inside: avoid;">
+            <h2 style="font-size: 18px; border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; color: #333;">
+                ${type}
+            </h2>
+            ${itemsHtml}
+        </div>
       `;
     }).join('');
 
@@ -319,6 +303,11 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
       <head>
         <meta charset="UTF-8">
         <title>Relatório de Equipamentos</title>
+        <style>
+            body { font-family: Arial, sans-serif; }
+            h1 { font-size: 24px; color: #333; }
+            p { font-size: 12px; color: #666; }
+        </style>
       </head>
       <body>
         <h1>Relatório de Equipamentos</h1>
