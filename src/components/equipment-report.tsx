@@ -16,6 +16,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { format, differenceInDays, startOfDay, isBefore } from 'date-fns';
@@ -23,7 +31,7 @@ import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Pencil, Trash2, Loader2, TriangleAlert, FileDown } from 'lucide-react';
+import { Pencil, Trash2, Loader2, TriangleAlert, FileDown, Eye } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,14 +47,18 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Label } from './ui/label';
 import { SheetFilter } from './sheet-filter';
+import { ScrollArea } from './ui/scroll-area';
 
 interface Equipment {
   id: string;
   equipmentType: string;
   brand: string;
   model: string;
+  lotCaUiaa: string;
   status: 'operacional' | 'em manutencao' | 'descartado';
   manufacturingDate?: Timestamp;
+  storageLocation: string;
+  storageDetails: string;
   lastInspectionDate?: Timestamp;
   nextInspectionDate?: Timestamp;
 }
@@ -95,6 +107,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const { toast } = useToast();
   
   const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
@@ -311,146 +324,219 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   );
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Relatório Equipamentos</CardTitle>
-          <CardDescription>Filtre e visualize os equipamentos registrados no sistema.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
-             <div className="space-y-2">
-                <Label>Filtrar por Tipo</Label>
-                <SheetFilter
-                    title='Filtrar Tipos'
-                    options={equipmentTypes.map(o => ({ value: o, label: o }))}
-                    selected={filterType}
-                    onChange={setFilterType}
-                    disabled={equipmentTypes.length === 0}
-                    buttonText='Filtrar por Tipo'
-                />
-            </div>
-             <div className="space-y-2">
-                <Label>Filtrar por Marca</Label>
-                <SheetFilter
-                    title='Filtrar Marcas'
-                    options={brands.map(o => ({ value: o, label: o }))}
-                    selected={filterBrand}
-                    onChange={setFilterBrand}
-                    disabled={brands.length === 0}
-                    buttonText='Filtrar por Marca'
-                />
-            </div>
-            <div className="space-y-2">
-                <Label>Filtrar por Status</Label>
-                <SheetFilter
-                    title='Filtrar Status'
-                    options={Object.entries(statusMapping).map(([key, { label }]) => ({ value: key, label: label }))}
-                    selected={filterStatus}
-                    onChange={setFilterStatus}
-                    buttonText='Filtrar por Status'
-                />
-            </div>
-            <div className="space-y-2">
-                <Label>Situação da Vistoria</Label>
-                <SheetFilter
-                    title='Filtrar Situação'
-                    options={inspectionStatusOptions}
-                    selected={filterInspection}
-                    onChange={setFilterInspection}
-                    buttonText='Filtrar por Situação'
-                />
-            </div>
-            <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-              <div>
-                <CardTitle>Resultados</CardTitle>
-                <CardDescription>Foram encontrados {filteredEquipments.length} equipamentos.</CardDescription>
+    <Dialog onOpenChange={(isOpen) => !isOpen && setSelectedEquipment(null)}>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Relatório Equipamentos</CardTitle>
+            <CardDescription>Filtre e visualize os equipamentos registrados no sistema.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+               <div className="space-y-2">
+                  <Label>Filtrar por Tipo</Label>
+                  <SheetFilter
+                      title='Filtrar Tipos'
+                      options={equipmentTypes.map(o => ({ value: o, label: o }))}
+                      selected={filterType}
+                      onChange={setFilterType}
+                      disabled={equipmentTypes.length === 0}
+                      buttonText='Filtrar por Tipo'
+                  />
               </div>
-              <Button onClick={handleExportToWord} disabled={filteredEquipments.length === 0}>
-                  <FileDown className="mr-2" />
-                  Exportar
-              </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Marca</TableHead>
-                <TableHead>Modelo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Inspeção</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading || !clientToday ? (
-                renderSkeletons()
-              ) : filteredEquipments.length > 0 ? (
-                filteredEquipments.map((eq) => {
-                  const statusProps = statusMapping[eq.status] || { label: 'Desconhecido', className: 'bg-gray-400' };
-                  const inspectionStatusProps = eq.status === 'descartado' 
-                    ? { label: 'Sem vistoria', className: 'bg-muted text-muted-foreground' }
-                    : getInspectionStatus(eq.nextInspectionDate?.toDate(), clientToday);
-                  
-                  return (
-                    <TableRow key={eq.id} className={cn(eq.status === 'descartado' && 'bg-destructive/10 hover:bg-destructive/20')}>
-                      <TableCell>{eq.equipmentType}</TableCell>
-                      <TableCell>{eq.brand}</TableCell>
-                      <TableCell>{eq.model}</TableCell>
-                      <TableCell><Badge className={cn(statusProps.className)}>{statusProps.label}</Badge></TableCell>
-                      <TableCell>
-                        <Badge className={cn('flex items-center gap-1.5', inspectionStatusProps.className)}>
-                          {inspectionStatusProps.label === 'Vistoria Atrasada' && <TriangleAlert className="h-3.5 w-3.5" />}
-                          {inspectionStatusProps.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar equipamento" onClick={() => onEdit(eq)}>
-                            <Pencil className="h-4 w-4" />
-                         </Button>
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir equipamento" disabled={isDeleting === eq.id}>
-                                  {isDeleting === eq.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                    <AlertDialogDescription>Esta ação excluirá permanentemente o equipamento {eq.brand} {eq.model}.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(eq.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                        Sim, excluir
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                         </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
+               <div className="space-y-2">
+                  <Label>Filtrar por Marca</Label>
+                  <SheetFilter
+                      title='Filtrar Marcas'
+                      options={brands.map(o => ({ value: o, label: o }))}
+                      selected={filterBrand}
+                      onChange={setFilterBrand}
+                      disabled={brands.length === 0}
+                      buttonText='Filtrar por Marca'
+                  />
+              </div>
+              <div className="space-y-2">
+                  <Label>Filtrar por Status</Label>
+                  <SheetFilter
+                      title='Filtrar Status'
+                      options={Object.entries(statusMapping).map(([key, { label }]) => ({ value: key, label: label }))}
+                      selected={filterStatus}
+                      onChange={setFilterStatus}
+                      buttonText='Filtrar por Status'
+                  />
+              </div>
+              <div className="space-y-2">
+                  <Label>Situação da Vistoria</Label>
+                  <SheetFilter
+                      title='Filtrar Situação'
+                      options={inspectionStatusOptions}
+                      selected={filterInspection}
+                      onChange={setFilterInspection}
+                      buttonText='Filtrar por Situação'
+                  />
+              </div>
+              <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Resultados</CardTitle>
+                  <CardDescription>Foram encontrados {filteredEquipments.length} equipamentos.</CardDescription>
+                </div>
+                <Button onClick={handleExportToWord} disabled={filteredEquipments.length === 0}>
+                    <FileDown className="mr-2" />
+                    Exportar
+                </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    {equipments.length === 0 ? "Nenhum equipamento registrado ainda." : "Nenhum equipamento encontrado com os filtros selecionados."}
-                  </TableCell>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Marca</TableHead>
+                  <TableHead>Modelo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Inspeção</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+              </TableHeader>
+              <TableBody>
+                {isLoading || !clientToday ? (
+                  renderSkeletons()
+                ) : filteredEquipments.length > 0 ? (
+                  filteredEquipments.map((eq) => {
+                    const statusProps = statusMapping[eq.status] || { label: 'Desconhecido', className: 'bg-gray-400' };
+                    const inspectionStatusProps = eq.status === 'descartado' 
+                      ? { label: 'Sem vistoria', className: 'bg-muted text-muted-foreground' }
+                      : getInspectionStatus(eq.nextInspectionDate?.toDate(), clientToday);
+                    
+                    return (
+                      <TableRow key={eq.id} className={cn(eq.status === 'descartado' && 'bg-destructive/10 hover:bg-destructive/20')}>
+                        <TableCell>{eq.equipmentType}</TableCell>
+                        <TableCell>{eq.brand}</TableCell>
+                        <TableCell>{eq.model}</TableCell>
+                        <TableCell><Badge className={cn(statusProps.className)}>{statusProps.label}</Badge></TableCell>
+                        <TableCell>
+                          <Badge className={cn('flex items-center gap-1.5', inspectionStatusProps.className)}>
+                            {inspectionStatusProps.label === 'Vistoria Atrasada' && <TriangleAlert className="h-3.5 w-3.5" />}
+                            {inspectionStatusProps.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                           <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar equipamento" onClick={() => setSelectedEquipment(eq)}>
+                                  <Eye className="h-4 w-4" />
+                              </Button>
+                           </DialogTrigger>
+                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar equipamento" onClick={() => onEdit(eq)}>
+                              <Pencil className="h-4 w-4" />
+                           </Button>
+                           <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir equipamento" disabled={isDeleting === eq.id}>
+                                    {isDeleting === eq.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                 </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                      <AlertDialogDescription>Esta ação excluirá permanentemente o equipamento {eq.brand} {eq.model}.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDelete(eq.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                          Sim, excluir
+                                      </AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                           </AlertDialog>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      {equipments.length === 0 ? "Nenhum equipamento registrado ainda." : "Nenhum equipamento encontrado com os filtros selecionados."}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+      <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Equipamento</DialogTitle>
+          </DialogHeader>
+          {selectedEquipment && (
+            <>
+              <ScrollArea className="max-h-[70vh] pr-6">
+                  <div className="space-y-4 py-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                          <div>
+                              <Label className="font-semibold text-muted-foreground">Tipo</Label>
+                              <p>{selectedEquipment.equipmentType}</p>
+                          </div>
+                          <div>
+                              <Label className="font-semibold text-muted-foreground">Marca</Label>
+                              <p>{selectedEquipment.brand}</p>
+                          </div>
+                          <div>
+                              <Label className="font-semibold text-muted-foreground">Modelo</Label>
+                              <p>{selectedEquipment.model || 'Não informado'}</p>
+                          </div>
+                          <div>
+                              <Label className="font-semibold text-muted-foreground">Lote/CA/UIAA</Label>
+                              <p>{selectedEquipment.lotCaUiaa || 'Não informado'}</p>
+                          </div>
+                          <div>
+                              <Label className="font-semibold text-muted-foreground">Data de Fabricação</Label>
+                              <p>{selectedEquipment.manufacturingDate ? format(selectedEquipment.manufacturingDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p>
+                          </div>
+                           <div>
+                              <Label className="font-semibold text-muted-foreground">Local Armazenado</Label>
+                              <p>{selectedEquipment.storageLocation || 'Não informado'}</p>
+                          </div>
+                          <div>
+                              <Label className="font-semibold text-muted-foreground">Detalhes do Local</Label>
+                              <p>{selectedEquipment.storageDetails || 'Não informado'}</p>
+                          </div>
+                           <div>
+                              <Label className="font-semibold text-muted-foreground">Status</Label>
+                              <div>
+                                  <Badge className={cn(statusMapping[selectedEquipment.status]?.className)}>
+                                      {statusMapping[selectedEquipment.status]?.label || 'Desconhecido'}
+                                  </Badge>
+                              </div>
+                          </div>
+                          <div>
+                              <Label className="font-semibold text-muted-foreground">Última Inspeção</Label>
+                              <p>{selectedEquipment.lastInspectionDate ? format(selectedEquipment.lastInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p>
+                          </div>
+                           <div>
+                              <Label className="font-semibold text-muted-foreground">Próxima Inspeção</Label>
+                              <p>{selectedEquipment.nextInspectionDate ? format(selectedEquipment.nextInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p>
+                          </div>
+                      </div>
+                  </div>
+              </ScrollArea>
+              <div className="flex justify-end pt-2">
+                  <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                          Fechar
+                      </Button>
+                  </DialogClose>
+              </div>
+            </>
+          )}
+      </DialogContent>
+    </Dialog>
   );
 }
