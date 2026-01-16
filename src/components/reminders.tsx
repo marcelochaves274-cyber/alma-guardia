@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,6 +17,7 @@ interface Treatment {
 interface Equipment {
   id: string;
   nextInspectionDate?: Timestamp;
+  status: 'operacional' | 'em manutencao' | 'descartado';
 }
 
 interface Notice {
@@ -66,7 +66,12 @@ export function Reminders({ setPage }: RemindersProps) {
       const overdue = snapshot.docs
         .map(doc => doc.data() as Equipment)
         .filter(e => {
-          if (!e.nextInspectionDate) return false;
+          if (e.status === 'descartado') {
+            return false;
+          }
+          if (!e.nextInspectionDate) {
+            return false;
+          }
           const inspectionDate = e.nextInspectionDate.toDate();
           return isBefore(startOfDay(inspectionDate), today);
         });
