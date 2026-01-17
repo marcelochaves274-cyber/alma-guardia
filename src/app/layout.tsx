@@ -6,13 +6,16 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { HelpProvider } from '@/context/help-context';
 import { ProfileProvider } from '@/context/profile-context';
 
+const iconUrl = "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.appspot.com/o/Logo%20da%20SGS%20APP%20com%20natureza.png?alt=media&token=4ee1a47a-0188-4730-8458-58443665c8ec";
+
 export const metadata: Metadata = {
   title: 'SGS APP',
   description: 'Seu Sistema de Gestão de Segurança inteligente.',
   manifest: '/manifest.json',
   icons: {
-    icon: '/icon.png',
-    apple: '/apple-icon.png',
+    icon: iconUrl,
+    shortcut: iconUrl,
+    apple: iconUrl,
   },
 };
 
