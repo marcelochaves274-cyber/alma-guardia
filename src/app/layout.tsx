@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   description: 'Seu Sistema de Gestão de Segurança inteligente.',
   manifest: '/manifest.json',
   icons: {
-    icon: 'https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.appspot.com/o/Logo%20da%20SGS%20APP%20com%20natureza.png?alt=media&token=4ee1a47a-0188-4730-8458-58443665c8ec',
-    apple: 'https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.appspot.com/o/Logo%20da%20SGS%20APP%20com%20natureza.png?alt=media&token=4ee1a47a-0188-4730-8458-58443665c8ec',
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
   },
 };
 
