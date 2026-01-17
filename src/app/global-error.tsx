@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { SgsGeniusLogo } from '@/components/icons';
+import { SgsAppLogo } from '@/components/icons';
 
 export default function GlobalError({
   error,
@@ -25,7 +25,7 @@ export default function GlobalError({
       <body>
         <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 text-center">
             <div className="max-w-md">
-                <SgsGeniusLogo className="mx-auto h-16 w-16 text-destructive mb-6" />
+                <SgsAppLogo className="mx-auto h-16 w-16 text-destructive mb-6" />
                 <h1 className="text-3xl font-bold text-foreground">Ocorreu um Erro</h1>
                 <p className="mt-4 text-muted-foreground">
                     Pedimos desculpas, mas encontramos um problema inesperado. Isso pode ser um problema temporário de sincronização.

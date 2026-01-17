@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info, Map, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { SgsGeniusLogo } from '@/components/icons';
+import { SgsAppLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -181,7 +181,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                 className="rounded-sm object-contain"
               />
           ) : (
-            <SgsGeniusLogo className="h-6 w-6 text-primary" />
+            <SgsAppLogo className="h-6 w-6 text-primary" />
           )}
           {state === 'expanded' && (
             <div className="flex flex-col">

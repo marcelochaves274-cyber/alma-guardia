@@ -7,7 +7,7 @@ import { HelpProvider } from '@/context/help-context';
 import { ProfileProvider } from '@/context/profile-context';
 
 export const metadata: Metadata = {
-  title: 'SGS Genius',
+  title: 'SGS APP',
   description: 'Seu Sistema de Gestão de Segurança inteligente.',
   manifest: '/manifest.json',
   icons: {

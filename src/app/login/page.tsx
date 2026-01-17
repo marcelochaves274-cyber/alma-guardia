@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { SgsGeniusLogo } from '@/components/icons';
+import { SgsAppLogo } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import {
@@ -140,9 +140,9 @@ export default function LoginPage() {
         <Card className="w-full max-w-sm border-none bg-card/80 shadow-2xl backdrop-blur-sm">
           <CardHeader className="text-center">
             <div className="mb-4 flex justify-center">
-              <SgsGeniusLogo className="h-12 w-12 text-primary" />
+              <SgsAppLogo className="h-12 w-12 text-primary" />
             </div>
-            <CardTitle className="text-2xl">Bem-vindo ao SGS Genius</CardTitle>
+            <CardTitle className="text-2xl">Bem-vindo ao SGS APP</CardTitle>
             <CardDescription>
               Entre ou crie uma conta para continuar
             </CardDescription>

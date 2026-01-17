@@ -283,7 +283,7 @@ function MainAppLayout() {
                   Sistema de Gestão de Segurança
                 </span>
                 <span className="text-sm md:text-lg font-bold text-muted-foreground text-center">
-                    {appName || 'SGS Genius'}
+                    {appName || 'SGS APP'}
                 </span>
               </div>
             </div>

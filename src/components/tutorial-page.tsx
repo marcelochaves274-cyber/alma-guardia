@@ -23,7 +23,7 @@ export function TutorialPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Tutorial do Sistema SGS Genius</CardTitle>
+        <CardTitle>Tutorial do Sistema SGS APP</CardTitle>
         <CardDescription>
           Um guia completo para utilizar todas as funcionalidades do sistema. Expanda as seções abaixo para aprender mais.
         </CardDescription>

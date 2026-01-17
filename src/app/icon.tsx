@@ -25,7 +25,7 @@ export default function Icon() {
           width={32}
           height={32}
           src={imageUrl}
-          alt="SGS Genius Icon"
+          alt="SGS APP Icon"
           style={{
             width: '100%',
             height: '100%',

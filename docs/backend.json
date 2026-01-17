@@ -1,10 +1,11 @@
+
 {
   "entities": {
     "SgsGenius": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "SgsGenius",
+      "title": "SgsApp",
       "type": "object",
-      "description": "Represents the main SGS Genius application data.",
+      "description": "Represents the main SGS APP application data.",
       "properties": {
         "id": {
           "type": "string",
@@ -36,7 +37,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ChatMessage",
       "type": "object",
-      "description": "Represents a single chat message within the SGS Genius application. This is also used for Occurrences.",
+      "description": "Represents a single chat message within the SGS APP application. This is also used for Occurrences.",
       "properties": {
         "id": {
           "type": "string",
@@ -72,7 +73,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Parameter",
       "type": "object",
-      "description": "Represents a modifiable parameter within the SGS Genius application.",
+      "description": "Represents a modifiable parameter within the SGS APP application.",
       "properties": {
         "id": {
           "type": "string",
@@ -610,7 +611,7 @@
           "schema": {
             "$ref": "#/backend/entities/SgsGenius"
           },
-          "description": "Stores the main SGS Genius application data. Each document represents a unique SGS application instance.",
+          "description": "Stores the main SGS APP application data. Each document represents a unique SGS application instance.",
           "params": [
             {
               "name": "sgsGeniusId",
@@ -626,7 +627,7 @@
           "schema": {
             "$ref": "#/backend/entities/ChatMessage"
           },
-          "description": "Stores chat messages and occurrences associated with a specific SGS Genius application. Includes the sgsGeniusId for relationship.",
+          "description": "Stores chat messages and occurrences associated with a specific SGS APP application. Includes the sgsGeniusId for relationship.",
           "params": [
             {
               "name": "sgsGeniusId",
@@ -646,7 +647,7 @@
           "schema": {
             "$ref": "#/backend/entities/Parameter"
           },
-          "description": "Stores modifiable parameters associated with a specific SGS Genius application. Includes the sgsGeniusId for relationship.",
+          "description": "Stores modifiable parameters associated with a specific SGS APP application. Includes the sgsGeniusId for relationship.",
           "params": [
             {
               "name": "sgsGeniusId",
@@ -800,6 +801,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the SGS Genius application, focusing on chat interactions with an AI and parameter adjustments. It provides a secure and scalable data model, suitable for the app's collaborative and iterative development process. The structure prioritizes Authorization Independence through denormalization, simplifies security rules via Structural Segregation, and standardizes access patterns using Access Modeling. This design supports atomic operations and efficient `list` operations while upholding data integrity.\n\nAuthorization Independence:\nAuthorization independence is achieved by avoiding hierarchical authorization dependencies. There are no `get()` calls in the security rules. Every collection has all of the authorization information needed in the document itself.\n\nQAPs (Rules are not Filters):\nThe structure is designed to support secure `list` operations. This is accomplished by segregating data based on access requirements and using membership maps to define access rights. Segregation means that rules do not have to filter based on document content and membership maps mean that list access can be controlled."
+    "reasoning": "The Firestore structure is designed to support the SGS APP application, focusing on chat interactions with an AI and parameter adjustments. It provides a secure and scalable data model, suitable for the app's collaborative and iterative development process. The structure prioritizes Authorization Independence through denormalization, simplifies security rules via Structural Segregation, and standardizes access patterns using Access Modeling. This design supports atomic operations and efficient `list` operations while upholding data integrity.\n\nAuthorization Independence:\nAuthorization independence is achieved by avoiding hierarchical authorization dependencies. There are no `get()` calls in the security rules. Every collection has all of the authorization information needed in the document itself.\n\nQAPs (Rules are not Filters):\nThe structure is designed to support secure `list` operations. This is accomplished by segregating data based on access requirements and using membership maps to define access rights. Segregation means that rules do not have to filter based on document content and membership maps mean that list access can be controlled."
   }
 }
