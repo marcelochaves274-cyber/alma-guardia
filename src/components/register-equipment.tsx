@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -72,6 +72,19 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
   const { user } = useUser();
   const { toast } = useToast();
 
+  const resetForm = useCallback(() => {
+    setEquipmentType('');
+    setBrand('');
+    setModel('');
+    setLotCaUiaa('');
+    setManufacturingDate(undefined);
+    setStorageLocation('');
+    setStorageDetails('');
+    setStatus('operacional');
+    setLastInspectionDate(undefined);
+    setNextInspectionDate(undefined);
+  }, []);
+
   useEffect(() => {
     if (isEditing && equipmentToEdit) {
       setEquipmentType(equipmentToEdit.equipmentType || '');
@@ -84,8 +97,10 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
       setStatus(equipmentToEdit.status || 'operacional');
       setLastInspectionDate(equipmentToEdit.lastInspectionDate instanceof Timestamp ? equipmentToEdit.lastInspectionDate.toDate() : undefined);
       setNextInspectionDate(equipmentToEdit.nextInspectionDate instanceof Timestamp ? equipmentToEdit.nextInspectionDate.toDate() : undefined);
+    } else {
+      resetForm();
     }
-  }, [isEditing, equipmentToEdit]);
+  }, [isEditing, equipmentToEdit, resetForm]);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -115,19 +130,6 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
     fetchSelectOptions('equipmentBrands', setBrands, setIsLoadingBrands, 'brands');
     fetchSelectOptions('locations', setLocations, setIsLoadingLocations, 'locations');
   }, [getSettingsDocRef]);
-
-  const resetForm = () => {
-    setEquipmentType('');
-    setBrand('');
-    setModel('');
-    setLotCaUiaa('');
-    setManufacturingDate(undefined);
-    setStorageLocation('');
-    setStorageDetails('');
-    setStatus('operacional');
-    setLastInspectionDate(undefined);
-    setNextInspectionDate(undefined);
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
