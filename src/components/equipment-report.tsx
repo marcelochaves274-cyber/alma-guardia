@@ -24,15 +24,20 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { useFirestore, useUser } from '@/firebase';
 import { useProfile } from '@/context/profile-context';
-import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot, writeBatch } from 'firebase/firestore';
 import { format, differenceInDays, startOfDay, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Pencil, Trash2, Loader2, TriangleAlert, FileDown, Eye } from 'lucide-react';
+import { Calendar as CalendarIcon, Pencil, Trash2, Loader2, TriangleAlert, FileDown, Eye } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +54,8 @@ import { cn } from '@/lib/utils';
 import { Label } from './ui/label';
 import { SheetFilter } from './sheet-filter';
 import { ScrollArea } from './ui/scroll-area';
+import { Checkbox } from './ui/checkbox';
+import { Calendar } from './ui/calendar';
 
 interface Equipment {
   id: string;
@@ -120,6 +127,11 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterInspection, setFilterInspection] = useState<string[]>(preFilter?.status === 'overdue' ? ['overdue'] : []);
   const [filterStorageLocation, setFilterStorageLocation] = useState<string[]>([]);
+
+  // Bulk update states
+  const [selectedEquipments, setSelectedEquipments] = useState<string[]>([]);
+  const [bulkNextInspectionDate, setBulkNextInspectionDate] = useState<Date | undefined>();
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   
   // Dynamic options for selects
   const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
@@ -185,6 +197,11 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     
     return () => unsubscribe();
   }, [user, firestore, toast]);
+
+  useEffect(() => {
+    // Clear selection when filters change
+    setSelectedEquipments([]);
+  }, [filterInspection]);
   
   const handleDelete = async (equipmentId: string) => {
     if (!firestore || !user) {
@@ -208,6 +225,50 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
       setIsDeleting(null);
     }
   };
+
+  const handleBulkUpdate = async () => {
+    if (!firestore || !user || selectedEquipments.length === 0 || !bulkNextInspectionDate) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível realizar a atualização. Verifique os dados.',
+      });
+      return;
+    }
+
+    setIsBulkUpdating(true);
+    const batch = writeBatch(firestore);
+    const today = Timestamp.now();
+    const nextDate = Timestamp.fromDate(bulkNextInspectionDate);
+
+    selectedEquipments.forEach(id => {
+      const docRef = doc(firestore, 'sgs_genius', user.uid, 'equipments', id);
+      batch.update(docRef, {
+        lastInspectionDate: today,
+        nextInspectionDate: nextDate,
+      });
+    });
+
+    try {
+      await batch.commit();
+      toast({
+        title: 'Sucesso!',
+        description: `${selectedEquipments.length} equipamentos foram atualizados.`,
+      });
+      setSelectedEquipments([]);
+      setBulkNextInspectionDate(undefined);
+    } catch (error) {
+      console.error('Error in bulk update:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro na atualização',
+        description: 'Não foi possível atualizar os equipamentos em lote.',
+      });
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
+
 
   const filteredEquipments = useMemo(() => {
     if (!clientToday) return [];
@@ -350,6 +411,8 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     ))
   );
 
+  const showBulkActions = filterInspection.includes('due_soon');
+
   return (
     <Dialog onOpenChange={(isOpen) => !isOpen && setSelectedEquipment(null)}>
       <div className="space-y-6">
@@ -420,21 +483,92 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
         
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Resultados</CardTitle>
-                  <CardDescription>Foram encontrados {filteredEquipments.length} equipamentos.</CardDescription>
-                </div>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <CardTitle>Resultados</CardTitle>
+                <CardDescription>
+                  Foram encontrados {filteredEquipments.length} equipamentos.
+                  {selectedEquipments.length > 0 && ` (${selectedEquipments.length} selecionados)`}
+                </CardDescription>
+              </div>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {showBulkActions && selectedEquipments.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'w-[240px] justify-start text-left font-normal',
+                            !bulkNextInspectionDate && 'text-muted-foreground'
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {bulkNextInspectionDate
+                            ? format(bulkNextInspectionDate, 'dd/MM/yyyy', { locale: ptBR })
+                            : 'Nova data de vistoria'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={bulkNextInspectionDate}
+                          onSelect={setBulkNextInspectionDate}
+                          initialFocus
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button disabled={!bulkNextInspectionDate || isBulkUpdating}>
+                          {isBulkUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Atualizar
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirmar Atualização em Lote</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Você tem certeza que deseja definir a próxima data de vistoria como{' '}
+                            <strong>{bulkNextInspectionDate ? format(bulkNextInspectionDate, 'dd/MM/yyyy') : ''}</strong> para os{' '}
+                            <strong>{selectedEquipments.length}</strong> equipamentos selecionados?
+                            <br />A data da última vistoria será definida como hoje.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleBulkUpdate}>
+                            Sim, atualizar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
                 <Button onClick={handleExportToWord} disabled={filteredEquipments.length === 0}>
-                    <FileDown className="mr-2" />
+                    <FileDown className="mr-2 h-4 w-4" />
                     Exportar
                 </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
+                  {showBulkActions && (
+                    <TableHead className="w-[50px]">
+                      <Checkbox
+                        checked={filteredEquipments.length > 0 && selectedEquipments.length === filteredEquipments.length}
+                        onCheckedChange={(checked) => {
+                          setSelectedEquipments(checked ? filteredEquipments.map((eq) => eq.id) : []);
+                        }}
+                        aria-label="Selecionar todos"
+                        disabled={filteredEquipments.length === 0}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Tipo</TableHead>
                   <TableHead>Marca</TableHead>
                   <TableHead>Local</TableHead>
@@ -454,7 +588,24 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                       : getInspectionStatus(eq.nextInspectionDate?.toDate(), clientToday);
                     
                     return (
-                      <TableRow key={eq.id} className={cn(eq.status === 'descartado' && 'bg-destructive/10 hover:bg-destructive/20')}>
+                      <TableRow 
+                        key={eq.id}
+                        data-state={selectedEquipments.includes(eq.id) ? 'selected' : undefined}
+                        className={cn(eq.status === 'descartado' && 'bg-destructive/10 hover:bg-destructive/20')}
+                      >
+                         {showBulkActions && (
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedEquipments.includes(eq.id)}
+                              onCheckedChange={(checked) => {
+                                setSelectedEquipments((prev) =>
+                                  checked ? [...prev, eq.id] : prev.filter((id) => id !== eq.id)
+                                );
+                              }}
+                              aria-label={`Selecionar ${eq.equipmentType}`}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell>{eq.equipmentType}</TableCell>
                         <TableCell>{eq.brand}</TableCell>
                         <TableCell>{eq.storageLocation}</TableCell>
@@ -505,7 +656,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={showBulkActions ? 7 : 6} className="h-24 text-center">
                       {equipments.length === 0 ? "Nenhum equipamento registrado ainda." : "Nenhum equipamento encontrado com os filtros selecionados."}
                     </TableCell>
                   </TableRow>
