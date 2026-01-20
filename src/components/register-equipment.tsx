@@ -188,7 +188,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="equipment-type">Tipo de Equipamento</Label>
-              <Select key={equipmentToEdit?.id || 'new-type'} name="equipmentType" required onValueChange={setEquipmentType} value={equipmentType} disabled={isLoadingTypes}>
+              <Select key={equipmentToEdit?.id || 'new-type'} name="equipmentType" required onValueChange={setEquipmentType} defaultValue={equipmentType} disabled={isLoadingTypes}>
                 <SelectTrigger id="equipment-type">
                   <SelectValue placeholder={isLoadingTypes ? "Carregando..." : "Selecione o tipo"} />
                 </SelectTrigger>
@@ -199,7 +199,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
             </div>
             <div className="space-y-2">
               <Label htmlFor="brand">Marca</Label>
-              <Select key={equipmentToEdit?.id || 'new-brand'} name="brand" required onValueChange={setBrand} value={brand} disabled={isLoadingBrands}>
+              <Select key={equipmentToEdit?.id || 'new-brand'} name="brand" required onValueChange={setBrand} defaultValue={brand} disabled={isLoadingBrands}>
                 <SelectTrigger id="brand">
                   <SelectValue placeholder={isLoadingBrands ? "Carregando..." : "Selecione a marca"} />
                 </SelectTrigger>
@@ -312,5 +312,3 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
     </Card>
   );
 }
-
-    
