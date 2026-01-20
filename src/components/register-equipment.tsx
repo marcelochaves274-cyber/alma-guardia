@@ -33,6 +33,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { HelpTooltip } from './ui/help-tooltip';
+import { Textarea } from './ui/textarea';
 
 interface RegisterEquipmentProps {
   equipmentToEdit: any | null;
@@ -53,6 +54,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
   const [status, setStatus] = useState('operacional');
   const [lastInspectionDate, setLastInspectionDate] = useState<Date | undefined>();
   const [nextInspectionDate, setNextInspectionDate] = useState<Date | undefined>();
+  const [discardReason, setDiscardReason] = useState('');
 
   // UI/Data loading states
   const [isMfgCalendarOpen, setIsMfgCalendarOpen] = useState(false);
@@ -84,6 +86,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
     setStatus('operacional');
     setLastInspectionDate(undefined);
     setNextInspectionDate(undefined);
+    setDiscardReason('');
   }, []);
 
   useEffect(() => {
@@ -98,6 +101,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
       setStatus(equipmentToEdit.status || 'operacional');
       setLastInspectionDate(equipmentToEdit.lastInspectionDate instanceof Timestamp ? equipmentToEdit.lastInspectionDate.toDate() : undefined);
       setNextInspectionDate(equipmentToEdit.nextInspectionDate instanceof Timestamp ? equipmentToEdit.nextInspectionDate.toDate() : undefined);
+      setDiscardReason(equipmentToEdit.discardReason || '');
     } else {
       resetForm();
     }
@@ -151,8 +155,9 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
       storageLocation,
       storageDetails,
       status,
-      lastInspectionDate: lastInspectionDate ? Timestamp.fromDate(lastInspectionDate) : null,
-      nextInspectionDate: nextInspectionDate ? Timestamp.fromDate(nextInspectionDate) : null,
+      lastInspectionDate: status === 'descartado' ? null : (lastInspectionDate ? Timestamp.fromDate(lastInspectionDate) : null),
+      nextInspectionDate: status === 'descartado' ? null : (nextInspectionDate ? Timestamp.fromDate(nextInspectionDate) : null),
+      discardReason: status === 'descartado' ? discardReason : null,
     };
 
     try {
@@ -188,7 +193,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="equipment-type">Tipo de Equipamento</Label>
-              <Select key={equipmentToEdit?.id || 'new-type'} name="equipmentType" required onValueChange={setEquipmentType} defaultValue={equipmentType} disabled={isLoadingTypes}>
+              <Select key={`type-${equipmentToEdit?.id || 'new'}`} name="equipmentType" required onValueChange={setEquipmentType} defaultValue={equipmentType} disabled={isLoadingTypes}>
                 <SelectTrigger id="equipment-type">
                   <SelectValue placeholder={isLoadingTypes ? "Carregando..." : "Selecione o tipo"} />
                 </SelectTrigger>
@@ -199,7 +204,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
             </div>
             <div className="space-y-2">
               <Label htmlFor="brand">Marca</Label>
-              <Select key={equipmentToEdit?.id || 'new-brand'} name="brand" required onValueChange={setBrand} defaultValue={brand} disabled={isLoadingBrands}>
+              <Select key={`brand-${equipmentToEdit?.id || 'new'}`} name="brand" required onValueChange={setBrand} defaultValue={brand} disabled={isLoadingBrands}>
                 <SelectTrigger id="brand">
                   <SelectValue placeholder={isLoadingBrands ? "Carregando..." : "Selecione a marca"} />
                 </SelectTrigger>
@@ -238,7 +243,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
             </div>
             <div className="space-y-2">
               <Label htmlFor="storage-location">Local Armazenado</Label>
-              <Select key={equipmentToEdit?.id || 'new-location'} name="storageLocation" onValueChange={setStorageLocation} value={storageLocation} disabled={isLoadingLocations}>
+              <Select key={`location-${equipmentToEdit?.id || 'new'}`} name="storageLocation" onValueChange={setStorageLocation} defaultValue={storageLocation} disabled={isLoadingLocations}>
                 <SelectTrigger id="storage-location">
                   <SelectValue placeholder={isLoadingLocations ? "Carregando..." : "Selecione o local"} />
                 </SelectTrigger>
@@ -256,7 +261,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Status do Equipamento</Label>
-              <Select key={equipmentToEdit?.id || 'new-status'} name="status" required onValueChange={setStatus} value={status}>
+              <Select key={`status-${equipmentToEdit?.id || 'new'}`} name="status" required onValueChange={setStatus} defaultValue={status}>
                 <SelectTrigger id="status">
                   <SelectValue />
                 </SelectTrigger>
@@ -267,34 +272,50 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="last-inspection-date">Data última inspeção</Label>
-              <Popover open={isLastInspCalendarOpen} onOpenChange={setIsLastInspCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !lastInspectionDate && 'text-muted-foreground')}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {lastInspectionDate ? format(lastInspectionDate, 'dd/MM/yyyy') : <span>Selecione a data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={lastInspectionDate} onSelect={(d) => { setLastInspectionDate(d); setIsLastInspCalendarOpen(false); }} locale={ptBR} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="next-inspection-date">Data próxima inspeção</Label>
-              <Popover open={isNextInspCalendarOpen} onOpenChange={setIsNextInspCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !nextInspectionDate && 'text-muted-foreground')}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {nextInspectionDate ? format(nextInspectionDate, 'dd/MM/yyyy') : <span>Selecione a data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={nextInspectionDate} onSelect={(d) => { setNextInspectionDate(d); setIsNextInspCalendarOpen(false); }} locale={ptBR} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
+
+            {status !== 'descartado' ? (
+                <>
+                    <div className="space-y-2">
+                        <Label htmlFor="last-inspection-date">Data última inspeção</Label>
+                        <Popover open={isLastInspCalendarOpen} onOpenChange={setIsLastInspCalendarOpen}>
+                            <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !lastInspectionDate && 'text-muted-foreground')}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {lastInspectionDate ? format(lastInspectionDate, 'dd/MM/yyyy') : <span>Selecione a data</span>}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                            <Calendar mode="single" selected={lastInspectionDate} onSelect={(d) => { setLastInspectionDate(d); setIsLastInspCalendarOpen(false); }} locale={ptBR} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="next-inspection-date">Data próxima inspeção</Label>
+                        <Popover open={isNextInspCalendarOpen} onOpenChange={setIsNextInspCalendarOpen}>
+                            <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !nextInspectionDate && 'text-muted-foreground')}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {nextInspectionDate ? format(nextInspectionDate, 'dd/MM/yyyy') : <span>Selecione a data</span>}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                            <Calendar mode="single" selected={nextInspectionDate} onSelect={(d) => { setNextInspectionDate(d); setIsNextInspCalendarOpen(false); }} locale={ptBR} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                </>
+            ) : (
+                <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="discard-reason">Motivo do Descarte</Label>
+                    <Textarea
+                        id="discard-reason"
+                        value={discardReason}
+                        onChange={(e) => setDiscardReason(e.target.value)}
+                        placeholder="Explique por que o equipamento foi descartado (ex: danificado, fim da vida útil)."
+                        required={status === 'descartado'}
+                    />
+                </div>
+            )}
           </div>
           <div className="flex justify-end gap-4 pt-4">
             {isEditing && (

@@ -421,6 +421,10 @@
           ],
           "description": "The current status of the equipment."
         },
+        "discardReason": {
+          "type": "string",
+          "description": "Reason why the equipment was discarded."
+        },
         "lastInspectionDate": {
           "type": "string",
           "format": "date-time",

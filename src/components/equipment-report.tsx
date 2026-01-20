@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -69,6 +70,7 @@ interface Equipment {
   storageDetails: string;
   lastInspectionDate?: Timestamp;
   nextInspectionDate?: Timestamp;
+  discardReason?: string;
 }
 
 interface EquipmentReportProps {
@@ -711,14 +713,24 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                                   </Badge>
                               </div>
                           </div>
-                          <div>
-                              <Label className="font-semibold text-muted-foreground">Última Inspeção</Label>
-                              <p>{selectedEquipment.lastInspectionDate ? format(selectedEquipment.lastInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p>
-                          </div>
-                           <div>
-                              <Label className="font-semibold text-muted-foreground">Próxima Inspeção</Label>
-                              <p>{selectedEquipment.nextInspectionDate ? format(selectedEquipment.nextInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p>
-                          </div>
+                          {selectedEquipment.status === 'descartado' && selectedEquipment.discardReason && (
+                            <div className="md:col-span-2">
+                                <Label className="font-semibold text-muted-foreground">Motivo do Descarte</Label>
+                                <p>{selectedEquipment.discardReason}</p>
+                            </div>
+                          )}
+                          {selectedEquipment.status !== 'descartado' && (
+                            <>
+                                <div>
+                                    <Label className="font-semibold text-muted-foreground">Última Inspeção</Label>
+                                    <p>{selectedEquipment.lastInspectionDate ? format(selectedEquipment.lastInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p>
+                                </div>
+                                <div>
+                                    <Label className="font-semibold text-muted-foreground">Próxima Inspeção</Label>
+                                    <p>{selectedEquipment.nextInspectionDate ? format(selectedEquipment.nextInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p>
+                                </div>
+                            </>
+                          )}
                       </div>
                   </div>
               </ScrollArea>
