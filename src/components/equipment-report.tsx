@@ -413,7 +413,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     ))
   );
 
-  const showBulkActions = filterInspection.includes('due_soon');
+  const showBulkActions = filterInspection.includes('due_soon') || filterInspection.includes('overdue');
 
   return (
     <Dialog onOpenChange={(isOpen) => !isOpen && setSelectedEquipment(null)}>
