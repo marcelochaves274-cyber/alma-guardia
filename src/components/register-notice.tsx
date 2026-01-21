@@ -211,72 +211,70 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
 
     setIsSubmitting(true);
     
-    let finalImageUrl: string | null = isEditing ? noticeToEdit.imageUrl : null;
-
     try {
-      if (imageFile) {
+      let finalImageUrl: string | null = isEditing ? noticeToEdit.imageUrl : null;
+
+      if (imageFile) { // If a new file is selected
+        // Delete old image if editing and it exists
         if (isEditing && noticeToEdit.imageUrl) {
           const oldImageRef = storageRef(getStorage(firebaseApp), noticeToEdit.imageUrl);
           await deleteObject(oldImageRef).catch(err => console.warn("Could not delete old image", err));
         }
+        // Upload new image
         const filePath = `notices/${user.uid}/${Date.now()}_${imageFile.name}`;
         const newImageRef = storageRef(getStorage(firebaseApp), filePath);
         await uploadBytes(newImageRef, imageFile);
         finalImageUrl = await getDownloadURL(newImageRef);
       } else if (!imagePreview && isEditing && noticeToEdit.imageUrl) {
+        // If preview is cleared, it means user wants to remove the image
         const oldImageRef = storageRef(getStorage(firebaseApp), noticeToEdit.imageUrl);
         await deleteObject(oldImageRef).catch(err => console.warn("Could not delete old image", err));
         finalImageUrl = null;
       }
-    } catch (storageError) {
-      console.error("Error with image storage:", storageError);
-      toast({ variant: "destructive", title: "Erro no Upload", description: "Não foi possível gerenciar a imagem." });
-      setIsSubmitting(false);
-      return;
-    }
-    
-    const [hours, minutes] = noticeTime.split(':').map(Number);
-    const combinedDate = setMinutes(setHours(noticeDate, hours), minutes);
-    
-    const noticeData = {
-        userId: user.uid,
-        collaboratorName,
-        noticeDate: Timestamp.fromDate(combinedDate),
-        weather,
-        description,
-        location,
-        mapMarker: marker,
-        imageUrl: finalImageUrl,
-    };
 
-    if (isEditing && noticeToEdit) {
-      const docRef = doc(firestore, 'sgs_genius', user.uid, 'notices', noticeToEdit.id);
-      updateDoc(docRef, { ...noticeData, status: noticeToEdit.status, updatedAt: serverTimestamp() })
-        .then(() => {
-          toast({ title: 'Sucesso!', description: 'Aviso atualizado com sucesso.' });
-          setPage('pending-notices');
-        })
-        .catch(error => {
-          const permissionError = new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: noticeData });
-          errorEmitter.emit('permission-error', permissionError);
-        })
-        .finally(() => {
-          setIsSubmitting(false);
-        });
-    } else {
-      const noticesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'notices');
-      addDoc(noticesCollectionRef, { ...noticeData, status: 'pendente', createdAt: serverTimestamp() })
-        .then(() => {
-            toast({ title: 'Sucesso!', description: 'Aviso registrado com sucesso.' });
-            resetForm();
-        })
-        .catch(error => {
-            const permissionError = new FirestorePermissionError({ path: noticesCollectionRef.path, operation: 'create', requestResourceData: noticeData });
+      const [hours, minutes] = noticeTime.split(':').map(Number);
+      const combinedDate = setMinutes(setHours(noticeDate, hours), minutes);
+      
+      const noticeData = {
+          userId: user.uid,
+          collaboratorName,
+          noticeDate: Timestamp.fromDate(combinedDate),
+          weather,
+          description,
+          location,
+          mapMarker: marker,
+          imageUrl: finalImageUrl,
+      };
+
+      if (isEditing && noticeToEdit) {
+        const docRef = doc(firestore, 'sgs_genius', user.uid, 'notices', noticeToEdit.id);
+        await updateDoc(docRef, { ...noticeData, status: noticeToEdit.status, updatedAt: serverTimestamp() });
+        toast({ title: 'Sucesso!', description: 'Aviso atualizado com sucesso.' });
+        setPage('pending-notices');
+      } else {
+        const noticesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'notices');
+        await addDoc(noticesCollectionRef, { ...noticeData, status: 'pendente', createdAt: serverTimestamp() });
+        toast({ title: 'Sucesso!', description: 'Aviso registrado com sucesso.' });
+        resetForm();
+      }
+
+    } catch (error: any) {
+        console.error("Error saving notice:", error);
+        if (error.code && error.code.startsWith('storage/')) {
+            toast({ variant: "destructive", title: "Erro no Upload", description: "Não foi possível enviar a imagem. Verifique sua conexão e as permissões de armazenamento." });
+        } else if (error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+                path: `sgs_genius/${user.uid}/notices`,
+                operation: isEditing ? 'update' : 'create',
+                // noticeData is not fully available here, but we can send what we have
+                requestResourceData: { collaboratorName, description, location }
+            });
             errorEmitter.emit('permission-error', permissionError);
-        })
-        .finally(() => {
-            setIsSubmitting(false);
-        });
+        } else {
+            toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar o aviso.' });
+        }
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
@@ -432,7 +430,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
                     )}
                   </>
                 ) : (
-                  <p className="text-muted-foreground text-center p-4"> Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload. </p>
+                  <p className="text-muted-foreground text-center p-4"> Nenhum mapa foi carregado. <br />Vá para "Configurações" > "Gerenciar Mapa" para fazer o upload. </p>
                 )}
               </div>
            </div>
