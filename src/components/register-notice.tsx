@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, type MouseEvent, ChangeEvent } from 'react';
@@ -107,7 +106,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setLocations(data.locations || []);
+          setLocations((data.locations || []).sort((a: string, b: string) => a.localeCompare(b)));
         }
       } catch (error) {
         console.error(`Error fetching locations:`, error);
@@ -156,11 +155,12 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+    // Limit set to 750KB to avoid exceeding Firestore's 1MB document limit after Base64 encoding.
+    if (file.size > 750 * 1024) { // 750KB limit
         toast({
             variant: "destructive",
             title: "Arquivo muito grande",
-            description: "Por favor, escolha uma imagem com menos de 2MB.",
+            description: "Por favor, escolha uma imagem com menos de 750KB para garantir o salvamento.",
         });
         return;
     }
