@@ -34,7 +34,7 @@ import { ptBR } from 'date-fns/locale';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { Separator } from './ui/separator';
 import { HelpTooltip } from './ui/help-tooltip';
 
@@ -385,7 +385,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
               </div>
                {imagePreview && (
                     <div className="relative w-48 h-48 border rounded-md overflow-hidden">
-                        <Image src={imagePreview} alt="Pré-visualização" layout="fill" objectFit="cover" />
+                        <NextImage src={imagePreview} alt="Pré-visualização" layout="fill" objectFit="cover" />
                          <Button
                             type="button"
                             variant="destructive"
@@ -427,7 +427,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
                 {isLoadingMap ? ( <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 ) : mapUrl ? (
                   <>
-                    <Image src={mapUrl} alt="Mapa de avisos" fill className="object-cover" />
+                    <NextImage src={mapUrl} alt="Mapa de avisos" fill className="object-cover" />
                     {marker && (
                       <div className="absolute pointer-events-none" style={{ left: `${marker.x}%`, top: `${marker.y}%`, transform: 'translate(-50%, -100%)' }} aria-label="Marcador de aviso" >
                          <MapPin className="h-5 w-5 fill-blue-500 stroke-white stroke-2 drop-shadow-lg" />
@@ -451,3 +451,5 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
     </Card>
   );
 }
+
+    
