@@ -37,7 +37,7 @@ interface Notice {
   location: string;
   mapMarker?: { x: number; y: number };
   status: 'pendente' | 'finalizado';
-  imageDataUrl?: string;
+  imageUrl?: string;
 }
 
 interface PendingNoticesProps {
@@ -166,7 +166,7 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
                   <p>{notice.description}</p>
                 </div>
                 <div className="flex flex-col gap-2 w-full md:w-48">
-                  {notice.imageDataUrl && (
+                  {notice.imageUrl && (
                     <DialogTrigger asChild>
                        <Button variant="outline"><ImageIcon className="mr-2" />Ver Imagem</Button>
                     </DialogTrigger>
@@ -180,7 +180,7 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
                   </Button>
                 </div>
               </CardContent>
-               {notice.imageDataUrl && (
+               {notice.imageUrl && (
                     <DialogContent className="max-w-3xl">
                         <DialogHeader>
                             <DialogTitle>Imagem do Aviso</DialogTitle>
@@ -190,7 +190,7 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
                         </DialogHeader>
                         <div className="relative aspect-video w-full mt-4">
                             <Image
-                                src={notice.imageDataUrl}
+                                src={notice.imageUrl}
                                 alt="Imagem do aviso"
                                 layout="fill"
                                 objectFit="contain"

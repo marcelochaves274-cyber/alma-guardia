@@ -30,8 +30,9 @@ import { cn } from '@/lib/utils';
 import { Calendar as CalendarIcon, Loader2, MapPin, X, Upload } from 'lucide-react';
 import { format, setHours, setMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirebaseApp, useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
@@ -56,6 +57,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
   const [location, setLocation] = useState('');
   const [marker, setMarker] = useState<Marker>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
 
   // UI/Data loading states
@@ -69,6 +71,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   
+  const firebaseApp = useFirebaseApp();
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -86,7 +89,8 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
       setDescription(noticeToEdit.description || '');
       setLocation(noticeToEdit.location || '');
       setMarker(noticeToEdit.mapMarker || null);
-      setImagePreview(noticeToEdit.imageDataUrl || null);
+      setImagePreview(noticeToEdit.imageUrl || null);
+      setImageFile(null); // Reset file input on edit load
     }
   }, [isEditing, noticeToEdit]);
 
@@ -143,6 +147,16 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
     fetchMap();
   }, [getSettingsDocRef]);
 
+  // Clean up object URL to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+
   const handleMapClick = (e: MouseEvent<HTMLDivElement>) => {
     if (!mapContainerRef.current) return;
     const rect = mapContainerRef.current.getBoundingClientRect();
@@ -153,23 +167,13 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Limit set to 750KB to avoid exceeding Firestore's 1MB document limit after Base64 encoding.
-    if (file.size > 750 * 1024) { // 750KB limit
-        toast({
-            variant: "destructive",
-            title: "Arquivo muito grande",
-            description: "Por favor, escolha uma imagem com menos de 750KB para garantir o salvamento.",
-        });
-        return;
+    if (!file) {
+      setImageFile(null);
+      setImagePreview(null);
+      return;
     }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
   };
   
   const resetForm = () => {
@@ -181,12 +185,13 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
     setLocation('');
     setMarker(null);
     setImagePreview(null);
+    setImageFile(null);
     if(imageInputRef.current) imageInputRef.current.value = "";
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!firestore || !user) {
+    if (!firestore || !user || !firebaseApp) {
         toast({ variant: 'destructive', title: 'Erro', description: 'Você não está autenticado.' });
         return;
     }
@@ -196,6 +201,28 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
     }
 
     setIsSubmitting(true);
+    
+    let finalImageUrl: string | null = isEditing ? noticeToEdit.imageUrl : null;
+    
+    // If a new image file is selected, upload it
+    if (imageFile) {
+        const storage = getStorage(firebaseApp);
+        const filePath = `notices/${user.uid}/${Date.now()}_${imageFile.name}`;
+        const imageStorageRef = storageRef(storage, filePath);
+
+        try {
+            await uploadBytes(imageStorageRef, imageFile);
+            finalImageUrl = await getDownloadURL(imageStorageRef);
+        } catch (storageError) {
+            console.error("Error uploading image:", storageError);
+            toast({ variant: "destructive", title: "Erro no Upload", description: "Não foi possível enviar a imagem." });
+            setIsSubmitting(false);
+            return;
+        }
+    } else if (imagePreview === null && isEditing) {
+        // If there was an image and it was removed (preview is null)
+        finalImageUrl = null;
+    }
 
     const [hours, minutes] = noticeTime.split(':').map(Number);
     const combinedDate = setMinutes(setHours(noticeDate, hours), minutes);
@@ -209,7 +236,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
         location,
         mapMarker: marker,
         status: 'pendente',
-        imageDataUrl: imagePreview,
+        imageUrl: finalImageUrl,
     };
 
     try {
@@ -342,6 +369,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
                             className="absolute top-1 right-1 h-7 w-7"
                             onClick={() => {
                                 setImagePreview(null);
+                                setImageFile(null);
                                 if(imageInputRef.current) imageInputRef.current.value = "";
                             }}
                         >

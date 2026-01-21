@@ -1,15 +1,14 @@
-
 {
   "entities": {
     "SgsGenius": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "SgsGenius",
+      "title": "SgsApp",
       "type": "object",
-      "description": "Represents the main SGS Genius application data.",
+      "description": "Represents the main SGS APP application data.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the SGS Genius application instance."
+          "description": "Unique identifier for the SGS application instance, typically the user's ID."
         },
         "name": {
           "type": "string",
@@ -37,15 +36,15 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ChatMessage",
       "type": "object",
-      "description": "Represents a single chat message within the SGS Genius application. This is also used for Occurrences.",
+      "description": "Represents a single chat message within the SGS APP application. This is also used for Occurrences.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the chat message."
         },
-        "sgsGeniusId": {
+        "userId": {
           "type": "string",
-          "description": "Reference to the SGS Genius application this message belongs to. (Relationship: SgsGenius 1:N ChatMessage)"
+          "description": "Reference to the user this message belongs to."
         },
         "sender": {
           "type": "string",
@@ -63,7 +62,7 @@
       },
       "required": [
         "id",
-        "sgsGeniusId",
+        "userId",
         "sender",
         "message",
         "timestamp"
@@ -73,15 +72,15 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Parameter",
       "type": "object",
-      "description": "Represents a modifiable parameter within the SGS Genius application.",
+      "description": "Represents a modifiable parameter within the SGS APP application.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the parameter."
         },
-        "sgsGeniusId": {
+        "userId": {
           "type": "string",
-          "description": "Reference to the SGS Genius application this parameter belongs to. (Relationship: SgsGenius 1:N Parameter)"
+          "description": "Reference to the user this parameter belongs to."
         },
         "name": {
           "type": "string",
@@ -102,7 +101,7 @@
       },
       "required": [
         "id",
-        "sgsGeniusId",
+        "userId",
         "name",
         "value",
         "dataType",
@@ -422,6 +421,10 @@
           ],
           "description": "The current status of the equipment."
         },
+        "discardReason": {
+          "type": "string",
+          "description": "Reason why the equipment was discarded."
+        },
         "lastInspectionDate": {
           "type": "string",
           "format": "date-time",
@@ -554,6 +557,11 @@
             "finalizado"
           ]
         },
+        "imageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "A URL to the uploaded image for the notice, hosted on Firebase Storage."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -603,204 +611,65 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/sgs_genius/{sgsGeniusId}",
-        "definition": {
-          "entityName": "SgsGenius",
-          "schema": {
-            "$ref": "#/backend/entities/SgsGenius"
-          },
-          "description": "Stores the main SGS Genius application data. Each document represents a unique SGS application instance.",
-          "params": [
-            {
-              "name": "sgsGeniusId",
-              "description": "Unique identifier for the SGS Genius application instance."
-            }
-          ]
-        }
+    "/sgs_genius/{userId}": {
+      "schema": {
+        "$ref": "#/entities/SgsGenius"
       },
-      {
-        "path": "/sgs_genius/{sgsGeniusId}/chat_messages/{chatMessageId}",
-        "definition": {
-          "entityName": "ChatMessage",
-          "schema": {
-            "$ref": "#/backend/entities/ChatMessage"
-          },
-          "description": "Stores chat messages and occurrences associated with a specific SGS Genius application. Includes the sgsGeniusId for relationship.",
-          "params": [
-            {
-              "name": "sgsGeniusId",
-              "description": "The ID of the SGS Genius application to which this message belongs."
-            },
-            {
-              "name": "chatMessageId",
-              "description": "Unique identifier for the chat message/occurrence."
-            }
-          ]
-        }
+      "description": "Stores the main SGS APP application data for a specific user."
+    },
+    "/sgs_genius/{userId}/chat_messages/{chatMessageId}": {
+      "schema": {
+        "$ref": "#/entities/ChatMessage"
       },
-      {
-        "path": "/sgs_genius/{sgsGeniusId}/parameters/{parameterId}",
-        "definition": {
-          "entityName": "Parameter",
-          "schema": {
-            "$ref": "#/backend/entities/Parameter"
-          },
-          "description": "Stores modifiable parameters associated with a specific SGS Genius application. Includes the sgsGeniusId for relationship.",
-          "params": [
-            {
-              "name": "sgsGeniusId",
-              "description": "The ID of the SGS Genius application to which this parameter belongs."
-            },
-            {
-              "name": "parameterId",
-              "description": "Unique identifier for the parameter."
-            }
-          ]
-        }
+      "description": "Stores chat messages and occurrences associated with a specific user."
+    },
+    "/sgs_genius/{userId}/parameters/{parameterId}": {
+      "schema": {
+        "$ref": "#/entities/Parameter"
       },
-      {
-        "path": "/sgs_genius/{sgsGeniusId}/risk_treatments/{riskTreatmentId}",
-        "definition": {
-          "entityName": "RiskTreatment",
-          "schema": {
-            "$ref": "#/backend/entities/RiskTreatment"
-          },
-          "description": "Stores risk treatment records for a user.",
-          "params": [
-            {
-              "name": "sgsGeniusId",
-              "description": "Corresponds to the user's UID."
-            },
-            {
-              "name": "riskTreatmentId",
-              "description": "Unique identifier for the risk treatment record."
-            }
-          ]
-        }
+      "description": "Stores modifiable parameters associated with a specific user."
+    },
+    "/sgs_genius/{userId}/risk_treatments/{riskTreatmentId}": {
+      "schema": {
+        "$ref": "#/entities/RiskTreatment"
       },
-      {
-        "path": "/sgs_genius/{userId}/fauna_flora_geo/{recordId}",
-        "definition": {
-          "entityName": "FaunaFloraGeoRecord",
-          "schema": {
-            "$ref": "#/backend/entities/FaunaFloraGeoRecord"
-          },
-          "description": "Stores Fauna, Flora, and Geo records for a user.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Corresponds to the user's UID."
-            },
-            {
-              "name": "recordId",
-              "description": "Unique identifier for the record."
-            }
-          ]
-        }
+      "description": "Stores risk treatment records for a user."
+    },
+    "/sgs_genius/{userId}/fauna_flora_geo/{recordId}": {
+      "schema": {
+        "$ref": "#/entities/FaunaFloraGeoRecord"
       },
-      {
-        "path": "/sgs_genius/{userId}/risk_assessments/{assessmentId}",
-        "definition": {
-          "entityName": "RiskAssessment",
-          "schema": {
-            "$ref": "#/backend/entities/RiskAssessment"
-          },
-          "description": "Stores risk assessment records for a user.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Corresponds to the user's UID."
-            },
-            {
-              "name": "assessmentId",
-              "description": "Unique identifier for the risk assessment record."
-            }
-          ]
-        }
+      "description": "Stores Fauna, Flora, and Geo records for a user."
+    },
+    "/sgs_genius/{userId}/risk_assessments/{assessmentId}": {
+      "schema": {
+        "$ref": "#/entities/RiskAssessment"
       },
-      {
-        "path": "/sgs_genius/{userId}/equipments/{equipmentId}",
-        "definition": {
-          "entityName": "Equipment",
-          "schema": {
-            "$ref": "#/backend/entities/Equipment"
-          },
-          "description": "Stores equipment records for a user.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Corresponds to the user's UID."
-            },
-            {
-              "name": "equipmentId",
-              "description": "Unique identifier for the equipment record."
-            }
-          ]
-        }
+      "description": "Stores risk assessment records for a user."
+    },
+    "/sgs_genius/{userId}/equipments/{equipmentId}": {
+      "schema": {
+        "$ref": "#/entities/Equipment"
       },
-      {
-        "path": "/sgs_genius/{userId}/activities/{activityId}",
-        "definition": {
-          "entityName": "Activity",
-          "schema": {
-            "$ref": "#/backend/entities/Activity"
-          },
-          "description": "Stores registered activity sessions for a user.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Corresponds to the user's UID."
-            },
-            {
-              "name": "activityId",
-              "description": "Unique identifier for the activity record."
-            }
-          ]
-        }
+      "description": "Stores equipment records for a user."
+    },
+    "/sgs_genius/{userId}/activities/{activityId}": {
+      "schema": {
+        "$ref": "#/entities/Activity"
       },
-       {
-        "path": "/sgs_genius/{userId}/notices/{noticeId}",
-        "definition": {
-          "entityName": "Notice",
-          "schema": {
-            "$ref": "#/backend/entities/Notice"
-          },
-          "description": "Stores notice records for a user.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Corresponds to the user's UID."
-            },
-            {
-              "name": "noticeId",
-              "description": "Unique identifier for the notice record."
-            }
-          ]
-        }
+      "description": "Stores registered activity sessions for a user."
+    },
+    "/sgs_genius/{userId}/notices/{noticeId}": {
+      "schema": {
+        "$ref": "#/entities/Notice"
       },
-       {
-        "path": "/sgs_genius/{userId}/settings/{settingId}",
-        "definition": {
-          "entityName": "ProfilePasses",
-          "schema": {
-            "$ref": "#/backend/entities/ProfilePasses"
-          },
-          "description": "Stores profile passcodes for a user.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Corresponds to the user's UID."
-            },
-            {
-              "name": "settingId",
-              "description": "The name of the setting, e.g., 'profiles'."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore structure is designed to support the SGS Genius application, focusing on chat interactions with an AI and parameter adjustments. It provides a secure and scalable data model, suitable for the app's collaborative and iterative development process. The structure prioritizes Authorization Independence through denormalization, simplifies security rules via Structural Segregation, and standardizes access patterns using Access Modeling. This design supports atomic operations and efficient `list` operations while upholding data integrity.\n\nAuthorization Independence:\nAuthorization independence is achieved by avoiding hierarchical authorization dependencies. There are no `get()` calls in the security rules. Every collection has all of the authorization information needed in the document itself.\n\nQAPs (Rules are not Filters):\nThe structure is designed to support secure `list` operations. This is accomplished by segregating data based on access requirements and using membership maps to define access rights. Segregation means that rules do not have to filter based on document content and membership maps mean that list access can be controlled."
+      "description": "Stores notice records for a user."
+    },
+    "/sgs_genius/{userId}/settings/{settingId}": {
+      "schema": {
+        "$ref": "#/entities/ProfilePasses"
+      },
+      "description": "Stores profile passcodes and other settings for a user."
+    }
   }
 }
