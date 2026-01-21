@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef, type MouseEvent } from 'react';
+import { useState, useEffect, useCallback, useRef, type MouseEvent, ChangeEvent } from 'react';
 import {
   Card,
   CardContent,
@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Calendar as CalendarIcon, Loader2, MapPin, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, MapPin, X, Upload } from 'lucide-react';
 import { format, setHours, setMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useFirestore, useUser } from '@/firebase';
@@ -56,6 +56,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [marker, setMarker] = useState<Marker>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
 
   // UI/Data loading states
@@ -67,6 +68,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   
   const firestore = useFirestore();
   const { user } = useUser();
@@ -85,6 +87,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
       setDescription(noticeToEdit.description || '');
       setLocation(noticeToEdit.location || '');
       setMarker(noticeToEdit.mapMarker || null);
+      setImagePreview(noticeToEdit.imageDataUrl || null);
     }
   }, [isEditing, noticeToEdit]);
 
@@ -148,6 +151,26 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setMarker({ x, y });
   };
+
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({
+            variant: "destructive",
+            title: "Arquivo muito grande",
+            description: "Por favor, escolha uma imagem com menos de 2MB.",
+        });
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
   
   const resetForm = () => {
     setCollaboratorName('');
@@ -157,6 +180,8 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
     setDescription('');
     setLocation('');
     setMarker(null);
+    setImagePreview(null);
+    if(imageInputRef.current) imageInputRef.current.value = "";
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -184,6 +209,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
         location,
         mapMarker: marker,
         status: 'pendente',
+        imageDataUrl: imagePreview,
     };
 
     try {
@@ -287,6 +313,46 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
             </div>
 
           <Separator />
+          
+          <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Label>Anexar Imagem (Opcional)</Label>
+                <HelpTooltip content="Uma imagem vale mais que mil palavras. Anexe uma foto para ilustrar o que você observou." />
+              </div>
+              <div className="flex items-center gap-4">
+                <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Carregar Imagem
+                </Button>
+                 <Input
+                    ref={imageInputRef}
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                />
+              </div>
+               {imagePreview && (
+                    <div className="relative w-48 h-48 border rounded-md overflow-hidden">
+                        <Image src={imagePreview} alt="Pré-visualização" layout="fill" objectFit="cover" />
+                         <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1 right-1 h-7 w-7"
+                            onClick={() => {
+                                setImagePreview(null);
+                                if(imageInputRef.current) imageInputRef.current.value = "";
+                            }}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+          </div>
+
+          <Separator />
+
            <div className="space-y-4">
               <div className="flex justify-between items-start">
                   <div>

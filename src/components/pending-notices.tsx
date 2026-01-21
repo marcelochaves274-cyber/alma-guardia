@@ -15,8 +15,18 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, ShieldCheck, Sprout, Check } from 'lucide-react';
+import { Loader2, Send, ShieldCheck, Sprout, Check, Image as ImageIcon } from 'lucide-react';
 import { Badge } from './ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose
+} from "@/components/ui/dialog";
+import Image from 'next/image';
 
 interface Notice {
   id: string;
@@ -27,6 +37,7 @@ interface Notice {
   location: string;
   mapMarker?: { x: number; y: number };
   status: 'pendente' | 'finalizado';
+  imageDataUrl?: string;
 }
 
 interface PendingNoticesProps {
@@ -130,48 +141,78 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
   );
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Avisos Pendentes</CardTitle>
-          <CardDescription>Relatos enviados pela equipe de campo que precisam de sua atenção.</CardDescription>
-        </CardHeader>
-      </Card>
+    <Dialog>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Avisos Pendentes</CardTitle>
+            <CardDescription>Relatos enviados pela equipe de campo que precisam de sua atenção.</CardDescription>
+          </CardHeader>
+        </Card>
 
-      {isLoading ? renderSkeletons() : notices.length > 0 ? (
-        notices.map(notice => (
-          <Card key={notice.id} className="overflow-hidden">
-            <CardHeader className="bg-muted/50 p-4 border-b">
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                <span><strong>Data:</strong> {format(notice.noticeDate.toDate(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
-                <span><strong>Por:</strong> {notice.collaboratorName}</span>
-                <span><strong>Local:</strong> {notice.location}</span>
-                <span><strong>Clima:</strong> <Badge variant="outline">{notice.weather}</Badge></span>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 flex flex-col md:flex-row gap-4">
-              <div className="flex-1 p-3 rounded-md bg-muted min-h-[60px]">
-                <p>{notice.description}</p>
-              </div>
-              <div className="flex flex-col gap-2 w-full md:w-48">
-                <Button onClick={() => handleAction(notice, 'occurrence')}><Send className="mr-2" />Criar Ocorrência</Button>
-                <Button onClick={() => handleAction(notice, 'treatment')}><ShieldCheck className="mr-2" />Criar Trat. de Risco</Button>
-                <Button onClick={() => handleAction(notice, 'fauna')}><Sprout className="mr-2" />Criar Fau/Flo/Geo</Button>
-                <Button variant="secondary" onClick={() => handleMarkAsResolved(notice.id)} disabled={isUpdating === notice.id}>
-                  {isUpdating === notice.id ? <Loader2 className="mr-2 animate-spin" /> : <Check className="mr-2" />}
-                  Marcar como Resolvido
-                </Button>
-              </div>
+        {isLoading ? renderSkeletons() : notices.length > 0 ? (
+          notices.map(notice => (
+            <Card key={notice.id} className="overflow-hidden">
+              <CardHeader className="bg-muted/50 p-4 border-b">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                  <span><strong>Data:</strong> {format(notice.noticeDate.toDate(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                  <span><strong>Por:</strong> {notice.collaboratorName}</span>
+                  <span><strong>Local:</strong> {notice.location}</span>
+                  <span><strong>Clima:</strong> <Badge variant="outline">{notice.weather}</Badge></span>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 flex flex-col md:flex-row gap-4">
+                <div className="flex-1 p-3 rounded-md bg-muted min-h-[60px]">
+                  <p>{notice.description}</p>
+                </div>
+                <div className="flex flex-col gap-2 w-full md:w-48">
+                  {notice.imageDataUrl && (
+                    <DialogTrigger asChild>
+                       <Button variant="outline"><ImageIcon className="mr-2" />Ver Imagem</Button>
+                    </DialogTrigger>
+                  )}
+                  <Button onClick={() => handleAction(notice, 'occurrence')}><Send className="mr-2" />Criar Ocorrência</Button>
+                  <Button onClick={() => handleAction(notice, 'treatment')}><ShieldCheck className="mr-2" />Criar Trat. de Risco</Button>
+                  <Button onClick={() => handleAction(notice, 'fauna')}><Sprout className="mr-2" />Criar Fau/Flo/Geo</Button>
+                  <Button variant="secondary" onClick={() => handleMarkAsResolved(notice.id)} disabled={isUpdating === notice.id}>
+                    {isUpdating === notice.id ? <Loader2 className="mr-2 animate-spin" /> : <Check className="mr-2" />}
+                    Marcar como Resolvido
+                  </Button>
+                </div>
+              </CardContent>
+               {notice.imageDataUrl && (
+                    <DialogContent className="max-w-3xl">
+                        <DialogHeader>
+                            <DialogTitle>Imagem do Aviso</DialogTitle>
+                            <DialogDescription>
+                                Imagem anexada por {notice.collaboratorName} em {format(notice.noticeDate.toDate(), "dd/MM/yyyy", { locale: ptBR })}.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="relative aspect-video w-full mt-4">
+                            <Image
+                                src={notice.imageDataUrl}
+                                alt="Imagem do aviso"
+                                layout="fill"
+                                objectFit="contain"
+                            />
+                        </div>
+                        <DialogClose asChild>
+                           <Button type="button" variant="outline" className="mt-4">
+                            Fechar
+                           </Button>
+                        </DialogClose>
+                    </DialogContent>
+               )}
+            </Card>
+          ))
+        ) : (
+          <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">
+              Nenhum aviso pendente no momento.
             </CardContent>
           </Card>
-        ))
-      ) : (
-        <Card>
-          <CardContent className="p-6 text-center text-muted-foreground">
-            Nenhum aviso pendente no momento.
-          </CardContent>
-        </Card>
-      )}
-    </div>
+        )}
+      </div>
+    </Dialog>
   );
 }

@@ -557,6 +557,11 @@
             "finalizado"
           ]
         },
+        "imageDataUrl": {
+          "type": "string",
+          "format": "data-url",
+          "description": "A Base64 encoded data URI of the uploaded image for the notice."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
