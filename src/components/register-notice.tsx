@@ -172,11 +172,11 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
       setImagePreview(null);
       return;
     }
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
       toast({
         variant: 'destructive',
         title: 'Arquivo muito grande',
-        description: 'Por favor, escolha uma imagem menor que 2MB.',
+        description: 'Por favor, escolha uma imagem menor que 10MB.',
       });
       return;
     }
@@ -449,3 +449,5 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
     </Card>
   );
 }
+
+    
