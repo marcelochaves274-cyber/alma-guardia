@@ -110,7 +110,7 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setData(data[field] || []);
+          setData((data[field] || []).sort((a: string, b: string) => a.localeCompare(b)));
         }
       } catch (error) {
         console.error(`Error fetching ${entityName}:`, error);

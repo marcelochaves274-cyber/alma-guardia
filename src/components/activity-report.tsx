@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -136,7 +137,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
     getDoc(popDocRef).then(docSnap => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            setPopDocs((data.documents || []) as PopDocument[]);
+            setPopDocs(((data.documents || []) as PopDocument[]).sort((a, b) => a.name.localeCompare(b.name)));
         }
     }).catch(error => console.error("Error fetching POP docs: ", error));
 
@@ -144,7 +145,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
     getDoc(tcrDocRef).then(docSnap => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            setTcrDocs((data.documents || []) as TcrDocument[]);
+            setTcrDocs(((data.documents || []) as TcrDocument[]).sort((a, b) => a.name.localeCompare(b.name)));
         }
     }).catch(error => console.error("Error fetching TCR docs: ", error));
 

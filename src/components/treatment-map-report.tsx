@@ -143,7 +143,7 @@ export function TreatmentMapReport() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setData(data[field] || []);
+          setData((data[field] || []).sort((a: string, b: string) => a.localeCompare(b)));
         }
       } catch (error) {
         console.error(`Error fetching ${docName}:`, error);

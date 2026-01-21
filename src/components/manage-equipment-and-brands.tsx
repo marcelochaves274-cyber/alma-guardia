@@ -89,7 +89,7 @@ export function ManageEquipmentAndBrands() {
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
               const data = docSnap.data();
-              setState(s => ({ ...s, [itemType]: { ...s[itemType], items: data[fieldMap[itemType]] || [] } }));
+              setState(s => ({ ...s, [itemType]: { ...s[itemType], items: (data[fieldMap[itemType]] || []).sort() } }));
             }
           } catch (error: any) {
             if (error.code !== 'permission-denied') {
@@ -139,7 +139,7 @@ export function ManageEquipmentAndBrands() {
       return;
     }
 
-    const newItems = [...current.items, trimmedItem];
+    const newItems = [...current.items, trimmedItem].sort();
     const success = await saveItemsToFirestore(itemType, newItems);
     if (success) {
       setState(s => ({ ...s, [itemType]: { ...s[itemType], items: newItems, newItem: '' } }));
@@ -149,7 +149,7 @@ export function ManageEquipmentAndBrands() {
 
   const handleRemoveItem = async (itemType: ItemType, itemToRemove: string) => {
     const current = state[itemType];
-    const newItems = current.items.filter((item) => item !== itemToRemove);
+    const newItems = current.items.filter((item) => item !== itemToRemove).sort();
     const success = await saveItemsToFirestore(itemType, newItems);
     if (success) {
       setState(s => ({ ...s, [itemType]: { ...s[itemType], items: newItems } }));
@@ -177,7 +177,7 @@ export function ManageEquipmentAndBrands() {
         return;
     }
 
-    const newItems = current.items.map(i => (i === current.editingItem ? trimmedValue : i));
+    const newItems = current.items.map(i => (i === current.editingItem ? trimmedValue : i)).sort();
     const success = await saveItemsToFirestore(itemType, newItems);
     if(success) {
         setState(s => ({ ...s, [itemType]: { ...s[itemType], items: newItems, editingItem: null, editingValue: '' } }));

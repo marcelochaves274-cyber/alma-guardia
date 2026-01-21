@@ -126,7 +126,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setData(data.types || data.locations || []);
+          setData((data.types || data.locations || []).sort((a: string, b: string) => a.localeCompare(b)));
         }
       } catch (error) {
         console.error(`Error fetching ${entityName}:`, error);

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -84,7 +83,7 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
       try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setAllPops((docSnap.data().documents || []) as PopDocument[]);
+          setAllPops(((docSnap.data().documents || []) as PopDocument[]).sort((a, b) => a.name.localeCompare(b.name)));
         }
       } catch (error) {
         console.error("Error fetching POPs:", error);
@@ -102,7 +101,7 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
       try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setAllTcrs((docSnap.data().documents || []) as TcrDocument[]);
+          setAllTcrs(((docSnap.data().documents || []) as TcrDocument[]).sort((a, b) => a.name.localeCompare(b.name)));
         }
       } catch (error) {
         console.error("Error fetching TCRs:", error);
@@ -121,7 +120,7 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
       try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setLocations(docSnap.data().locations || []);
+          setLocations((docSnap.data().locations || []).sort());
         }
       } catch (error) {
         console.error("Error fetching locations:", error);

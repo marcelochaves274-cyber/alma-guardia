@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -105,7 +106,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setLocations(data['locations'] || []);
+          setLocations((data['locations'] || []).sort((a: string, b: string) => a.localeCompare(b)));
         }
       } catch (error) {
         console.error(`Error fetching locations:`, error);

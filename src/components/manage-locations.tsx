@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type FormEvent, useEffect, useCallback } from 'react';
@@ -65,10 +66,10 @@ export function ManageLocations() {
         if (isMounted) {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setLocations(data.locations || []);
+            setLocations((data.locations || []).sort());
           } else {
             const defaultLocations = ['Escritório', 'Fábrica - Linha 1', 'Depósito'];
-            setLocations(defaultLocations);
+            setLocations(defaultLocations.sort());
           }
         }
       } catch (error: any) {
@@ -133,7 +134,7 @@ export function ManageLocations() {
       return;
     }
 
-    const newLocations = [...locations, trimmedLocation];
+    const newLocations = [...locations, trimmedLocation].sort();
     const success = await saveLocationsToFirestore(newLocations);
     if(success) {
         setLocations(newLocations);
@@ -146,7 +147,7 @@ export function ManageLocations() {
   };
 
   const handleRemoveLocation = async (locationToRemove: string) => {
-    const newLocations = locations.filter((loc) => loc !== locationToRemove);
+    const newLocations = locations.filter((loc) => loc !== locationToRemove).sort();
     const success = await saveLocationsToFirestore(newLocations);
     if(success) {
         setLocations(newLocations);
@@ -187,7 +188,7 @@ export function ManageLocations() {
         return;
     }
 
-    const newLocations = locations.map(t => (t === editingLocation ? trimmedValue : t));
+    const newLocations = locations.map(t => (t === editingLocation ? trimmedValue : t)).sort();
     const success = await saveLocationsToFirestore(newLocations);
     if(success) {
         setLocations(newLocations);

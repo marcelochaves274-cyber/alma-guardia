@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type FormEvent, useEffect, useCallback } from 'react';
@@ -65,7 +66,7 @@ export function ManageFaunaFloraGeo() {
         if (isMounted) {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setItemTypes(data.types || []);
+            setItemTypes((data.types || []).sort());
           } else {
             // Document doesn't exist, start with an empty array
             setItemTypes([]);
@@ -133,7 +134,7 @@ export function ManageFaunaFloraGeo() {
       return;
     }
 
-    const newTypes = [...itemTypes, trimmedType];
+    const newTypes = [...itemTypes, trimmedType].sort();
     const success = await saveTypesToFirestore(newTypes);
     if(success) {
         setItemTypes(newTypes);
@@ -146,7 +147,7 @@ export function ManageFaunaFloraGeo() {
   };
 
   const handleRemoveType = async (typeToRemove: string) => {
-    const newTypes = itemTypes.filter((type) => type !== typeToRemove);
+    const newTypes = itemTypes.filter((type) => type !== typeToRemove).sort();
     const success = await saveTypesToFirestore(newTypes);
     if(success) {
         setItemTypes(newTypes);
@@ -187,7 +188,7 @@ export function ManageFaunaFloraGeo() {
         return;
     }
 
-    const newTypes = itemTypes.map(t => (t === editingType ? trimmedValue : t));
+    const newTypes = itemTypes.map(t => (t === editingType ? trimmedValue : t)).sort();
     const success = await saveTypesToFirestore(newTypes);
     if(success) {
         setItemTypes(newTypes);

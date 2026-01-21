@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type FormEvent, useEffect, useCallback } from 'react';
@@ -65,11 +66,11 @@ export function ManageOccurrences() {
         if (isMounted) {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setOccurrenceTypes(data.types || []);
+            setOccurrenceTypes((data.types || []).sort());
           } else {
             const defaultTypes = ['Queda de mesmo nível', 'Corte', 'Contato com produto químico'];
             // Pre-populate for new users, but don't save until they add something
-            setOccurrenceTypes(defaultTypes);
+            setOccurrenceTypes(defaultTypes.sort());
           }
         }
       } catch (error: any) {
@@ -134,7 +135,7 @@ export function ManageOccurrences() {
       return;
     }
 
-    const newTypes = [...occurrenceTypes, trimmedType];
+    const newTypes = [...occurrenceTypes, trimmedType].sort();
     const success = await saveTypesToFirestore(newTypes);
     if(success) {
         setOccurrenceTypes(newTypes);
@@ -147,7 +148,7 @@ export function ManageOccurrences() {
   };
 
   const handleRemoveType = async (typeToRemove: string) => {
-    const newTypes = occurrenceTypes.filter((type) => type !== typeToRemove);
+    const newTypes = occurrenceTypes.filter((type) => type !== typeToRemove).sort();
     const success = await saveTypesToFirestore(newTypes);
     if(success) {
         setOccurrenceTypes(newTypes);
@@ -188,7 +189,7 @@ export function ManageOccurrences() {
         return;
     }
 
-    const newTypes = occurrenceTypes.map(t => (t === editingType ? trimmedValue : t));
+    const newTypes = occurrenceTypes.map(t => (t === editingType ? trimmedValue : t)).sort();
     const success = await saveTypesToFirestore(newTypes);
     if(success) {
         setOccurrenceTypes(newTypes);
