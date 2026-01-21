@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,7 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useFirebaseApp, useFirestore, useUser } from '@/firebase';
-import { collection, onSnapshot, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, Timestamp, deleteField } from 'firebase/firestore';
 import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -95,7 +96,7 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
       
       // 2. Mark notice as 'finalizado' and remove the imageUrl field
       const noticeRef = doc(firestore, 'sgs_genius', user.uid, 'notices', notice.id);
-      await updateDoc(noticeRef, { status: 'finalizado', imageUrl: null });
+      await updateDoc(noticeRef, { status: 'finalizado', imageUrl: deleteField() });
 
       // 3. Execute the callback (e.g., navigate or show toast)
       callback();
@@ -249,3 +250,5 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
     </Dialog>
   );
 }
+
+    

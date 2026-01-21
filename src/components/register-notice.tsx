@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, type MouseEvent, ChangeEvent } from 'react';
@@ -30,7 +31,7 @@ import { cn } from '@/lib/utils';
 import { Calendar as CalendarIcon, Loader2, MapPin, X, Upload } from 'lucide-react';
 import { format, setHours, setMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useFirebaseApp, useFirestore, useUser } from '@/firebase';
+import { useFirebaseApp, useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
@@ -210,41 +211,30 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
 
     setIsSubmitting(true);
     
-    const storage = getStorage(firebaseApp);
     let finalImageUrl: string | null = isEditing ? noticeToEdit.imageUrl : null;
 
-    // Handle image upload/delete logic
-    if (imageFile) { // A new file is being uploaded
-        // If editing and there was an old image, delete it from storage first
+    try {
+      if (imageFile) {
         if (isEditing && noticeToEdit.imageUrl) {
-            const oldImageRef = storageRef(storage, noticeToEdit.imageUrl);
-            await deleteObject(oldImageRef).catch(err => {
-                // Non-blocking error. It might fail if the URL is bad or file doesn't exist, which is fine.
-                console.warn("Could not delete old image during replacement:", err);
-            });
+          const oldImageRef = storageRef(getStorage(firebaseApp), noticeToEdit.imageUrl);
+          await deleteObject(oldImageRef).catch(err => console.warn("Could not delete old image", err));
         }
-        
         const filePath = `notices/${user.uid}/${Date.now()}_${imageFile.name}`;
-        const newImageRef = storageRef(storage, filePath);
-
-        try {
-            await uploadBytes(newImageRef, imageFile);
-            finalImageUrl = await getDownloadURL(newImageRef);
-        } catch (storageError) {
-            console.error("Error uploading image:", storageError);
-            toast({ variant: "destructive", title: "Erro no Upload", description: "Não foi possível enviar a imagem." });
-            setIsSubmitting(false);
-            return;
-        }
-    } else if (imagePreview === null && isEditing && noticeToEdit.imageUrl) {
-        // Image was removed during edit (preview is null), delete it from storage
-        const oldImageRef = storageRef(storage, noticeToEdit.imageUrl);
-        await deleteObject(oldImageRef).catch(err => {
-            console.warn("Could not delete old image:", err);
-        });
+        const newImageRef = storageRef(getStorage(firebaseApp), filePath);
+        await uploadBytes(newImageRef, imageFile);
+        finalImageUrl = await getDownloadURL(newImageRef);
+      } else if (!imagePreview && isEditing && noticeToEdit.imageUrl) {
+        const oldImageRef = storageRef(getStorage(firebaseApp), noticeToEdit.imageUrl);
+        await deleteObject(oldImageRef).catch(err => console.warn("Could not delete old image", err));
         finalImageUrl = null;
+      }
+    } catch (storageError) {
+      console.error("Error with image storage:", storageError);
+      toast({ variant: "destructive", title: "Erro no Upload", description: "Não foi possível gerenciar a imagem." });
+      setIsSubmitting(false);
+      return;
     }
-
+    
     const [hours, minutes] = noticeTime.split(':').map(Number);
     const combinedDate = setMinutes(setHours(noticeDate, hours), minutes);
     
@@ -256,28 +246,37 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
         description,
         location,
         mapMarker: marker,
-        status: 'pendente',
         imageUrl: finalImageUrl,
     };
 
-    try {
-      if (isEditing && noticeToEdit) {
-        const docRef = doc(firestore, 'sgs_genius', user.uid, 'notices', noticeToEdit.id);
-        await updateDoc(docRef, { ...noticeData, updatedAt: serverTimestamp() });
-        toast({ title: 'Sucesso!', description: 'Aviso atualizado com sucesso.' });
-        setPage('pending-notices');
-      } else {
-        const noticesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'notices');
-        await addDoc(noticesCollectionRef, { ...noticeData, createdAt: serverTimestamp() });
-        toast({ title: 'Sucesso!', description: 'Aviso registrado com sucesso.' });
-        resetForm();
-      }
-
-    } catch (error) {
-        console.error("Error saving notice:", error);
-        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar o aviso.'});
-    } finally {
-        setIsSubmitting(false);
+    if (isEditing && noticeToEdit) {
+      const docRef = doc(firestore, 'sgs_genius', user.uid, 'notices', noticeToEdit.id);
+      updateDoc(docRef, { ...noticeData, status: noticeToEdit.status, updatedAt: serverTimestamp() })
+        .then(() => {
+          toast({ title: 'Sucesso!', description: 'Aviso atualizado com sucesso.' });
+          setPage('pending-notices');
+        })
+        .catch(error => {
+          const permissionError = new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: noticeData });
+          errorEmitter.emit('permission-error', permissionError);
+        })
+        .finally(() => {
+          setIsSubmitting(false);
+        });
+    } else {
+      const noticesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'notices');
+      addDoc(noticesCollectionRef, { ...noticeData, status: 'pendente', createdAt: serverTimestamp() })
+        .then(() => {
+            toast({ title: 'Sucesso!', description: 'Aviso registrado com sucesso.' });
+            resetForm();
+        })
+        .catch(error => {
+            const permissionError = new FirestorePermissionError({ path: noticesCollectionRef.path, operation: 'create', requestResourceData: noticeData });
+            errorEmitter.emit('permission-error', permissionError);
+        })
+        .finally(() => {
+            setIsSubmitting(false);
+        });
     }
   };
 
