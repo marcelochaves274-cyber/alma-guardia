@@ -9,8 +9,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirebaseApp, useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
@@ -45,6 +46,7 @@ interface PendingNoticesProps {
 }
 
 export function PendingNotices({ setPage }: PendingNoticesProps) {
+  const firebaseApp = useFirebaseApp();
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -77,45 +79,67 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
     return () => unsubscribe();
   }, [user, firestore, toast]);
 
-  const handleAction = (notice: Notice, action: 'occurrence' | 'treatment' | 'fauna') => {
-    const prefill = {
-      date: notice.noticeDate,
-      description: notice.description,
-      location: notice.location,
-      mapMarker: notice.mapMarker,
-      collaboratorName: notice.collaboratorName,
-    };
-
-    switch (action) {
-      case 'occurrence':
-        setPage('register-occurrence', { prefill });
-        break;
-      case 'treatment':
-        setPage('register-treatment', { prefill });
-        break;
-      case 'fauna':
-        setPage('register-fauna-flora-geo', { prefill });
-        break;
-    }
-  };
-
-  const handleMarkAsResolved = async (noticeId: string) => {
-    if (!user || !firestore) return;
-    setIsUpdating(noticeId);
+  const processNoticeAction = async (notice: Notice, callback: () => void) => {
+    if (!user || !firestore || !firebaseApp) return;
+    setIsUpdating(notice.id);
     try {
-      const noticeRef = doc(firestore, 'sgs_genius', user.uid, 'notices', noticeId);
-      await updateDoc(noticeRef, { status: 'finalizado' });
-      toast({ title: "Sucesso!", description: "Aviso marcado como resolvido." });
+      // 1. Delete image from Storage if it exists
+      if (notice.imageUrl) {
+        const storage = getStorage(firebaseApp);
+        const imageRef = storageRef(storage, notice.imageUrl);
+        await deleteObject(imageRef).catch(err => {
+          // Log error but don't block. Image might be gone.
+          console.warn("Could not delete image, it might be already gone:", err);
+        });
+      }
+      
+      // 2. Mark notice as 'finalizado' and remove the imageUrl field
+      const noticeRef = doc(firestore, 'sgs_genius', user.uid, 'notices', notice.id);
+      await updateDoc(noticeRef, { status: 'finalizado', imageUrl: null });
+
+      // 3. Execute the callback (e.g., navigate or show toast)
+      callback();
+
     } catch (error) {
-      console.error("Error updating notice:", error);
+      console.error("Error processing notice action:", error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível atualizar o aviso."
+        description: "Não foi possível processar a ação para este aviso."
       });
     } finally {
       setIsUpdating(null);
     }
+  };
+
+  const handleAction = (notice: Notice, action: 'occurrence' | 'treatment' | 'fauna') => {
+    processNoticeAction(notice, () => {
+      const prefill = {
+        date: notice.noticeDate,
+        description: notice.description,
+        location: notice.location,
+        mapMarker: notice.mapMarker,
+        collaboratorName: notice.collaboratorName,
+      };
+
+      switch (action) {
+        case 'occurrence':
+          setPage('register-occurrence', { prefill });
+          break;
+        case 'treatment':
+          setPage('register-treatment', { prefill });
+          break;
+        case 'fauna':
+          setPage('register-fauna-flora-geo', { prefill });
+          break;
+      }
+    });
+  };
+
+  const handleMarkAsResolved = async (notice: Notice) => {
+    processNoticeAction(notice, () => {
+      toast({ title: "Sucesso!", description: "Aviso marcado como resolvido." });
+    });
   };
 
   const renderSkeletons = () => (
@@ -171,10 +195,19 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
                        <Button variant="outline"><ImageIcon className="mr-2" />Ver Imagem</Button>
                     </DialogTrigger>
                   )}
-                  <Button onClick={() => handleAction(notice, 'occurrence')}><Send className="mr-2" />Criar Ocorrência</Button>
-                  <Button onClick={() => handleAction(notice, 'treatment')}><ShieldCheck className="mr-2" />Criar Trat. de Risco</Button>
-                  <Button onClick={() => handleAction(notice, 'fauna')}><Sprout className="mr-2" />Criar Fau/Flo/Geo</Button>
-                  <Button variant="secondary" onClick={() => handleMarkAsResolved(notice.id)} disabled={isUpdating === notice.id}>
+                  <Button onClick={() => handleAction(notice, 'occurrence')} disabled={isUpdating === notice.id}>
+                    {isUpdating === notice.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="mr-2" />}
+                    Criar Ocorrência
+                  </Button>
+                  <Button onClick={() => handleAction(notice, 'treatment')} disabled={isUpdating === notice.id}>
+                    {isUpdating === notice.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2" />}
+                    Criar Trat. de Risco
+                  </Button>
+                  <Button onClick={() => handleAction(notice, 'fauna')} disabled={isUpdating === notice.id}>
+                     {isUpdating === notice.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sprout className="mr-2" />}
+                    Criar Fau/Flo/Geo
+                  </Button>
+                  <Button variant="secondary" onClick={() => handleMarkAsResolved(notice)} disabled={isUpdating === notice.id}>
                     {isUpdating === notice.id ? <Loader2 className="mr-2 animate-spin" /> : <Check className="mr-2" />}
                     Marcar como Resolvido
                   </Button>

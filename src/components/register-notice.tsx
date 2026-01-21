@@ -172,6 +172,14 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
       setImagePreview(null);
       return;
     }
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      toast({
+        variant: 'destructive',
+        title: 'Arquivo muito grande',
+        description: 'Por favor, escolha uma imagem menor que 2MB.',
+      });
+      return;
+    }
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };
@@ -202,25 +210,38 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
 
     setIsSubmitting(true);
     
+    const storage = getStorage(firebaseApp);
     let finalImageUrl: string | null = isEditing ? noticeToEdit.imageUrl : null;
-    
-    // If a new image file is selected, upload it
-    if (imageFile) {
-        const storage = getStorage(firebaseApp);
+
+    // Handle image upload/delete logic
+    if (imageFile) { // A new file is being uploaded
+        // If editing and there was an old image, delete it from storage first
+        if (isEditing && noticeToEdit.imageUrl) {
+            const oldImageRef = storageRef(storage, noticeToEdit.imageUrl);
+            await deleteObject(oldImageRef).catch(err => {
+                // Non-blocking error. It might fail if the URL is bad or file doesn't exist, which is fine.
+                console.warn("Could not delete old image during replacement:", err);
+            });
+        }
+        
         const filePath = `notices/${user.uid}/${Date.now()}_${imageFile.name}`;
-        const imageStorageRef = storageRef(storage, filePath);
+        const newImageRef = storageRef(storage, filePath);
 
         try {
-            await uploadBytes(imageStorageRef, imageFile);
-            finalImageUrl = await getDownloadURL(imageStorageRef);
+            await uploadBytes(newImageRef, imageFile);
+            finalImageUrl = await getDownloadURL(newImageRef);
         } catch (storageError) {
             console.error("Error uploading image:", storageError);
             toast({ variant: "destructive", title: "Erro no Upload", description: "Não foi possível enviar a imagem." });
             setIsSubmitting(false);
             return;
         }
-    } else if (imagePreview === null && isEditing) {
-        // If there was an image and it was removed (preview is null)
+    } else if (imagePreview === null && isEditing && noticeToEdit.imageUrl) {
+        // Image was removed during edit (preview is null), delete it from storage
+        const oldImageRef = storageRef(storage, noticeToEdit.imageUrl);
+        await deleteObject(oldImageRef).catch(err => {
+            console.warn("Could not delete old image:", err);
+        });
         finalImageUrl = null;
     }
 
