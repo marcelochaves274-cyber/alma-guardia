@@ -10,9 +10,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useFirebaseApp, useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, updateDoc, Timestamp, deleteField } from 'firebase/firestore';
-import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
@@ -47,7 +46,6 @@ interface PendingNoticesProps {
 }
 
 export function PendingNotices({ setPage }: PendingNoticesProps) {
-  const firebaseApp = useFirebaseApp();
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -81,24 +79,14 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
   }, [user, firestore, toast]);
 
   const processNoticeAction = async (notice: Notice, callback: () => void) => {
-    if (!user || !firestore || !firebaseApp) return;
+    if (!user || !firestore) return;
     setIsUpdating(notice.id);
     try {
-      // 1. Delete image from Storage if it exists
-      if (notice.imageUrl) {
-        const storage = getStorage(firebaseApp);
-        const imageRef = storageRef(storage, notice.imageUrl);
-        await deleteObject(imageRef).catch(err => {
-          // Log error but don't block. Image might be gone.
-          console.warn("Could not delete image, it might be already gone:", err);
-        });
-      }
-      
-      // 2. Mark notice as 'finalizado' and remove the imageUrl field
+      // Mark notice as 'finalizado' and remove the imageUrl field
       const noticeRef = doc(firestore, 'sgs_genius', user.uid, 'notices', notice.id);
       await updateDoc(noticeRef, { status: 'finalizado', imageUrl: deleteField() });
 
-      // 3. Execute the callback (e.g., navigate or show toast)
+      // Execute the callback (e.g., navigate or show toast)
       callback();
 
     } catch (error) {

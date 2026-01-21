@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "SgsGenius": {
@@ -557,7 +558,7 @@
             "finalizado"
           ]
         },
-        "imageDataUrl": {
+        "imageUrl": {
           "type": "string",
           "format": "data-url",
           "description": "A Base64 encoded data URI of the uploaded image for the notice."
