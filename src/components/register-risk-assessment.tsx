@@ -20,8 +20,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -63,6 +71,8 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
   const isEditing = !!assessmentToEdit;
 
   // Form states
+  const [assessmentDate, setAssessmentDate] = useState<Date | undefined>(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [location, setLocation] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [riskSource, setRiskSource] = useState('');
@@ -84,6 +94,8 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
   // Populate form if we are editing
   useEffect(() => {
     if (isEditing && assessmentToEdit) {
+      const date = assessmentToEdit.assessmentDate;
+      setAssessmentDate(date instanceof Timestamp ? date.toDate() : new Date());
       setLocation(assessmentToEdit.location || '');
       setTaskDescription(assessmentToEdit.taskDescription || '');
       setRiskSource(assessmentToEdit.riskSource || '');
@@ -101,33 +113,34 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
   }, [firestore, user]);
 
   useEffect(() => {
-    const fetchSelectOptions = async (docName: string, setData: (data: string[]) => void, setLoading: (loading: boolean) => void, field: 'types' | 'locations') => {
-      const docRef = getSettingsDocRef(docName);
+    const fetchSelectOptions = async () => {
+      const docRef = getSettingsDocRef('locations');
       if (!docRef) {
-        setLoading(false);
+        setIsLoadingLocations(false);
         return;
       }
       try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setData((data[field] || []).sort((a: string, b: string) => a.localeCompare(b)));
+          setLocations((data['locations'] || []).sort((a: string, b: string) => a.localeCompare(b)));
         }
       } catch (error) {
-        console.error(`Error fetching ${field}:`, error);
+        console.error(`Error fetching locations:`, error);
         toast({
           variant: "destructive",
           title: "Erro ao carregar dados",
-          description: `Não foi possível buscar ${field}.`
+          description: `Não foi possível buscar locais.`
         });
       } finally {
-        setLoading(false);
+        setIsLoadingLocations(false);
       }
     };
-    fetchSelectOptions('locations', setLocations, setIsLoadingLocations, 'locations');
+    fetchSelectOptions();
   }, [getSettingsDocRef, toast]);
   
   const resetForm = () => {
+    setAssessmentDate(new Date());
     setLocation('');
     setTaskDescription('');
     setRiskSource('');
@@ -140,8 +153,8 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!firestore || !user) {
-        toast({ variant: 'destructive', title: 'Erro', description: 'Você não está autenticado.' });
+    if (!firestore || !user || !assessmentDate) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Você não está autenticado ou a data é inválida.' });
         return;
     }
 
@@ -150,7 +163,7 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
     const riskLevelData = getRiskLevel(Number(probability), Number(consequence));
 
     const assessmentData = {
-        assessmentDate: serverTimestamp(),
+        assessmentDate: Timestamp.fromDate(assessmentDate),
         location,
         taskDescription,
         riskSource,
@@ -204,8 +217,41 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="space-y-2 lg:col-span-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="assessment-date">Data da Avaliação</Label>
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={'outline'}
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !assessmentDate && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {assessmentDate ? (
+                      format(assessmentDate, 'dd/MM/yyyy')
+                    ) : (
+                      <span>Escolha uma data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={assessmentDate}
+                    onSelect={(d) => {
+                        if(d) setAssessmentDate(d);
+                        setIsCalendarOpen(false);
+                    }}
+                    locale={ptBR}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="assessment-location">Local</Label>
               <Select name="assessmentLocation" required disabled={isLoadingLocations || locations.length === 0} onValueChange={setLocation} value={location}>
                 <SelectTrigger id="assessment-location">
@@ -361,3 +407,5 @@ export function RegisterRiskAssessment({ assessmentToEdit, setPage }: RegisterRi
     </Card>
   );
 }
+
+    
