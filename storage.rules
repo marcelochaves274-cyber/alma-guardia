@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Permite que usuários autenticados leiam e gravem arquivos
+    // em seu próprio diretório dentro da pasta 'notices'.
+    match /notices/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
