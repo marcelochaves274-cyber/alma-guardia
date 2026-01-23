@@ -6,7 +6,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { HelpProvider } from '@/context/help-context';
 import { ProfileProvider } from '@/context/profile-context';
 
-const iconUrl = "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Logo-da-SGS-APP-ico.ico?alt=media&token=14f5c68a-515e-4c63-8774-d2ff889ba92a";
+const iconUrl = "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.appspot.com/o/favicon.png?alt=media";
 
 export const metadata: Metadata = {
   title: 'SGS APP',
