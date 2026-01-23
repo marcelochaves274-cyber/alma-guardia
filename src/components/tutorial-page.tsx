@@ -34,7 +34,7 @@ export function TutorialPage() {
              <AccordionItem value="item-1">
               <AccordionTrigger>Lembretes</AccordionTrigger>
               <AccordionContent>
-                A tela de Lembretes é seu painel principal. Ela exibe um resumo rápido de todas as pendências que exigem sua atenção, como tratamentos de risco em aberto e vistorias de equipamentos atrasadas. Clique nos botões "Ver" para ser direcionado ao relatório correspondente já filtrado.
+                A tela de Lembretes é seu painel principal. Ela exibe um resumo rápido de todas as pendências que exigem sua atenção, como tratamentos de risco em aberto, vistorias de equipamentos atrasadas e avisos de campo pendentes. Clique nos botões "Ver" para ser direcionado à tela correspondente já filtrada.
               </AccordionContent>
             </AccordionItem>
           )}
@@ -95,7 +95,7 @@ export function TutorialPage() {
                 <AccordionTrigger>Avaliação de Riscos</AccordionTrigger>
                 <AccordionContent>
                   <ul className="list-disc space-y-2 pl-5">
-                    <li><strong>Registrar Avaliação:</strong> Ferramenta para realizar avaliações de risco formais de uma atividade ou local, detalhando causa, perigo, dano, controles existentes e recomendados, e calculando o nível de risco.</li>
+                    <li><strong>Registrar Avaliação:</strong> Ferramenta para realizar avaliações de risco formais de uma atividade, detalhando a Causa (fonte do risco), o Perigo (o que pode acontecer), o Dano (a consequência) e o Controle Operacional (medidas para mitigar).</li>
                     <li><strong>Relatório de Avaliação:</strong> Consulte todas as avaliações de risco realizadas. Filtre por local para analisar os riscos de uma área específica.</li>
                   </ul>
                 </AccordionContent>
@@ -135,7 +135,7 @@ export function TutorialPage() {
                       <ul className="list-disc space-y-2 pl-5">
                         <li><strong>Configurações Gerais:</strong> Personalize a aparência do sistema, alterando o nome da empresa (exibido no cabeçalho), a logo e o tema de cores.</li>
                         <li><strong>Gerenciar Perfil:</strong> Defina os passes (senhas numéricas de 6 dígitos) para os perfis Administrador e Observador.</li>
-                        <li><strong>Gerenciar Ocorrências / Locais / Fa/Fl/Ge / Equip./Marca / Atividade POP TCR:</strong> Nestas telas, você customiza as opções que aparecem nos menus de seleção dos formulários, tornando o sistema adaptado à sua realidade operacional.</li>
+                        <li><strong>Gerenciar Ocorrências / Locais / Fa/Fl/Ge / Equip./Marca / POPs / TCRs:</strong> Nestas telas, você customiza as opções que aparecem nos menus de seleção dos formulários, tornando o sistema adaptado à sua realidade operacional.</li>
                         <li><strong>Gerenciar Mapa:</strong> Faça o upload da imagem de fundo (planta baixa, mapa da área) que será usada em todas as telas de relatório de mapa.</li>
                       </ul>
                     </AccordionContent>
