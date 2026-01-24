@@ -4,11 +4,11 @@
   "description": "Seu Sistema de Gestão de Segurança inteligente.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#2a332a",
-  "theme_color": "#5b7a5b",
+  "background_color": "#2f4028",
+  "theme_color": "#5c8552",
   "icons": [
     {
-      "src": "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Logo-da-SGS-APP-com-natureza%20icone.ico?alt=media&token=812f8f9d-5605-49cc-9b2f-35dfa026e41b",
+      "src": "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Icone%20SGS%20APP.ico?alt=media&token=742b0804-f2bb-4ec6-8fa5-ed1ac32d76c3",
       "sizes": "any",
       "type": "image/x-icon"
     }
