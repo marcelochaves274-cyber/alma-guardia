@@ -237,7 +237,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
         mapMarker: marker,
         userId: user.uid,
         situation,
-        completionDate: completionDate && (situation === 'pendente' || situation === 'reaberto') ? Timestamp.fromDate(completionDate) : null,
+        completionDate: completionDate && situation === 'pendente' ? Timestamp.fromDate(completionDate) : null,
     };
 
     try {
@@ -518,11 +518,10 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
                         <SelectContent>
                             <SelectItem value="pendente">Pendente</SelectItem>
                             <SelectItem value="finalizado">Finalizado</SelectItem>
-                            <SelectItem value="reaberto">Reaberto</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
-                {(situation === 'pendente' || situation === 'reaberto') && (
+                {situation === 'pendente' && (
                   <div className="space-y-2">
                       <Label htmlFor="completion-date">Data para Conclusão</Label>
                       <Popover open={isCompletionCalendarOpen} onOpenChange={setIsCompletionCalendarOpen}>

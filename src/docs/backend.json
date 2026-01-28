@@ -177,8 +177,7 @@
           "description": "The current status of the treatment.",
           "enum": [
             "pendente",
-            "finalizado",
-            "reaberto"
+            "finalizado"
           ]
         },
         "completionDate": {
@@ -560,8 +559,8 @@
         },
         "imageUrl": {
           "type": "string",
-          "format": "uri",
-          "description": "A URL to the uploaded image for the notice, hosted on Firebase Storage."
+          "format": "data-url",
+          "description": "A Base64 encoded data URI of the uploaded image for the notice."
         },
         "createdAt": {
           "type": "string",
@@ -674,5 +673,3 @@
     }
   }
 }
-
-    

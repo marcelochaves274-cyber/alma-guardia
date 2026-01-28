@@ -42,7 +42,7 @@ interface Treatment {
   treatmentType: string;
   treatmentLocation: string;
   riskLevel: number;
-  situation: 'pendente' | 'finalizado' | 'reaberto';
+  situation: 'pendente' | 'finalizado';
   description: string;
   proposedTreatment: string;
   actionTaken: string;
@@ -67,7 +67,6 @@ const riskLevelOptions = [
 const situationOptions = [
     { value: 'pendente', label: 'Pendente' },
     { value: 'finalizado', label: 'Finalizado' },
-    { value: 'reaberto', label: 'Reaberto' },
 ];
 
 const getRiskLevelProperties = (score: number) => {
@@ -83,8 +82,6 @@ const getSituationProperties = (situation: string) => {
             return { label: 'Pendente', className: 'bg-yellow-500 text-black' };
         case 'finalizado':
             return { label: 'Finalizado', className: 'bg-green-600 text-white' };
-        case 'reaberto':
-            return { label: 'Reaberto', className: 'bg-blue-600 text-white' };
         default:
             return { label: situation, className: 'bg-muted text-muted-foreground' };
     }
@@ -487,7 +484,7 @@ export function TreatmentMapReport() {
                           </Badge>
                         </div>
                       </div>
-                      {(detailedTreatment.situation === 'pendente' || detailedTreatment.situation === 'reaberto') && detailedTreatment.completionDate && (
+                      {detailedTreatment.situation === 'pendente' && detailedTreatment.completionDate && (
                         <div>
                           <Label className="font-semibold text-muted-foreground">Prazo para Conclusão</Label>
                           <p>{format(detailedTreatment.completionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR })}</p>

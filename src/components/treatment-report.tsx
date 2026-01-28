@@ -62,7 +62,7 @@ interface Treatment {
   probability: string;
   consequence: string;
   riskLevel: number;
-  situation: 'pendente' | 'finalizado' | 'reaberto';
+  situation: 'pendente' | 'finalizado';
   completionDate?: Timestamp;
 }
 
@@ -89,7 +89,6 @@ const riskLevelOptions = [
 const situationOptions = [
     { value: 'pendente', label: 'Pendente' },
     { value: 'finalizado', label: 'Finalizado' },
-    { value: 'reaberto', label: 'Reaberto' },
 ];
 
 const getSituationProperties = (situation: string) => {
@@ -98,8 +97,6 @@ const getSituationProperties = (situation: string) => {
             return { label: 'Pendente', className: 'bg-yellow-500 text-black' };
         case 'finalizado':
             return { label: 'Finalizado', className: 'bg-green-600 text-white' };
-        case 'reaberto':
-            return { label: 'Reaberto', className: 'bg-blue-600 text-white' };
         default:
             return { label: situation, className: 'bg-muted text-muted-foreground' };
     }
@@ -397,7 +394,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
                           {getSituationProperties('finalizado').label}
                         </Badge>
                       );
-                    } else if (occ.situation === 'pendente' || occ.situation === 'reaberto') {
+                    } else if (occ.situation === 'pendente') {
                       if (clientToday && completionDate) {
                         const daysUntil = differenceInDays(startOfDay(completionDate), clientToday);
                         if (daysUntil < 0) {
@@ -405,11 +402,10 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
                             <Badge className="bg-red-600 text-white">Atrasado</Badge>
                           );
                         } else {
-                          const situationProps = getSituationProperties(occ.situation);
                           situationContent = (
                             <div className="flex flex-col items-start gap-1">
-                              <Badge className={cn(situationProps.className)}>
-                                {situationProps.label}
+                              <Badge className={cn(getSituationProperties('pendente').className)}>
+                                Pendente
                               </Badge>
                               <span className="text-xs text-muted-foreground">
                                 {daysUntil === 0 ? 'Vence hoje' : `Vence em ${daysUntil} dia(s)`}
@@ -418,11 +414,10 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
                           );
                         }
                       } else {
-                        // Pendente ou Reaberto sem data de conclusão
-                        const situationProps = getSituationProperties(occ.situation);
+                        // Pendente sem data de conclusão
                         situationContent = (
-                           <Badge className={cn(situationProps.className)}>
-                              {situationProps.label}
+                           <Badge className={cn(getSituationProperties('pendente').className)}>
+                              Pendente
                            </Badge>
                         );
                       }
@@ -532,7 +527,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
                           </Badge>
                         </div>
                       </div>
-                      {(selectedTreatment.situation === 'pendente' || selectedTreatment.situation === 'reaberto') && selectedTreatment.completionDate && (
+                      {selectedTreatment.situation === 'pendente' && selectedTreatment.completionDate && (
                         <div>
                           <Label className="font-semibold text-muted-foreground">Prazo para Conclusão</Label>
                           <p>{format(selectedTreatment.completionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR })}</p>

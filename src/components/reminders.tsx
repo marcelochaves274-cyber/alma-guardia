@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,7 +12,7 @@ import { startOfDay, isBefore } from 'date-fns';
 
 interface Treatment {
   id: string;
-  situation: 'pendente' | 'finalizado' | 'reaberto';
+  situation: 'pendente' | 'finalizado';
 }
 
 interface Equipment {
@@ -54,7 +55,7 @@ export function Reminders({ setPage }: RemindersProps) {
     const unsubscribeTreatments = onSnapshot(treatmentsRef, (snapshot) => {
       const pending = snapshot.docs
         .map(doc => doc.data() as Treatment)
-        .filter(t => t.situation === 'pendente' || t.situation === 'reaberto');
+        .filter(t => t.situation === 'pendente');
       setPendingTreatments(pending.length);
       setIsLoadingTreatments(false);
     });
@@ -97,7 +98,7 @@ export function Reminders({ setPage }: RemindersProps) {
     setPage('treatment-report', {
         filters: {
             treatmentReport: {
-                situations: ['pendente', 'reaberto']
+                situations: ['pendente']
             }
         }
     });
@@ -141,7 +142,7 @@ export function Reminders({ setPage }: RemindersProps) {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{pendingTreatments}</div>
-                <p className="text-xs text-muted-foreground">pendentes ou reabertos</p>
+                <p className="text-xs text-muted-foreground">pendentes</p>
               </CardContent>
               <CardFooter>
                  <Button className="w-full" onClick={handleViewTreatments} disabled={pendingTreatments === 0}>
