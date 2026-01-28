@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { format, differenceInDays, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
@@ -115,6 +115,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [clientToday, setClientToday] = useState<Date | null>(null);
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
@@ -131,6 +132,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
 
   useEffect(() => {
     setIsClient(true);
+    setClientToday(startOfDay(new Date()));
   }, []);
   
   useEffect(() => {
@@ -380,12 +382,26 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
+                {isLoading || !clientToday ? (
                   renderSkeletons()
                 ) : filteredTreatments.length > 0 ? (
                   filteredTreatments.map((occ) => {
                     const riskProps = getRiskLevelProperties(occ.riskLevel);
                     const situationProps = getSituationProperties(occ.situation);
+
+                    const completionDate = occ.completionDate?.toDate();
+                    let dueDateInfo = null;
+                    if (clientToday && completionDate && (occ.situation === 'pendente' || occ.situation === 'reaberto')) {
+                        const dueDate = startOfDay(completionDate);
+                        const daysUntil = differenceInDays(dueDate, clientToday);
+
+                        if (daysUntil > 0) {
+                            dueDateInfo = `Vence em ${daysUntil} dia(s)`;
+                        } else if (daysUntil === 0) {
+                            dueDateInfo = 'Vence hoje';
+                        }
+                    }
+
                     return (
                       <TableRow key={occ.id}>
                         <TableCell>{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
@@ -397,9 +413,14 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
                             </Badge>
                         </TableCell>
                          <TableCell>
-                            <Badge className={cn(situationProps.className)}>
-                                {situationProps.label}
-                            </Badge>
+                            <div className="flex flex-col items-start gap-1">
+                                <Badge className={cn(situationProps.className)}>
+                                    {situationProps.label}
+                                </Badge>
+                                {dueDateInfo && (
+                                    <span className="text-xs text-muted-foreground">{dueDateInfo}</span>
+                                )}
+                            </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <DialogTrigger asChild>
