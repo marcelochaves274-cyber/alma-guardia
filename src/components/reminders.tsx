@@ -7,12 +7,13 @@ import { collection, onSnapshot, Timestamp, query, where } from 'firebase/firest
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldAlert, Wrench, Megaphone } from 'lucide-react';
+import { ShieldAlert, Wrench, Megaphone, ShieldX } from 'lucide-react';
 import { startOfDay, isBefore } from 'date-fns';
 
 interface Treatment {
   id: string;
   situation: 'pendente' | 'finalizado';
+  completionDate?: Timestamp;
 }
 
 interface Equipment {
@@ -35,6 +36,7 @@ export function Reminders({ setPage }: RemindersProps) {
   const { user } = useUser();
 
   const [pendingTreatments, setPendingTreatments] = useState<number>(0);
+  const [overdueTreatments, setOverdueTreatments] = useState<number>(0);
   const [overdueEquipments, setOverdueEquipments] = useState<number>(0);
   const [pendingNotices, setPendingNotices] = useState<number>(0);
 
@@ -53,10 +55,22 @@ export function Reminders({ setPage }: RemindersProps) {
     // Listener for risk treatments
     const treatmentsRef = collection(firestore, 'sgs_genius', user.uid, 'risk_treatments');
     const unsubscribeTreatments = onSnapshot(treatmentsRef, (snapshot) => {
-      const pending = snapshot.docs
-        .map(doc => doc.data() as Treatment)
-        .filter(t => t.situation === 'pendente');
-      setPendingTreatments(pending.length);
+      const today = startOfDay(new Date());
+      let pendingCount = 0;
+      let overdueCount = 0;
+      snapshot.docs.forEach(doc => {
+          const treatment = doc.data() as Treatment;
+          if (treatment.situation === 'pendente') {
+              const completionDate = treatment.completionDate?.toDate();
+              if (completionDate && isBefore(startOfDay(completionDate), today)) {
+                  overdueCount++;
+              } else {
+                  pendingCount++;
+              }
+          }
+      });
+      setPendingTreatments(pendingCount);
+      setOverdueTreatments(overdueCount);
       setIsLoadingTreatments(false);
     });
 
@@ -103,6 +117,16 @@ export function Reminders({ setPage }: RemindersProps) {
         }
     });
   }
+
+  const handleViewOverdueTreatments = () => {
+    setPage('treatment-report', {
+        filters: {
+            treatmentReport: {
+                situations: ['atrasado']
+            }
+        }
+    });
+  }
   
   const handleViewEquipments = () => {
     setPage('equipment-report', {
@@ -126,9 +150,10 @@ export function Reminders({ setPage }: RemindersProps) {
         <h1 className="text-3xl font-bold">Lembretes</h1>
         <p className="text-muted-foreground">Resumo de itens que necessitam de sua atenção.</p>
       </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {isLoading ? (
           <>
+            <ReminderCardSkeleton />
             <ReminderCardSkeleton />
             <ReminderCardSkeleton />
             <ReminderCardSkeleton />
@@ -137,16 +162,31 @@ export function Reminders({ setPage }: RemindersProps) {
           <>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Tratamentos de Risco</CardTitle>
+                <CardTitle className="text-sm font-medium">Tratamentos Pendentes</CardTitle>
                 <ShieldAlert className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{pendingTreatments}</div>
-                <p className="text-xs text-muted-foreground">pendentes</p>
+                <p className="text-xs text-muted-foreground">dentro do prazo</p>
               </CardContent>
               <CardFooter>
                  <Button className="w-full" onClick={handleViewTreatments} disabled={pendingTreatments === 0}>
-                    Ver Tratamentos
+                    Ver Pendentes
+                 </Button>
+              </CardFooter>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Tratamentos Atrasados</CardTitle>
+                <ShieldX className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{overdueTreatments}</div>
+                <p className="text-xs text-muted-foreground">fora do prazo</p>
+              </CardContent>
+              <CardFooter>
+                 <Button variant="destructive" className="w-full" onClick={handleViewOverdueTreatments} disabled={overdueTreatments === 0}>
+                    Ver Atrasados
                  </Button>
               </CardFooter>
             </Card>

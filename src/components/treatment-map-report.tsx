@@ -28,7 +28,7 @@ import { Loader2, MapPin, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
-import { format } from 'date-fns';
+import { format, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from './ui/scroll-area';
 import { MonthSelector } from './month-selector';
@@ -67,12 +67,13 @@ const riskLevelOptions = [
 const situationOptions = [
     { value: 'pendente', label: 'Pendente' },
     { value: 'finalizado', label: 'Finalizado' },
+    { value: 'atrasado', label: 'Atrasado' },
 ];
 
 const getRiskLevelProperties = (score: number) => {
     if (score >= 15) return { label: 'Alta', className: 'bg-red-600 text-white hover:bg-red-700' };
     if (score >= 8) return { label: 'Média', className: 'bg-orange-500 text-white hover:bg-orange-600' };
-    if (score > 0) return { label: 'Baixa', className: 'bg-yellow-400 text-black hover:bg-yellow-500' };
+    if (score > 0) return { label: 'Baixa', className: 'bg-yellow-400 text-black hover:bg-yellow-600' };
     return { label: 'N/A', className: 'bg-muted text-muted-foreground' };
 };
 
@@ -121,9 +122,11 @@ export function TreatmentMapReport() {
   const [treatmentTypes, setTreatmentTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [clientToday, setClientToday] = useState<Date | null>(null);
 
   useEffect(() => {
     setIsClient(true);
+    setClientToday(startOfDay(new Date()));
   }, []);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
@@ -217,7 +220,7 @@ export function TreatmentMapReport() {
   }, [user, firestore, toast]);
 
   const filteredTreatments = useMemo(() => {
-    if (!isClient) return [];
+    if (!isClient || !clientToday) return [];
     return treatments.filter(occ => {
       const occDate = occ.treatmentDate;
       if (!occDate) return false;
@@ -226,8 +229,7 @@ export function TreatmentMapReport() {
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
       const typeMatch = filterType.length === 0 || filterType.includes(occ.treatmentType);
       const locationMatch = filterLocation.length === 0 || filterLocation.includes(occ.treatmentLocation);
-      const situationMatch = filterSituation.length === 0 || filterSituation.includes(occ.situation);
-
+      
        const riskLevelMatch = filterRiskLevel.length === 0 || filterRiskLevel.some((riskLevel) => {
         const score = occ.riskLevel;
         if (riskLevel === 'alta') return score >= 15;
@@ -236,9 +238,18 @@ export function TreatmentMapReport() {
         return false;
       });
 
+      const isOverdue = occ.situation === 'pendente' && occ.completionDate && isBefore(startOfDay(occ.completionDate.toDate()), clientToday);
+
+      const situationMatch = filterSituation.length === 0 || filterSituation.some(s => {
+        if (s === 'atrasado') return isOverdue;
+        if (s === 'pendente') return occ.situation === 'pendente' && !isOverdue;
+        if (s === 'finalizado') return occ.situation === 'finalizado';
+        return false;
+      });
+
       return yearMatch && monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch && !!occ.mapMarker;
     });
-  }, [treatments, filterYear, filterMonths, filterType, filterLocation, filterRiskLevel, filterSituation, isClient]);
+  }, [treatments, filterYear, filterMonths, filterType, filterLocation, filterRiskLevel, filterSituation, isClient, clientToday]);
 
   const clusters = useMemo(() => {
     const points = filteredTreatments.filter(occ => occ.mapMarker);

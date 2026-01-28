@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { format, differenceInDays, startOfDay } from 'date-fns';
+import { format, differenceInDays, startOfDay, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
@@ -89,6 +89,7 @@ const riskLevelOptions = [
 const situationOptions = [
     { value: 'pendente', label: 'Pendente' },
     { value: 'finalizado', label: 'Finalizado' },
+    { value: 'atrasado', label: 'Atrasado' },
 ];
 
 const getSituationProperties = (situation: string) => {
@@ -209,14 +210,15 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
 
   const filteredTreatments = useMemo(() => {
     return treatments.filter(occ => {
+      if (!clientToday) return false;
+
       const occDate = occ.treatmentDate;
-      if (!occDate || !isClient) return false;
+      if (!occDate) return false;
 
       const yearMatch = filterYear.length === 0 || filterYear.includes(occDate.getFullYear().toString());
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(occDate.getMonth().toString());
       const typeMatch = filterType.length === 0 || filterType.includes(occ.treatmentType);
       const locationMatch = filterLocation.length === 0 || filterLocation.includes(occ.treatmentLocation);
-      const situationMatch = filterSituation.length === 0 || filterSituation.includes(occ.situation);
       
       const riskLevelMatch = filterRiskLevel.length === 0 || filterRiskLevel.some((level) => {
         const score = occ.riskLevel;
@@ -226,9 +228,18 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
         return false;
       });
 
+      const isOverdue = occ.situation === 'pendente' && occ.completionDate && isBefore(startOfDay(occ.completionDate.toDate()), clientToday);
+
+      const situationMatch = filterSituation.length === 0 || filterSituation.some(s => {
+        if (s === 'atrasado') return isOverdue;
+        if (s === 'pendente') return occ.situation === 'pendente' && !isOverdue;
+        if (s === 'finalizado') return occ.situation === 'finalizado';
+        return false;
+      });
+
       return yearMatch && monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch;
     });
-  }, [treatments, filterYear, filterMonths, filterType, filterLocation, filterRiskLevel, filterSituation, isClient]);
+  }, [treatments, filterYear, filterMonths, filterType, filterLocation, filterRiskLevel, filterSituation, clientToday]);
 
   const clearFilters = () => {
     setFilterYear([]);
@@ -388,13 +399,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
                     let situationContent;
                     const completionDate = occ.completionDate?.toDate();
 
-                    if (occ.situation === 'finalizado') {
-                      situationContent = (
-                        <Badge className={cn(getSituationProperties('finalizado').className)}>
-                          {getSituationProperties('finalizado').label}
-                        </Badge>
-                      );
-                    } else if (occ.situation === 'pendente') {
+                    if (occ.situation === 'pendente') {
                       if (clientToday && completionDate) {
                         const daysUntil = differenceInDays(startOfDay(completionDate), clientToday);
                         if (daysUntil < 0) {
@@ -421,14 +426,12 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
                            </Badge>
                         );
                       }
-                    } else {
-                      // Fallback para outras situações, caso existam
-                      const situationProps = getSituationProperties(occ.situation);
-                       situationContent = (
-                           <Badge className={cn(situationProps.className)}>
-                              {situationProps.label}
-                           </Badge>
-                        );
+                    } else { // situation is 'finalizado'
+                      situationContent = (
+                        <Badge className={cn(getSituationProperties('finalizado').className)}>
+                          {getSituationProperties('finalizado').label}
+                        </Badge>
+                      );
                     }
 
                     return (
