@@ -387,19 +387,53 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
                 ) : filteredTreatments.length > 0 ? (
                   filteredTreatments.map((occ) => {
                     const riskProps = getRiskLevelProperties(occ.riskLevel);
-                    const situationProps = getSituationProperties(occ.situation);
-
+                    
+                    let situationContent;
                     const completionDate = occ.completionDate?.toDate();
-                    let dueDateInfo = null;
-                    if (clientToday && completionDate && (occ.situation === 'pendente' || occ.situation === 'reaberto')) {
-                        const dueDate = startOfDay(completionDate);
-                        const daysUntil = differenceInDays(dueDate, clientToday);
 
-                        if (daysUntil > 0) {
-                            dueDateInfo = `Vence em ${daysUntil} dia(s)`;
-                        } else if (daysUntil === 0) {
-                            dueDateInfo = 'Vence hoje';
+                    if (occ.situation === 'finalizado') {
+                      situationContent = (
+                        <Badge className={cn(getSituationProperties('finalizado').className)}>
+                          {getSituationProperties('finalizado').label}
+                        </Badge>
+                      );
+                    } else if (occ.situation === 'pendente' || occ.situation === 'reaberto') {
+                      if (clientToday && completionDate) {
+                        const daysUntil = differenceInDays(startOfDay(completionDate), clientToday);
+                        if (daysUntil < 0) {
+                          situationContent = (
+                            <Badge className="bg-red-600 text-white">Atrasado</Badge>
+                          );
+                        } else {
+                          const situationProps = getSituationProperties(occ.situation);
+                          situationContent = (
+                            <div className="flex flex-col items-start gap-1">
+                              <Badge className={cn(situationProps.className)}>
+                                {situationProps.label}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {daysUntil === 0 ? 'Vence hoje' : `Vence em ${daysUntil} dia(s)`}
+                              </span>
+                            </div>
+                          );
                         }
+                      } else {
+                        // Pendente ou Reaberto sem data de conclusão
+                        const situationProps = getSituationProperties(occ.situation);
+                        situationContent = (
+                           <Badge className={cn(situationProps.className)}>
+                              {situationProps.label}
+                           </Badge>
+                        );
+                      }
+                    } else {
+                      // Fallback para outras situações, caso existam
+                      const situationProps = getSituationProperties(occ.situation);
+                       situationContent = (
+                           <Badge className={cn(situationProps.className)}>
+                              {situationProps.label}
+                           </Badge>
+                        );
                     }
 
                     return (
@@ -413,14 +447,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
                             </Badge>
                         </TableCell>
                          <TableCell>
-                            <div className="flex flex-col items-start gap-1">
-                                <Badge className={cn(situationProps.className)}>
-                                    {situationProps.label}
-                                </Badge>
-                                {dueDateInfo && (
-                                    <span className="text-xs text-muted-foreground">{dueDateInfo}</span>
-                                )}
-                            </div>
+                           {situationContent}
                         </TableCell>
                         <TableCell className="text-right">
                           <DialogTrigger asChild>
