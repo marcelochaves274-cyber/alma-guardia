@@ -619,8 +619,8 @@
         },
         "url": {
           "type": "string",
-          "format": "data-url",
-          "description": "A Base64 encoded data URI of the map image."
+          "format": "uri",
+          "description": "The download URL of the map image stored in Firebase Storage."
         }
       },
       "required": [
