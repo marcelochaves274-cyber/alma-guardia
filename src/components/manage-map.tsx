@@ -27,6 +27,53 @@ interface MapInfo {
   url: string | null;
 }
 
+const resizeImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (!event.target?.result) {
+        return reject(new Error('FileReader did not successfully read the file.'));
+      }
+      const img = new Image();
+      img.onload = () => {
+        const MAX_WIDTH = 1024;
+        const MAX_HEIGHT = 1024;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return reject(new Error('Could not get canvas context'));
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        // Use JPEG with quality 0.7 for smaller size
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl);
+      };
+      img.onerror = reject;
+      img.src = event.target.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+
 export function ManageMap() {
   const { toast } = useToast();
 
@@ -108,24 +155,34 @@ export function ManageMap() {
     return () => { isMounted = false; }
   }, [user, firestore, isUserLoading, getSettingsDocRef]);
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>, mapId: string) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>, mapId: string) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit for raw upload
         toast({
           variant: 'destructive',
           title: 'Arquivo muito grande',
-          description: 'Por favor, escolha uma imagem menor que 2MB.',
+          description: 'Por favor, escolha uma imagem menor que 10MB.',
         });
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      
+      setIsSaving(true);
+      try {
+        const resizedDataUrl = await resizeImage(file);
         setMaps(prevMaps =>
-          prevMaps.map(m => m.id === mapId ? { ...m, url: reader.result as string } : m)
+          prevMaps.map(m => m.id === mapId ? { ...m, url: resizedDataUrl } : m)
         );
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error("Image resize error:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao processar imagem',
+          description: 'Não foi possível redimensionar a imagem. Tente um arquivo diferente.'
+        });
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -242,10 +299,10 @@ export function ManageMap() {
                         variant="outline" 
                         onClick={() => fileInputRefs[map.id as keyof typeof fileInputRefs].current?.click()} 
                         disabled={isSaving}>
-                      <Upload className="mr-2 h-4 w-4" />
+                      {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                       Carregar Imagem
                     </Button>
-                    <p className="text-xs text-muted-foreground">Recomendado: Imagem com boa resolução, máx 2MB.</p>
+                    <p className="text-xs text-muted-foreground">Recomendado: Imagem com boa resolução, máx 10MB.</p>
                 </div>
                 <Input
                   type="file"
@@ -269,5 +326,3 @@ export function ManageMap() {
     </Card>
   );
 }
-
-    
