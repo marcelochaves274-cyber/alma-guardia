@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service firebase.storage {
@@ -14,7 +15,7 @@ service firebase.storage {
     }
     
     // Allow authenticated users to read and write map files
-    // in their own user-specific directory.
+    // in their own user-specific directory. This rule is critical.
     match /maps/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }

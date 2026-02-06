@@ -67,7 +67,6 @@ export function ManageMap() {
     return doc(firestore, 'sgs_genius', user.uid, 'settings', 'mapDetails');
   }, [firestore, user]);
 
-  // Fetches initial map configuration from Firestore
   useEffect(() => {
     if (isUserLoading || !user || !firestore) {
       if (!isUserLoading) setIsLoading(false);
@@ -88,7 +87,6 @@ export function ManageMap() {
 
         if (docSnap.exists()) {
           const data = docSnap.data();
-          // New structure with 'maps' array
           if (data.maps && Array.isArray(data.maps)) {
             data.maps.forEach((fm: MapInfo) => {
               const index = newMapsState.findIndex((m) => m.id === fm.id);
@@ -97,7 +95,6 @@ export function ManageMap() {
               }
             });
           } else if (data.mapUrl) {
-            // Backwards compatibility for old structure
             newMapsState[0] = { id: 'map1', name: data.mapName || 'Mapa Principal', url: data.mapUrl };
           }
         }
@@ -110,13 +107,16 @@ export function ManageMap() {
       .finally(() => setIsLoading(false));
   }, [user, firestore, isUserLoading, getSettingsDocRef]);
 
-  // Clean up object URLs to prevent memory leaks
   useEffect(() => {
-    const objectUrls = maps.map(map => map.url).filter(url => url && url.startsWith('blob:'));
     return () => {
-      objectUrls.forEach(url => url && URL.revokeObjectURL(url));
+      Object.values(mapFiles).forEach(file => {
+        if (file) {
+            const map = maps.find(m => m.url && m.url.startsWith('blob:'));
+            if(map?.url) URL.revokeObjectURL(map.url);
+        }
+      });
     };
-  }, [maps]);
+  }, [mapFiles, maps]);
 
 
   const handleFileChange = (
@@ -135,17 +135,12 @@ export function ManageMap() {
       }
       
       setMapFiles(prev => ({ ...prev, [mapId]: file }));
-
       const objectUrl = URL.createObjectURL(file);
-      setMaps((prevMaps) => {
-          const oldUrl = prevMaps.find(m => m.id === mapId)?.url;
-          if (oldUrl && oldUrl.startsWith('blob:')) {
-              URL.revokeObjectURL(oldUrl);
-          }
-          return prevMaps.map((m) =>
-              m.id === mapId ? { ...m, url: objectUrl } : m
-          );
-      });
+      setMaps((prevMaps) => 
+        prevMaps.map((m) =>
+          m.id === mapId ? { ...m, url: objectUrl } : m
+        )
+      );
     }
   };
 
@@ -158,9 +153,9 @@ export function ManageMap() {
   const handleRemoveImage = (mapId: string) => {
     setMapFiles(prev => ({ ...prev, [mapId]: null }));
     setMaps((prevMaps) => {
-        const oldUrl = prevMaps.find(m => m.id === mapId)?.url;
-        if (oldUrl && oldUrl.startsWith('blob:')) {
-            URL.revokeObjectURL(oldUrl);
+        const mapToRemove = prevMaps.find(m => m.id === mapId);
+        if (mapToRemove?.url && mapToRemove.url.startsWith('blob:')) {
+            URL.revokeObjectURL(mapToRemove.url);
         }
         return prevMaps.map((m) => (m.id === mapId ? { ...m, url: null } : m))
     });
@@ -172,87 +167,87 @@ export function ManageMap() {
 
   const handleSaveMap = async (mapId: string) => {
     const settingsDocRef = getSettingsDocRef();
-    if (!settingsDocRef || !user) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
+    if (!user || !firestore || !firebaseApp || !settingsDocRef) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Aplicação não inicializada corretamente.' });
       return;
     }
-
+    
     setSavingState(s => ({ ...s, [mapId]: true }));
     
-    const storage = getStorage(firebaseApp);
+    const fileToUpload = mapFiles[mapId];
     const currentMap = maps.find(m => m.id === mapId);
     const originalMap = originalMaps.find(m => m.id === mapId);
-    const fileToUpload = mapFiles[mapId];
 
     if (!currentMap) {
         setSavingState(s => ({ ...s, [mapId]: false }));
         return;
     }
 
+    let finalUrl = currentMap.url;
+
     try {
-        let finalUrl = currentMap.url;
-        const originalUrl = originalMap?.url;
+        const storage = getStorage(firebaseApp);
         
-        // A new file was selected for upload
+        // Scenario 1: A new file is staged for upload.
         if (fileToUpload) {
-            if (originalUrl && !originalUrl.startsWith('blob:')) {
+            // Delete old file from storage if it exists
+            if (originalMap?.url && !originalMap.url.startsWith('blob:')) {
                 try {
-                    const oldRef = storageRef(storage, originalUrl);
-                    await deleteObject(oldRef);
-                } catch (error: any) {
-                    if (error.code !== 'storage/object-not-found') {
-                        console.warn(`Could not delete old map ${mapId}:`, error);
+                    await deleteObject(storageRef(storage, originalMap.url));
+                } catch (delError: any) {
+                    if (delError.code !== 'storage/object-not-found') {
+                        console.warn("Could not delete old file from storage:", delError);
                     }
                 }
             }
+            
             const newImageRef = storageRef(storage, `maps/${user.uid}/${mapId}-${Date.now()}`);
             const uploadResult = await uploadBytes(newImageRef, fileToUpload);
             finalUrl = await getDownloadURL(uploadResult.ref);
-        } 
-        // The image was removed
-        else if (originalUrl && !currentMap.url) {
-             if (!originalUrl.startsWith('blob:')) {
-                try {
-                    const oldRef = storageRef(storage, originalUrl);
-                    await deleteObject(oldRef);
-                } catch (error: any) {
-                    if (error.code !== 'storage/object-not-found') {
-                        console.warn(`Could not delete old map ${mapId}:`, error);
+        }
+        // Scenario 2: An existing image was removed (but no new one was staged).
+        else if (!currentMap.url && originalMap?.url) {
+            finalUrl = null;
+            if (!originalMap.url.startsWith('blob:')) {
+                 try {
+                    await deleteObject(storageRef(storage, originalMap.url));
+                } catch (delError: any) {
+                    if (delError.code !== 'storage/object-not-found') {
+                         console.warn("Could not delete old file from storage:", delError);
                     }
                 }
-             }
+            }
         }
-
-        const updatedMapData = {
+        
+        const updatedMapData: MapInfo = {
             id: currentMap.id,
             name: currentMap.name.trim() || `Mapa ${currentMap.id.replace('map', '')}`,
-            url: finalUrl && !finalUrl.startsWith('blob:') ? finalUrl : null,
+            url: finalUrl,
         };
-        
+
         const docSnap = await getDoc(settingsDocRef);
-        const firestoreMapsRaw = docSnap.exists() ? (docSnap.data().maps || []) : [];
-
-        let newMapsForFirestore: MapInfo[] = [...firestoreMapsRaw];
-        const existingMapIndex = newMapsForFirestore.findIndex(m => m.id === mapId);
-
-        if (existingMapIndex > -1) {
-            newMapsForFirestore[existingMapIndex] = updatedMapData;
+        const allMaps = docSnap.exists() ? (docSnap.data().maps || []) : [];
+        const mapIndex = allMaps.findIndex((m: MapInfo) => m.id === mapId);
+        
+        if (mapIndex > -1) {
+            allMaps[mapIndex] = updatedMapData;
         } else {
-            newMapsForFirestore.push(updatedMapData);
+            allMaps.push(updatedMapData);
         }
 
-        const primaryMapUrl = newMapsForFirestore.find(m => m.id === 'map1')?.url || null;
-        await setDoc(settingsDocRef, { maps: newMapsForFirestore, mapUrl: primaryMapUrl }, { merge: true });
+        const primaryMapUrl = allMaps.find((m: MapInfo) => m.id === 'map1')?.url || null;
+        await setDoc(settingsDocRef, { maps: allMaps, mapUrl: primaryMapUrl }, { merge: true });
 
-        setMaps(prevMaps => prevMaps.map(m => m.id === mapId ? updatedMapData : m));
+        // Update local state to reflect successful save
+        setMaps(prev => prev.map(m => m.id === mapId ? updatedMapData : m));
         setOriginalMaps(prev => prev.map(m => m.id === mapId ? updatedMapData : m));
-        setMapFiles(prev => ({...prev, [mapId]: null}));
+        setMapFiles(prev => ({...prev, [mapId]: null})); // Clear staged file
 
         toast({ title: 'Sucesso!', description: `O mapa "${updatedMapData.name}" foi salvo.` });
 
     } catch (error: any) {
       console.error(`Error saving map ${mapId}:`, error);
-      toast({ variant: 'destructive', title: 'Erro ao salvar', description: error.message || `Não foi possível salvar o mapa.` });
+      toast({ variant: 'destructive', title: 'Erro ao salvar', description: error.message || 'Não foi possível salvar o mapa. Verifique as permissões e tente novamente.' });
     } finally {
       setSavingState(s => ({ ...s, [mapId]: false }));
     }
