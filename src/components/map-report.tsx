@@ -105,6 +105,8 @@ export function MapReport() {
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [detailedOccurrence, setDetailedOccurrence] = useState<Occurrence | null>(null);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [activePopoverKey, setActivePopoverKey] = useState<string | null>(null);
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
@@ -288,7 +290,7 @@ export function MapReport() {
 
     const clampedX = Math.max(-overflowX, Math.min(pos.x, overflowX));
     const clampedY = Math.max(-overflowY, Math.min(pos.y, overflowY));
-
+    
     return { x: clampedX, y: clampedY, scale: pos.scale };
   }, [imageRenderMetrics]);
 
@@ -296,12 +298,14 @@ export function MapReport() {
   const handleZoom = (direction: 'in' | 'out') => {
     setTransform(prev => {
         const newScale = Math.max(1, Math.min(direction === 'in' ? prev.scale * 1.2 : prev.scale / 1.2, 5));
-        return clampPosition({ ...prev, scale: newScale });
+        const newPos = { ...prev, scale: newScale };
+        return clampPosition(newPos);
     });
   };
   
   const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0 || !imageRenderMetrics) return;
+    e.preventDefault();
 
     panStart.current = { x: e.clientX, y: e.clientY, startX: transform.x, startY: transform.y };
     setIsPanning(true);
@@ -309,17 +313,17 @@ export function MapReport() {
     
     const handlePanMove = (moveEvent: globalThis.MouseEvent) => {
       moveEvent.preventDefault();
-      const currentPanStart = panStart.current;
-      if (!currentPanStart) {
+      const localPanStart = panStart.current;
+      if (!localPanStart) {
         return;
       }
       
-      const dx = moveEvent.clientX - currentPanStart.x;
-      const dy = moveEvent.clientY - currentPanStart.y;
+      const dx = moveEvent.clientX - localPanStart.x;
+      const dy = moveEvent.clientY - localPanStart.y;
       
       setTransform(prev => {
-          const newX = currentPanStart.startX + dx;
-          const newY = currentPanStart.startY + dy;
+          const newX = localPanStart.startX + dx;
+          const newY = localPanStart.startY + dy;
           return clampPosition({ ...prev, x: newX, y: newY });
       });
     };
@@ -368,11 +372,12 @@ export function MapReport() {
       return null;
     }
     return clusters.map((cluster, index) => {
+      const clusterKey = `occurrence-cluster-${index}`;
       const clusterYear = cluster.occurrences[0]?.occurrenceDate.getFullYear();
       const pinColorClass = clusterYear ? getYearColor(clusterYear, availableYears) : 'fill-gray-500';
       
       return (
-        <Popover key={index}>
+        <Popover key={clusterKey} open={activePopoverKey === clusterKey} onOpenChange={(open) => setActivePopoverKey(open ? clusterKey : null)}>
             <PopoverTrigger asChild>
                 <div
                     className="absolute cursor-pointer pointer-events-auto"
@@ -391,7 +396,6 @@ export function MapReport() {
                 </div>
             </PopoverTrigger>
             <PopoverContent className="w-80 z-[60]">
-               <Dialog>
                 <div className="grid gap-4">
                   <div className="space-y-2">
                       <h4 className="font-medium leading-none">{cluster.occurrences.length > 1 ? 'Ocorrências Agrupadas' : 'Detalhes da Ocorrência'}</h4>
@@ -408,107 +412,23 @@ export function MapReport() {
                               <p><strong className="font-medium">Tipo:</strong> {occ.occurrenceType}</p>
                               <p><strong className="font-medium">Local:</strong> {occ.occurrenceLocation}</p>
                             </div>
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
                                   setDetailedOccurrence(occ);
+                                  setIsDetailModalOpen(true);
+                                  setActivePopoverKey(null);
                               }}>
                                   <Eye className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
+                            </Button>
                           </div>
                       ))}
                   </div>
                   </ScrollArea>
                 </div>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Detalhes da Ocorrência</DialogTitle>
-                    <DialogDescription>Visualização detalhada da ocorrência selecionada.</DialogDescription>
-                  </DialogHeader>
-                  {detailedOccurrence && (
-                    <>
-                      <ScrollArea className="max-h-[70vh] pr-6">
-                        <div className="space-y-4 py-4">
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-foreground">Dados da Ocorrência</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
-                              <div>
-                                <Label className="text-muted-foreground">Data</Label>
-                                <p>{format(detailedOccurrence.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
-                              </div>
-                              <div>
-                                <Label className="text-muted-foreground">Local</Label>
-                                <p>{detailedOccurrence.occurrenceLocation}</p>
-                              </div>
-                              <div>
-                                <Label className="text-muted-foreground">Tipo de Ocorrência</Label>
-                                <p>{detailedOccurrence.occurrenceType}</p>
-                              </div>
-                              <div>
-                                <Label className="text-muted-foreground">Análise</Label>
-                                <div>
-                                  {analysisMapping[detailedOccurrence.analysis] ? (
-                                      <Badge className={cn(analysisMapping[detailedOccurrence.analysis].className)}>
-                                          {analysisMapping[detailedOccurrence.analysis].label}
-                                      </Badge>
-                                  ) : 'N/A'}
-                                </div>
-                              </div>
-                              <div className="col-span-1 md:col-span-2">
-                                <Label className="text-muted-foreground">Descrição</Label>
-                                <p className="whitespace-pre-wrap">{detailedOccurrence.description}</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-foreground">Dados do Envolvido</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
-                                <div>
-                                  <Label className="text-muted-foreground">Nome Completo</Label>
-                                  <p>{detailedOccurrence.involvedPersonName}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-muted-foreground">CPF</Label>
-                                  <p>{detailedOccurrence.cpf || 'Não informado'}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-muted-foreground">Data de Nascimento</Label>
-                                  <p>{detailedOccurrence.birthDate || 'Não informado'}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-muted-foreground">Faixa Etária</Label>
-                                  <p>{ageGroupOptions.find(o => o.value === detailedOccurrence.ageGroup)?.label || detailedOccurrence.ageGroup || 'Não informado'}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-muted-foreground">Telefone</Label>
-                                  <p>{detailedOccurrence.phone || 'Não informado'}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-muted-foreground">Cidade/Estado</Label>
-                                  <p>{detailedOccurrence.city || 'Não informado'} / {detailedOccurrence.state || 'N/A'}</p>
-                                </div>
-                            </div>
-                          </div>
-
-                        </div>
-                      </ScrollArea>
-                      <div className="flex justify-end pt-2">
-                          <DialogClose asChild>
-                              <Button type="button" variant="secondary">
-                                  Fechar
-                              </Button>
-                          </DialogClose>
-                      </div>
-                    </>
-                  )}
-                </DialogContent>
-               </Dialog>
             </PopoverContent>
         </Popover>
       )
     });
-  }, [clusters, isClient, availableYears, isLoading, imageRenderMetrics]);
+  }, [clusters, isClient, availableYears, isLoading, imageRenderMetrics, activePopoverKey]);
 
   return (
     <div className="space-y-6">
@@ -591,6 +511,7 @@ export function MapReport() {
                       ref={mapContainerRef}
                       className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center", isPanning ? 'cursor-grabbing' : 'cursor-grab')}
                       onMouseDown={handlePanStart}
+                      onDragStart={(e) => e.preventDefault()}
                   >
                      {imageRenderMetrics && mapUrl ? (
                            <div
@@ -619,9 +540,8 @@ export function MapReport() {
                            <NextImage
                             src={mapUrl}
                             alt="Mapa para carregar"
-                            width={1000}
-                            height={1000}
-                            className="max-w-full max-h-full opacity-0"
+                            fill
+                            className="object-contain opacity-0"
                             onLoad={handleImageLoad}
                           />
                         ) : (
@@ -652,7 +572,92 @@ export function MapReport() {
           </div>
         </CardContent>
       </Card>
+      
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Ocorrência</DialogTitle>
+            <DialogDescription>Visualização detalhada da ocorrência selecionada.</DialogDescription>
+          </DialogHeader>
+          {detailedOccurrence && (
+            <>
+              <ScrollArea className="max-h-[70vh] pr-6">
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-foreground">Dados da Ocorrência</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
+                      <div>
+                        <Label className="text-muted-foreground">Data</Label>
+                        <p>{format(detailedOccurrence.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Local</Label>
+                        <p>{detailedOccurrence.occurrenceLocation}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Tipo de Ocorrência</Label>
+                        <p>{detailedOccurrence.occurrenceType}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Análise</Label>
+                        <div>
+                          {analysisMapping[detailedOccurrence.analysis] ? (
+                              <Badge className={cn(analysisMapping[detailedOccurrence.analysis].className)}>
+                                  {analysisMapping[detailedOccurrence.analysis].label}
+                              </Badge>
+                          ) : 'N/A'}
+                        </div>
+                      </div>
+                      <div className="col-span-1 md:col-span-2">
+                        <Label className="text-muted-foreground">Descrição</Label>
+                        <p className="whitespace-pre-wrap">{detailedOccurrence.description}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-foreground">Dados do Envolvido</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
+                        <div>
+                          <Label className="text-muted-foreground">Nome Completo</Label>
+                          <p>{detailedOccurrence.involvedPersonName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">CPF</Label>
+                          <p>{detailedOccurrence.cpf || 'Não informado'}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Data de Nascimento</Label>
+                          <p>{detailedOccurrence.birthDate || 'Não informado'}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Faixa Etária</Label>
+                          <p>{ageGroupOptions.find(o => o.value === detailedOccurrence.ageGroup)?.label || detailedOccurrence.ageGroup || 'Não informado'}</p>
+                        </div>
+                         <div>
+                          <Label className="text-muted-foreground">Telefone</Label>
+                          <p>{detailedOccurrence.phone || 'Não informado'}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Cidade/Estado</Label>
+                          <p>{detailedOccurrence.city || 'Não informado'} / {detailedOccurrence.state || 'N/A'}</p>
+                        </div>
+                    </div>
+                  </div>
+
+                </div>
+              </ScrollArea>
+              <div className="flex justify-end pt-2">
+                  <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                          Fechar
+                      </Button>
+                  </DialogClose>
+              </div>
+            </>
+           )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
