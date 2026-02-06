@@ -28,7 +28,7 @@ import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firesto
 import { Button } from './ui/button';
 import { Loader2, MapPin, Eye, ZoomIn, ZoomOut, Expand } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { Badge } from './ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -79,8 +79,8 @@ export function FaunaFloraGeoMapReport() {
   const [mapUrl, setMapUrl] = useState<string | null>(null);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [detailedRecord, setDetailedRecord] = useState<FaunaFloraGeoRecord | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
@@ -95,8 +95,8 @@ export function FaunaFloraGeoMapReport() {
   const [isClient, setIsClient] = useState(false);
 
   // Zoom and Pan state
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
+  const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
@@ -248,23 +248,39 @@ export function FaunaFloraGeoMapReport() {
     setFilterType([]);
     setFilterLocation([]);
   }
-
-  const openDetails = (record: FaunaFloraGeoRecord) => {
-    setDetailedRecord(record);
-    setIsDetailModalOpen(true);
-  }
   
- const handleZoom = (direction: 'in' | 'out') => {
-    setZoom(prevZoom => {
-      const newZoom = direction === 'in' ? prevZoom * 1.2 : prevZoom / 1.2;
-      return Math.max(1, Math.min(newZoom, 5)); // Clamp zoom between 1x and 5x
+  const handleZoom = (direction: 'in' | 'out') => {
+    if (!mapContainerRef.current || !imageSize) return;
+  
+    setTransform(prevTransform => {
+      const newScale = direction === 'in' ? prevTransform.scale * 1.2 : prevTransform.scale / 1.2;
+      const clampedScale = Math.max(1, Math.min(newScale, 5));
+  
+      const parentRect = mapContainerRef.current!.getBoundingClientRect();
+      const scaledWidth = imageSize.width * clampedScale;
+      const scaledHeight = imageSize.height * clampedScale;
+  
+      // Calculate the boundaries for translation
+      const minX = parentRect.width - scaledWidth;
+      const minY = parentRect.height - scaledHeight;
+      const maxX = 0;
+      const maxY = 0;
+  
+      // Clamp the current position to the new boundaries
+      const clampedX = Math.max(minX, Math.min(maxX, prevTransform.x));
+      const clampedY = Math.max(minY, Math.min(maxY, prevTransform.y));
+  
+      return {
+        scale: clampedScale,
+        x: scaledWidth <= parentRect.width ? (parentRect.width - scaledWidth) / 2 : clampedX,
+        y: scaledHeight <= parentRect.height ? (parentRect.height - scaledHeight) / 2 : clampedY,
+      };
     });
   };
   
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
-    if (zoom <= 1) return;
     isPanning.current = true;
-    panStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+    panStart.current = { x: e.clientX - transform.x, y: e.clientY - transform.y };
     if(mapContainerRef.current) mapContainerRef.current.style.cursor = 'grabbing';
   };
 
@@ -274,39 +290,31 @@ export function FaunaFloraGeoMapReport() {
   };
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (!isPanning.current || !mapContainerRef.current) return;
+    if (!isPanning.current || !mapContainerRef.current || !imageSize) return;
     e.preventDefault();
     
-    const dx = e.clientX - panStart.current.x;
-    const dy = e.clientY - panStart.current.y;
-
-    const mapDiv = mapContainerRef.current.firstChild as HTMLDivElement;
-    if(!mapDiv) return;
-
     const parentRect = mapContainerRef.current.getBoundingClientRect();
-    const childRect = mapDiv.getBoundingClientRect();
-    
-    let clampedX = dx;
-    if (childRect.width > parentRect.width) {
-       const minX = parentRect.width - childRect.width;
-       const maxX = 0;
-       clampedX = Math.max(minX, Math.min(maxX, dx));
-    } else {
-       clampedX = (parentRect.width - childRect.width) / 2;
-    }
-    
-    let clampedY = dy;
-    if (childRect.height > parentRect.height) {
-        const minY = parentRect.height - childRect.height;
-        const maxY = 0;
-        clampedY = Math.max(minY, Math.min(maxY, dy));
-    } else {
-        clampedY = (parentRect.height - childRect.height) / 2;
-    }
+    const scaledWidth = imageSize.width * transform.scale;
+    const scaledHeight = imageSize.height * transform.scale;
 
-    setPan({ x: clampedX, y: clampedY });
+    const newX = e.clientX - panStart.current.x;
+    const newY = e.clientY - panStart.current.y;
+
+    const minX = parentRect.width - scaledWidth;
+    const minY = parentRect.height - scaledHeight;
+    const maxX = 0;
+    const maxY = 0;
+
+    const clampedX = scaledWidth > parentRect.width ? Math.max(minX, Math.min(maxX, newX)) : (parentRect.width - scaledWidth) / 2;
+    const clampedY = scaledHeight > parentRect.height ? Math.max(minY, Math.min(maxY, newY)) : (parentRect.height - scaledHeight) / 2;
+    
+    setTransform({ scale: transform.scale, x: clampedX, y: clampedY });
   };
-
+  
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth, naturalHeight } = e.currentTarget;
+    setImageSize({ width: naturalWidth, height: naturalHeight });
+  };
 
   const renderedPins = useMemo(() => {
     if (!isClient || isLoading) {
@@ -352,11 +360,12 @@ export function FaunaFloraGeoMapReport() {
                             <p><strong className="font-medium">Tipo:</strong> {rec.speciesType}</p>
                             <p><strong className="font-medium">Local:</strong> {rec.location}</p>
                           </div>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openDetails(rec)}>
-                                <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
+                            setDetailedRecord(rec);
+                            setIsDetailsModalOpen(true);
+                          }}>
+                              <Eye className="h-4 w-4" />
+                          </Button>
                         </div>
                     ))}
                 </div>
@@ -369,7 +378,7 @@ export function FaunaFloraGeoMapReport() {
   }, [clusters, isClient, availableYears, isLoading]);
 
   return (
-    <div>
+    <>
       <div className="space-y-6">
         <Card>
           <CardHeader>
@@ -425,7 +434,13 @@ export function FaunaFloraGeoMapReport() {
           </CardContent>
         </Card>
 
-        <Dialog onOpenChange={(isOpen) => { setIsMapModalOpen(isOpen); if (!isOpen) { setZoom(1); setPan({x: 0, y: 0}); } }}>
+        <Dialog open={isMapModalOpen} onOpenChange={(isOpen) => {
+            setIsMapModalOpen(isOpen);
+            if (!isOpen) {
+              setTransform({ scale: 1, x: 0, y: 0 }); // Reset on close
+              setImageSize(null);
+            }
+          }}>
           <Card>
             <CardHeader>
               <div className='flex justify-between items-center gap-4'>
@@ -435,11 +450,11 @@ export function FaunaFloraGeoMapReport() {
                     {isLoading ? 'Carregando...' : `Foram encontrados ${filteredRecords.length} registros com marcação no mapa, agrupados em ${clusters.length} pontos.`}
                   </CardDescription>
                 </div>
-                <DialogTrigger asChild>
+                 <DialogTrigger asChild>
                     <Button variant="outline" disabled={isLoadingMap || !mapUrl}>
                         <Expand className="mr-2 h-4 w-4" /> Ampliar Mapa
                     </Button>
-                </DialogTrigger>
+                 </DialogTrigger>
               </div>
             </CardHeader>
             <CardContent>
@@ -451,11 +466,11 @@ export function FaunaFloraGeoMapReport() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   ) : mapUrl ? (
                     <div style={{ width: '100%', height: '100%' }}>
-                        <Image
+                        <NextImage
                             src={mapUrl}
                             alt="Mapa de registros"
                             fill
-                            className="object-cover pointer-events-none"
+                            className="object-contain"
                         />
                         {renderedPins}
                     </div>
@@ -480,30 +495,39 @@ export function FaunaFloraGeoMapReport() {
                 onMouseUp={handleMouseUp} 
                 onMouseMove={handleMouseMove} 
                 onMouseLeave={handleMouseUp}
-                onWheel={(e) => handleZoom(e.deltaY > 0 ? 'out' : 'in')}
+                onWheel={(e) => {
+                  e.preventDefault();
+                  handleZoom(e.deltaY > 0 ? 'out' : 'in');
+                }}
                 >
-                  {mapUrl ? (
-                      <div 
-                        style={{ 
-                          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, 
-                          transformOrigin: '0 0',
-                          width: '100%',
-                          height: '100%',
-                        }}
-                      >
-                          <Image src={mapUrl} alt="Mapa de registros" fill className="object-cover pointer-events-none" />
-                          {renderedPins}
-                      </div>
-                  ) : <p className="text-center p-4">Mapa não disponível.</p>}
+                  {mapUrl && imageSize && (
+                    <div style={{
+                      transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                      transformOrigin: '0 0',
+                      width: imageSize.width,
+                      height: imageSize.height,
+                      willChange: 'transform',
+                    }}>
+                      <NextImage 
+                        src={mapUrl} 
+                        alt="Mapa de registros ampliado" 
+                        fill 
+                        className="object-contain"
+                        onLoad={handleImageLoad}
+                      />
+                      {renderedPins}
+                    </div>
+                  )}
+                  {!mapUrl && !isLoadingMap && <p className="text-center p-4">Mapa não disponível.</p>}
               </div>
               <div className="absolute top-4 right-16 flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={zoom <= 1}><ZoomOut/></Button>
-                  <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={zoom >= 5}><ZoomIn/></Button>
+                  <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={transform.scale <= 1}><ZoomOut/></Button>
+                  <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={transform.scale >= 5}><ZoomIn/></Button>
               </div>
           </DialogContent>
         </Dialog>
       </div>
-      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes do Registro</DialogTitle>
@@ -556,6 +580,6 @@ export function FaunaFloraGeoMapReport() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
