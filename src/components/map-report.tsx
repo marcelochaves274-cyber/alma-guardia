@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
@@ -411,6 +412,7 @@ export function MapReport() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes da Ocorrência</DialogTitle>
+            <DialogDescription>Visualização detalhada da ocorrência selecionada.</DialogDescription>
           </DialogHeader>
           {detailedOccurrence && (
             <>
