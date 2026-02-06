@@ -119,10 +119,10 @@ export function MapReport() {
 
   // Zoom and Pan state
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
-  const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [imageRenderMetrics, setImageRenderMetrics] = useState<ImageRenderMetrics | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const panStart = useRef({ x: 0, y: 0 });
+  const transformableWrapperRef = useRef<HTMLDivElement>(null);
+  const panStart = useRef<{ x: number; y: number, startX: number, startY: number } | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -272,54 +272,67 @@ export function MapReport() {
   }
 
   const clampPosition = useCallback((pos: { scale: number; x: number; y: number; }) => {
-    if (!mapContainerRef.current || !imageSize) return pos;
-  
-    const parentRect = mapContainerRef.current.getBoundingClientRect();
-    const scaledWidth = imageSize.width * pos.scale;
-    const scaledHeight = imageSize.height * pos.scale;
-  
-    const minX = Math.min(parentRect.width - scaledWidth, 0);
-    const minY = Math.min(parentRect.height - scaledHeight, 0);
-  
-    const clampedX = Math.max(minX, Math.min(0, pos.x));
-    const clampedY = Math.max(minY, Math.min(0, pos.y));
-  
+    if (!mapContainerRef.current || !imageRenderMetrics) return pos;
+
+    const containerRect = mapContainerRef.current.getBoundingClientRect();
+    const { renderedWidth, renderedHeight } = imageRenderMetrics;
+
+    const scaledWidth = renderedWidth * pos.scale;
+    const scaledHeight = renderedHeight * pos.scale;
+
+    const overflowX = Math.max(0, (scaledWidth - containerRect.width) / 2);
+    const overflowY = Math.max(0, (scaledHeight - containerRect.height) / 2);
+
+    const clampedX = Math.max(-overflowX, Math.min(pos.x, overflowX));
+    const clampedY = Math.max(-overflowY, Math.min(pos.y, overflowY));
+
     return { scale: pos.scale, x: clampedX, y: clampedY };
-  }, [imageSize]);
-  
+  }, [imageRenderMetrics]);
+
   const handleZoom = (direction: 'in' | 'out') => {
-    setTransform(prevTransform => {
-      const newScale = Math.max(1, Math.min(direction === 'in' ? prevTransform.scale * 1.2 : prevTransform.scale / 1.2, 5));
-      const newPos = { ...prevTransform, scale: newScale };
-      return clampPosition(newPos);
+    setTransform(prev => {
+        const newScale = Math.max(1, Math.min(direction === 'in' ? prev.scale * 1.2 : prev.scale / 1.2, 5));
+        const scaleRatio = newScale / prev.scale;
+
+        const newX = prev.x * scaleRatio;
+        const newY = prev.y * scaleRatio;
+
+        const newPos = { scale: newScale, x: newX, y: newY };
+
+        return clampPosition(newPos);
     });
   };
   
   const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.button !== 0 || !imageSize) return;
+    if (e.button !== 0 || !imageRenderMetrics) return;
 
-    panStart.current = { x: e.clientX - transform.x, y: e.clientY - transform.y };
-    if (mapContainerRef.current) mapContainerRef.current.style.cursor = 'grabbing';
+    panStart.current = { x: e.clientX, y: e.clientY, startX: transform.x, startY: transform.y };
+    if (transformableWrapperRef.current) transformableWrapperRef.current.style.cursor = 'grabbing';
 
     const handlePanMove = (moveEvent: globalThis.MouseEvent) => {
       moveEvent.preventDefault();
-      const newPos = {
-          x: moveEvent.clientX - panStart.current.x,
-          y: moveEvent.clientY - panStart.current.y
-      };
-      setTransform(prev => clampPosition({ ...prev, ...newPos }));
+      if (!panStart.current) return;
+      
+      const dx = moveEvent.clientX - panStart.current.x;
+      const dy = moveEvent.clientY - panStart.current.y;
+      
+      setTransform(prev => {
+          const newX = panStart.current!.startX + dx;
+          const newY = panStart.current!.startY + dy;
+          return clampPosition({ ...prev, x: newX, y: newY });
+      });
     };
 
     const handlePanEnd = () => {
-      if (mapContainerRef.current) mapContainerRef.current.style.cursor = 'grab';
+      panStart.current = null;
+      if (transformableWrapperRef.current) transformableWrapperRef.current.style.cursor = 'grab';
       window.removeEventListener('mousemove', handlePanMove);
       window.removeEventListener('mouseup', handlePanEnd);
     };
 
     window.addEventListener('mousemove', handlePanMove);
     window.addEventListener('mouseup', handlePanEnd);
-
-  }, [transform.x, transform.y, imageSize, clampPosition]);
+  }, [transform.x, transform.y, imageRenderMetrics, clampPosition]);
   
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     if (!mapContainerRef.current) return;
@@ -344,7 +357,6 @@ export function MapReport() {
     const offsetY = (containerRect.height - renderedHeight) / 2;
 
     setImageRenderMetrics({ offsetX, offsetY, renderedWidth, renderedHeight });
-    setImageSize({ width: naturalWidth, height: naturalHeight });
     setTransform({ scale: 1, x: 0, y: 0});
   };
   
@@ -412,7 +424,7 @@ export function MapReport() {
   }, [clusters, isClient, availableYears, isLoading]);
 
   return (
-    <Dialog>
+    <>
       <div className="space-y-6">
         <Card>
           <CardHeader>
@@ -478,11 +490,63 @@ export function MapReport() {
                   {isLoading ? 'Carregando...' : `Foram encontradas ${filteredOccurrences.length} ocorrências com marcação no mapa, agrupadas em ${clusters.length} pontos.`}
                 </CardDescription>
               </div>
-               <DialogTrigger asChild>
+              <Dialog>
+                <DialogTrigger asChild>
                   <Button variant="outline" disabled={isLoadingMap || !mapUrl} onClick={() => setIsMapModalOpen(true)}>
-                     <ZoomIn className="mr-2 h-4 w-4" /> Ampliar Mapa
+                      <ZoomIn className="mr-2 h-4 w-4" /> Ampliar Mapa
                   </Button>
-               </DialogTrigger>
+                </DialogTrigger>
+                <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
+                    <DialogHeader className="p-4 border-b">
+                        <DialogTitle>Mapa Interativo de Ocorrências</DialogTitle>
+                        <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
+                    </DialogHeader>
+                    <div
+                        ref={mapContainerRef}
+                        className="flex-1 relative overflow-hidden bg-muted flex justify-center items-center"
+                    >
+                        {isLoadingMap && <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />}
+                        {!isLoadingMap && !mapUrl && <p className="text-center p-4">Mapa não disponível.</p>}
+
+                        {mapUrl && imageRenderMetrics && (
+                            <div
+                                ref={transformableWrapperRef}
+                                className="absolute cursor-grab active:cursor-grabbing"
+                                onMouseDown={handlePanStart}
+                                onDragStart={(e) => e.preventDefault()}
+                                style={{
+                                    width: imageRenderMetrics.renderedWidth,
+                                    height: imageRenderMetrics.renderedHeight,
+                                    transform: `translate(-50%, -50%) translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                                    top: '50%',
+                                    left: '50%',
+                                }}
+                            >
+                                <NextImage
+                                    src={mapUrl}
+                                    alt="Mapa ampliado"
+                                    fill
+                                    className="object-contain pointer-events-none"
+                                />
+                                {renderedPins}
+                            </div>
+                        )}
+                         {mapUrl && !imageRenderMetrics && (
+                            <NextImage
+                                src={mapUrl}
+                                alt="Carregando mapa"
+                                fill
+                                className="object-contain invisible"
+                                onLoad={handleImageLoad}
+                            />
+                        )}
+                    </div>
+                    <div className="absolute top-20 right-4 flex flex-col items-center gap-2">
+                        <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={transform.scale >= 5}><ZoomIn/></Button>
+                        <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={transform.scale <= 1}><ZoomOut/></Button>
+                    </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardHeader>
           <CardContent>
@@ -504,58 +568,6 @@ export function MapReport() {
           </CardContent>
         </Card>
       </div>
-
-       <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
-          <DialogHeader className="p-4 border-b">
-              <DialogTitle>Mapa Interativo de Ocorrências</DialogTitle>
-              <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
-          </DialogHeader>
-          <div 
-            ref={mapContainerRef} 
-            className="flex-1 relative overflow-hidden bg-muted cursor-grab" 
-            onMouseDown={handlePanStart}
-            onWheel={(e) => { e.preventDefault(); handleZoom(e.deltaY > 0 ? 'out' : 'in'); }}
-          >
-            {isLoadingMap && <div className="w-full h-full flex items-center justify-center"> <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /> </div>}
-            {!isLoadingMap && !mapUrl && <div className="w-full h-full flex items-center justify-center"> <p className="text-center p-4">Mapa não disponível.</p> </div>}
-            {mapUrl && (
-              <div
-                style={{
-                  transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-                  transformOrigin: '0 0',
-                  width: '100%',
-                  height: '100%',
-                }}
-                onDragStart={(e) => e.preventDefault()}
-              >
-                <NextImage 
-                  src={mapUrl} 
-                  alt="Mapa ampliado" 
-                  fill 
-                  className="object-contain pointer-events-none"
-                  onLoad={handleImageLoad}
-                />
-                {imageRenderMetrics && (
-                  <div
-                    className="absolute pointer-events-none"
-                    style={{
-                      left: imageRenderMetrics.offsetX,
-                      top: imageRenderMetrics.offsetY,
-                      width: imageRenderMetrics.renderedWidth,
-                      height: imageRenderMetrics.renderedHeight,
-                    }}
-                  >
-                    {renderedPins}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="absolute top-16 right-4 flex flex-col items-center gap-2">
-              <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={transform.scale >= 5}><ZoomIn/></Button>
-              <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={transform.scale <= 1}><ZoomOut/></Button>
-          </div>
-      </DialogContent>
 
        <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
         <DialogContent className="max-w-2xl">
@@ -642,6 +654,6 @@ export function MapReport() {
            )}
         </DialogContent>
       </Dialog>
-    </Dialog>
+    </>
   );
 }
