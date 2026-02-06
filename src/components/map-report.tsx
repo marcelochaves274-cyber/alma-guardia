@@ -263,6 +263,24 @@ export function MapReport() {
     setFilterType([]);
     setFilterLocation([]);
   }
+
+  const clampPosition = useCallback((pos: { scale: number; x: number; y: number; }) => {
+    if (!mapContainerRef.current || !imageSize) return pos;
+  
+    const parentRect = mapContainerRef.current.getBoundingClientRect();
+    const scaledWidth = imageSize.width * pos.scale;
+    const scaledHeight = imageSize.height * pos.scale;
+  
+    const minX = Math.min(parentRect.width - scaledWidth, 0);
+    const minY = Math.min(parentRect.height - scaledHeight, 0);
+    const maxX = 0;
+    const maxY = 0;
+  
+    const clampedX = Math.max(minX, Math.min(maxX, pos.x));
+    const clampedY = Math.max(minY, Math.min(maxY, pos.y));
+  
+    return { scale: pos.scale, x: clampedX, y: clampedY };
+  }, [imageSize]);
   
   const handleZoom = (direction: 'in' | 'out') => {
     if (!mapContainerRef.current || !imageSize) return;
@@ -272,24 +290,14 @@ export function MapReport() {
       const clampedScale = Math.max(1, Math.min(newScale, 5));
   
       const parentRect = mapContainerRef.current!.getBoundingClientRect();
-      const scaledWidth = imageSize.width * clampedScale;
-      const scaledHeight = imageSize.height * clampedScale;
+      const newX = parentRect.width / 2 - (parentRect.width / 2 - prevTransform.x) * (clampedScale / prevTransform.scale);
+      const newY = parentRect.height / 2 - (parentRect.height / 2 - prevTransform.y) * (clampedScale / prevTransform.scale);
   
-      // Calculate the boundaries for translation
-      const minX = parentRect.width - scaledWidth;
-      const minY = parentRect.height - scaledHeight;
-      const maxX = 0;
-      const maxY = 0;
-  
-      // Clamp the current position to the new boundaries
-      const clampedX = Math.max(minX, Math.min(maxX, prevTransform.x));
-      const clampedY = Math.max(minY, Math.min(maxY, prevTransform.y));
-  
-      return {
+      return clampPosition({
         scale: clampedScale,
-        x: scaledWidth <= parentRect.width ? (parentRect.width - scaledWidth) / 2 : clampedX,
-        y: scaledHeight <= parentRect.height ? (parentRect.height - scaledHeight) / 2 : clampedY,
-      };
+        x: newX,
+        y: newY,
+      });
     });
   };
   
@@ -308,22 +316,10 @@ export function MapReport() {
     if (!isPanning.current || !mapContainerRef.current || !imageSize) return;
     e.preventDefault();
     
-    const parentRect = mapContainerRef.current.getBoundingClientRect();
-    const scaledWidth = imageSize.width * transform.scale;
-    const scaledHeight = imageSize.height * transform.scale;
-
     const newX = e.clientX - panStart.current.x;
     const newY = e.clientY - panStart.current.y;
-
-    const minX = parentRect.width - scaledWidth;
-    const minY = parentRect.height - scaledHeight;
-    const maxX = 0;
-    const maxY = 0;
-
-    const clampedX = scaledWidth > parentRect.width ? Math.max(minX, Math.min(maxX, newX)) : (parentRect.width - scaledWidth) / 2;
-    const clampedY = scaledHeight > parentRect.height ? Math.max(minY, Math.min(maxY, newY)) : (parentRect.height - scaledHeight) / 2;
     
-    setTransform({ scale: transform.scale, x: clampedX, y: clampedY });
+    setTransform(clampPosition({ scale: transform.scale, x: newX, y: newY }));
   };
   
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -521,29 +517,35 @@ export function MapReport() {
                   handleZoom(e.deltaY > 0 ? 'out' : 'in');
                 }}
               >
-                  {mapUrl && imageSize && (
+                  {mapUrl ? (
                     <div style={{
+                      width: imageSize ? imageSize.width : '100%',
+                      height: imageSize ? imageSize.height : '100%',
                       transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                       transformOrigin: '0 0',
-                      width: imageSize.width,
-                      height: imageSize.height,
                       willChange: 'transform',
+                      position: 'relative',
                     }}>
                       <NextImage 
-                        src={mapUrl}
-                        alt="Mapa de ocorrências ampliado"
-                        fill
+                        src={mapUrl} 
+                        alt="Mapa de registros ampliado" 
+                        fill 
                         className="object-contain"
                         onLoad={handleImageLoad}
                       />
-                       {renderedPins}
+                      {imageSize && renderedPins}
                     </div>
+                  ) : isLoadingMap ? (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                  ) : (
+                      <p className="text-center p-4">Mapa não disponível.</p>
                   )}
-                  {!mapUrl && !isLoadingMap && <p className="text-center p-4">Mapa não disponível.</p>}
               </div>
-              <div className="absolute top-4 right-16 flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={transform.scale <= 1}><ZoomOut/></Button>
+              <div className="absolute top-16 right-4 flex flex-col items-center gap-2">
                   <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={transform.scale >= 5}><ZoomIn/></Button>
+                  <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={transform.scale <= 1}><ZoomOut/></Button>
               </div>
           </DialogContent>
         </Dialog>
