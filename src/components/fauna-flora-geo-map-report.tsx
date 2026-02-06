@@ -70,6 +70,24 @@ const analysisMapping: Record<string, { label: string, className: string }> = {
     baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
+const getRenderedImageSize = (container: DOMRect, image: {width: number, height: number}) => {
+    const containerAspectRatio = container.width / container.height;
+    const imageAspectRatio = image.width / image.height;
+    let renderedWidth, renderedHeight, offsetX = 0, offsetY = 0;
+
+    if (imageAspectRatio > containerAspectRatio) {
+        renderedWidth = container.width;
+        renderedHeight = renderedWidth / imageAspectRatio;
+        offsetY = (container.height - renderedHeight) / 2;
+    } else {
+        renderedHeight = container.height;
+        renderedWidth = renderedHeight * imageAspectRatio;
+        offsetX = (container.width - renderedWidth) / 2;
+    }
+    return { renderedWidth, renderedHeight, offsetX, offsetY };
+}
+
+
 export function FaunaFloraGeoMapReport() {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -101,6 +119,7 @@ export function FaunaFloraGeoMapReport() {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const mapRef = useRef<HTMLDivElement>(null);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     setIsClient(true);
@@ -263,54 +282,70 @@ export function FaunaFloraGeoMapReport() {
   };
 
   useEffect(() => {
-    if (isZoomModalOpen && zoomTarget) {
-      setZoomState({ scale: 1, x: 0, y: 0 });
+    if (isZoomModalOpen) {
+        // Reset state when opening
+        setZoomState({ scale: 1, x: 0, y: 0 });
 
-      const attemptZoom = (retries = 5) => {
-        if (retries === 0) return;
-        
-        if (mapRef.current) {
-          const { width, height } = mapRef.current.getBoundingClientRect();
-          if (width > 0 && height > 0) {
-            const initialScale = 2.0;
-            const newX = (width / 2) - (zoomTarget.x / 100 * width * initialScale);
-            const newY = (height / 2) - (zoomTarget.y / 100 * height * initialScale);
-            
-            const clampedX = Math.min(0, Math.max(width * (1 - initialScale), newX));
-            const clampedY = Math.min(0, Math.max(height * (1 - initialScale), newY));
+        // Focus on the target after a delay to allow the modal to render
+        const timer = setTimeout(() => {
+            if (zoomTarget && mapRef.current && imageDimensions.width > 0) {
+                const container = mapRef.current.getBoundingClientRect();
+                const { renderedWidth, renderedHeight, offsetX, offsetY } = getRenderedImageSize(container, imageDimensions);
+                
+                const initialScale = 2.5;
 
-            setZoomState({
-              scale: initialScale,
-              x: clampedX,
-              y: clampedY,
-            });
-            return;
-          }
-        }
-        
-        setTimeout(() => attemptZoom(retries - 1), 100);
-      };
+                const targetX = (zoomTarget.x / 100) * renderedWidth;
+                const targetY = (zoomTarget.y / 100) * renderedHeight;
 
-      setTimeout(attemptZoom, 50);
+                let newX = container.width / 2 - targetX * initialScale;
+                let newY = container.height / 2 - targetY * initialScale;
+                
+                newX += offsetX;
+                newY += offsetY;
+                
+                const finalImageWidth = renderedWidth * initialScale;
+                const finalImageHeight = renderedHeight * initialScale;
+                
+                const minX = container.width - finalImageWidth;
+                const minY = container.height - finalImageHeight;
+
+                const clampedX = Math.max(minX < 0 ? minX : 0, Math.min(0, newX));
+                const clampedY = Math.max(minY < 0 ? minY : 0, Math.min(0, newY));
+
+                setZoomState({
+                    scale: initialScale,
+                    x: clampedX,
+                    y: clampedY,
+                });
+            }
+        }, 150); // Delay to ensure modal is rendered
+
+        return () => clearTimeout(timer);
     }
-  }, [isZoomModalOpen, zoomTarget]);
+  }, [isZoomModalOpen, zoomTarget, imageDimensions]);
+
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
       e.preventDefault();
-      if (!mapRef.current) return;
+      if (!mapRef.current || imageDimensions.width === 0) return;
       
-      const rect = mapRef.current.getBoundingClientRect();
+      const container = mapRef.current.getBoundingClientRect();
+      const { renderedWidth, renderedHeight } = getRenderedImageSize(container, imageDimensions);
+      
       const scaleAmount = -e.deltaY / 500;
       const newScale = Math.max(1, Math.min(zoomState.scale + scaleAmount, 10));
 
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+      const mouseX = e.clientX - container.left;
+      const mouseY = e.clientY - container.top;
 
       const newX = mouseX - (mouseX - zoomState.x) * (newScale / zoomState.scale);
       const newY = mouseY - (mouseY - zoomState.y) * (newScale / zoomState.scale);
       
-      const clampedX = Math.min(0, Math.max(rect.width * (1 - newScale), newX));
-      const clampedY = Math.min(0, Math.max(rect.height * (1 - newScale), newY));
+      const minX = container.width - renderedWidth * newScale;
+      const minY = container.height - renderedHeight * newScale;
+
+      const clampedX = Math.max(minX < 0 ? minX : 0, Math.min(0, newX));
+      const clampedY = Math.max(minY < 0 ? minY : 0, Math.min(0, newY));
 
       setZoomState({ scale: newScale, x: clampedX, y: clampedY });
   };
@@ -324,15 +359,20 @@ export function FaunaFloraGeoMapReport() {
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!isPanning || !mapRef.current) return;
+      if (!isPanning || !mapRef.current || imageDimensions.width === 0) return;
       e.preventDefault();
-      const rect = mapRef.current.getBoundingClientRect();
       
+      const container = mapRef.current.getBoundingClientRect();
+      const { renderedWidth, renderedHeight } = getRenderedImageSize(container, imageDimensions);
+
       const newX = e.clientX - panStart.x;
       const newY = e.clientY - panStart.y;
+      
+      const minX = container.width - renderedWidth * zoomState.scale;
+      const minY = container.height - renderedHeight * zoomState.scale;
 
-      const clampedX = Math.min(0, Math.max(rect.width * (1 - zoomState.scale), newX));
-      const clampedY = Math.min(0, Math.max(rect.height * (1 - zoomState.scale), newY));
+      const clampedX = Math.max(minX < 0 ? minX : 0, Math.min(0, newX));
+      const clampedY = Math.max(minY < 0 ? minY : 0, Math.min(0, newY));
       
       setZoomState({
           ...zoomState,
@@ -346,27 +386,35 @@ export function FaunaFloraGeoMapReport() {
   };
 
   const handleZoomIn = () => {
-      if (!mapRef.current) return;
-      const rect = mapRef.current.getBoundingClientRect();
-      const newScale = Math.min(zoomState.scale * 1.5, 10);
-      const newX = rect.width / 2 - (rect.width / 2 - zoomState.x) * (newScale / zoomState.scale);
-      const newY = rect.height / 2 - (rect.height / 2 - zoomState.y) * (newScale / zoomState.scale);
-      
-      const clampedX = Math.min(0, Math.max(rect.width * (1 - newScale), newX));
-      const clampedY = Math.min(0, Math.max(rect.height * (1 - newScale), newY));
+    if (!mapRef.current || imageDimensions.width === 0) return;
+    const container = mapRef.current.getBoundingClientRect();
+    const { renderedWidth, renderedHeight } = getRenderedImageSize(container, imageDimensions);
+    const newScale = Math.min(zoomState.scale * 1.5, 10);
+    const newX = container.width / 2 - (container.width / 2 - zoomState.x) * (newScale / zoomState.scale);
+    const newY = container.height / 2 - (container.height / 2 - zoomState.y) * (newScale / zoomState.scale);
 
-      setZoomState({ scale: newScale, x: clampedX, y: clampedY });
+    const minX = container.width - renderedWidth * newScale;
+    const minY = container.height - renderedHeight * newScale;
+    
+    const clampedX = Math.max(minX < 0 ? minX : 0, Math.min(0, newX));
+    const clampedY = Math.max(minY < 0 ? minY : 0, Math.min(0, newY));
+
+    setZoomState({ scale: newScale, x: clampedX, y: clampedY });
   };
 
   const handleZoomOut = () => {
-      if (!mapRef.current) return;
-      const rect = mapRef.current.getBoundingClientRect();
+      if (!mapRef.current || imageDimensions.width === 0) return;
+      const container = mapRef.current.getBoundingClientRect();
+      const { renderedWidth, renderedHeight } = getRenderedImageSize(container, imageDimensions);
       const newScale = Math.max(1, zoomState.scale / 1.5);
-      const newX = rect.width / 2 - (rect.width / 2 - zoomState.x) * (newScale / zoomState.scale);
-      const newY = rect.height / 2 - (rect.height / 2 - zoomState.y) * (newScale / zoomState.scale);
+      const newX = container.width / 2 - (container.width / 2 - zoomState.x) * (newScale / zoomState.scale);
+      const newY = container.height / 2 - (container.height / 2 - zoomState.y) * (newScale / zoomState.scale);
 
-      const clampedX = Math.min(0, Math.max(rect.width * (1 - newScale), newX));
-      const clampedY = Math.min(0, Math.max(rect.height * (1 - newScale), newY));
+      const minX = container.width - renderedWidth * newScale;
+      const minY = container.height - renderedHeight * newScale;
+      
+      const clampedX = Math.max(minX < 0 ? minX : 0, Math.min(0, newX));
+      const clampedY = Math.max(minY < 0 ? minY : 0, Math.min(0, newY));
 
       setZoomState({ scale: newScale, x: clampedX, y: clampedY });
   };
@@ -596,7 +644,7 @@ export function FaunaFloraGeoMapReport() {
             >
                 {mapUrl ? (
                     <div 
-                        className="relative w-full h-full transition-transform duration-100 ease-linear"
+                        className="relative w-full h-full"
                         style={{ 
                             transform: `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale})`,
                             cursor: isPanning ? 'grabbing' : 'grab',
@@ -606,7 +654,11 @@ export function FaunaFloraGeoMapReport() {
                             src={mapUrl}
                             alt="Mapa ampliado"
                             fill
-                            className="object-cover pointer-events-none"
+                            className="object-contain pointer-events-none"
+                             onLoad={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                setImageDimensions({ width: target.naturalWidth, height: target.naturalHeight });
+                            }}
                         />
                         {zoomTarget && (
                             <div
@@ -657,5 +709,3 @@ export function FaunaFloraGeoMapReport() {
     </div>
   );
 }
-
-    
