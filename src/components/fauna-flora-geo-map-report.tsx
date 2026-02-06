@@ -37,6 +37,7 @@ import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
 import { SheetFilter } from './sheet-filter';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface FaunaFloraGeoRecord {
   id: string;
@@ -594,9 +595,30 @@ export function FaunaFloraGeoMapReport() {
             </div>
             <DialogFooter className="p-2 border-t bg-background/95 flex justify-between">
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" onClick={handleZoomOut}><ZoomOut /></Button>
-                    <Button variant="outline" size="icon" onClick={handleZoomIn}><ZoomIn /></Button>
-                    <Button variant="outline" size="icon" onClick={handleResetZoom}><RotateCcw /></Button>
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Button variant="outline" size="icon" onClick={handleZoomOut}><ZoomOut /></Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                          <p>Reduzir Zoom</p>
+                      </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Button variant="outline" size="icon" onClick={handleZoomIn}><ZoomIn /></Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                          <p>Aumentar Zoom</p>
+                      </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                           <Button variant="outline" size="icon" onClick={handleResetZoom}><RotateCcw /></Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                          <p>Redefinir Zoom</p>
+                      </TooltipContent>
+                  </Tooltip>
                 </div>
                 <DialogClose asChild>
                     <Button type="button" variant="secondary">
