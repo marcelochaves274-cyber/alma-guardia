@@ -245,18 +245,17 @@ export function ManageMap() {
       if (error.code) { // Firebase-specific error
         switch (error.code) {
           case 'storage/unauthorized':
-            description = 'Erro de permissão (storage/unauthorized). O servidor recusou o upload. Isso pode ser um problema nas regras de segurança do Firebase Storage ou na configuração CORS do bucket.';
+            description = 'Erro de permissão (storage/unauthorized). As regras de segurança do Storage negaram o acesso.';
             break;
           case 'storage/canceled':
             description = 'O upload foi cancelado.';
             break;
+          case 'storage/unknown':
+             description = 'Erro de CORS ou rede. O servidor de armazenamento bloqueou a solicitação. Isso requer uma configuração de CORS no bucket do Google Cloud, que não posso fazer. Verifique o console do navegador (F12) para mais detalhes.';
+             break;
           default:
             description = `Ocorreu um erro de armazenamento: ${error.code}`;
         }
-      } else if (error.name === 'FirebaseError') {
-        description = `Erro no Firebase: ${error.message}`;
-      } else if (error instanceof Error) {
-        description = error.message;
       }
       
       toast({
