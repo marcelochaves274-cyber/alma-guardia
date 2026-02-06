@@ -107,6 +107,9 @@ export function FaunaFloraGeoMapReport() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const transformableWrapperRef = useRef<HTMLDivElement>(null);
   const panStart = useRef<{ x: number; y: number, startX: number, startY: number } | null>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const pinsContainerRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -256,35 +259,31 @@ export function FaunaFloraGeoMapReport() {
     setFilterLocation([]);
   }
   
-  const clampPosition = useCallback((pos: { scale: number; x: number; y: number; }) => {
-    if (!mapContainerRef.current || !imageRenderMetrics) return pos;
+  const clampPosition = useCallback((x: number, y: number, scale: number) => {
+    if (!mapContainerRef.current || !imageRenderMetrics) return { x, y };
 
     const containerRect = mapContainerRef.current.getBoundingClientRect();
     const { renderedWidth, renderedHeight } = imageRenderMetrics;
 
-    const scaledWidth = renderedWidth * pos.scale;
-    const scaledHeight = renderedHeight * pos.scale;
+    const scaledWidth = renderedWidth * scale;
+    const scaledHeight = renderedHeight * scale;
 
     const overflowX = Math.max(0, (scaledWidth - containerRect.width) / 2);
     const overflowY = Math.max(0, (scaledHeight - containerRect.height) / 2);
 
-    const clampedX = Math.max(-overflowX, Math.min(pos.x, overflowX));
-    const clampedY = Math.max(-overflowY, Math.min(pos.y, overflowY));
+    const clampedX = Math.max(-overflowX, Math.min(x, overflowX));
+    const clampedY = Math.max(-overflowY, Math.min(y, overflowY));
 
-    return { scale: pos.scale, x: clampedX, y: clampedY };
+    return { x: clampedX, y: clampedY };
   }, [imageRenderMetrics]);
 
   const handleZoom = (direction: 'in' | 'out') => {
     setTransform(prev => {
         const newScale = Math.max(1, Math.min(direction === 'in' ? prev.scale * 1.2 : prev.scale / 1.2, 5));
-        const scaleRatio = newScale / prev.scale;
+        
+        const clamped = clampPosition(prev.x, prev.y, newScale);
 
-        const newX = prev.x * scaleRatio;
-        const newY = prev.y * scaleRatio;
-
-        const newPos = { scale: newScale, x: newX, y: newY };
-
-        return clampPosition(newPos);
+        return { scale: newScale, x: clamped.x, y: clamped.y };
     });
   };
   
@@ -292,25 +291,27 @@ export function FaunaFloraGeoMapReport() {
     if (e.button !== 0 || !imageRenderMetrics) return;
 
     panStart.current = { x: e.clientX, y: e.clientY, startX: transform.x, startY: transform.y };
-    if (transformableWrapperRef.current) transformableWrapperRef.current.style.cursor = 'grabbing';
-
+    
     const handlePanMove = (moveEvent: globalThis.MouseEvent) => {
       moveEvent.preventDefault();
-      if (!panStart.current) return;
+      const currentPanStart = panStart.current;
+      if (!currentPanStart) {
+        return;
+      }
       
-      const dx = moveEvent.clientX - panStart.current.x;
-      const dy = moveEvent.clientY - panStart.current.y;
+      const dx = moveEvent.clientX - currentPanStart.x;
+      const dy = moveEvent.clientY - currentPanStart.y;
       
       setTransform(prev => {
-          const newX = panStart.current!.startX + dx;
-          const newY = panStart.current!.startY + dy;
-          return clampPosition({ ...prev, x: newX, y: newY });
+          const newX = currentPanStart.startX + dx;
+          const newY = currentPanStart.startY + dy;
+          const clamped = clampPosition(newX, newY, prev.scale);
+          return { ...prev, x: clamped.x, y: clamped.y };
       });
     };
 
     const handlePanEnd = () => {
       panStart.current = null;
-      if (transformableWrapperRef.current) transformableWrapperRef.current.style.cursor = 'grab';
       window.removeEventListener('mousemove', handlePanMove);
       window.removeEventListener('mouseup', handlePanEnd);
     };
@@ -329,20 +330,28 @@ export function FaunaFloraGeoMapReport() {
     
     let renderedWidth: number;
     let renderedHeight: number;
+    let offsetX = 0;
+    let offsetY = 0;
 
     if (imageAspectRatio > containerAspectRatio) {
       renderedWidth = containerRect.width;
       renderedHeight = renderedWidth / imageAspectRatio;
+      offsetY = (containerRect.height - renderedHeight) / 2;
     } else {
       renderedHeight = containerRect.height;
       renderedWidth = renderedHeight * imageAspectRatio;
+      offsetX = (containerRect.width - renderedWidth) / 2;
     }
-
-    const offsetX = (containerRect.width - renderedWidth) / 2;
-    const offsetY = (containerRect.height - renderedHeight) / 2;
 
     setImageRenderMetrics({ offsetX, offsetY, renderedWidth, renderedHeight });
     setTransform({ scale: 1, x: 0, y: 0});
+
+     if (pinsContainerRef.current) {
+        pinsContainerRef.current.style.width = `${renderedWidth}px`;
+        pinsContainerRef.current.style.height = `${renderedHeight}px`;
+        pinsContainerRef.current.style.top = `${offsetY}px`;
+        pinsContainerRef.current.style.left = `${offsetX}px`;
+    }
   };
 
   const renderedPins = useMemo(() => {
@@ -475,9 +484,9 @@ export function FaunaFloraGeoMapReport() {
                   {isLoading ? 'Carregando...' : `Foram encontrados ${filteredRecords.length} registros com marcação no mapa, agrupados em ${clusters.length} pontos.`}
                 </CardDescription>
               </div>
-               <Dialog>
+              <Dialog open={isMapModalOpen} onOpenChange={setIsMapModalOpen}>
                  <DialogTrigger asChild>
-                    <Button variant="outline" disabled={isLoadingMap || !mapUrl} onClick={() => setIsMapModalOpen(true)}>
+                    <Button variant="outline" disabled={isLoadingMap || !mapUrl}>
                         <ZoomIn className="mr-2 h-4 w-4" /> Ampliar Mapa
                     </Button>
                  </DialogTrigger>
@@ -488,42 +497,34 @@ export function FaunaFloraGeoMapReport() {
                      </DialogHeader>
                       <div
                           ref={mapContainerRef}
-                          className="flex-1 relative overflow-hidden bg-muted flex justify-center items-center"
+                          className="flex-1 relative overflow-hidden bg-muted flex justify-center items-center cursor-grab"
+                          onMouseDown={handlePanStart}
                       >
                           {isLoadingMap && <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />}
                           {!isLoadingMap && !mapUrl && <p className="text-center p-4">Mapa não disponível.</p>}
-
-                          {mapUrl && imageRenderMetrics && (
-                              <div
-                                  ref={transformableWrapperRef}
-                                  className="absolute cursor-grab active:cursor-grabbing"
-                                  onMouseDown={handlePanStart}
-                                  onDragStart={(e) => e.preventDefault()}
-                                  style={{
-                                      width: imageRenderMetrics.renderedWidth,
-                                      height: imageRenderMetrics.renderedHeight,
-                                      transform: `translate(-50%, -50%) translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-                                      top: '50%',
-                                      left: '50%',
-                                  }}
+                           {mapUrl && (
+                             <div
+                                ref={transformableWrapperRef}
+                                className="absolute"
+                                style={{
+                                    transformOrigin: 'center center',
+                                    transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                                }}
                               >
                                   <NextImage
+                                      ref={imageRef}
                                       src={mapUrl}
                                       alt="Mapa ampliado"
-                                      fill
-                                      className="object-contain pointer-events-none"
+                                      width={1000}
+                                      height={1000}
+                                      className="object-contain pointer-events-none max-w-full max-h-full"
+                                      onLoad={handleImageLoad}
+                                      onDragStart={(e) => e.preventDefault()}
                                   />
-                                  {renderedPins}
+                                   <div ref={pinsContainerRef} className="absolute top-0 left-0 pointer-events-none">
+                                      {imageRenderMetrics && renderedPins}
+                                  </div>
                               </div>
-                          )}
-                           {mapUrl && !imageRenderMetrics && (
-                              <NextImage
-                                  src={mapUrl}
-                                  alt="Carregando mapa"
-                                  fill
-                                  className="object-contain invisible"
-                                  onLoad={handleImageLoad}
-                              />
                           )}
                       </div>
                      <div className="absolute top-20 right-4 flex flex-col items-center gap-2">
@@ -535,29 +536,27 @@ export function FaunaFloraGeoMapReport() {
             </div>
           </CardHeader>
           <CardContent>
-            <Popover>
-              <div 
-                className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden"
-              >
-                {isLoadingMap || isLoading ? (
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                ) : mapUrl ? (
-                  <div style={{ width: '100%', height: '100%' }}>
-                      <NextImage
-                          src={mapUrl}
-                          alt="Mapa de registros"
-                          fill
-                          className="object-contain"
-                      />
-                      {renderedPins}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center p-4">
-                    Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
-                  </p>
-                )}
-              </div>
-            </Popover>
+            <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+              {isLoadingMap || isLoading ? (
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              ) : mapUrl ? (
+                 <Popover>
+                    <div style={{ width: '100%', height: '100%' }}>
+                        <NextImage
+                            src={mapUrl}
+                            alt="Mapa de registros"
+                            fill
+                            className="object-contain"
+                        />
+                        {renderedPins}
+                    </div>
+                </Popover>
+              ) : (
+                <p className="text-muted-foreground text-center p-4">
+                  Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
