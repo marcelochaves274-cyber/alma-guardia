@@ -127,7 +127,7 @@ export function ManageMap() {
   ) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // Reverted to 2MB limit
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
         toast({
           variant: 'destructive',
           title: 'Arquivo muito grande',
@@ -215,7 +215,7 @@ export function ManageMap() {
         }
         
         // Handle image addition/change in storage
-        if (currentMap.url && currentMap.url.startsWith('data:image')) {
+        if (currentMap.url && currentMap.url.startsWith('data:')) {
             if (originalUrl) {
                 try {
                     const oldRef = storageRef(storage, originalUrl);
@@ -241,7 +241,7 @@ export function ManageMap() {
         const docSnap = await getDoc(settingsDocRef);
         const firestoreMapsRaw = docSnap.exists() ? (docSnap.data().maps || []) : [];
 
-        let newMapsForFirestore = [...firestoreMapsRaw];
+        let newMapsForFirestore: MapInfo[] = [...firestoreMapsRaw];
         const existingMapIndex = newMapsForFirestore.findIndex(m => m.id === mapId);
 
         if (existingMapIndex > -1) {
@@ -249,6 +249,19 @@ export function ManageMap() {
         } else {
             newMapsForFirestore.push(updatedMapData);
         }
+        
+        // Ensure all map slots are present
+        const allMapIds = ['map1', 'map2', 'map3'];
+        allMapIds.forEach(id => {
+          if (!newMapsForFirestore.some(m => m.id === id)) {
+            const currentMapInState = maps.find(m => m.id === id);
+            newMapsForFirestore.push({
+              id: id,
+              name: currentMapInState?.name || `Mapa ${id.replace('map', '')}`,
+              url: currentMapInState?.url && !currentMapInState.url.startsWith('data:') ? currentMapInState.url : null
+            });
+          }
+        });
         
         const primaryMapUrl = newMapsForFirestore.find(m => m.id === 'map1')?.url || null;
         await setDoc(settingsDocRef, { maps: newMapsForFirestore, mapUrl: primaryMapUrl }, { merge: true });
