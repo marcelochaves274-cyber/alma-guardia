@@ -70,11 +70,29 @@ export function ManageMap() {
         if (isMounted) {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            const fetchedMaps = data.maps || [];
-            setMaps(currentMaps => currentMaps.map(defaultMap => {
-              const foundMap = fetchedMaps.find((fm: MapInfo) => fm.id === defaultMap.id);
-              return foundMap ? { ...defaultMap, name: foundMap.name, url: foundMap.url } : defaultMap;
-            }));
+            // Check for the new 'maps' array first (forward compatibility)
+            if (data.maps && Array.isArray(data.maps) && data.maps.length > 0) {
+                const fetchedMaps = data.maps;
+                const newMapsState: MapInfo[] = [
+                    { id: 'map1', name: 'Mapa 1', url: null },
+                    { id: 'map2', name: 'Mapa 2', url: null },
+                    { id: 'map3', name: 'Mapa 3', url: null },
+                ];
+                fetchedMaps.forEach((fm: MapInfo) => {
+                    const index = newMapsState.findIndex(m => m.id === fm.id);
+                    if (index !== -1) {
+                        newMapsState[index] = { ...newMapsState[index], name: fm.name, url: fm.url };
+                    }
+                });
+                setMaps(newMapsState);
+            } else if (data.mapUrl) {
+              // Backward compatibility: old 'mapUrl' exists. Migrate it to the first slot.
+              setMaps([
+                { id: 'map1', name: 'Mapa Principal', url: data.mapUrl },
+                { id: 'map2', name: 'Mapa 2', url: null },
+                { id: 'map3', name: 'Mapa 3', url: null },
+              ]);
+            }
           }
         }
       })
@@ -142,7 +160,13 @@ export function ManageMap() {
             url: m.url
        }));
 
-      await setDoc(settingsDocRef, { maps: mapsToSave }, { merge: true });
+       // Ensure backward compatibility by also saving the first map's URL to the old field.
+       const primaryMapUrl = mapsToSave.find(m => m.id === 'map1')?.url || null;
+
+      await setDoc(settingsDocRef, { 
+          maps: mapsToSave,
+          mapUrl: primaryMapUrl // Keep the old field updated
+      }, { merge: true });
       toast({ title: 'Sucesso!', description: 'Os mapas foram salvos.' });
     } catch (error) {
       console.error("Error saving maps:", error);
@@ -245,3 +269,5 @@ export function ManageMap() {
     </Card>
   );
 }
+
+    
