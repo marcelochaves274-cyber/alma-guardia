@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, MouseEvent } from 'react';
 import {
   Card,
   CardContent,
@@ -21,11 +21,12 @@ import {
   DialogTitle,
   DialogClose,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Button } from './ui/button';
-import { Loader2, MapPin, Eye } from 'lucide-react';
+import { Loader2, MapPin, Eye, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
@@ -107,6 +108,15 @@ export function MapReport() {
   const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
   const [isClient, setIsClient] = useState(false);
+
+  // Zoom modal state
+  const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
+  const [zoomTarget, setZoomTarget] = useState<{ x: number; y: number } | null>(null);
+  const [zoomState, setZoomState] = useState({ scale: 1, x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const mapRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -260,6 +270,88 @@ export function MapReport() {
     setIsDetailModalOpen(true);
   }
 
+  const openZoomModal = (occurrence: Occurrence) => {
+    if (occurrence.mapMarker) {
+        setZoomTarget(occurrence.mapMarker);
+        setIsZoomModalOpen(true);
+    }
+  };
+
+  useEffect(() => {
+    if (isZoomModalOpen && zoomTarget && mapRef.current) {
+        const { width, height } = mapRef.current.getBoundingClientRect();
+        const initialScale = 2.5;
+        setZoomState({
+            scale: initialScale,
+            x: (width / 2) - (zoomTarget.x / 100 * width * initialScale),
+            y: (height / 2) - (zoomTarget.y / 100 * height * initialScale),
+        });
+    }
+  }, [isZoomModalOpen, zoomTarget]);
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const { deltaY, clientX, clientY } = e;
+      if (!mapRef.current) return;
+
+      const rect = mapRef.current.getBoundingClientRect();
+      const scaleAmount = -deltaY / 500;
+      const newScale = Math.min(Math.max(0.5, zoomState.scale + scaleAmount), 10);
+
+      const mouseX = clientX - rect.left;
+      const mouseY = clientY - rect.top;
+
+      const newX = mouseX - (mouseX - zoomState.x) * (newScale / zoomState.scale);
+      const newY = mouseY - (mouseY - zoomState.y) * (newScale / zoomState.scale);
+
+      setZoomState({ scale: newScale, x: newX, y: newY });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+      setIsPanning(true);
+      setPanStart({
+          x: e.clientX - zoomState.x,
+          y: e.clientY - zoomState.y,
+      });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!isPanning) return;
+      e.preventDefault();
+      setZoomState(prev => ({
+          ...prev,
+          x: e.clientX - panStart.x,
+          y: e.clientY - panStart.y,
+      }));
+  };
+
+  const handleMouseUp = () => {
+      setIsPanning(false);
+  };
+
+  const handleZoomIn = () => {
+      setZoomState(prev => ({ ...prev, scale: Math.min(prev.scale * 1.2, 10) }));
+  };
+
+  const handleZoomOut = () => {
+      setZoomState(prev => ({ ...prev, scale: Math.max(prev.scale / 1.2, 0.5) }));
+  };
+  
+  const handleResetZoom = () => {
+    if (zoomTarget && mapRef.current) {
+      const { width, height } = mapRef.current.getBoundingClientRect();
+      const initialScale = 2.5; 
+      setZoomState({
+          scale: initialScale,
+          x: (width / 2) - (zoomTarget.x / 100 * width * initialScale),
+          y: (height / 2) - (zoomTarget.y / 100 * height * initialScale),
+      });
+    } else {
+        setZoomState({ scale: 1, x: 0, y: 0 });
+    }
+  };
+
+
   const renderedPins = useMemo(() => {
     if (!isClient || isLoading) {
       return null;
@@ -304,9 +396,14 @@ export function MapReport() {
                             <p><strong className="font-medium">Tipo:</strong> {occ.occurrenceType}</p>
                             <p><strong className="font-medium">Local:</strong> {occ.occurrenceLocation}</p>
                           </div>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openDetails(occ)}>
-                              <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className='flex'>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-primary" onClick={() => openZoomModal(occ)}>
+                                <ZoomIn className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openDetails(occ)}>
+                                <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                     ))}
                 </div>
@@ -493,6 +590,70 @@ export function MapReport() {
            )}
         </DialogContent>
       </Dialog>
+      <Dialog open={isZoomModalOpen} onOpenChange={setIsZoomModalOpen}>
+        <DialogContent className="max-w-[90vw] h-[90vh] flex flex-col p-0 gap-0">
+            <DialogHeader className="p-4 border-b">
+                <DialogTitle>Mapa Ampliado</DialogTitle>
+                <DialogDescription>
+                    Use a roda do mouse para zoom. Clique e arraste para mover.
+                </DialogDescription>
+            </DialogHeader>
+            <div 
+                ref={mapRef}
+                className="flex-1 w-full h-full bg-muted/20 overflow-hidden cursor-grab active:cursor-grabbing"
+                onWheel={handleWheel}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+            >
+                {mapUrl ? (
+                    <div 
+                        className="relative w-full h-full transition-transform duration-100 ease-linear"
+                        style={{ 
+                            transform: `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale})`,
+                            cursor: isPanning ? 'grabbing' : 'grab',
+                        }}
+                    >
+                        <Image
+                            src={mapUrl}
+                            alt="Mapa ampliado"
+                            fill
+                            className="object-contain pointer-events-none"
+                        />
+                        {zoomTarget && (
+                            <div
+                                className="absolute"
+                                style={{
+                                    left: `${zoomTarget.x}%`,
+                                    top: `${zoomTarget.y}%`,
+                                    transform: `translate(-50%, -100%) scale(${1 / zoomState.scale})`,
+                                }}
+                            >
+                                <MapPin className="h-6 w-6 fill-blue-500 stroke-white drop-shadow-lg" />
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-center w-full h-full">
+                        <p>Mapa não disponível.</p>
+                    </div>
+                )}
+            </div>
+            <DialogFooter className="p-2 border-t bg-background/95 flex justify-between">
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" onClick={handleZoomOut}><ZoomOut /></Button>
+                    <Button variant="outline" size="icon" onClick={handleZoomIn}><ZoomIn /></Button>
+                    <Button variant="outline" size="icon" onClick={handleResetZoom}><RotateCcw /></Button>
+                </div>
+                <DialogClose asChild>
+                    <Button type="button" variant="secondary">
+                        Fechar
+                    </Button>
+                </DialogClose>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
     </div>
   );
 }
