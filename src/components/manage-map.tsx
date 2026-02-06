@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -75,7 +76,7 @@ const resizeImage = (file: File): Promise<string> => {
           return reject(new Error('Could not get canvas context'));
         }
         ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         resolve(dataUrl);
       };
       img.onerror = reject;
@@ -95,8 +96,7 @@ export function ManageMap() {
     { id: 'map3', name: 'Mapa 3', url: null },
   ]);
   const [originalMaps, setOriginalMaps] = useState<MapInfo[]>([]);
-
-  const [isSaving, setIsSaving] = useState(false);
+  const [savingState, setSavingState] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const fileInputRefs = {
@@ -146,11 +146,12 @@ export function ManageMap() {
                 }
               });
             } else if (data.mapUrl) {
+              // Compatibility for old structure
               newMapsState[0] = { id: 'map1', name: data.mapName || 'Mapa Principal', url: data.mapUrl };
             }
           }
           setMaps(newMapsState);
-          setOriginalMaps(JSON.parse(JSON.stringify(newMapsState))); // Deep copy
+          setOriginalMaps(JSON.parse(JSON.stringify(newMapsState)));
         }
       })
       .catch((error: any) => {
@@ -174,7 +175,6 @@ export function ManageMap() {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
-        // 10MB limit
         toast({
           variant: 'destructive',
           title: 'Arquivo muito grande',
@@ -183,7 +183,7 @@ export function ManageMap() {
         return;
       }
 
-      setIsSaving(true); // Use isSaving to show loader during resize
+      setSavingState(s => ({ ...s, [mapId]: true }));
       try {
         const resizedDataUrl = await resizeImage(file);
         setMaps((prevMaps) =>
@@ -196,11 +196,10 @@ export function ManageMap() {
         toast({
           variant: 'destructive',
           title: 'Erro ao processar imagem',
-          description:
-            'Não foi possível redimensionar a imagem. Tente um arquivo diferente.',
+          description: 'Não foi possível redimensionar a imagem. Tente um arquivo diferente.',
         });
       } finally {
-        setIsSaving(false);
+        setSavingState(s => ({ ...s, [mapId]: false }));
       }
     }
   };
@@ -221,74 +220,90 @@ export function ManageMap() {
     }
   };
 
-  const handleSaveMaps = async () => {
+  const handleSaveMap = async (mapId: string) => {
     const settingsDocRef = getSettingsDocRef();
     if (!settingsDocRef || !user) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
       return;
     }
 
-    setIsSaving(true);
+    setSavingState(s => ({ ...s, [mapId]: true }));
+    
     const storage = getStorage(firebaseApp);
-    const mapsToSaveToFirestore: MapInfo[] = [];
+    const currentMap = maps.find(m => m.id === mapId);
+    const originalMap = originalMaps.find(m => m.id === mapId);
+
+    if (!currentMap) {
+        setSavingState(s => ({ ...s, [mapId]: false }));
+        return;
+    }
 
     try {
-      for (const currentMap of maps) {
         let finalUrl = currentMap.url;
-        const originalMap = originalMaps.find(m => m.id === currentMap.id);
         const originalUrl = originalMap?.url;
 
-        // Case 1: Image was removed
+        // Handle image removal from storage
         if (originalUrl && !currentMap.url) {
             try {
                 const oldRef = storageRef(storage, originalUrl);
                 await deleteObject(oldRef);
             } catch (error: any) {
-                 if (error.code !== 'storage/object-not-found') {
-                    console.warn(`Could not delete old map ${currentMap.id}:`, error);
+                if (error.code !== 'storage/object-not-found') {
+                    console.warn(`Could not delete old map ${mapId}:`, error);
                 }
             }
         }
         
-        // Case 2: Image was added or changed (it's a base64 string)
+        // Handle image addition/change in storage
         if (currentMap.url && currentMap.url.startsWith('data:image')) {
-            // Delete old image from storage if it existed
             if (originalUrl) {
                 try {
                     const oldRef = storageRef(storage, originalUrl);
                     await deleteObject(oldRef);
                 } catch (error: any) {
                     if (error.code !== 'storage/object-not-found') {
-                        console.warn(`Could not delete old map ${currentMap.id}:`, error);
+                        console.warn(`Could not delete old map ${mapId}:`, error);
                     }
                 }
             }
-            // Upload new image
-            const newImageRef = storageRef(storage,`maps/${user.uid}/${currentMap.id}-${Date.now()}`);
+            const newImageRef = storageRef(storage, `maps/${user.uid}/${mapId}-${Date.now()}`);
             const uploadResult = await uploadString(newImageRef, currentMap.url, 'data_url');
             finalUrl = await getDownloadURL(uploadResult.ref);
         }
 
-        mapsToSaveToFirestore.push({
+        const updatedMapData = {
             id: currentMap.id,
             name: currentMap.name.trim() || `Mapa ${currentMap.id.replace('map', '')}`,
             url: finalUrl,
-        });
-      }
-      
-      const primaryMapUrl = mapsToSaveToFirestore.find(m => m.id === 'map1')?.url || null;
+        };
+        
+        // Atomically update Firestore document
+        const docSnap = await getDoc(settingsDocRef);
+        const firestoreMapsRaw = docSnap.exists() ? (docSnap.data().maps || []) : [];
 
-      await setDoc(settingsDocRef, { maps: mapsToSaveToFirestore, mapUrl: primaryMapUrl }, { merge: true });
-      
-      setMaps(mapsToSaveToFirestore);
-      setOriginalMaps(JSON.parse(JSON.stringify(mapsToSaveToFirestore)));
+        let newMapsForFirestore = [...firestoreMapsRaw];
+        const existingMapIndex = newMapsForFirestore.findIndex(m => m.id === mapId);
 
-      toast({ title: 'Sucesso!', description: 'Os mapas foram salvos.' });
+        if (existingMapIndex > -1) {
+            newMapsForFirestore[existingMapIndex] = updatedMapData;
+        } else {
+            newMapsForFirestore.push(updatedMapData);
+        }
+        
+        const primaryMapUrl = newMapsForFirestore.find(m => m.id === 'map1')?.url || null;
+        await setDoc(settingsDocRef, { maps: newMapsForFirestore, mapUrl: primaryMapUrl }, { merge: true });
+
+        // Update local state to reflect saved changes
+        setMaps(newMapsForFirestore);
+        setOriginalMaps(JSON.parse(JSON.stringify(newMapsForFirestore)));
+
+        toast({ title: 'Sucesso!', description: `O mapa "${updatedMapData.name}" foi salvo.` });
+
     } catch (error: any) {
-      console.error('Error saving maps:', error);
-      toast({ variant: 'destructive', title: 'Erro ao salvar', description: error.message || 'Não foi possível salvar os mapas.' });
+      console.error(`Error saving map ${mapId}:`, error);
+      toast({ variant: 'destructive', title: 'Erro ao salvar', description: error.message || `Não foi possível salvar o mapa.` });
     } finally {
-      setIsSaving(false);
+      setSavingState(s => ({ ...s, [mapId]: false }));
     }
   };
 
@@ -305,9 +320,6 @@ export function ManageMap() {
           <Skeleton className="h-48 w-full" />
           <Skeleton className="h-48 w-full" />
         </CardContent>
-        <CardFooter>
-          <Skeleton className="h-10 w-32" />
-        </CardFooter>
       </Card>
     );
   }
@@ -318,92 +330,95 @@ export function ManageMap() {
         <CardTitle>Gerenciar Mapas</CardTitle>
         <CardDescription>
           Faça o upload de até 3 imagens (planta baixa, mapa, etc.) para usar
-          como base para marcações de ocorrências.
+          como base para marcações de ocorrências. Salve cada mapa individualmente.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
-        {maps.map((map, index) => (
-          <div key={map.id}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor={`map-name-${map.id}`}>
-                  Nome do Mapa {index + 1}
-                </Label>
-                <Input
-                  id={`map-name-${map.id}`}
-                  value={map.name}
-                  onChange={(e) => handleNameChange(e.target.value, map.id)}
-                  placeholder={`Nome para o Mapa ${index + 1}`}
-                />
-              </div>
-              <Label>Imagem do Mapa</Label>
-              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-                {map.url ? (
-                  <div className="relative">
-                    <NextImage
-                      src={map.url}
-                      alt={`Pré-visualização do ${map.name}`}
-                      width={128}
-                      height={128}
-                      className="rounded-md border object-contain"
-                    />
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -right-2 -top-2 h-6 w-6 rounded-full"
-                      onClick={() => handleRemoveImage(map.id)}
-                      disabled={isSaving}
-                      aria-label={`Remover ${map.name}`}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex h-32 w-32 items-center justify-center rounded-md border border-dashed">
-                    <span className="text-center text-xs text-muted-foreground">
-                      Sem mapa
-                    </span>
-                  </div>
-                )}
-                <div className="flex flex-col gap-2">
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={() =>
-                      fileInputRefs[map.id as keyof typeof fileInputRefs].current?.click()
-                    }
-                    disabled={isSaving}
-                  >
-                    {isSaving ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Upload className="mr-2 h-4 w-4" />
-                    )}
-                    Carregar Imagem
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    Recomendado: Imagem com boa resolução, máx 10MB.
-                  </p>
+        {maps.map((map, index) => {
+          const isMapSaving = savingState[map.id] || false;
+          return (
+            <div key={map.id}>
+              <div className="space-y-4 rounded-lg border p-4">
+                <div className="space-y-2">
+                  <Label htmlFor={`map-name-${map.id}`}>
+                    Nome do Mapa {index + 1}
+                  </Label>
+                  <Input
+                    id={`map-name-${map.id}`}
+                    value={map.name}
+                    onChange={(e) => handleNameChange(e.target.value, map.id)}
+                    placeholder={`Nome para o Mapa ${index + 1}`}
+                    disabled={isMapSaving}
+                  />
                 </div>
-                <Input
-                  type="file"
-                  ref={fileInputRefs[map.id as keyof typeof fileInputRefs]}
-                  className="hidden"
-                  onChange={(e) => handleFileChange(e, map.id)}
-                  accept="image/png, image/jpeg, image/gif, image/svg+xml"
-                />
+                <Label>Imagem do Mapa</Label>
+                <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                  {map.url ? (
+                    <div className="relative">
+                      <NextImage
+                        src={map.url}
+                        alt={`Pré-visualização do ${map.name}`}
+                        width={128}
+                        height={128}
+                        className="rounded-md border object-contain"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -right-2 -top-2 h-6 w-6 rounded-full"
+                        onClick={() => handleRemoveImage(map.id)}
+                        disabled={isMapSaving}
+                        aria-label={`Remover ${map.name}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex h-32 w-32 items-center justify-center rounded-md border border-dashed">
+                      <span className="text-center text-xs text-muted-foreground">
+                        Sem mapa
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={() =>
+                        fileInputRefs[map.id as keyof typeof fileInputRefs].current?.click()
+                      }
+                      disabled={isMapSaving}
+                    >
+                      {isMapSaving && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Carregar Imagem
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Recomendado: Imagem com boa resolução, máx 10MB.
+                    </p>
+                  </div>
+                  <Input
+                    type="file"
+                    ref={fileInputRefs[map.id as keyof typeof fileInputRefs]}
+                    className="hidden"
+                    onChange={(e) => handleFileChange(e, map.id)}
+                    accept="image/png, image/jpeg, image/gif, image/svg+xml"
+                  />
+                </div>
+                 <div className="flex justify-end">
+                    <Button onClick={() => handleSaveMap(map.id)} disabled={isMapSaving}>
+                        {isMapSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        {isMapSaving ? 'Salvando...' : 'Salvar Mapa'}
+                    </Button>
+                 </div>
               </div>
+              {index < maps.length - 1 && <Separator className="mt-8" />}
             </div>
-            {index < maps.length - 1 && <Separator className="mt-8" />}
-          </div>
-        ))}
+          );
+        })}
       </CardContent>
-      <CardFooter>
-        <Button onClick={handleSaveMaps} disabled={isSaving}>
-          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-        </Button>
-      </CardFooter>
     </Card>
   );
 }
+
