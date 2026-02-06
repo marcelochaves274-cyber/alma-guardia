@@ -26,7 +26,7 @@ import {
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Button } from './ui/button';
-import { Loader2, MapPin, Eye, ZoomIn, ZoomOut, Expand } from 'lucide-react';
+import { Loader2, MapPin, Eye, ZoomIn, ZoomOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import NextImage from 'next/image';
 import { Badge } from './ui/badge';
@@ -256,13 +256,12 @@ export function FaunaFloraGeoMapReport() {
     const scaledWidth = imageSize.width * pos.scale;
     const scaledHeight = imageSize.height * pos.scale;
   
-    const minX = Math.min(parentRect.width - scaledWidth, 0);
-    const minY = Math.min(parentRect.height - scaledHeight, 0);
-    const maxX = 0;
-    const maxY = 0;
+    // Calculate the boundaries for the image's top-left corner
+    const minX = parentRect.width - scaledWidth;
+    const minY = parentRect.height - scaledHeight;
   
-    const clampedX = Math.max(minX, Math.min(maxX, pos.x));
-    const clampedY = Math.max(minY, Math.min(maxY, pos.y));
+    const clampedX = Math.max(minX, Math.min(0, pos.x));
+    const clampedY = Math.max(minY, Math.min(0, pos.y));
   
     return { scale: pos.scale, x: clampedX, y: clampedY };
   }, [imageSize]);
@@ -286,30 +285,36 @@ export function FaunaFloraGeoMapReport() {
     });
   };
   
-  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
-    isPanning.current = true;
+  const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || !imageSize) return;
+
     panStart.current = { x: e.clientX - transform.x, y: e.clientY - transform.y };
-    if(mapContainerRef.current) mapContainerRef.current.style.cursor = 'grabbing';
-  };
+    if (mapContainerRef.current) mapContainerRef.current.style.cursor = 'grabbing';
 
-  const handleMouseUp = () => {
-    isPanning.current = false;
-     if(mapContainerRef.current) mapContainerRef.current.style.cursor = 'grab';
-  };
+    const handlePanMove = (moveEvent: globalThis.MouseEvent) => {
+      moveEvent.preventDefault();
+      const newPos = {
+          x: moveEvent.clientX - panStart.current.x,
+          y: moveEvent.clientY - panStart.current.y
+      };
+      setTransform(prev => clampPosition({ ...prev, ...newPos }));
+    };
 
-  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (!isPanning.current || !mapContainerRef.current || !imageSize) return;
-    e.preventDefault();
-    
-    const newX = e.clientX - panStart.current.x;
-    const newY = e.clientY - panStart.current.y;
-    
-    setTransform(clampPosition({ scale: transform.scale, x: newX, y: newY }));
-  };
+    const handlePanEnd = () => {
+      if (mapContainerRef.current) mapContainerRef.current.style.cursor = 'grab';
+      window.removeEventListener('mousemove', handlePanMove);
+      window.removeEventListener('mouseup', handlePanEnd);
+    };
+
+    window.addEventListener('mousemove', handlePanMove);
+    window.addEventListener('mouseup', handlePanEnd);
+
+  }, [transform.x, transform.y, imageSize, clampPosition]);
   
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const { naturalWidth, naturalHeight } = e.currentTarget;
     setImageSize({ width: naturalWidth, height: naturalHeight });
+    setTransform({ scale: 1, x: 0, y: 0});
   };
 
   const renderedPins = useMemo(() => {
@@ -448,7 +453,7 @@ export function FaunaFloraGeoMapReport() {
                 </div>
                  <DialogTrigger asChild>
                     <Button variant="outline" disabled={isLoadingMap || !mapUrl}>
-                        <Expand className="mr-2 h-4 w-4" /> Ampliar Mapa
+                        <ZoomIn className="mr-2 h-4 w-4" /> Ampliar Mapa
                     </Button>
                  </DialogTrigger>
               </div>
@@ -487,24 +492,21 @@ export function FaunaFloraGeoMapReport() {
               <div 
                 className="flex-1 relative overflow-hidden bg-muted cursor-grab" 
                 ref={mapContainerRef} 
-                onMouseDown={handleMouseDown} 
-                onMouseUp={handleMouseUp} 
-                onMouseMove={handleMouseMove} 
-                onMouseLeave={handleMouseUp}
+                onMouseDown={handlePanStart}
                 onWheel={(e) => {
                   e.preventDefault();
                   handleZoom(e.deltaY > 0 ? 'out' : 'in');
                 }}
                 >
+                  <div 
+                      className="relative h-full w-full"
+                      style={{
+                        transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                        transformOrigin: '0 0',
+                      }}
+                  >
                   {mapUrl ? (
-                    <div style={{
-                      width: imageSize ? imageSize.width : '100%',
-                      height: imageSize ? imageSize.height : '100%',
-                      transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-                      transformOrigin: '0 0',
-                      willChange: 'transform',
-                      position: 'relative',
-                    }}>
+                    <>
                       <NextImage 
                         src={mapUrl} 
                         alt="Mapa de registros ampliado" 
@@ -513,7 +515,7 @@ export function FaunaFloraGeoMapReport() {
                         onLoad={handleImageLoad}
                       />
                       {imageSize && renderedPins}
-                    </div>
+                    </>
                   ) : isLoadingMap ? (
                       <div className="w-full h-full flex items-center justify-center">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -521,6 +523,7 @@ export function FaunaFloraGeoMapReport() {
                   ) : (
                       <p className="text-center p-4">Mapa não disponível.</p>
                   )}
+                  </div>
               </div>
               <div className="absolute top-16 right-4 flex flex-col items-center gap-2">
                   <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={transform.scale >= 5}><ZoomIn/></Button>
