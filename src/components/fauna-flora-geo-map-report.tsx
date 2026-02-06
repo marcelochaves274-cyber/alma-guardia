@@ -263,9 +263,12 @@ export function FaunaFloraGeoMapReport() {
   };
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
     if (isZoomModalOpen && zoomTarget) {
-      // A small delay allows the modal animation to complete and the ref to get its dimensions.
-      const timer = setTimeout(() => {
+      // Set to a base state to ensure we are not starting from a panned/zoomed state from a previous interaction.
+      setZoomState({ scale: 1, x: 0, y: 0 });
+
+      timer = setTimeout(() => {
         if (mapRef.current) {
           const { width, height } = mapRef.current.getBoundingClientRect();
           if (width > 0 && height > 0) {
@@ -277,12 +280,9 @@ export function FaunaFloraGeoMapReport() {
             });
           }
         }
-      }, 100); // 100ms should be safe for the dialog animation.
+      }, 150);
 
       return () => clearTimeout(timer);
-    } else {
-      // Reset zoom state when the modal is closed to ensure a clean state for the next opening.
-      setZoomState({ scale: 1, x: 0, y: 0 });
     }
   }, [isZoomModalOpen, zoomTarget]);
 
