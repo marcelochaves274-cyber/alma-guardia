@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -35,8 +36,8 @@ const resizeImage = (file: File): Promise<string> => {
       }
       const img = new Image();
       img.onload = () => {
-        const MAX_WIDTH = 1024;
-        const MAX_HEIGHT = 1024;
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
         let width = img.width;
         let height = img.height;
 
@@ -224,9 +225,9 @@ export function ManageMap() {
           mapUrl: primaryMapUrl // Keep the old field updated
       }, { merge: true });
       toast({ title: 'Sucesso!', description: 'Os mapas foram salvos.' });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving maps:", error);
-      toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar os mapas.' });
+      toast({ variant: 'destructive', title: 'Erro ao salvar', description: error.message || 'Não foi possível salvar os mapas.' });
     } finally {
       setIsSaving(false);
     }
