@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -6,9 +7,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type ChangeEvent } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, X } from 'lucide-react';
 import Image from 'next/image';
@@ -17,14 +19,30 @@ import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Separator } from './ui/separator';
+
+interface MapInfo {
+  id: string;
+  name: string;
+  url: string | null;
+}
 
 export function ManageMap() {
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [mapUrl, setMapUrl] = useState<string | null>(null);
+  const [maps, setMaps] = useState<MapInfo[]>([
+    { id: 'map1', name: 'Mapa 1', url: null },
+    { id: 'map2', name: 'Mapa 2', url: null },
+    { id: 'map3', name: 'Mapa 3', url: null },
+  ]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  const fileInputRefs = {
+    map1: useRef<HTMLInputElement>(null),
+    map2: useRef<HTMLInputElement>(null),
+    map3: useRef<HTMLInputElement>(null),
+  };
 
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -37,7 +55,7 @@ export function ManageMap() {
   useEffect(() => {
     let isMounted = true;
     if (isUserLoading || !user || !firestore) {
-      if(!isUserLoading) setIsLoading(false);
+      if (!isUserLoading) setIsLoading(false);
       return;
     }
 
@@ -46,26 +64,33 @@ export function ManageMap() {
       setIsLoading(false);
       return;
     }
-    
+
     getDoc(settingsDocRef)
       .then((docSnap) => {
-        if (isMounted && docSnap.exists()) {
-          setMapUrl(docSnap.data().mapUrl || null);
+        if (isMounted) {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const fetchedMaps = data.maps || [];
+            setMaps(currentMaps => currentMaps.map(defaultMap => {
+              const foundMap = fetchedMaps.find((fm: MapInfo) => fm.id === defaultMap.id);
+              return foundMap ? { ...defaultMap, name: foundMap.name, url: foundMap.url } : defaultMap;
+            }));
+          }
         }
       })
       .catch((error: any) => {
         if (error.code !== 'permission-denied') {
-          console.error("Error fetching map:", error);
+          console.error("Error fetching maps:", error);
         }
       })
       .finally(() => {
         if (isMounted) setIsLoading(false);
       });
-      
+
     return () => { isMounted = false; }
   }, [user, firestore, isUserLoading, getSettingsDocRef]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>, mapId: string) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) { // 2MB limit
@@ -78,36 +103,31 @@ export function ManageMap() {
       }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setMapUrl(reader.result as string);
+        setMaps(prevMaps =>
+          prevMaps.map(m => m.id === mapId ? { ...m, url: reader.result as string } : m)
+        );
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSaveMap = async () => {
-    const settingsDocRef = getSettingsDocRef();
-    if (!settingsDocRef) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
-      return;
-    }
-    if (!mapUrl) {
-      toast({ variant: 'destructive', title: 'Nenhum mapa', description: 'Carregue uma imagem do mapa primeiro.' });
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      await setDoc(settingsDocRef, { mapUrl }, { merge: true });
-      toast({ title: 'Sucesso!', description: 'O mapa foi salvo.' });
-    } catch (error) {
-      console.error("Error saving map:", error);
-      toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar o mapa.' });
-    } finally {
-      setIsSaving(false);
+  const handleNameChange = (newName: string, mapId: string) => {
+    setMaps(prevMaps =>
+      prevMaps.map(m => m.id === mapId ? { ...m, name: newName } : m)
+    );
+  };
+  
+  const handleRemoveImage = (mapId: string) => {
+    setMaps(prevMaps => 
+      prevMaps.map(m => m.id === mapId ? { ...m, url: null } : m)
+    );
+    const ref = fileInputRefs[mapId as keyof typeof fileInputRefs];
+    if (ref.current) {
+        ref.current.value = "";
     }
   };
 
-  const handleRemoveMap = async () => {
+  const handleSaveMaps = async () => {
     const settingsDocRef = getSettingsDocRef();
     if (!settingsDocRef) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
@@ -116,72 +136,112 @@ export function ManageMap() {
 
     setIsSaving(true);
     try {
-      await setDoc(settingsDocRef, { mapUrl: null }, { merge: true });
-      setMapUrl(null);
-      toast({ title: 'Mapa Removido', description: 'O mapa foi removido com sucesso.' });
+       const mapsToSave = maps.map(m => ({
+            id: m.id,
+            name: m.name.trim() || `Mapa ${m.id.replace('map', '')}`,
+            url: m.url
+       }));
+
+      await setDoc(settingsDocRef, { maps: mapsToSave }, { merge: true });
+      toast({ title: 'Sucesso!', description: 'Os mapas foram salvos.' });
     } catch (error) {
-      console.error("Error removing map:", error);
-      toast({ variant: 'destructive', title: 'Erro ao remover', description: 'Não foi possível remover o mapa.' });
+      console.error("Error saving maps:", error);
+      toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar os mapas.' });
     } finally {
       setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return (
+        <Card className="w-full">
+            <CardHeader>
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-4 w-3/4" />
+            </CardHeader>
+            <CardContent className="space-y-8">
+               <Skeleton className="h-48 w-full" />
+               <Skeleton className="h-48 w-full" />
+               <Skeleton className="h-48 w-full" />
+            </CardContent>
+             <CardFooter>
+                 <Skeleton className="h-10 w-32" />
+            </CardFooter>
+        </Card>
+    );
+  }
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Gerenciar Mapa de Ocorrências</CardTitle>
+        <CardTitle>Gerenciar Mapas</CardTitle>
         <CardDescription>
-          Faça o upload de uma imagem (planta baixa, mapa, etc.) para marcar a localização exata das ocorrências.
+          Faça o upload de até 3 imagens (planta baixa, mapa, etc.) para usar como base para marcações de ocorrências.
         </CardDescription>
-        <p className="text-sm text-destructive pt-2">
-          Importante: Alterar a imagem do mapa não atualizará as marcações em ocorrências já registradas. A nova imagem será usada apenas para futuros registros.
-        </p>
       </CardHeader>
       <CardContent className="space-y-8">
-        <div className="space-y-4">
-          <Label>Imagem do Mapa</Label>
-          <div className="flex items-center gap-4">
-            {isLoading ? (
-              <Skeleton className="h-32 w-32 rounded-md" />
-            ) : mapUrl ? (
-              <div className="relative">
-                <Image src={mapUrl} alt="Pré-visualização do Mapa" width={128} height={128} className="rounded-md border object-contain" />
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute -right-2 -top-2 h-6 w-6 rounded-full"
-                  onClick={handleRemoveMap}
-                  disabled={isSaving}
-                  aria-label="Remover mapa"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+        {maps.map((map, index) => (
+          <div key={map.id}>
+             <div className="space-y-4">
+                <div className='space-y-2'>
+                    <Label htmlFor={`map-name-${map.id}`}>Nome do Mapa {index + 1}</Label>
+                    <Input 
+                        id={`map-name-${map.id}`}
+                        value={map.name}
+                        onChange={(e) => handleNameChange(e.target.value, map.id)}
+                        placeholder={`Nome para o Mapa ${index + 1}`}
+                    />
+                </div>
+              <Label>Imagem do Mapa</Label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                {map.url ? (
+                  <div className="relative">
+                    <Image src={map.url} alt={`Pré-visualização do ${map.name}`} width={128} height={128} className="rounded-md border object-contain" />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -right-2 -top-2 h-6 w-6 rounded-full"
+                      onClick={() => handleRemoveImage(map.id)}
+                      disabled={isSaving}
+                      aria-label={`Remover ${map.name}`}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex h-32 w-32 items-center justify-center rounded-md border border-dashed">
+                    <span className="text-center text-xs text-muted-foreground">Sem mapa</span>
+                  </div>
+                )}
+                <div className='flex flex-col gap-2'>
+                    <Button 
+                        variant="outline" 
+                        onClick={() => fileInputRefs[map.id as keyof typeof fileInputRefs].current?.click()} 
+                        disabled={isSaving}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Carregar Imagem
+                    </Button>
+                    <p className="text-xs text-muted-foreground">Recomendado: Imagem com boa resolução, máx 2MB.</p>
+                </div>
+                <Input
+                  type="file"
+                  ref={fileInputRefs[map.id as keyof typeof fileInputRefs]}
+                  className="hidden"
+                  onChange={(e) => handleFileChange(e, map.id)}
+                  accept="image/png, image/jpeg, image/gif, image/svg+xml"
+                />
               </div>
-            ) : (
-              <div className="flex h-32 w-32 items-center justify-center rounded-md border border-dashed">
-                <span className="text-center text-xs text-muted-foreground">Sem mapa</span>
-              </div>
-            )}
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isSaving}>
-              <Upload className="mr-2 h-4 w-4" />
-              Carregar Imagem
-            </Button>
-            <Input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={handleFileChange}
-              accept="image/png, image/jpeg, image/gif, image/svg+xml"
-            />
+            </div>
+            {index < maps.length - 1 && <Separator className="mt-8" />}
           </div>
-          <p className="text-xs text-muted-foreground">Recomendado: Imagem com boa resolução, máx 2MB.</p>
-          <Button onClick={handleSaveMap} disabled={isSaving || !mapUrl} className="w-full sm:w-auto">
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {isSaving ? 'Salvando...' : 'Salvar Mapa'}
-          </Button>
-        </div>
+        ))}
       </CardContent>
+      <CardFooter>
+          <Button onClick={handleSaveMaps} disabled={isSaving}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+          </Button>
+      </CardFooter>
     </Card>
   );
 }

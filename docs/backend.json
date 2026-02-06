@@ -177,8 +177,7 @@
           "description": "The current status of the treatment.",
           "enum": [
             "pendente",
-            "finalizado",
-            "reaberto"
+            "finalizado"
           ]
         },
         "completionDate": {
@@ -603,6 +602,31 @@
         "adminPass",
         "observerPass"
       ]
+    },
+    "MapInfo": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MapInfo",
+      "type": "object",
+      "description": "Represents a single map configuration.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "A unique identifier for the map (e.g., 'map1')."
+        },
+        "name": {
+          "type": "string",
+          "description": "A user-friendly name for the map."
+        },
+        "url": {
+          "type": "string",
+          "format": "data-url",
+          "description": "A Base64 encoded data URI of the map image."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
     }
   },
   "auth": {
@@ -666,11 +690,26 @@
       },
       "description": "Stores notice records for a user."
     },
-    "/sgs_genius/{userId}/settings/{settingId}": {
+    "/sgs_genius/{userId}/settings/profiles": {
       "schema": {
         "$ref": "#/entities/ProfilePasses"
       },
-      "description": "Stores profile passcodes and other settings for a user."
+      "description": "Stores profile passcodes for a user."
+    },
+    "/sgs_genius/{userId}/settings/mapDetails": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "maps": {
+            "type": "array",
+            "description": "An array of map configurations.",
+            "items": {
+              "$ref": "#/entities/MapInfo"
+            }
+          }
+        }
+      },
+      "description": "Stores configuration for user-defined maps."
     }
   }
 }
