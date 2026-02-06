@@ -214,7 +214,7 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
                             <Image
                                 src={notice.imageUrl}
                                 alt="Imagem do aviso"
-                                layout="fill"
+                                fill
                                 objectFit="contain"
                             />
                         </div>

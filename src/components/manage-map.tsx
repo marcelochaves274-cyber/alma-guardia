@@ -182,9 +182,7 @@ export function ManageMap() {
         const storage = getStorage(firebaseApp);
         
         if (fileToUpload) {
-            // Se tem um arquivo novo, faz o upload.
             if (originalMapState?.url && originalMapState.url.includes('firebasestorage')) {
-                // Tenta deletar a imagem antiga, mas não falha se não encontrar.
                 try {
                     const oldImageRef = storageRef(storage, originalMapState.url);
                     await deleteObject(oldImageRef);
@@ -199,7 +197,6 @@ export function ManageMap() {
             await uploadBytes(newImageRef, fileToUpload);
             finalUrl = await getDownloadURL(newImageRef);
         } else if (!currentMapState.url && originalMapState?.url) {
-            // Se não tem arquivo novo e o URL foi removido, deleta do storage.
              try {
                 const oldImageRef = storageRef(storage, originalMapState.url);
                 await deleteObject(oldImageRef);
@@ -240,32 +237,36 @@ export function ManageMap() {
     } catch (error: any) {
       console.error(`[SGS_APP_DEBUG] Erro completo ao salvar o mapa ${mapId}:`, error);
       
-      let description = 'Ocorreu um erro inesperado. Verifique sua conexão com a internet.';
+      let title = `Erro ao Salvar Mapa "${currentMapState?.name || mapId}"`;
+      let description = 'Ocorreu um erro inesperado. Verifique sua conexão e tente novamente.';
 
-      if (error.code) { // Firebase-specific error
+      if (error.code) {
         switch (error.code) {
           case 'storage/unauthorized':
-            description = 'Erro de permissão (storage/unauthorized). As regras de segurança do Storage negaram o acesso.';
+            description = 'As regras de segurança do Firebase Storage negaram a permissão para este upload. Verifique as storage.rules.';
             break;
           case 'storage/canceled':
             description = 'O upload foi cancelado.';
             break;
           case 'storage/unknown':
-             description = 'Erro de CORS ou rede. O servidor de armazenamento bloqueou a solicitação. Isso requer uma configuração de CORS no bucket do Google Cloud, que não posso fazer. Verifique o console do navegador (F12) para mais detalhes.';
-             break;
+            title = 'Erro de Configuração do Servidor (CORS)';
+            description = "O servidor de armazenamento bloqueou a solicitação do seu navegador. Este erro geralmente requer uma configuração de CORS no Google Cloud Console, que está fora do nosso alcance. Verifique o console do navegador (F12) para mais detalhes.";
+            break;
           default:
-            description = `Ocorreu um erro de armazenamento: ${error.code}`;
+            description = `Ocorreu um erro de armazenamento não identificado: ${error.code}`;
         }
+      } else if (error.message && (error.message.includes('net::ERR_FAILED') || error.message.includes('CORS'))) {
+          title = 'Erro de Rede ou CORS';
+          description = "O navegador bloqueou a solicitação para o servidor de armazenamento. Isso é quase sempre um problema de configuração de CORS no Google Cloud que precisa ser ajustado no servidor, não no código do aplicativo.";
       }
       
       toast({
         variant: 'destructive',
-        title: `Erro ao Salvar Mapa "${currentMapState?.name || mapId}"`,
+        title: title,
         description: description,
         duration: 9000
       });
 
-      // Reverte o estado visual para o que era antes da tentativa
       setMaps(originalMaps);
     } finally {
         setSavingState(s => ({ ...s, [mapId]: false }));

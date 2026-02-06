@@ -43,6 +43,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -386,6 +387,9 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes do Registro</DialogTitle>
+             <DialogDescription>
+              Visualização detalhada do registro ambiental.
+            </DialogDescription>
           </DialogHeader>
           {selectedRecord && (
             <>

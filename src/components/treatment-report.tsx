@@ -43,6 +43,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -504,6 +505,9 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes do Tratamento de Risco</DialogTitle>
+            <DialogDescription>
+              Visualização detalhada do registro de tratamento de risco.
+            </DialogDescription>
           </DialogHeader>
           {selectedTreatment && (
             <>

@@ -24,6 +24,7 @@ import {
   DialogTitle,
   DialogClose,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -347,6 +348,9 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>{selectedContent.title}</DialogTitle>
+             <DialogDescription>
+              Conteúdo do documento selecionado.
+            </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[70vh] pr-6">
             <div className="whitespace-pre-wrap py-4">{selectedContent.content || "Nenhum conteúdo definido para este documento."}</div>
@@ -366,12 +370,12 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
         <DialogContent className="max-w-4xl">
            <DialogHeader>
               <DialogTitle>Avaliações de Risco Associadas</DialogTitle>
+              <DialogDescription>
+                Exibindo as avaliações de risco para os locais selecionados na atividade.
+              </DialogDescription>
            </DialogHeader>
           {selectedAssessments.length > 0 ? (
             <>
-              <p className='text-sm text-muted-foreground px-6 -mt-4'>
-                Exibindo {selectedAssessments.length} avaliação(ões) para os locais selecionados.
-              </p>
             <ScrollArea className="max-h-[70vh] p-6 pt-2">
               <div className="space-y-6">
                 {Object.entries(groupedAssessments).map(([location, assessments], index) => (

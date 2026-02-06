@@ -44,6 +44,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -436,6 +437,9 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes da Ocorrência</DialogTitle>
+            <DialogDescription>
+              Visualização detalhada do registro de ocorrência.
+            </DialogDescription>
           </DialogHeader>
           {selectedOccurrence && (
             <>

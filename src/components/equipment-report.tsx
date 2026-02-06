@@ -24,6 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Popover,
@@ -671,6 +672,9 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
       <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes do Equipamento</DialogTitle>
+             <DialogDescription>
+              Visualização detalhada do equipamento.
+            </DialogDescription>
           </DialogHeader>
           {selectedEquipment && (
             <>

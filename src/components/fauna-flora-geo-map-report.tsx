@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
@@ -396,6 +397,9 @@ export function FaunaFloraGeoMapReport() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes do Registro</DialogTitle>
+            <DialogDescription>
+              Visualização detalhada do registro ambiental.
+            </DialogDescription>
           </DialogHeader>
           {detailedRecord && (
             <>

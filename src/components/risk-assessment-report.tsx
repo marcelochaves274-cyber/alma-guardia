@@ -35,6 +35,7 @@ import {
   DialogTitle,
   DialogClose,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -344,6 +345,9 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes da Avaliação de Risco</DialogTitle>
+             <DialogDescription>
+              Visualização detalhada da avaliação de risco.
+            </DialogDescription>
           </DialogHeader>
             {selectedAssessment && (
               <>
