@@ -98,7 +98,6 @@ export function FaunaFloraGeoMapReport() {
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -256,9 +255,8 @@ export function FaunaFloraGeoMapReport() {
     const scaledWidth = imageSize.width * pos.scale;
     const scaledHeight = imageSize.height * pos.scale;
   
-    // Calculate the boundaries for the image's top-left corner
-    const minX = parentRect.width - scaledWidth;
-    const minY = parentRect.height - scaledHeight;
+    const minX = Math.min(parentRect.width - scaledWidth, 0);
+    const minY = Math.min(parentRect.height - scaledHeight, 0);
   
     const clampedX = Math.max(minX, Math.min(0, pos.x));
     const clampedY = Math.max(minY, Math.min(0, pos.y));
@@ -498,32 +496,36 @@ export function FaunaFloraGeoMapReport() {
                   handleZoom(e.deltaY > 0 ? 'out' : 'in');
                 }}
                 >
+                {isLoadingMap && (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {!isLoadingMap && !mapUrl && (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-center p-4">Mapa não disponível.</p>
+                  </div>
+                )}
+                {mapUrl && (
                   <div 
                       className="relative h-full w-full"
                       style={{
                         transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                         transformOrigin: '0 0',
+                        visibility: imageSize ? 'visible' : 'hidden'
                       }}
                   >
-                  {mapUrl ? (
-                    <>
-                      <NextImage 
-                        src={mapUrl} 
-                        alt="Mapa de registros ampliado" 
-                        fill 
-                        className="object-contain"
-                        onLoad={handleImageLoad}
-                      />
-                      {imageSize && renderedPins}
-                    </>
-                  ) : isLoadingMap ? (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                      </div>
-                  ) : (
-                      <p className="text-center p-4">Mapa não disponível.</p>
-                  )}
+                    <NextImage 
+                      src={mapUrl} 
+                      alt="Mapa de registros ampliado" 
+                      fill 
+                      className="object-contain"
+                      onLoad={handleImageLoad}
+                      onDragStart={(e) => e.preventDefault()}
+                    />
+                    {imageSize && renderedPins}
                   </div>
+                )}
               </div>
               <div className="absolute top-16 right-4 flex flex-col items-center gap-2">
                   <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={transform.scale >= 5}><ZoomIn/></Button>

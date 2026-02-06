@@ -114,7 +114,6 @@ export function MapReport() {
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -518,32 +517,36 @@ export function MapReport() {
                   handleZoom(e.deltaY > 0 ? 'out' : 'in');
                 }}
               >
+                {isLoadingMap && (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {!isLoadingMap && !mapUrl && (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-center p-4">Mapa não disponível.</p>
+                  </div>
+                )}
+                {mapUrl && (
                   <div 
                       className="relative h-full w-full"
                       style={{
                         transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                         transformOrigin: '0 0',
+                        visibility: imageSize ? 'visible' : 'hidden',
                       }}
                   >
-                  {mapUrl ? (
-                    <>
-                      <NextImage 
-                        src={mapUrl} 
-                        alt="Mapa de registros ampliado" 
-                        fill 
-                        className="object-contain"
-                        onLoad={handleImageLoad}
-                      />
-                      {imageSize && renderedPins}
-                    </>
-                  ) : isLoadingMap ? (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                      </div>
-                  ) : (
-                      <p className="text-center p-4">Mapa não disponível.</p>
-                  )}
+                    <NextImage 
+                      src={mapUrl} 
+                      alt="Mapa de registros ampliado" 
+                      fill 
+                      className="object-contain"
+                      onLoad={handleImageLoad}
+                      onDragStart={(e) => e.preventDefault()}
+                    />
+                    {imageSize && renderedPins}
                   </div>
+                )}
               </div>
               <div className="absolute top-16 right-4 flex flex-col items-center gap-2">
                   <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={transform.scale >= 5}><ZoomIn/></Button>
