@@ -26,7 +26,7 @@ import {
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Button } from './ui/button';
-import { Loader2, MapPin, Eye, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { Loader2, MapPin, Eye, ZoomIn, ZoomOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
@@ -338,21 +338,6 @@ export function MapReport() {
       setZoomState(prev => ({ ...prev, scale: Math.max(prev.scale / 1.2, 0.5) }));
   };
   
-  const handleResetZoom = () => {
-    if (zoomTarget && mapRef.current) {
-      const { width, height } = mapRef.current.getBoundingClientRect();
-      const initialScale = 2.5; 
-      setZoomState({
-          scale: initialScale,
-          x: (width / 2) - (zoomTarget.x / 100 * width * initialScale),
-          y: (height / 2) - (zoomTarget.y / 100 * height * initialScale),
-      });
-    } else {
-        setZoomState({ scale: 1, x: 0, y: 0 });
-    }
-  };
-
-
   const renderedPins = useMemo(() => {
     if (!isClient || isLoading) {
       return null;
@@ -657,14 +642,6 @@ export function MapReport() {
                       </TooltipTrigger>
                       <TooltipContent>
                           <p>Aumentar Zoom</p>
-                      </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                      <TooltipTrigger asChild>
-                           <Button variant="outline" size="icon" onClick={handleResetZoom}><RotateCcw /></Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          <p>Redefinir Zoom</p>
                       </TooltipContent>
                   </Tooltip>
                 </div>
