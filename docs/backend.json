@@ -602,31 +602,6 @@
         "adminPass",
         "observerPass"
       ]
-    },
-    "MapInfo": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "MapInfo",
-      "type": "object",
-      "description": "Represents a single map configuration.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "A unique identifier for the map (e.g., 'map1')."
-        },
-        "name": {
-          "type": "string",
-          "description": "A user-friendly name for the map."
-        },
-        "url": {
-          "type": "string",
-          "format": "uri",
-          "description": "The download URL of the map image stored in Firebase Storage."
-        }
-      },
-      "required": [
-        "id",
-        "name"
-      ]
     }
   },
   "auth": {
@@ -700,16 +675,14 @@
       "schema": {
         "type": "object",
         "properties": {
-          "maps": {
-            "type": "array",
-            "description": "An array of map configurations.",
-            "items": {
-              "$ref": "#/entities/MapInfo"
-            }
+          "mapUrl": {
+            "type": "string",
+            "format": "data-url",
+            "description": "A Base64 encoded data URI of the uploaded map image."
           }
         }
       },
-      "description": "Stores configuration for user-defined maps."
+      "description": "Stores configuration for the user-defined map."
     }
   }
 }
