@@ -269,13 +269,11 @@ export function MapReport() {
     setIsDetailModalOpen(true);
   }
   
-  const handleZoomIn = () => setZoom(prev => Math.min(prev * 1.2, 5));
-  const handleZoomOut = () => {
-    const newZoom = Math.max(zoom / 1.2, 1);
-    if (newZoom === 1) {
-        setPan({ x: 0, y: 0 });
-    }
-    setZoom(newZoom);
+  const handleZoom = (direction: 'in' | 'out') => {
+    setZoom(prevZoom => {
+      const newZoom = direction === 'in' ? prevZoom * 1.2 : prevZoom / 1.2;
+      return Math.max(1, Math.min(newZoom, 5)); // Clamp zoom between 1x and 5x
+    });
   };
   
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
@@ -294,18 +292,32 @@ export function MapReport() {
     if (!isPanning.current || !mapContainerRef.current) return;
     e.preventDefault();
     
-    const newX = e.clientX - panStart.current.x;
-    const newY = e.clientY - panStart.current.y;
+    const dx = e.clientX - panStart.current.x;
+    const dy = e.clientY - panStart.current.y;
+
+    const mapDiv = mapContainerRef.current.firstChild as HTMLDivElement;
+    if(!mapDiv) return;
+
+    const parentRect = mapContainerRef.current.getBoundingClientRect();
+    const childRect = mapDiv.getBoundingClientRect();
     
-    const container = mapContainerRef.current.getBoundingClientRect();
-    const mapWidth = container.width * zoom;
-    const mapHeight = container.height * zoom;
-
-    const minX = container.width - mapWidth;
-    const minY = container.height - mapHeight;
-
-    const clampedX = Math.min(0, Math.max(minX, newX));
-    const clampedY = Math.min(0, Math.max(minY, newY));
+    let clampedX = dx;
+    if (childRect.width > parentRect.width) {
+       const minX = parentRect.width - childRect.width;
+       const maxX = 0;
+       clampedX = Math.max(minX, Math.min(maxX, dx));
+    } else {
+       clampedX = (parentRect.width - childRect.width) / 2;
+    }
+    
+    let clampedY = dy;
+    if (childRect.height > parentRect.height) {
+        const minY = parentRect.height - childRect.height;
+        const maxY = 0;
+        clampedY = Math.max(minY, Math.min(maxY, dy));
+    } else {
+        clampedY = (parentRect.height - childRect.height) / 2;
+    }
 
     setPan({ x: clampedX, y: clampedY });
   };
@@ -354,9 +366,11 @@ export function MapReport() {
                             <p><strong className="font-medium">Tipo:</strong> {occ.occurrenceType}</p>
                             <p><strong className="font-medium">Local:</strong> {occ.occurrenceLocation}</p>
                           </div>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openDetails(occ)}>
-                              <Eye className="h-4 w-4" />
-                          </Button>
+                           <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openDetails(occ)}>
+                                  <Eye className="h-4 w-4" />
+                              </Button>
+                           </DialogTrigger>
                         </div>
                     ))}
                 </div>
@@ -369,7 +383,7 @@ export function MapReport() {
   }, [clusters, isClient, availableYears, isLoading]);
 
   return (
-    <Dialog>
+    <div>
       <div className="space-y-6">
         <Card>
           <CardHeader>
@@ -443,32 +457,34 @@ export function MapReport() {
               </div>
             </CardHeader>
             <CardContent>
-              <div 
-                  className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden"
-              >
-                  {isLoadingMap || isLoading ? (
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  ) : mapUrl ? (
-                    <div
-                      style={{
-                          width: '100%',
-                          height: '100%',
-                      }}
-                    >
-                      <Image
-                        src={mapUrl}
-                        alt="Mapa de ocorrências"
-                        fill
-                        className="object-cover pointer-events-none"
-                      />
-                      {renderedPins}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-center p-4">
-                      Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
-                    </p>
-                  )}
-                </div>
+              <Popover>
+                <div 
+                    className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden"
+                >
+                    {isLoadingMap || isLoading ? (
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    ) : mapUrl ? (
+                      <div
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                        }}
+                      >
+                        <Image
+                          src={mapUrl}
+                          alt="Mapa de ocorrências"
+                          fill
+                          className="object-cover pointer-events-none"
+                        />
+                        {renderedPins}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center p-4">
+                        Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
+                      </p>
+                    )}
+                  </div>
+              </Popover>
             </CardContent>
           </Card>
           
@@ -477,22 +493,39 @@ export function MapReport() {
                   <DialogTitle>Mapa Interativo de Ocorrências</DialogTitle>
                   <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
               </DialogHeader>
-              <div className="flex-1 relative overflow-hidden bg-muted" ref={mapContainerRef} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove} onMouseLeave={handleMouseUp}>
+              <div 
+                className="flex-1 relative overflow-hidden bg-muted cursor-grab" 
+                ref={mapContainerRef} 
+                onMouseDown={handleMouseDown} 
+                onMouseUp={handleMouseUp} 
+                onMouseMove={handleMouseMove} 
+                onMouseLeave={handleMouseUp}
+                onWheel={(e) => handleZoom(e.deltaY > 0 ? 'out' : 'in')}
+              >
                   {mapUrl ? (
-                      <div style={{ transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`, transformOrigin: '0 0', width: '100%', height: '100%' }}>
-                          <Image src={mapUrl} alt="Mapa de ocorrências" fill className="object-contain pointer-events-none" />
+                      <div 
+                        style={{ 
+                          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, 
+                          transformOrigin: '0 0',
+                          width: '100%',
+                          height: '100%',
+                        }}
+                      >
+                          <Image src={mapUrl} alt="Mapa de ocorrências" fill className="object-cover pointer-events-none" />
                           {renderedPins}
                       </div>
                   ) : <p className="text-center p-4">Mapa não disponível.</p>}
               </div>
               <div className="absolute top-4 right-16 flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={handleZoomOut} disabled={zoom <= 1}><ZoomOut/></Button>
-                  <Button variant="outline" size="icon" onClick={handleZoomIn} disabled={zoom >= 5}><ZoomIn/></Button>
+                  <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={zoom <= 1}><ZoomOut/></Button>
+                  <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={zoom >= 5}><ZoomIn/></Button>
               </div>
           </DialogContent>
         </Dialog>
+      </div>
 
-        <DialogContent className="max-w-2xl" onOpenChange={setIsDetailModalOpen}>
+       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes da Ocorrência</DialogTitle>
             <DialogDescription>Visualização detalhada da ocorrência selecionada.</DialogDescription>
@@ -575,7 +608,8 @@ export function MapReport() {
             </>
            )}
         </DialogContent>
-      </div>
-    </Dialog>
+      </Dialog>
+    </div>
   );
 }
+
