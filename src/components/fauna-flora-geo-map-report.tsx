@@ -21,7 +21,6 @@ import {
   DialogTitle,
   DialogClose,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
@@ -37,7 +36,6 @@ import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
 import { SheetFilter } from './sheet-filter';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface FaunaFloraGeoRecord {
   id: string;
@@ -70,24 +68,6 @@ const analysisMapping: Record<string, { label: string, className: string }> = {
     baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
-const getRenderedImageSize = (container: DOMRect, image: {width: number, height: number}) => {
-    const containerAspectRatio = container.width / container.height;
-    const imageAspectRatio = image.width / image.height;
-    let renderedWidth, renderedHeight, offsetX = 0, offsetY = 0;
-
-    if (imageAspectRatio > containerAspectRatio) {
-        renderedWidth = container.width;
-        renderedHeight = renderedWidth / imageAspectRatio;
-        offsetY = (container.height - renderedHeight) / 2;
-    } else {
-        renderedHeight = container.height;
-        renderedWidth = renderedHeight * imageAspectRatio;
-        offsetX = (container.width - renderedWidth) / 2;
-    }
-    return { renderedWidth, renderedHeight, offsetX, offsetY };
-}
-
-
 export function FaunaFloraGeoMapReport() {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -112,14 +92,12 @@ export function FaunaFloraGeoMapReport() {
   const [locations, setLocations] = useState<string[]>([]);
   const [isClient, setIsClient] = useState(false);
 
-  // Zoom modal state
-  const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
-  const [zoomTarget, setZoomTarget] = useState<{ x: number; y: number } | null>(null);
-  const [zoomState, setZoomState] = useState({ scale: 1, x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  const mapRef = useRef<HTMLDivElement>(null);
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  // Zoom and Pan state
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const isPanning = useRef(false);
+  const panStart = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     setIsClient(true);
@@ -274,150 +252,47 @@ export function FaunaFloraGeoMapReport() {
     setIsDetailModalOpen(true);
   }
   
-  const openZoomModal = (record: FaunaFloraGeoRecord) => {
-    if (record.mapMarker) {
-        setZoomTarget(record.mapMarker);
-        setIsZoomModalOpen(true);
+  const handleZoomIn = () => setZoom(prev => Math.min(prev * 1.2, 5));
+  const handleZoomOut = () => {
+    const newZoom = Math.max(zoom / 1.2, 1);
+    if (newZoom === 1) {
+        setPan({ x: 0, y: 0 });
     }
+    setZoom(newZoom);
   };
-
-  useEffect(() => {
-    if (isZoomModalOpen) {
-        // Reset state when opening
-        setZoomState({ scale: 1, x: 0, y: 0 });
-
-        // Focus on the target after a delay to allow the modal to render
-        const timer = setTimeout(() => {
-            if (zoomTarget && mapRef.current && imageDimensions.width > 0) {
-                const container = mapRef.current.getBoundingClientRect();
-                const { renderedWidth, renderedHeight, offsetX, offsetY } = getRenderedImageSize(container, imageDimensions);
-                
-                const initialScale = 2.5;
-
-                const targetX = (zoomTarget.x / 100) * renderedWidth;
-                const targetY = (zoomTarget.y / 100) * renderedHeight;
-
-                let newX = container.width / 2 - targetX * initialScale;
-                let newY = container.height / 2 - targetY * initialScale;
-                
-                newX += offsetX;
-                newY += offsetY;
-                
-                const finalImageWidth = renderedWidth * initialScale;
-                const finalImageHeight = renderedHeight * initialScale;
-                
-                const minX = container.width - finalImageWidth;
-                const minY = container.height - finalImageHeight;
-
-                const clampedX = Math.max(minX < 0 ? minX : 0, Math.min(0, newX));
-                const clampedY = Math.max(minY < 0 ? minY : 0, Math.min(0, newY));
-
-                setZoomState({
-                    scale: initialScale,
-                    x: clampedX,
-                    y: clampedY,
-                });
-            }
-        }, 150); // Delay to ensure modal is rendered
-
-        return () => clearTimeout(timer);
-    }
-  }, [isZoomModalOpen, zoomTarget, imageDimensions]);
-
-
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      if (!mapRef.current || imageDimensions.width === 0) return;
-      
-      const container = mapRef.current.getBoundingClientRect();
-      const { renderedWidth, renderedHeight } = getRenderedImageSize(container, imageDimensions);
-      
-      const scaleAmount = -e.deltaY / 500;
-      const newScale = Math.max(1, Math.min(zoomState.scale + scaleAmount, 10));
-
-      const mouseX = e.clientX - container.left;
-      const mouseY = e.clientY - container.top;
-
-      const newX = mouseX - (mouseX - zoomState.x) * (newScale / zoomState.scale);
-      const newY = mouseY - (mouseY - zoomState.y) * (newScale / zoomState.scale);
-      
-      const minX = container.width - renderedWidth * newScale;
-      const minY = container.height - renderedHeight * newScale;
-
-      const clampedX = Math.max(minX < 0 ? minX : 0, Math.min(0, newX));
-      const clampedY = Math.max(minY < 0 ? minY : 0, Math.min(0, newY));
-
-      setZoomState({ scale: newScale, x: clampedX, y: clampedY });
-  };
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-      setIsPanning(true);
-      setPanStart({
-          x: e.clientX - zoomState.x,
-          y: e.clientY - zoomState.y,
-      });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!isPanning || !mapRef.current || imageDimensions.width === 0) return;
-      e.preventDefault();
-      
-      const container = mapRef.current.getBoundingClientRect();
-      const { renderedWidth, renderedHeight } = getRenderedImageSize(container, imageDimensions);
-
-      const newX = e.clientX - panStart.x;
-      const newY = e.clientY - panStart.y;
-      
-      const minX = container.width - renderedWidth * zoomState.scale;
-      const minY = container.height - renderedHeight * zoomState.scale;
-
-      const clampedX = Math.max(minX < 0 ? minX : 0, Math.min(0, newX));
-      const clampedY = Math.max(minY < 0 ? minY : 0, Math.min(0, newY));
-      
-      setZoomState({
-          ...zoomState,
-          x: clampedX,
-          y: clampedY,
-      });
+  
+  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    if (zoom <= 1) return;
+    isPanning.current = true;
+    panStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+    if(mapContainerRef.current) mapContainerRef.current.style.cursor = 'grabbing';
   };
 
   const handleMouseUp = () => {
-      setIsPanning(false);
+    isPanning.current = false;
+     if(mapContainerRef.current) mapContainerRef.current.style.cursor = 'grab';
   };
 
-  const handleZoomIn = () => {
-    if (!mapRef.current || imageDimensions.width === 0) return;
-    const container = mapRef.current.getBoundingClientRect();
-    const { renderedWidth, renderedHeight } = getRenderedImageSize(container, imageDimensions);
-    const newScale = Math.min(zoomState.scale * 1.5, 10);
-    const newX = container.width / 2 - (container.width / 2 - zoomState.x) * (newScale / zoomState.scale);
-    const newY = container.height / 2 - (container.height / 2 - zoomState.y) * (newScale / zoomState.scale);
-
-    const minX = container.width - renderedWidth * newScale;
-    const minY = container.height - renderedHeight * newScale;
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    if (!isPanning.current || !mapContainerRef.current) return;
+    e.preventDefault();
     
-    const clampedX = Math.max(minX < 0 ? minX : 0, Math.min(0, newX));
-    const clampedY = Math.max(minY < 0 ? minY : 0, Math.min(0, newY));
+    const newX = e.clientX - panStart.current.x;
+    const newY = e.clientY - panStart.current.y;
+    
+    const container = mapContainerRef.current.getBoundingClientRect();
+    const mapWidth = container.width * zoom;
+    const mapHeight = container.height * zoom;
 
-    setZoomState({ scale: newScale, x: clampedX, y: clampedY });
+    const minX = container.width - mapWidth;
+    const minY = container.height - mapHeight;
+
+    const clampedX = Math.min(0, Math.max(minX, newX));
+    const clampedY = Math.min(0, Math.max(minY, newY));
+
+    setPan({ x: clampedX, y: clampedY });
   };
 
-  const handleZoomOut = () => {
-      if (!mapRef.current || imageDimensions.width === 0) return;
-      const container = mapRef.current.getBoundingClientRect();
-      const { renderedWidth, renderedHeight } = getRenderedImageSize(container, imageDimensions);
-      const newScale = Math.max(1, zoomState.scale / 1.5);
-      const newX = container.width / 2 - (container.width / 2 - zoomState.x) * (newScale / zoomState.scale);
-      const newY = container.height / 2 - (container.height / 2 - zoomState.y) * (newScale / zoomState.scale);
-
-      const minX = container.width - renderedWidth * newScale;
-      const minY = container.height - renderedHeight * newScale;
-      
-      const clampedX = Math.max(minX < 0 ? minX : 0, Math.min(0, newX));
-      const clampedY = Math.max(minY < 0 ? minY : 0, Math.min(0, newY));
-
-      setZoomState({ scale: newScale, x: clampedX, y: clampedY });
-  };
 
   const renderedPins = useMemo(() => {
     if (!isClient || isLoading) {
@@ -464,9 +339,6 @@ export function FaunaFloraGeoMapReport() {
                             <p><strong className="font-medium">Local:</strong> {rec.location}</p>
                           </div>
                           <div className="flex">
-                           <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-primary" onClick={() => openZoomModal(rec)}>
-                                <ZoomIn className="h-4 w-4" />
-                            </Button>
                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openDetails(rec)}>
                               <Eye className="h-4 w-4" />
                           </Button>
@@ -547,22 +419,44 @@ export function FaunaFloraGeoMapReport() {
                 {isLoading ? 'Carregando...' : `Foram encontrados ${filteredRecords.length} registros com marcação no mapa, agrupados em ${clusters.length} pontos.`}
               </CardDescription>
             </div>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={handleZoomOut} disabled={zoom <= 1}><ZoomOut/></Button>
+                <Button variant="outline" size="icon" onClick={handleZoomIn} disabled={zoom >= 5}><ZoomIn/></Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-           <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+           <div 
+              ref={mapContainerRef}
+              onMouseDown={handleMouseDown}
+              onMouseUp={handleMouseUp}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseUp}
+              className={cn(
+                "relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden",
+                zoom > 1 && "cursor-grab"
+              )}
+            >
               {isLoadingMap || isLoading ? (
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               ) : mapUrl ? (
-                <>
-                  <Image
-                    src={mapUrl}
-                    alt="Mapa de registros"
-                    fill
-                    className="object-cover"
-                  />
-                  {renderedPins}
-                </>
+                <div
+                    style={{
+                        transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                        width: '100%',
+                        height: '100%',
+                        transformOrigin: 'top left',
+                    }}
+                    className="transition-transform duration-200"
+                >
+                    <Image
+                        src={mapUrl}
+                        alt="Mapa de registros"
+                        fill
+                        className="object-cover pointer-events-none"
+                    />
+                    {renderedPins}
+                </div>
               ) : (
                 <p className="text-muted-foreground text-center p-4">
                   Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
@@ -625,87 +519,7 @@ export function FaunaFloraGeoMapReport() {
           )}
         </DialogContent>
       </Dialog>
-      <Dialog open={isZoomModalOpen} onOpenChange={setIsZoomModalOpen}>
-        <DialogContent className="max-w-[90vw] h-[90vh] flex flex-col p-0 gap-0">
-            <DialogHeader className="p-4 border-b">
-                <DialogTitle>Mapa Ampliado</DialogTitle>
-                <DialogDescription>
-                    Use a roda do mouse para zoom. Clique e arraste para mover.
-                </DialogDescription>
-            </DialogHeader>
-            <div 
-                ref={mapRef}
-                className="flex-1 w-full h-full bg-muted/20 overflow-hidden cursor-grab active:cursor-grabbing"
-                onWheel={handleWheel}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-            >
-                {mapUrl ? (
-                    <div 
-                        className="relative w-full h-full"
-                        style={{ 
-                            transform: `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale})`,
-                            cursor: isPanning ? 'grabbing' : 'grab',
-                        }}
-                    >
-                        <Image
-                            src={mapUrl}
-                            alt="Mapa ampliado"
-                            fill
-                            className="object-contain pointer-events-none"
-                             onLoad={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                setImageDimensions({ width: target.naturalWidth, height: target.naturalHeight });
-                            }}
-                        />
-                        {zoomTarget && (
-                            <div
-                                className="absolute"
-                                style={{
-                                    left: `${zoomTarget.x}%`,
-                                    top: `${zoomTarget.y}%`,
-                                    transform: `translate(-50%, -100%) scale(${1 / zoomState.scale})`,
-                                }}
-                            >
-                                <MapPin className="h-6 w-6 fill-blue-500 stroke-white drop-shadow-lg" />
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <div className="flex items-center justify-center w-full h-full">
-                        <p>Mapa não disponível.</p>
-                    </div>
-                )}
-            </div>
-            <DialogFooter className="p-2 border-t bg-background/95 flex justify-between">
-                <div className="flex items-center gap-2">
-                  <Tooltip>
-                      <TooltipTrigger asChild>
-                          <Button variant="outline" size="icon" onClick={handleZoomOut}><ZoomOut /></Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          <p>Reduzir Zoom</p>
-                      </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                      <TooltipTrigger asChild>
-                          <Button variant="outline" size="icon" onClick={handleZoomIn}><ZoomIn /></Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          <p>Aumentar Zoom</p>
-                      </TooltipContent>
-                  </Tooltip>
-                </div>
-                <DialogClose asChild>
-                    <Button type="button" variant="secondary">
-                        Fechar
-                    </Button>
-                </DialogClose>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
     </div>
   );
 }
+
