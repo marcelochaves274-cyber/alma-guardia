@@ -235,15 +235,30 @@ export function ManageMap() {
         toast({ title: 'Sucesso!', description: `O mapa "${updatedMapData.name}" foi salvo.` });
 
     } catch (error: any) {
-      console.error(`Error saving map ${mapId}:`, error);
-      let description = 'Ocorreu um erro inesperado ao salvar. Tente novamente.';
-      if (error.code === 'storage/unauthorized') {
-        description = 'Erro de permissão. O upload da imagem foi bloqueado pelas regras de segurança.';
-      }
-      toast({ variant: 'destructive', title: 'Erro ao Salvar', description });
-      setMaps(originalMaps);
+        console.error(`[SGS_APP_DEBUG] Erro completo ao salvar o mapa ${mapId}:`, error);
+        
+        let description = 'Ocorreu um erro inesperado. Verifique o console do navegador para mais detalhes (F12).';
+        if (error.code) {
+          description = `Erro: ${error.code}. Verifique as regras de segurança do Firebase Storage e sua conexão.`;
+          if (error.code === 'storage/unauthorized') {
+            description = 'Erro de permissão (storage/unauthorized). O servidor recusou o upload. Verifique as regras de segurança do Firebase Storage.';
+          } else if (error.code === 'storage/object-not-found') {
+            description = 'Erro: Objeto não encontrado. Isso pode ter acontecido ao tentar deletar um mapa antigo.';
+          }
+        }
+        
+        toast({
+          variant: 'destructive',
+          title: `Erro ao Salvar Mapa "${currentMapState?.name || mapId}"`,
+          description: description,
+          duration: 9000
+        });
+
+        // Restore component to pre-save attempt state
+        setMaps(originalMaps);
     } finally {
-      setSavingState(s => ({ ...s, [mapId]: false }));
+        console.log(`[SGS_APP_DEBUG] Bloco finally executado para ${mapId}.`);
+        setSavingState(s => ({ ...s, [mapId]: false }));
     }
   };
 
