@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -41,6 +40,9 @@ interface MapInfo {
 
 export function ManageMap() {
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const firebaseApp = useFirebaseApp();
+  const { user, isUserLoading } = useUser();
 
   const [maps, setMaps] = useState<MapInfo[]>([]);
   const [originalMaps, setOriginalMaps] = useState<MapInfo[]>([]);
@@ -54,18 +56,13 @@ export function ManageMap() {
     map3: useRef<HTMLInputElement>(null),
   };
 
-  const firestore = useFirestore();
-  const firebaseApp = useFirebaseApp();
-  const { user, isUserLoading } = useUser();
-
   const getSettingsDocRef = useCallback(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'sgs_genius', user.uid, 'settings', 'mapDetails');
   }, [firestore, user]);
 
-  // Fetch initial map data
   useEffect(() => {
-    if (isUserLoading || !user || !firestore) {
+    if (isUserLoading || !user) {
       if (!isUserLoading) setIsLoading(false);
       return;
     }
@@ -76,7 +73,7 @@ export function ManageMap() {
     setIsLoading(true);
     getDoc(settingsDocRef)
       .then((docSnap) => {
-        const defaultMaps: MapInfo[] = [
+        const defaultMapsData: MapInfo[] = [
           { id: 'map1', name: 'Mapa 1', url: null },
           { id: 'map2', name: 'Mapa 2', url: null },
           { id: 'map3', name: 'Mapa 3', url: null },
@@ -86,23 +83,22 @@ export function ManageMap() {
           const data = docSnap.data();
           if (data.maps && Array.isArray(data.maps)) {
             data.maps.forEach((fm: MapInfo) => {
-              const index = defaultMaps.findIndex((m) => m.id === fm.id);
+              const index = defaultMapsData.findIndex((m) => m.id === fm.id);
               if (index !== -1) {
-                defaultMaps[index] = { ...defaultMaps[index], name: fm.name || `Mapa ${index + 1}`, url: fm.url };
+                defaultMapsData[index] = { ...defaultMapsData[index], name: fm.name || `Mapa ${index + 1}`, url: fm.url };
               }
             });
           }
         }
-        setMaps(defaultMaps);
-        setOriginalMaps(JSON.parse(JSON.stringify(defaultMaps)));
+        setMaps(defaultMapsData);
+        setOriginalMaps(JSON.parse(JSON.stringify(defaultMapsData)));
       })
       .catch((error: any) => {
         if (error.code !== 'permission-denied') console.error('Error fetching maps:', error);
       })
       .finally(() => setIsLoading(false));
-  }, [user, firestore, isUserLoading, getSettingsDocRef]);
+  }, [user, isUserLoading, getSettingsDocRef]);
 
-  // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
       maps.forEach(map => {
@@ -113,11 +109,7 @@ export function ManageMap() {
     };
   }, [maps]);
 
-
-  const handleFileChange = (
-    event: ChangeEvent<HTMLInputElement>,
-    mapId: string
-  ) => {
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>, mapId: string) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) { // 2MB limit
@@ -133,7 +125,6 @@ export function ManageMap() {
       
       const objectUrl = URL.createObjectURL(file);
       setMaps((prevMaps) => {
-        // Clean up old blob URL if it exists
         const oldMap = prevMaps.find(m => m.id === mapId);
         if (oldMap?.url && oldMap.url.startsWith('blob:')) {
             URL.revokeObjectURL(oldMap.url);
@@ -158,7 +149,7 @@ export function ManageMap() {
         if (mapToRemove?.url && mapToRemove.url.startsWith('blob:')) {
             URL.revokeObjectURL(mapToRemove.url);
         }
-        return prevMaps.map((m) => (m.id === mapId ? { ...m, url: null } : m))
+        return prevMaps.map((m) => (m.id === mapId ? { ...m, url: null } : m));
     });
     const ref = fileInputRefs[mapId as keyof typeof fileInputRefs];
     if (ref.current) {
@@ -169,7 +160,7 @@ export function ManageMap() {
   const handleSaveMap = async (mapId: string) => {
     const settingsDocRef = getSettingsDocRef();
     if (!user || !firestore || !firebaseApp || !settingsDocRef) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Aplicação não inicializada corretamente.' });
+      toast({ variant: 'destructive', title: 'Erro de Autenticação', description: 'Usuário não está autenticado corretamente.' });
       return;
     }
     
@@ -189,32 +180,32 @@ export function ManageMap() {
     try {
         const storage = getStorage(firebaseApp);
         
-        // Scenario 1: A new file is staged for upload.
         if (fileToUpload) {
-            // Delete old file from storage if it exists
-            if (originalMapState?.url) {
+            if (originalMapState?.url && originalMapState.url.includes('firebasestorage')) {
                 try {
-                    await deleteObject(storageRef(storage, originalMapState.url));
-                } catch (delError: any) {
-                    if (delError.code !== 'storage/object-not-found') {
-                        console.warn("Could not delete old file from storage:", delError);
+                    const oldImageRef = storageRef(storage, originalMapState.url);
+                    await deleteObject(oldImageRef);
+                } catch (deleteError: any) {
+                    if (deleteError.code !== 'storage/object-not-found') {
+                        console.warn("Não foi possível deletar o mapa antigo:", deleteError);
                     }
                 }
             }
             
-            const newImageRef = storageRef(storage, `maps/${user.uid}/${mapId}-${Date.now()}`);
-            const uploadResult = await uploadBytes(newImageRef, fileToUpload);
-            finalUrl = await getDownloadURL(uploadResult.ref);
+            const newImageRef = storageRef(storage, `maps/${user.uid}/${mapId}-${Date.now()}-${fileToUpload.name}`);
+            await uploadBytes(newImageRef, fileToUpload);
+            finalUrl = await getDownloadURL(newImageRef);
         }
-        // Scenario 2: An existing image was removed (but no new one was staged).
-        else if (!currentMapState.url && originalMapState?.url) {
-            finalUrl = null;
+        else if (!currentMapState.url && originalMapState?.url && originalMapState.url.includes('firebasestorage')) {
             try {
-                await deleteObject(storageRef(storage, originalMapState.url));
-            } catch (delError: any) {
-                if (delError.code !== 'storage/object-not-found') {
-                     console.warn("Could not delete old file from storage:", delError);
+                const oldImageRef = storageRef(storage, originalMapState.url);
+                await deleteObject(oldImageRef);
+                finalUrl = null;
+            } catch (deleteError: any) {
+                if (deleteError.code !== 'storage/object-not-found') {
+                     console.warn("Não foi possível deletar o mapa antigo:", deleteError);
                 }
+                 finalUrl = null;
             }
         }
         
@@ -236,17 +227,21 @@ export function ManageMap() {
         
         await setDoc(settingsDocRef, { maps: allMapsData }, { merge: true });
 
-        // Update local state to reflect successful save
-        const newMapsArray = maps.map(m => m.id === mapId ? updatedMapData : m);
+        const newMapsArray = maps.map(m => m.id === mapId ? { ...m, url: finalUrl } : m);
         setMaps(newMapsArray);
         setOriginalMaps(JSON.parse(JSON.stringify(newMapsArray)));
-        setStagedFiles(prev => ({...prev, [mapId]: null})); // Clear staged file
+        setStagedFiles(prev => ({...prev, [mapId]: null}));
 
         toast({ title: 'Sucesso!', description: `O mapa "${updatedMapData.name}" foi salvo.` });
 
     } catch (error: any) {
       console.error(`Error saving map ${mapId}:`, error);
-      toast({ variant: 'destructive', title: 'Erro ao salvar', description: error.message || 'Não foi possível salvar o mapa. Verifique as permissões e tente novamente.' });
+      let description = 'Ocorreu um erro inesperado ao salvar. Tente novamente.';
+      if (error.code === 'storage/unauthorized') {
+        description = 'Erro de permissão. O upload da imagem foi bloqueado pelas regras de segurança.';
+      }
+      toast({ variant: 'destructive', title: 'Erro ao Salvar', description });
+      setMaps(originalMaps);
     } finally {
       setSavingState(s => ({ ...s, [mapId]: false }));
     }
@@ -274,8 +269,7 @@ export function ManageMap() {
       <CardHeader>
         <CardTitle>Gerenciar Mapas</CardTitle>
         <CardDescription>
-          Faça o upload de até 3 imagens (planta baixa, mapa, etc.) para usar
-          como base para marcações de ocorrências. Salve cada mapa individualmente.
+          Faça o upload de até 3 imagens para usar como base para marcações. Salve cada mapa individualmente.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
