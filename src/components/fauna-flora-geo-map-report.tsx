@@ -21,11 +21,12 @@ import {
   DialogTitle,
   DialogClose,
   DialogDescription,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useFirestore, useUser } from '@/firebase';
 import { collection, getDoc, doc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Button } from './ui/button';
-import { Loader2, MapPin, Eye, ZoomIn, ZoomOut } from 'lucide-react';
+import { Loader2, MapPin, Eye, ZoomIn, ZoomOut, Expand } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
@@ -79,6 +80,7 @@ export function FaunaFloraGeoMapReport() {
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [detailedRecord, setDetailedRecord] = useState<FaunaFloraGeoRecord | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
@@ -419,36 +421,21 @@ export function FaunaFloraGeoMapReport() {
                 {isLoading ? 'Carregando...' : `Foram encontrados ${filteredRecords.length} registros com marcação no mapa, agrupados em ${clusters.length} pontos.`}
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" onClick={handleZoomOut} disabled={zoom <= 1}><ZoomOut/></Button>
-                <Button variant="outline" size="icon" onClick={handleZoomIn} disabled={zoom >= 5}><ZoomIn/></Button>
-            </div>
+             <DialogTrigger asChild>
+                <Button variant="outline" disabled={isLoadingMap || !mapUrl} onClick={() => setIsMapModalOpen(true)}>
+                    <Expand className="mr-2 h-4 w-4" /> Ampliar Mapa
+                </Button>
+            </DialogTrigger>
           </div>
         </CardHeader>
         <CardContent>
            <div 
-              ref={mapContainerRef}
-              onMouseDown={handleMouseDown}
-              onMouseUp={handleMouseUp}
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseUp}
-              className={cn(
-                "relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden",
-                zoom > 1 && "cursor-grab"
-              )}
+              className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden"
             >
               {isLoadingMap || isLoading ? (
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               ) : mapUrl ? (
-                <div
-                    style={{
-                        transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                        width: '100%',
-                        height: '100%',
-                        transformOrigin: 'top left',
-                    }}
-                    className="transition-transform duration-200"
-                >
+                <div style={{ width: '100%', height: '100%' }}>
                     <Image
                         src={mapUrl}
                         alt="Mapa de registros"
@@ -465,6 +452,27 @@ export function FaunaFloraGeoMapReport() {
             </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isMapModalOpen} onOpenChange={(isOpen) => { setIsMapModalOpen(isOpen); if (!isOpen) { setZoom(1); setPan({x: 0, y: 0}); } }}>
+        <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
+            <DialogHeader className="p-4 border-b">
+                <DialogTitle>Mapa Interativo de Fauna, Flora & Geo</DialogTitle>
+                <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 relative overflow-hidden bg-muted" ref={mapContainerRef} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove} onMouseLeave={handleMouseUp}>
+                {mapUrl ? (
+                    <div style={{ transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`, transformOrigin: '0 0', width: '100%', height: '100%' }}>
+                         <Image src={mapUrl} alt="Mapa de registros" fill className="object-contain pointer-events-none" />
+                         {renderedPins}
+                    </div>
+                ) : <p className="text-center p-4">Mapa não disponível.</p>}
+            </div>
+            <div className="absolute top-4 right-16 flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={handleZoomOut} disabled={zoom <= 1}><ZoomOut/></Button>
+                <Button variant="outline" size="icon" onClick={handleZoomIn} disabled={zoom >= 5}><ZoomIn/></Button>
+            </div>
+        </DialogContent>
+      </Dialog>
 
        <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
         <DialogContent className="max-w-2xl">
@@ -522,4 +530,3 @@ export function FaunaFloraGeoMapReport() {
     </div>
   );
 }
-
