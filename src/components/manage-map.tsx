@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -13,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useState, useEffect, useRef, useCallback, type ChangeEvent } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, X } from 'lucide-react';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { Skeleton } from './ui/skeleton';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -277,7 +276,7 @@ export function ManageMap() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 {map.url ? (
                   <div className="relative">
-                    <Image src={map.url} alt={`Pré-visualização do ${map.name}`} width={128} height={128} className="rounded-md border object-contain" />
+                    <NextImage src={map.url} alt={`Pré-visualização do ${map.name}`} width={128} height={128} className="rounded-md border object-contain" />
                     <Button
                       variant="destructive"
                       size="icon"
