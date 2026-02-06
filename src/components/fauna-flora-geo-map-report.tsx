@@ -263,45 +263,56 @@ export function FaunaFloraGeoMapReport() {
   };
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
     if (isZoomModalOpen && zoomTarget) {
-      // Set to a base state to ensure we are not starting from a panned/zoomed state from a previous interaction.
       setZoomState({ scale: 1, x: 0, y: 0 });
 
-      timer = setTimeout(() => {
+      const attemptZoom = (retries = 5) => {
+        if (retries === 0) return;
+        
         if (mapRef.current) {
           const { width, height } = mapRef.current.getBoundingClientRect();
           if (width > 0 && height > 0) {
-            const initialScale = 2.5;
+            const initialScale = 2.0;
+            const newX = (width / 2) - (zoomTarget.x / 100 * width * initialScale);
+            const newY = (height / 2) - (zoomTarget.y / 100 * height * initialScale);
+            
+            const clampedX = Math.min(0, Math.max(width * (1 - initialScale), newX));
+            const clampedY = Math.min(0, Math.max(height * (1 - initialScale), newY));
+
             setZoomState({
               scale: initialScale,
-              x: (width / 2) - (zoomTarget.x / 100 * width * initialScale),
-              y: (height / 2) - (zoomTarget.y / 100 * height * initialScale),
+              x: clampedX,
+              y: clampedY,
             });
+            return;
           }
         }
-      }, 150);
+        
+        setTimeout(() => attemptZoom(retries - 1), 100);
+      };
 
-      return () => clearTimeout(timer);
+      setTimeout(attemptZoom, 50);
     }
   }, [isZoomModalOpen, zoomTarget]);
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
       e.preventDefault();
-      const { deltaY, clientX, clientY } = e;
       if (!mapRef.current) return;
-
+      
       const rect = mapRef.current.getBoundingClientRect();
-      const scaleAmount = -deltaY / 500;
-      const newScale = Math.min(Math.max(0.5, zoomState.scale + scaleAmount), 10);
+      const scaleAmount = -e.deltaY / 500;
+      const newScale = Math.max(1, Math.min(zoomState.scale + scaleAmount, 10));
 
-      const mouseX = clientX - rect.left;
-      const mouseY = clientY - rect.top;
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
 
       const newX = mouseX - (mouseX - zoomState.x) * (newScale / zoomState.scale);
       const newY = mouseY - (mouseY - zoomState.y) * (newScale / zoomState.scale);
+      
+      const clampedX = Math.min(0, Math.max(rect.width * (1 - newScale), newX));
+      const clampedY = Math.min(0, Math.max(rect.height * (1 - newScale), newY));
 
-      setZoomState({ scale: newScale, x: newX, y: newY });
+      setZoomState({ scale: newScale, x: clampedX, y: clampedY });
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -313,13 +324,21 @@ export function FaunaFloraGeoMapReport() {
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!isPanning) return;
+      if (!isPanning || !mapRef.current) return;
       e.preventDefault();
-      setZoomState(prev => ({
-          ...prev,
-          x: e.clientX - panStart.x,
-          y: e.clientY - panStart.y,
-      }));
+      const rect = mapRef.current.getBoundingClientRect();
+      
+      const newX = e.clientX - panStart.x;
+      const newY = e.clientY - panStart.y;
+
+      const clampedX = Math.min(0, Math.max(rect.width * (1 - zoomState.scale), newX));
+      const clampedY = Math.min(0, Math.max(rect.height * (1 - zoomState.scale), newY));
+      
+      setZoomState({
+          ...zoomState,
+          x: clampedX,
+          y: clampedY,
+      });
   };
 
   const handleMouseUp = () => {
@@ -327,11 +346,29 @@ export function FaunaFloraGeoMapReport() {
   };
 
   const handleZoomIn = () => {
-      setZoomState(prev => ({ ...prev, scale: Math.min(prev.scale * 1.2, 10) }));
+      if (!mapRef.current) return;
+      const rect = mapRef.current.getBoundingClientRect();
+      const newScale = Math.min(zoomState.scale * 1.5, 10);
+      const newX = rect.width / 2 - (rect.width / 2 - zoomState.x) * (newScale / zoomState.scale);
+      const newY = rect.height / 2 - (rect.height / 2 - zoomState.y) * (newScale / zoomState.scale);
+      
+      const clampedX = Math.min(0, Math.max(rect.width * (1 - newScale), newX));
+      const clampedY = Math.min(0, Math.max(rect.height * (1 - newScale), newY));
+
+      setZoomState({ scale: newScale, x: clampedX, y: clampedY });
   };
 
   const handleZoomOut = () => {
-      setZoomState(prev => ({ ...prev, scale: Math.max(prev.scale / 1.2, 0.5) }));
+      if (!mapRef.current) return;
+      const rect = mapRef.current.getBoundingClientRect();
+      const newScale = Math.max(1, zoomState.scale / 1.5);
+      const newX = rect.width / 2 - (rect.width / 2 - zoomState.x) * (newScale / zoomState.scale);
+      const newY = rect.height / 2 - (rect.height / 2 - zoomState.y) * (newScale / zoomState.scale);
+
+      const clampedX = Math.min(0, Math.max(rect.width * (1 - newScale), newX));
+      const clampedY = Math.min(0, Math.max(rect.height * (1 - newScale), newY));
+
+      setZoomState({ scale: newScale, x: clampedX, y: clampedY });
   };
 
   const renderedPins = useMemo(() => {
@@ -569,7 +606,7 @@ export function FaunaFloraGeoMapReport() {
                             src={mapUrl}
                             alt="Mapa ampliado"
                             fill
-                            className="object-contain pointer-events-none"
+                            className="object-cover pointer-events-none"
                         />
                         {zoomTarget && (
                             <div
@@ -620,3 +657,5 @@ export function FaunaFloraGeoMapReport() {
     </div>
   );
 }
+
+    
