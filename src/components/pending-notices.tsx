@@ -215,7 +215,7 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
                                 src={notice.imageUrl}
                                 alt="Imagem do aviso"
                                 fill
-                                objectFit="contain"
+                                style={{objectFit: 'contain'}}
                             />
                         </div>
                         <DialogClose asChild>

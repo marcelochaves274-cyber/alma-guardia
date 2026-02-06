@@ -408,149 +408,149 @@ export function TreatmentMapReport() {
   }, [clusters, isClient, availableYears, isLoading]);
   
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Mapa de Tratamentos</CardTitle>
-          <CardDescription>
-            Filtre e visualize a localização dos tratamentos de risco no mapa.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Filtrar por Mês</Label>
-            <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+    <Dialog>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Mapa de Tratamentos</CardTitle>
+            <CardDescription>
+              Filtre e visualize a localização dos tratamentos de risco no mapa.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
-                <Label>Filtrar por Ano</Label>
-                <SheetFilter
-                    title='Filtrar Anos'
-                    options={availableYears.map(y => ({ value: y, label: y }))}
-                    selected={filterYear}
-                    onChange={setFilterYear}
-                    disabled={isLoading || availableYears.length === 0}
-                    buttonText='Filtrar por Ano'
-                />
+              <Label>Filtrar por Mês</Label>
+              <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
             </div>
-            <div className="space-y-2">
-                <Label>Filtrar por Tipo de Risco</Label>
-                <SheetFilter
-                    title='Filtrar Tipos de Risco'
-                    options={treatmentTypes.map(t => ({ value: t, label: t }))}
-                    selected={filterType}
-                    onChange={setFilterType}
-                    disabled={!treatmentTypes || treatmentTypes.length === 0}
-                    buttonText='Filtrar por Tipo'
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+              <div className="space-y-2">
+                  <Label>Filtrar por Ano</Label>
+                  <SheetFilter
+                      title='Filtrar Anos'
+                      options={availableYears.map(y => ({ value: y, label: y }))}
+                      selected={filterYear}
+                      onChange={setFilterYear}
+                      disabled={isLoading || availableYears.length === 0}
+                      buttonText='Filtrar por Ano'
+                  />
+              </div>
+              <div className="space-y-2">
+                  <Label>Filtrar por Tipo de Risco</Label>
+                  <SheetFilter
+                      title='Filtrar Tipos de Risco'
+                      options={treatmentTypes.map(t => ({ value: t, label: t }))}
+                      selected={filterType}
+                      onChange={setFilterType}
+                      disabled={!treatmentTypes || treatmentTypes.length === 0}
+                      buttonText='Filtrar por Tipo'
+                  />
+              </div>
+              <div className="space-y-2">
+                  <Label>Nível de Risco (PxC)</Label>
+                  <SheetFilter
+                      title='Filtrar Níveis de Risco'
+                      options={riskLevelOptions}
+                      selected={filterRiskLevel}
+                      onChange={setFilterRiskLevel}
+                      buttonText='Filtrar por Nível'
+                  />
+              </div>
+              <div className="space-y-2">
+                  <Label>Filtrar por Local</Label>
+                  <SheetFilter
+                      title='Filtrar Locais'
+                      options={locations.map(l => ({ value: l, label: l }))}
+                      selected={filterLocation}
+                      onChange={setFilterLocation}
+                      disabled={!locations || locations.length === 0}
+                      buttonText='Filtrar por Local'
+                  />
+              </div>
+              <div className="space-y-2">
+                  <Label>Filtrar por Situação</Label>
+                  <SheetFilter
+                      title='Filtrar Situações'
+                      options={situationOptions}
+                      selected={filterSituation}
+                      onChange={setFilterSituation}
+                      buttonText='Filtrar por Situação'
+                  />
+              </div>
+              
+              <Button onClick={clearFilters} variant="outline" className="w-full">
+                Limpar Filtros
+              </Button>
             </div>
-             <div className="space-y-2">
-                <Label>Nível de Risco (PxC)</Label>
-                <SheetFilter
-                    title='Filtrar Níveis de Risco'
-                    options={riskLevelOptions}
-                    selected={filterRiskLevel}
-                    onChange={setFilterRiskLevel}
-                    buttonText='Filtrar por Nível'
-                />
-            </div>
-            <div className="space-y-2">
-                <Label>Filtrar por Local</Label>
-                <SheetFilter
-                    title='Filtrar Locais'
-                    options={locations.map(l => ({ value: l, label: l }))}
-                    selected={filterLocation}
-                    onChange={setFilterLocation}
-                    disabled={!locations || locations.length === 0}
-                    buttonText='Filtrar por Local'
-                />
-            </div>
-            <div className="space-y-2">
-                <Label>Filtrar por Situação</Label>
-                <SheetFilter
-                    title='Filtrar Situações'
-                    options={situationOptions}
-                    selected={filterSituation}
-                    onChange={setFilterSituation}
-                    buttonText='Filtrar por Situação'
-                />
-            </div>
-            
-            <Button onClick={clearFilters} variant="outline" className="w-full">
-              Limpar Filtros
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-           <div className='flex justify-between items-center gap-4'>
-            <div>
-              <CardTitle>Resultados no Mapa</CardTitle>
-              <CardDescription>
-                {isLoading ? 'Carregando...' : `Foram encontrados ${filteredTreatments.length} tratamentos com marcação no mapa, agrupados em ${clusters.length} pontos.`}
-              </CardDescription>
-            </div>
-             <DialogTrigger asChild>
-                <Button variant="outline" disabled={isLoadingMap || !mapUrl} onClick={() => setIsMapModalOpen(true)}>
-                    <Expand className="mr-2 h-4 w-4" /> Ampliar Mapa
-                </Button>
-            </DialogTrigger>
-          </div>
-        </CardHeader>
-        <CardContent>
-           <div 
-              className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden"
-            >
-              {isLoadingMap || isLoading ? (
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              ) : mapUrl ? (
-                <div style={{ width: '100%', height: '100%' }}>
-                    <Image
-                        src={mapUrl}
-                        alt="Mapa de tratamentos"
-                        fill
-                        className="object-cover pointer-events-none"
-                    />
-                    {renderedPins}
+        <Dialog onOpenChange={(isOpen) => { setIsMapModalOpen(isOpen); if (!isOpen) { setZoom(1); setPan({x: 0, y: 0}); } }}>
+          <Card>
+            <CardHeader>
+              <div className='flex justify-between items-center gap-4'>
+                <div>
+                  <CardTitle>Resultados no Mapa</CardTitle>
+                  <CardDescription>
+                    {isLoading ? 'Carregando...' : `Foram encontrados ${filteredTreatments.length} tratamentos com marcação no mapa, agrupados em ${clusters.length} pontos.`}
+                  </CardDescription>
                 </div>
-              ) : (
-                <p className="text-muted-foreground text-center p-4">
-                  Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
-                </p>
-              )}
-            </div>
-        </CardContent>
-      </Card>
-      
-      <Dialog open={isMapModalOpen} onOpenChange={(isOpen) => { setIsMapModalOpen(isOpen); if (!isOpen) { setZoom(1); setPan({x: 0, y: 0}); } }}>
-        <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
-            <DialogHeader className="p-4 border-b">
-                <DialogTitle>Mapa Interativo de Tratamentos de Risco</DialogTitle>
-                <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
-            </DialogHeader>
-            <div className="flex-1 relative overflow-hidden bg-muted" ref={mapContainerRef} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove} onMouseLeave={handleMouseUp}>
-                {mapUrl ? (
-                    <div style={{ transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`, transformOrigin: '0 0', width: '100%', height: '100%' }}>
-                         <Image src={mapUrl} alt="Mapa de tratamentos" fill className="object-contain pointer-events-none" />
-                         {renderedPins}
-                    </div>
-                ) : <p className="text-center p-4">Mapa não disponível.</p>}
-            </div>
-            <div className="absolute top-4 right-16 flex items-center gap-2">
-                <Button variant="outline" size="icon" onClick={handleZoomOut} disabled={zoom <= 1}><ZoomOut/></Button>
-                <Button variant="outline" size="icon" onClick={handleZoomIn} disabled={zoom >= 5}><ZoomIn/></Button>
-            </div>
-        </DialogContent>
-      </Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="outline" disabled={isLoadingMap || !mapUrl}>
+                        <Expand className="mr-2 h-4 w-4" /> Ampliar Mapa
+                    </Button>
+                </DialogTrigger>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div 
+                className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden"
+              >
+                {isLoadingMap || isLoading ? (
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                ) : mapUrl ? (
+                  <div style={{ width: '100%', height: '100%' }}>
+                      <Image
+                          src={mapUrl}
+                          alt="Mapa de tratamentos"
+                          fill
+                          className="object-cover pointer-events-none"
+                      />
+                      {renderedPins}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center p-4">
+                    Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
+              <DialogHeader className="p-4 border-b">
+                  <DialogTitle>Mapa Interativo de Tratamentos de Risco</DialogTitle>
+                  <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
+              </DialogHeader>
+              <div className="flex-1 relative overflow-hidden bg-muted" ref={mapContainerRef} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove} onMouseLeave={handleMouseUp}>
+                  {mapUrl ? (
+                      <div style={{ transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`, transformOrigin: '0 0', width: '100%', height: '100%' }}>
+                          <Image src={mapUrl} alt="Mapa de tratamentos" fill className="object-contain pointer-events-none" />
+                          {renderedPins}
+                      </div>
+                  ) : <p className="text-center p-4">Mapa não disponível.</p>}
+              </div>
+              <div className="absolute top-4 right-16 flex items-center gap-2">
+                  <Button variant="outline" size="icon" onClick={handleZoomOut} disabled={zoom <= 1}><ZoomOut/></Button>
+                  <Button variant="outline" size="icon" onClick={handleZoomIn} disabled={zoom >= 5}><ZoomIn/></Button>
+              </div>
+          </DialogContent>
+        </Dialog>
 
 
-      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
-         <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" onOpenChange={setIsDetailModalOpen}>
           <DialogHeader>
             <DialogTitle>Detalhes do Tratamento de Risco</DialogTitle>
-             <DialogDescription>
+            <DialogDescription>
               Visualização detalhada do registro de tratamento de risco.
             </DialogDescription>
           </DialogHeader>
@@ -628,7 +628,7 @@ export function TreatmentMapReport() {
             </>
           )}
         </DialogContent>
-      </Dialog>
-    </div>
+      </div>
+    </Dialog>
   );
 }
