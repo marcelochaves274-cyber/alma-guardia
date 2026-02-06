@@ -46,6 +46,13 @@ interface RegisterTreatmentProps {
   prefillData?: any | null;
 }
 
+interface ImageRenderMetrics {
+  offsetX: number;
+  offsetY: number;
+  renderedWidth: number;
+  renderedHeight: number;
+}
+
 const probabilityOptions = [
   { value: '1', label: '1 - Quase Improvável' },
   { value: '2', label: '2 - Improvável' },
@@ -98,6 +105,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
   const [mapUrl, setMapUrl] = useState<string | null>(null);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageRenderMetrics, setImageRenderMetrics] = useState<ImageRenderMetrics | null>(null);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   
@@ -187,12 +195,55 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
     fetchMap();
   }, [getSettingsDocRef]);
 
-  const handleMapClick = (e: MouseEvent<HTMLDivElement>) => {
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     if (!mapContainerRef.current) return;
-    const rect = mapContainerRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setMarker({ x, y });
+    const { naturalWidth, naturalHeight } = e.currentTarget;
+    const containerRect = mapContainerRef.current.getBoundingClientRect();
+    
+    const imageAspectRatio = naturalWidth / naturalHeight;
+    const containerAspectRatio = containerRect.width / containerRect.height;
+    
+    let renderedWidth: number;
+    let renderedHeight: number;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (imageAspectRatio > containerAspectRatio) {
+      renderedWidth = containerRect.width;
+      renderedHeight = renderedWidth / imageAspectRatio;
+      offsetY = (containerRect.height - renderedHeight) / 2;
+    } else {
+      renderedHeight = containerRect.height;
+      renderedWidth = renderedHeight * imageAspectRatio;
+      offsetX = (containerRect.width - renderedWidth) / 2;
+    }
+
+    setImageRenderMetrics({ offsetX, offsetY, renderedWidth, renderedHeight });
+  };
+  
+  const handleMapClick = (e: MouseEvent<HTMLDivElement>) => {
+    if (!imageRenderMetrics) return;
+    
+    const { offsetX, offsetY, renderedWidth, renderedHeight } = imageRenderMetrics;
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    if (
+        clickX >= offsetX &&
+        clickX <= offsetX + renderedWidth &&
+        clickY >= offsetY &&
+        clickY <= offsetY + renderedHeight
+    ) {
+        const x_rel = clickX - offsetX;
+        const y_rel = clickY - offsetY;
+
+        const x_perc = (x_rel / renderedWidth) * 100;
+        const y_perc = (y_rel / renderedHeight) * 100;
+
+        setMarker({ x: x_perc, y: y_perc });
+    }
   };
   
   const resetForm = () => {
@@ -482,7 +533,8 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
                       src={mapUrl}
                       alt="Mapa de tratamentos"
                       fill
-                      className="object-cover"
+                      className="object-contain"
+                      onLoad={handleImageLoad}
                     />
                     {marker && (
                       <div

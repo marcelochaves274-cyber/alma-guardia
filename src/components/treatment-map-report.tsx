@@ -138,13 +138,16 @@ export function TreatmentMapReport() {
   const [isClient, setIsClient] = useState(false);
   const [clientToday, setClientToday] = useState<Date | null>(null);
 
-  // Zoom and Pan state
+  // State for main map
+  const [mainMapRenderMetrics, setMainMapRenderMetrics] = useState<ImageRenderMetrics | null>(null);
+  const mainMapContainerRef = useRef<HTMLDivElement>(null);
+  
+  // State for modal map
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
-  const [imageRenderMetrics, setImageRenderMetrics] = useState<ImageRenderMetrics | null>(null);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const panStart = useRef<{ x: number; y: number, startX: number, startY: number } | null>(null);
+  const [modalImageRenderMetrics, setModalImageRenderMetrics] = useState<ImageRenderMetrics | null>(null);
+  const modalMapContainerRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
-
+  const panStart = useRef<{ x: number; y: number, startX: number, startY: number } | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -314,11 +317,44 @@ export function TreatmentMapReport() {
     setFilterSituation([]);
   }
 
-  const clampPosition = useCallback((pos: {x: number; y: number; scale: number}) => {
-    if (!mapContainerRef.current || !imageRenderMetrics) return pos;
+  const handleImageLoad = (
+    e: React.SyntheticEvent<HTMLImageElement>,
+    containerRef: React.RefObject<HTMLDivElement>,
+    setMetrics: React.Dispatch<React.SetStateAction<ImageRenderMetrics | null>>
+  ) => {
+      if (!containerRef.current) return;
+      const { naturalWidth, naturalHeight } = e.currentTarget;
+      const containerRect = containerRef.current.getBoundingClientRect();
+      
+      const imageAspectRatio = naturalWidth / naturalHeight;
+      const containerAspectRatio = containerRect.width / containerRect.height;
+      
+      let renderedWidth: number;
+      let renderedHeight: number;
+      let offsetX = 0;
+      let offsetY = 0;
+  
+      if (imageAspectRatio > containerAspectRatio) {
+        renderedWidth = containerRect.width;
+        renderedHeight = renderedWidth / imageAspectRatio;
+        offsetY = (containerRect.height - renderedHeight) / 2;
+      } else {
+        renderedHeight = containerRect.height;
+        renderedWidth = renderedHeight * imageAspectRatio;
+        offsetX = (containerRect.width - renderedWidth) / 2;
+      }
+  
+      setMetrics({ offsetX, offsetY, renderedWidth, renderedHeight, naturalWidth, naturalHeight });
+      if(containerRef === modalMapContainerRef) {
+        setTransform({ scale: 1, x: 0, y: 0 });
+      }
+  };
 
-    const containerRect = mapContainerRef.current.getBoundingClientRect();
-    const { renderedWidth, renderedHeight } = imageRenderMetrics;
+  const clampPosition = useCallback((pos: {x: number; y: number; scale: number}) => {
+    if (!modalMapContainerRef.current || !modalImageRenderMetrics) return pos;
+
+    const containerRect = modalMapContainerRef.current.getBoundingClientRect();
+    const { renderedWidth, renderedHeight } = modalImageRenderMetrics;
     const { scale } = pos;
 
     const scaledWidth = renderedWidth * scale;
@@ -331,7 +367,7 @@ export function TreatmentMapReport() {
     const clampedY = Math.max(-overflowY, Math.min(pos.y, overflowY));
     
     return { x: clampedX, y: clampedY, scale: pos.scale };
-  }, [imageRenderMetrics]);
+  }, [modalImageRenderMetrics]);
 
 
   const handleZoom = (direction: 'in' | 'out') => {
@@ -343,7 +379,7 @@ export function TreatmentMapReport() {
   };
   
   const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.button !== 0 || !imageRenderMetrics) return;
+    if (e.button !== 0 || !modalImageRenderMetrics) return;
     e.preventDefault();
 
     panStart.current = { x: e.clientX, y: e.clientY, startX: transform.x, startY: transform.y };
@@ -377,39 +413,11 @@ export function TreatmentMapReport() {
 
     window.addEventListener('mousemove', handlePanMove);
     window.addEventListener('mouseup', handlePanEnd);
-  }, [transform.x, transform.y, imageRenderMetrics, clampPosition]);
-  
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (!mapContainerRef.current) return;
-    const { naturalWidth, naturalHeight } = e.currentTarget;
-    const containerRect = mapContainerRef.current.getBoundingClientRect();
-    
-    const imageAspectRatio = naturalWidth / naturalHeight;
-    const containerAspectRatio = containerRect.width / containerRect.height;
-    
-    let renderedWidth: number;
-    let renderedHeight: number;
-    let offsetX = 0;
-    let offsetY = 0;
+  }, [transform.x, transform.y, modalImageRenderMetrics, clampPosition]);
 
-    if (imageAspectRatio > containerAspectRatio) {
-      renderedWidth = containerRect.width;
-      renderedHeight = renderedWidth / imageAspectRatio;
-      offsetY = (containerRect.height - renderedHeight) / 2;
-    } else {
-      renderedHeight = containerRect.height;
-      renderedWidth = renderedHeight * imageAspectRatio;
-      offsetX = (containerRect.width - renderedWidth) / 2;
-    }
+  const renderPins = useMemo(() => {
+    if (!isClient || isLoading) return null;
 
-    setImageRenderMetrics({ offsetX, offsetY, renderedWidth, renderedHeight, naturalWidth, naturalHeight });
-    setTransform({ scale: 1, x: 0, y: 0});
-  };
-
-  const renderedPins = useMemo(() => {
-    if (!isClient || isLoading || !imageRenderMetrics) {
-      return null;
-    }
     return clusters.map((cluster, index) => {
       const clusterKey = `treatment-cluster-${index}`;
       const clusterYear = cluster.treatments[0]?.treatmentDate.getFullYear();
@@ -467,7 +475,7 @@ export function TreatmentMapReport() {
         </Popover>
       )
     })
-  }, [clusters, isClient, availableYears, isLoading, imageRenderMetrics, activePopoverKey]);
+  }, [clusters, isClient, availableYears, isLoading, activePopoverKey]);
   
   return (
     <div className="space-y-6">
@@ -567,16 +575,16 @@ export function TreatmentMapReport() {
                         <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
                     </DialogHeader>
                     <div
-                        ref={mapContainerRef}
+                        ref={modalMapContainerRef}
                         className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center", isPanning ? 'cursor-grabbing' : 'cursor-grab')}
                         onMouseDown={handlePanStart}
                         onDragStart={(e) => e.preventDefault()}
                     >
-                      {imageRenderMetrics && mapUrl ? (
+                      {modalImageRenderMetrics && mapUrl ? (
                            <div
                               style={{
-                                  width: `${imageRenderMetrics.renderedWidth}px`,
-                                  height: `${imageRenderMetrics.renderedHeight}px`,
+                                  width: `${modalImageRenderMetrics.renderedWidth}px`,
+                                  height: `${modalImageRenderMetrics.renderedHeight}px`,
                                   transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                                   transformOrigin: 'center center',
                                   position: 'relative'
@@ -589,9 +597,7 @@ export function TreatmentMapReport() {
                                     className="object-contain pointer-events-none"
                                     onDragStart={(e) => e.preventDefault()}
                                 />
-                                 <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-                                    {renderedPins}
-                                </div>
+                                {renderPins}
                             </div>
                         ) : isLoadingMap ? (
                           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -600,8 +606,8 @@ export function TreatmentMapReport() {
                             src={mapUrl}
                             alt="Mapa para carregar"
                             fill
-                            className="object-contain opacity-0"
-                            onLoad={handleImageLoad}
+                            className="object-contain"
+                            onLoad={(e) => handleImageLoad(e, modalMapContainerRef, setModalImageRenderMetrics)}
                           />
                         ) : (
                           <p className="text-center p-4">Mapa não disponível.</p>
@@ -616,7 +622,7 @@ export function TreatmentMapReport() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+          <div ref={mainMapContainerRef} className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
             {isLoadingMap || isLoading ? (
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             ) : mapUrl ? (
@@ -626,8 +632,20 @@ export function TreatmentMapReport() {
                     alt="Mapa de tratamentos"
                     fill
                     className="object-contain"
+                    onLoad={(e) => handleImageLoad(e, mainMapContainerRef, setMainMapRenderMetrics)}
                 />
-                {renderedPins}
+                {mainMapRenderMetrics && (
+                    <div className="absolute pointer-events-none" style={{
+                      width: `${mainMapRenderMetrics.renderedWidth}px`,
+                      height: `${mainMapRenderMetrics.renderedHeight}px`,
+                      top: `${mainMapRenderMetrics.offsetY}px`,
+                      left: `${mainMapRenderMetrics.offsetX}px`,
+                    }}>
+                      <div className="relative w-full h-full">
+                        {renderPins}
+                      </div>
+                    </div>
+                )}
               </>
             ) : (
               <p className="text-muted-foreground text-center p-4">
