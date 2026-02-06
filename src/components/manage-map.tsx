@@ -27,6 +27,7 @@ import {
   uploadBytes,
   getDownloadURL,
   deleteObject,
+  type FirebaseStorageError,
 } from 'firebase/storage';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -112,11 +113,11 @@ export function ManageMap() {
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>, mapId: string) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
         toast({
           variant: 'destructive',
           title: 'Arquivo muito grande',
-          description: 'Por favor, escolha uma imagem menor que 2MB.',
+          description: 'Por favor, escolha uma imagem menor que 5MB.',
         });
         return;
       }
@@ -181,7 +182,9 @@ export function ManageMap() {
         const storage = getStorage(firebaseApp);
         
         if (fileToUpload) {
+            // Se tem um arquivo novo, faz o upload.
             if (originalMapState?.url && originalMapState.url.includes('firebasestorage')) {
+                // Tenta deletar a imagem antiga, mas não falha se não encontrar.
                 try {
                     const oldImageRef = storageRef(storage, originalMapState.url);
                     await deleteObject(oldImageRef);
@@ -195,9 +198,9 @@ export function ManageMap() {
             const newImageRef = storageRef(storage, `maps/${user.uid}/${mapId}-${Date.now()}-${fileToUpload.name}`);
             await uploadBytes(newImageRef, fileToUpload);
             finalUrl = await getDownloadURL(newImageRef);
-        }
-        else if (!currentMapState.url && originalMapState?.url && originalMapState.url.includes('firebasestorage')) {
-            try {
+        } else if (!currentMapState.url && originalMapState?.url) {
+            // Se não tem arquivo novo e o URL foi removido, deleta do storage.
+             try {
                 const oldImageRef = storageRef(storage, originalMapState.url);
                 await deleteObject(oldImageRef);
                 finalUrl = null;
@@ -235,29 +238,37 @@ export function ManageMap() {
         toast({ title: 'Sucesso!', description: `O mapa "${updatedMapData.name}" foi salvo.` });
 
     } catch (error: any) {
-        console.error(`[SGS_APP_DEBUG] Erro completo ao salvar o mapa ${mapId}:`, error);
-        
-        let description = 'Ocorreu um erro inesperado. Verifique o console do navegador para mais detalhes (F12).';
-        if (error.code) {
-          description = `Erro: ${error.code}. Verifique as regras de segurança do Firebase Storage e sua conexão.`;
-          if (error.code === 'storage/unauthorized') {
-            description = 'Erro de permissão (storage/unauthorized). O servidor recusou o upload. Verifique as regras de segurança do Firebase Storage.';
-          } else if (error.code === 'storage/object-not-found') {
-            description = 'Erro: Objeto não encontrado. Isso pode ter acontecido ao tentar deletar um mapa antigo.';
-          }
-        }
-        
-        toast({
-          variant: 'destructive',
-          title: `Erro ao Salvar Mapa "${currentMapState?.name || mapId}"`,
-          description: description,
-          duration: 9000
-        });
+      console.error(`[SGS_APP_DEBUG] Erro completo ao salvar o mapa ${mapId}:`, error);
+      
+      let description = 'Ocorreu um erro inesperado. Verifique sua conexão com a internet.';
 
-        // Restore component to pre-save attempt state
-        setMaps(originalMaps);
+      if (error.code) { // Firebase-specific error
+        switch (error.code) {
+          case 'storage/unauthorized':
+            description = 'Erro de permissão (storage/unauthorized). O servidor recusou o upload. Isso pode ser um problema nas regras de segurança do Firebase Storage ou na configuração CORS do bucket.';
+            break;
+          case 'storage/canceled':
+            description = 'O upload foi cancelado.';
+            break;
+          default:
+            description = `Ocorreu um erro de armazenamento: ${error.code}`;
+        }
+      } else if (error.name === 'FirebaseError') {
+        description = `Erro no Firebase: ${error.message}`;
+      } else if (error instanceof Error) {
+        description = error.message;
+      }
+      
+      toast({
+        variant: 'destructive',
+        title: `Erro ao Salvar Mapa "${currentMapState?.name || mapId}"`,
+        description: description,
+        duration: 9000
+      });
+
+      // Reverte o estado visual para o que era antes da tentativa
+      setMaps(originalMaps);
     } finally {
-        console.log(`[SGS_APP_DEBUG] Bloco finally executado para ${mapId}.`);
         setSavingState(s => ({ ...s, [mapId]: false }));
     }
   };
@@ -315,6 +326,7 @@ export function ManageMap() {
                         width={128}
                         height={128}
                         className="rounded-md border object-contain"
+                        unoptimized={map.url.startsWith('blob:')} // Add this for blob URLs
                       />
                       <Button
                         variant="destructive"
@@ -347,7 +359,7 @@ export function ManageMap() {
                       Carregar Imagem
                     </Button>
                     <p className="text-xs text-muted-foreground">
-                      Recomendado: Imagem com boa resolução, máx 2MB.
+                      Recomendado: Imagem com boa resolução, máx 5MB.
                     </p>
                   </div>
                   <Input
