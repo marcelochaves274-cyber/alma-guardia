@@ -263,14 +263,26 @@ export function FaunaFloraGeoMapReport() {
   };
 
   useEffect(() => {
-    if (isZoomModalOpen && zoomTarget && mapRef.current) {
-        const { width, height } = mapRef.current.getBoundingClientRect();
-        const initialScale = 2.5;
-        setZoomState({
-            scale: initialScale,
-            x: (width / 2) - (zoomTarget.x / 100 * width * initialScale),
-            y: (height / 2) - (zoomTarget.y / 100 * height * initialScale),
-        });
+    if (isZoomModalOpen && zoomTarget) {
+      // A small delay allows the modal animation to complete and the ref to get its dimensions.
+      const timer = setTimeout(() => {
+        if (mapRef.current) {
+          const { width, height } = mapRef.current.getBoundingClientRect();
+          if (width > 0 && height > 0) {
+            const initialScale = 2.5;
+            setZoomState({
+              scale: initialScale,
+              x: (width / 2) - (zoomTarget.x / 100 * width * initialScale),
+              y: (height / 2) - (zoomTarget.y / 100 * height * initialScale),
+            });
+          }
+        }
+      }, 100); // 100ms should be safe for the dialog animation.
+
+      return () => clearTimeout(timer);
+    } else {
+      // Reset zoom state when the modal is closed to ensure a clean state for the next opening.
+      setZoomState({ scale: 1, x: 0, y: 0 });
     }
   }, [isZoomModalOpen, zoomTarget]);
 
