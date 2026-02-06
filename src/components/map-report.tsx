@@ -66,6 +66,8 @@ interface ImageRenderMetrics {
   offsetY: number;
   renderedWidth: number;
   renderedHeight: number;
+  naturalWidth: number;
+  naturalHeight: number;
 }
 
 const YEAR_COLORS = ['fill-red-500', 'fill-blue-500', 'fill-green-500', 'fill-orange-500', 'fill-purple-500', 'fill-yellow-500'];
@@ -103,7 +105,6 @@ export function MapReport() {
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [detailedOccurrence, setDetailedOccurrence] = useState<Occurrence | null>(null);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
@@ -121,10 +122,8 @@ export function MapReport() {
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
   const [imageRenderMetrics, setImageRenderMetrics] = useState<ImageRenderMetrics | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const transformableWrapperRef = useRef<HTMLDivElement>(null);
   const panStart = useRef<{ x: number; y: number, startX: number, startY: number } | null>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
-  const pinsContainerRef = useRef<HTMLDivElement>(null);
+  const [isPanning, setIsPanning] = useState(false);
 
 
   useEffect(() => {
@@ -274,11 +273,12 @@ export function MapReport() {
     setFilterLocation([]);
   }
 
-  const clampPosition = useCallback((x: number, y: number, scale: number) => {
-    if (!mapContainerRef.current || !imageRenderMetrics) return { x, y };
+  const clampPosition = useCallback((pos: {x: number; y: number; scale: number}) => {
+    if (!mapContainerRef.current || !imageRenderMetrics) return pos;
 
     const containerRect = mapContainerRef.current.getBoundingClientRect();
     const { renderedWidth, renderedHeight } = imageRenderMetrics;
+    const { scale } = pos;
 
     const scaledWidth = renderedWidth * scale;
     const scaledHeight = renderedHeight * scale;
@@ -286,19 +286,17 @@ export function MapReport() {
     const overflowX = Math.max(0, (scaledWidth - containerRect.width) / 2);
     const overflowY = Math.max(0, (scaledHeight - containerRect.height) / 2);
 
-    const clampedX = Math.max(-overflowX, Math.min(x, overflowX));
-    const clampedY = Math.max(-overflowY, Math.min(y, overflowY));
+    const clampedX = Math.max(-overflowX, Math.min(pos.x, overflowX));
+    const clampedY = Math.max(-overflowY, Math.min(pos.y, overflowY));
 
-    return { x: clampedX, y: clampedY };
+    return { x: clampedX, y: clampedY, scale: pos.scale };
   }, [imageRenderMetrics]);
+
 
   const handleZoom = (direction: 'in' | 'out') => {
     setTransform(prev => {
         const newScale = Math.max(1, Math.min(direction === 'in' ? prev.scale * 1.2 : prev.scale / 1.2, 5));
-        
-        const clamped = clampPosition(prev.x, prev.y, newScale);
-
-        return { scale: newScale, x: clamped.x, y: clamped.y };
+        return clampPosition({ ...prev, scale: newScale });
     });
   };
   
@@ -306,6 +304,8 @@ export function MapReport() {
     if (e.button !== 0 || !imageRenderMetrics) return;
 
     panStart.current = { x: e.clientX, y: e.clientY, startX: transform.x, startY: transform.y };
+    setIsPanning(true);
+    document.body.classList.add('dragging-map');
     
     const handlePanMove = (moveEvent: globalThis.MouseEvent) => {
       moveEvent.preventDefault();
@@ -320,13 +320,14 @@ export function MapReport() {
       setTransform(prev => {
           const newX = currentPanStart.startX + dx;
           const newY = currentPanStart.startY + dy;
-          const clamped = clampPosition(newX, newY, prev.scale);
-          return { ...prev, x: clamped.x, y: clamped.y };
+          return clampPosition({ ...prev, x: newX, y: newY });
       });
     };
 
     const handlePanEnd = () => {
       panStart.current = null;
+      setIsPanning(false);
+      document.body.classList.remove('dragging-map');
       window.removeEventListener('mousemove', handlePanMove);
       window.removeEventListener('mouseup', handlePanEnd);
     };
@@ -358,19 +359,12 @@ export function MapReport() {
       offsetX = (containerRect.width - renderedWidth) / 2;
     }
 
-    setImageRenderMetrics({ offsetX, offsetY, renderedWidth, renderedHeight });
+    setImageRenderMetrics({ offsetX, offsetY, renderedWidth, renderedHeight, naturalWidth, naturalHeight });
     setTransform({ scale: 1, x: 0, y: 0});
-
-    if (pinsContainerRef.current) {
-        pinsContainerRef.current.style.width = `${renderedWidth}px`;
-        pinsContainerRef.current.style.height = `${renderedHeight}px`;
-        pinsContainerRef.current.style.top = `${offsetY}px`;
-        pinsContainerRef.current.style.left = `${offsetX}px`;
-    }
   };
   
   const renderedPins = useMemo(() => {
-    if (!isClient || isLoading) {
+    if (!isClient || isLoading || !imageRenderMetrics) {
       return null;
     }
     return clusters.map((cluster, index) => {
@@ -396,266 +390,269 @@ export function MapReport() {
                     )}
                 </div>
             </PopoverTrigger>
-            <PopoverContent className="w-80">
+            <PopoverContent className="w-80 z-[60]">
+               <Dialog>
                 <div className="grid gap-4">
-                <div className="space-y-2">
-                    <h4 className="font-medium leading-none">{cluster.occurrences.length > 1 ? 'Ocorrências Agrupadas' : 'Detalhes da Ocorrência'}</h4>
-                    <p className="text-sm text-muted-foreground">
-                        {cluster.occurrences.length} ocorrência(s) neste local.
-                    </p>
-                </div>
-                <ScrollArea className="h-48">
-                <div className="grid gap-2 pr-4">
-                    {cluster.occurrences.map(occ => (
-                        <div key={occ.id} className="text-sm p-2 border rounded-md flex justify-between items-center">
-                          <div>
-                            <p><strong className="font-medium">Data:</strong> {format(occ.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
-                            <p><strong className="font-medium">Tipo:</strong> {occ.occurrenceType}</p>
-                            <p><strong className="font-medium">Local:</strong> {occ.occurrenceLocation}</p>
+                  <div className="space-y-2">
+                      <h4 className="font-medium leading-none">{cluster.occurrences.length > 1 ? 'Ocorrências Agrupadas' : 'Detalhes da Ocorrência'}</h4>
+                      <p className="text-sm text-muted-foreground">
+                          {cluster.occurrences.length} ocorrência(s) neste local.
+                      </p>
+                  </div>
+                  <ScrollArea className="h-48">
+                  <div className="grid gap-2 pr-4">
+                      {cluster.occurrences.map(occ => (
+                          <div key={occ.id} className="text-sm p-2 border rounded-md flex justify-between items-center">
+                            <div>
+                              <p><strong className="font-medium">Data:</strong> {format(occ.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
+                              <p><strong className="font-medium">Tipo:</strong> {occ.occurrenceType}</p>
+                              <p><strong className="font-medium">Local:</strong> {occ.occurrenceLocation}</p>
+                            </div>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
+                                  setDetailedOccurrence(occ);
+                              }}>
+                                  <Eye className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
                           </div>
-                           <DialogTrigger asChild>
-                             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
-                                 setDetailedOccurrence(occ);
-                                 setIsDetailsModalOpen(true);
-                             }}>
-                                 <Eye className="h-4 w-4" />
-                             </Button>
-                           </DialogTrigger>
+                      ))}
+                  </div>
+                  </ScrollArea>
+                </div>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Detalhes da Ocorrência</DialogTitle>
+                    <DialogDescription>Visualização detalhada da ocorrência selecionada.</DialogDescription>
+                  </DialogHeader>
+                  {detailedOccurrence && (
+                    <>
+                      <ScrollArea className="max-h-[70vh] pr-6">
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-foreground">Dados da Ocorrência</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
+                              <div>
+                                <Label className="text-muted-foreground">Data</Label>
+                                <p>{format(detailedOccurrence.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
+                              </div>
+                              <div>
+                                <Label className="text-muted-foreground">Local</Label>
+                                <p>{detailedOccurrence.occurrenceLocation}</p>
+                              </div>
+                              <div>
+                                <Label className="text-muted-foreground">Tipo de Ocorrência</Label>
+                                <p>{detailedOccurrence.occurrenceType}</p>
+                              </div>
+                              <div>
+                                <Label className="text-muted-foreground">Análise</Label>
+                                <div>
+                                  {analysisMapping[detailedOccurrence.analysis] ? (
+                                      <Badge className={cn(analysisMapping[detailedOccurrence.analysis].className)}>
+                                          {analysisMapping[detailedOccurrence.analysis].label}
+                                      </Badge>
+                                  ) : 'N/A'}
+                                </div>
+                              </div>
+                              <div className="col-span-1 md:col-span-2">
+                                <Label className="text-muted-foreground">Descrição</Label>
+                                <p className="whitespace-pre-wrap">{detailedOccurrence.description}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-foreground">Dados do Envolvido</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
+                                <div>
+                                  <Label className="text-muted-foreground">Nome Completo</Label>
+                                  <p>{detailedOccurrence.involvedPersonName}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-muted-foreground">CPF</Label>
+                                  <p>{detailedOccurrence.cpf || 'Não informado'}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-muted-foreground">Data de Nascimento</Label>
+                                  <p>{detailedOccurrence.birthDate || 'Não informado'}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-muted-foreground">Faixa Etária</Label>
+                                  <p>{ageGroupOptions.find(o => o.value === detailedOccurrence.ageGroup)?.label || detailedOccurrence.ageGroup || 'Não informado'}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-muted-foreground">Telefone</Label>
+                                  <p>{detailedOccurrence.phone || 'Não informado'}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-muted-foreground">Cidade/Estado</Label>
+                                  <p>{detailedOccurrence.city || 'Não informado'} / {detailedOccurrence.state || 'N/A'}</p>
+                                </div>
+                            </div>
+                          </div>
+
                         </div>
-                    ))}
-                </div>
-                </ScrollArea>
-                </div>
+                      </ScrollArea>
+                      <div className="flex justify-end pt-2">
+                          <DialogClose asChild>
+                              <Button type="button" variant="secondary">
+                                  Fechar
+                              </Button>
+                          </DialogClose>
+                      </div>
+                    </>
+                  )}
+                </DialogContent>
+               </Dialog>
             </PopoverContent>
         </Popover>
       )
     });
-  }, [clusters, isClient, availableYears, isLoading]);
+  }, [clusters, isClient, availableYears, isLoading, imageRenderMetrics]);
 
   return (
-    <>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Mapa de Ocorrências</CardTitle>
-            <CardDescription>
-              Filtre e visualize a localização das ocorrências (acidentes/incidentes) no mapa.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Mapa de Ocorrências</CardTitle>
+          <CardDescription>
+            Filtre e visualize a localização das ocorrências (acidentes/incidentes) no mapa.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Filtrar por Mês</Label>
+            <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
-              <Label>Filtrar por Mês</Label>
-              <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
+                <Label>Filtrar por Ano</Label>
+                <SheetFilter
+                    title='Filtrar Anos'
+                    options={availableYears.map(y => ({ value: y, label: y }))}
+                    selected={filterYear}
+                    onChange={setFilterYear}
+                    disabled={isLoading || availableYears.length === 0}
+                    buttonText='Filtrar por Ano'
+                />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-              <div className="space-y-2">
-                  <Label>Filtrar por Ano</Label>
-                  <SheetFilter
-                      title='Filtrar Anos'
-                      options={availableYears.map(y => ({ value: y, label: y }))}
-                      selected={filterYear}
-                      onChange={setFilterYear}
-                      disabled={isLoading || availableYears.length === 0}
-                      buttonText='Filtrar por Ano'
-                  />
-              </div>
-              <div className="space-y-2">
-                  <Label>Filtrar por Tipo</Label>
-                  <SheetFilter
-                      title='Filtrar Tipos'
-                      options={occurrenceTypes.map(t => ({ value: t, label: t }))}
-                      selected={filterType}
-                      onChange={setFilterType}
-                      disabled={!occurrenceTypes || occurrenceTypes.length === 0}
-                      buttonText='Filtrar por Tipo'
-                  />
-              </div>
-              <div className="space-y-2">
-                  <Label>Filtrar por Local</Label>
-                  <SheetFilter
-                      title='Filtrar Locais'
-                      options={locations.map(l => ({ value: l, label: l }))}
-                      selected={filterLocation}
-                      onChange={setFilterLocation}
-                      disabled={!locations || locations.length === 0}
-                      buttonText='Filtrar por Local'
-                  />
-              </div>
-              
-              <Button onClick={clearFilters} variant="outline" className="w-full">
-                Limpar Filtros
-              </Button>
+            <div className="space-y-2">
+                <Label>Filtrar por Tipo</Label>
+                <SheetFilter
+                    title='Filtrar Tipos'
+                    options={occurrenceTypes.map(t => ({ value: t, label: t }))}
+                    selected={filterType}
+                    onChange={setFilterType}
+                    disabled={!occurrenceTypes || occurrenceTypes.length === 0}
+                    buttonText='Filtrar por Tipo'
+                />
             </div>
-          </CardContent>
-        </Card>
-        
-        
-        <Card>
-          <CardHeader>
-            <div className='flex justify-between items-center gap-4'>
-              <div>
-                <CardTitle>Resultados no Mapa</CardTitle>
-                <CardDescription>
-                  {isLoading ? 'Carregando...' : `Foram encontradas ${filteredOccurrences.length} ocorrências com marcação no mapa, agrupadas em ${clusters.length} pontos.`}
-                </CardDescription>
-              </div>
-              <Dialog open={isMapModalOpen} onOpenChange={setIsMapModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" disabled={isLoadingMap || !mapUrl}>
-                      <ZoomIn className="mr-2 h-4 w-4" /> Ampliar Mapa
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
-                    <DialogHeader className="p-4 border-b">
-                        <DialogTitle>Mapa Interativo de Ocorrências</DialogTitle>
-                        <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
-                    </DialogHeader>
-                    <div
-                        ref={mapContainerRef}
-                        className="flex-1 relative overflow-hidden bg-muted flex justify-center items-center cursor-grab"
-                        onMouseDown={handlePanStart}
-                    >
-                        {isLoadingMap && <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />}
-                        {!isLoadingMap && !mapUrl && <p className="text-center p-4">Mapa não disponível.</p>}
-
-                        {mapUrl && (
-                             <div
-                                ref={transformableWrapperRef}
-                                className="absolute"
-                                style={{
-                                    transformOrigin: 'center center',
-                                    transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-                                }}
-                              >
-                                  <NextImage
-                                      ref={imageRef}
-                                      src={mapUrl}
-                                      alt="Mapa ampliado"
-                                      width={1000}
-                                      height={1000}
-                                      className="object-contain pointer-events-none max-w-full max-h-full"
-                                      onLoad={handleImageLoad}
-                                      onDragStart={(e) => e.preventDefault()}
-                                  />
-                                   <div ref={pinsContainerRef} className="absolute top-0 left-0 pointer-events-none">
-                                      {imageRenderMetrics && renderedPins}
-                                  </div>
-                              </div>
-                          )}
-                    </div>
-                    <div className="absolute top-20 right-4 flex flex-col items-center gap-2">
-                        <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={transform.scale >= 5}><ZoomIn/></Button>
-                        <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={transform.scale <= 1}><ZoomOut/></Button>
-                    </div>
-                </DialogContent>
-              </Dialog>
+            <div className="space-y-2">
+                <Label>Filtrar por Local</Label>
+                <SheetFilter
+                    title='Filtrar Locais'
+                    options={locations.map(l => ({ value: l, label: l }))}
+                    selected={filterLocation}
+                    onChange={setFilterLocation}
+                    disabled={!locations || locations.length === 0}
+                    buttonText='Filtrar por Local'
+                />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
-              {isLoadingMap || isLoading ? ( <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              ) : mapUrl ? (
-                <Popover>
-                    <div style={{ width: '100%', height: '100%' }} >
-                        <NextImage src={mapUrl} alt="Mapa de ocorrências" fill className="object-contain" />
-                        {renderedPins}
-                    </div>
-                </Popover>
-              ) : (
-                <p className="text-muted-foreground text-center p-4">
-                  Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
-                </p>
-              )}
+            
+            <Button onClick={clearFilters} variant="outline" className="w-full">
+              Limpar Filtros
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      
+      <Card>
+        <CardHeader>
+          <div className='flex justify-between items-center gap-4'>
+            <div>
+              <CardTitle>Resultados no Mapa</CardTitle>
+              <CardDescription>
+                {isLoading ? 'Carregando...' : `Foram encontradas ${filteredOccurrences.length} ocorrências com marcação no mapa, agrupadas em ${clusters.length} pontos.`}
+              </CardDescription>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-       <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Detalhes da Ocorrência</DialogTitle>
-            <DialogDescription>Visualização detalhada da ocorrência selecionada.</DialogDescription>
-          </DialogHeader>
-          {detailedOccurrence && (
-            <>
-              <ScrollArea className="max-h-[70vh] pr-6">
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-foreground">Dados da Ocorrência</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
-                      <div>
-                        <Label className="text-muted-foreground">Data</Label>
-                        <p>{format(detailedOccurrence.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">Local</Label>
-                        <p>{detailedOccurrence.occurrenceLocation}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">Tipo de Ocorrência</Label>
-                        <p>{detailedOccurrence.occurrenceType}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">Análise</Label>
-                        <div>
-                          {analysisMapping[detailedOccurrence.analysis] ? (
-                              <Badge className={cn(analysisMapping[detailedOccurrence.analysis].className)}>
-                                  {analysisMapping[detailedOccurrence.analysis].label}
-                              </Badge>
-                          ) : 'N/A'}
-                        </div>
-                      </div>
-                      <div className="col-span-1 md:col-span-2">
-                        <Label className="text-muted-foreground">Descrição</Label>
-                        <p className="whitespace-pre-wrap">{detailedOccurrence.description}</p>
-                      </div>
-                    </div>
+            <Dialog open={isMapModalOpen} onOpenChange={setIsMapModalOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" disabled={isLoadingMap || !mapUrl}>
+                    <ZoomIn className="mr-2 h-4 w-4" /> Ampliar Mapa
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
+                  <DialogHeader className="p-4 border-b">
+                      <DialogTitle>Mapa Interativo de Ocorrências</DialogTitle>
+                      <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
+                  </DialogHeader>
+                  <div
+                      ref={mapContainerRef}
+                      className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center", isPanning ? 'cursor-grabbing' : 'cursor-grab')}
+                      onMouseDown={handlePanStart}
+                  >
+                     {imageRenderMetrics && mapUrl ? (
+                           <div
+                              style={{
+                                  width: `${imageRenderMetrics.renderedWidth}px`,
+                                  height: `${imageRenderMetrics.renderedHeight}px`,
+                                  transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                                  transformOrigin: 'center center',
+                                  position: 'relative'
+                              }}
+                            >
+                                <NextImage
+                                    src={mapUrl}
+                                    alt="Mapa ampliado"
+                                    fill
+                                    className="object-contain pointer-events-none"
+                                    onDragStart={(e) => e.preventDefault()}
+                                />
+                                 <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                                    {renderedPins}
+                                </div>
+                            </div>
+                        ) : isLoadingMap ? (
+                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        ) : mapUrl ? (
+                           <NextImage
+                            src={mapUrl}
+                            alt="Mapa para carregar"
+                            width={1000}
+                            height={1000}
+                            className="max-w-full max-h-full opacity-0"
+                            onLoad={handleImageLoad}
+                          />
+                        ) : (
+                          <p className="text-center p-4">Mapa não disponível.</p>
+                        )}
                   </div>
-
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-foreground">Dados do Envolvido</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
-                        <div>
-                          <Label className="text-muted-foreground">Nome Completo</Label>
-                          <p>{detailedOccurrence.involvedPersonName}</p>
-                        </div>
-                        <div>
-                          <Label className="text-muted-foreground">CPF</Label>
-                          <p>{detailedOccurrence.cpf || 'Não informado'}</p>
-                        </div>
-                        <div>
-                          <Label className="text-muted-foreground">Data de Nascimento</Label>
-                          <p>{detailedOccurrence.birthDate || 'Não informado'}</p>
-                        </div>
-                        <div>
-                          <Label className="text-muted-foreground">Faixa Etária</Label>
-                          <p>{ageGroupOptions.find(o => o.value === detailedOccurrence.ageGroup)?.label || detailedOccurrence.ageGroup || 'Não informado'}</p>
-                        </div>
-                         <div>
-                          <Label className="text-muted-foreground">Telefone</Label>
-                          <p>{detailedOccurrence.phone || 'Não informado'}</p>
-                        </div>
-                        <div>
-                          <Label className="text-muted-foreground">Cidade/Estado</Label>
-                          <p>{detailedOccurrence.city || 'Não informado'} / {detailedOccurrence.state || 'N/A'}</p>
-                        </div>
-                    </div>
+                  <div className="absolute top-20 right-4 flex flex-col items-center gap-2">
+                      <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={transform.scale >= 5}><ZoomIn/></Button>
+                      <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={transform.scale <= 1}><ZoomOut/></Button>
                   </div>
-
-                </div>
-              </ScrollArea>
-              <div className="flex justify-end pt-2">
-                  <DialogClose asChild>
-                      <Button type="button" variant="secondary">
-                          Fechar
-                      </Button>
-                  </DialogClose>
-              </div>
-            </>
-           )}
-        </DialogContent>
-      </Dialog>
-    </>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+            {isLoadingMap || isLoading ? ( <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            ) : mapUrl ? (
+              <>
+                  <NextImage src={mapUrl} alt="Mapa de ocorrências" fill className="object-contain" />
+                  {renderedPins}
+              </>
+            ) : (
+              <p className="text-muted-foreground text-center p-4">
+                Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
+
