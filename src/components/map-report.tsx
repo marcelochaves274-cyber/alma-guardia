@@ -350,6 +350,14 @@ export function MapReport() {
   const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0 || !modalImageRenderMetrics) return;
 
+    let target = e.target as HTMLElement;
+    while (target && target !== e.currentTarget) {
+      if (target.dataset.pin) {
+        return; // It's a pin, don't start panning.
+      }
+      target = target.parentElement as HTMLElement;
+    }
+
     document.body.classList.add('dragging-map');
 
     panStart.current = { x: e.clientX, y: e.clientY, startX: transform.x, startY: transform.y };
@@ -398,21 +406,18 @@ export function MapReport() {
       return (
         <div
           key={clusterKey}
+          data-pin="true"
           className="absolute"
           style={{
             left: `${cluster.x}%`,
             top: `${cluster.y}%`,
             transform: 'translate(-50%, -100%)',
           }}
+          onMouseDown={(e) => e.stopPropagation()}
         >
           <Popover open={activeKey === clusterKey} onOpenChange={(open) => setActiveKey(open ? clusterKey : null)}>
               <PopoverTrigger asChild>
-                  <div
-                    className="cursor-pointer"
-                    onMouseDown={(e) => {
-                      if (isModal) e.stopPropagation();
-                    }}
-                  >
+                  <div className="cursor-pointer">
                     <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
                     {cluster.occurrences.length > 1 && (
                         <Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0">
@@ -569,7 +574,7 @@ export function MapReport() {
               </div>
             </CardContent>
         </Card>
-        <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
+        <DialogContent showClose={false} className="max-w-7xl h-[90vh] flex flex-col p-0">
             <DialogHeader className="p-4 border-b">
                 <DialogTitle>Mapa Interativo de Ocorrências</DialogTitle>
                 <DialogDescription>Clique e arraste para mover. Dê um clique em um pino para ver os detalhes.</DialogDescription>
@@ -619,9 +624,14 @@ export function MapReport() {
                 <p className="text-center p-4">Mapa não disponível.</p>
                 )}
             </div>
-            <div className="absolute top-20 right-4 flex flex-col items-center gap-2">
-                <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={!modalImageRenderMetrics || transform.scale >= 5}><ZoomIn/></Button>
-                <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={!modalImageRenderMetrics || transform.scale <= 1}><ZoomOut/></Button>
+            <div className="absolute top-4 right-4 flex flex-col items-center gap-2">
+                <DialogClose asChild>
+                    <Button variant="outline">Fechar modo ampliado</Button>
+                </DialogClose>
+                <div className="mt-2 flex flex-col gap-2">
+                    <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={!modalImageRenderMetrics || transform.scale >= 5}><ZoomIn/></Button>
+                    <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={!modalImageRenderMetrics || transform.scale <= 1}><ZoomOut/></Button>
+                </div>
             </div>
         </DialogContent>
       </Dialog>
