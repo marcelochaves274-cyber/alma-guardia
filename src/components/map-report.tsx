@@ -312,32 +312,23 @@ export function MapReport() {
     if (!modalMapContainerRef.current || !modalImageRenderMetrics) return pos;
 
     const containerRect = modalMapContainerRef.current.getBoundingClientRect();
-    const { renderedWidth, renderedHeight } = modalImageRenderMetrics;
+    const { naturalWidth, naturalHeight } = modalImageRenderMetrics;
     const { scale } = pos;
     
-    const scaledWidth = renderedWidth * scale;
-    const scaledHeight = renderedHeight * scale;
+    const scaledWidth = naturalWidth * scale;
+    const scaledHeight = naturalHeight * scale;
 
-    const minX = (containerRect.width - scaledWidth) / 2;
-    const maxX = (scaledWidth - containerRect.width) / 2;
-    const minY = (containerRect.height - scaledHeight) / 2;
-    const maxY = (scaledHeight - containerRect.height) / 2;
+    const overflowX = Math.max(0, (scaledWidth - containerRect.width) / 2);
+    const overflowY = Math.max(0, (scaledHeight - containerRect.height) / 2);
 
-    const clampedX = Math.max(minX, Math.min(pos.x, maxX));
-    const clampedY = Math.max(minY, Math.min(pos.y, maxY));
+    const clampedX = Math.max(-overflowX, Math.min(pos.x, overflowX));
+    const clampedY = Math.max(-overflowY, Math.min(pos.y, overflowY));
     
-    if (scaledWidth < containerRect.width) {
-       pos.x = 0;
-    } else {
-       pos.x = clampedX;
-    }
-    if (scaledHeight < containerRect.height) {
-        pos.y = 0;
-    } else {
-        pos.y = clampedY;
-    }
-
-    return pos;
+    return {
+        scale: pos.scale,
+        x: scaledWidth < containerRect.width ? 0 : clampedX,
+        y: scaledHeight < containerRect.height ? 0 : clampedY,
+    };
   }, [modalImageRenderMetrics]);
 
 
@@ -362,8 +353,7 @@ export function MapReport() {
       return; 
     }
     
-    document.body.style.cursor = 'grabbing';
-    document.body.style.userSelect = 'none';
+    document.body.classList.add('dragging-map');
 
     panStart.current = { x: e.clientX, y: e.clientY, startX: transform.x, startY: transform.y };
     setIsPanning(true);
@@ -388,8 +378,7 @@ export function MapReport() {
     const handlePanEnd = () => {
       panStart.current = null;
       setIsPanning(false);
-      document.body.style.cursor = 'default';
-      document.body.style.userSelect = 'auto';
+      document.body.classList.remove('dragging-map');
       window.removeEventListener('mousemove', handlePanMove);
       window.removeEventListener('mouseup', handlePanEnd);
     };
@@ -409,23 +398,25 @@ export function MapReport() {
       return (
         <div
           key={clusterKey}
-          data-pin="true"
-          className="absolute cursor-pointer"
+          className="absolute"
           style={{
             left: `${cluster.x}%`,
             top: `${cluster.y}%`,
             transform: 'translate(-50%, -100%)',
           }}
-          onDoubleClick={() => {
-            if (cluster.occurrences.length === 1) {
-              setDetailedOccurrence(cluster.occurrences[0]);
-              setIsDetailModalOpen(true);
-            }
-          }}
         >
           <Popover open={activePopoverKey === clusterKey} onOpenChange={(open) => setActivePopoverKey(open ? clusterKey : null)}>
               <PopoverTrigger asChild>
-                  <div>
+                  <div
+                    data-pin="true"
+                    className="cursor-pointer"
+                    onDoubleClick={() => {
+                      if (cluster.occurrences.length === 1) {
+                        setDetailedOccurrence(cluster.occurrences[0]);
+                        setIsDetailModalOpen(true);
+                      }
+                    }}
+                  >
                     <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
                     {cluster.occurrences.length > 1 && (
                         <Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0">
@@ -559,6 +550,7 @@ export function MapReport() {
                         fill 
                         className="object-contain"
                         onLoad={(e) => handleImageLoad(e, mainMapContainerRef, setMainMapRenderMetrics)}
+                        onDragStart={(e) => e.preventDefault()}
                       />
                       {mainMapRenderMetrics && (
                         <div className="absolute" style={{
@@ -567,7 +559,7 @@ export function MapReport() {
                           top: `${mainMapRenderMetrics.offsetY}px`,
                           left: `${mainMapRenderMetrics.offsetX}px`,
                         }}>
-                          <div className="relative w-full h-full" onDragStart={(e) => e.preventDefault()}>
+                          <div className="relative w-full h-full">
                             {renderPins}
                           </div>
                         </div>
@@ -588,13 +580,12 @@ export function MapReport() {
             </DialogHeader>
             <div
                 ref={modalMapContainerRef}
-                className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center w-full h-full", isPanning ? 'cursor-grabbing' : 'cursor-grab')}
+                className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center w-full h-full", isPanning ? '' : 'cursor-grab')}
                 onMouseDown={handlePanStart}
-                onDragStart={(e) => e.preventDefault()}
             >
                 {mapUrl ? (
                   <>
-                    <div className="absolute inset-0 overflow-hidden flex justify-center items-center">
+                    <div className="absolute inset-0 overflow-hidden flex justify-center items-center" onDragStart={(e) => e.preventDefault()}>
                         <div
                             style={{
                                 width: `${modalImageRenderMetrics?.naturalWidth}px`,
@@ -630,7 +621,12 @@ export function MapReport() {
         </DialogContent>
       </Dialog>
       
-      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+      <Dialog open={isDetailModalOpen} onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          setDetailedOccurrence(null);
+        }
+        setIsDetailModalOpen(isOpen);
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes da Ocorrência</DialogTitle>
