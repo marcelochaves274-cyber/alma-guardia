@@ -345,9 +345,6 @@ export function TreatmentMapReport() {
       }
   
       setMetrics({ offsetX, offsetY, renderedWidth, renderedHeight, naturalWidth, naturalHeight });
-      if(containerRef === modalMapContainerRef) {
-        setTransform({ scale: 1, x: 0, y: 0 });
-      }
   };
 
   const clampPosition = useCallback((pos: {x: number; y: number; scale: number}) => {
@@ -360,7 +357,6 @@ export function TreatmentMapReport() {
     const scaledWidth = renderedWidth * scale;
     const scaledHeight = renderedHeight * scale;
 
-    // Maximum and minimum coordinates to keep the image within the container
     const minX = (containerRect.width - scaledWidth) / 2;
     const maxX = (scaledWidth - containerRect.width) / 2;
     const minY = (containerRect.height - scaledHeight) / 2;
@@ -369,7 +365,6 @@ export function TreatmentMapReport() {
     const clampedX = Math.max(minX, Math.min(pos.x, maxX));
     const clampedY = Math.max(minY, Math.min(pos.y, maxY));
     
-    // If the scaled image is smaller than the container, center it
     if (scaledWidth < containerRect.width) {
        pos.x = 0;
     } else {
@@ -390,12 +385,21 @@ export function TreatmentMapReport() {
     
     setTransform(prev => {
         const newScale = Math.max(1, Math.min(direction === 'in' ? prev.scale * 1.2 : prev.scale / 1.2, 5));
-        return clampPosition({ ...prev, scale: newScale });
+        const center = { x: 0, y: 0 };
+        const newX = center.x - (center.x - prev.x) * (newScale / prev.scale);
+        const newY = center.y - (center.y - prev.y) * (newScale / prev.scale);
+        
+        return clampPosition({ scale: newScale, x: newX, y: newY });
     });
   };
   
   const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0 || !modalImageRenderMetrics) return;
+
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-pin="true"]')) {
+      return; 
+    }
     
     document.body.style.cursor = 'grabbing';
     document.body.style.userSelect = 'none';
@@ -442,29 +446,31 @@ export function TreatmentMapReport() {
       const pinColorClass = clusterYear ? getYearColor(clusterYear, availableYears) : 'fill-gray-500';
       
       return (
-        <Popover key={clusterKey} open={activePopoverKey === clusterKey} onOpenChange={(open) => setActivePopoverKey(open ? clusterKey : null)}>
+        <div
+          key={clusterKey}
+          data-pin="true"
+          className="absolute cursor-pointer"
+          style={{
+            left: `${cluster.x}%`,
+            top: `${cluster.y}%`,
+            transform: 'translate(-50%, -100%)',
+          }}
+          onDoubleClick={() => {
+            if (cluster.treatments.length === 1) {
+              setDetailedTreatment(cluster.treatments[0]);
+              setIsDetailModalOpen(true);
+            }
+          }}
+        >
+          <Popover open={activePopoverKey === clusterKey} onOpenChange={(open) => setActivePopoverKey(open ? clusterKey : null)}>
             <PopoverTrigger asChild>
-                <div
-                    className="absolute cursor-pointer"
-                    style={{
-                    left: `${cluster.x}%`,
-                    top: `${cluster.y}%`,
-                    transform: 'translate(-50%, -100%)',
-                    }}
-                     onDoubleClick={() => {
-                        if (cluster.treatments.length === 1) {
-                          setActivePopoverKey(null);
-                          setDetailedTreatment(cluster.treatments[0]);
-                          setIsDetailModalOpen(true);
-                        }
-                    }}
-                >
-                    <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
-                    {cluster.treatments.length > 1 && (
-                        <Badge variant="default" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0 bg-blue-600 hover:bg-blue-700">
-                            {cluster.treatments.length}
-                        </Badge>
-                    )}
+                <div>
+                  <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
+                  {cluster.treatments.length > 1 && (
+                      <Badge variant="default" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0 bg-blue-600 hover:bg-blue-700">
+                          {cluster.treatments.length}
+                      </Badge>
+                  )}
                 </div>
             </PopoverTrigger>
             <PopoverContent className="w-80 z-[60]">
@@ -497,7 +503,8 @@ export function TreatmentMapReport() {
                 </ScrollArea>
                 </div>
             </PopoverContent>
-        </Popover>
+          </Popover>
+        </div>
       )
     })
   }, [clusters, isClient, availableYears, isLoading, activePopoverKey, setActivePopoverKey, setIsDetailModalOpen, setDetailedTreatment]);
@@ -579,7 +586,12 @@ export function TreatmentMapReport() {
       </Card>
 
       
-      <Dialog onOpenChange={setIsMapModalOpen} open={isMapModalOpen}>
+      <Dialog onOpenChange={(isOpen) => {
+        setIsMapModalOpen(isOpen);
+        if (isOpen) {
+          setTransform({ scale: 1, x: 0, y: 0 });
+        }
+      }} open={isMapModalOpen}>
         <Card>
             <CardHeader>
               <div className='flex justify-between items-center gap-4'>
@@ -633,7 +645,7 @@ export function TreatmentMapReport() {
         <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
             <DialogHeader className="p-4 border-b">
                 <DialogTitle>Mapa Interativo de Tratamentos de Risco</DialogTitle>
-                <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
+                <DialogDescription>Clique e arraste para mover. Dê um duplo clique em um pino para ver os detalhes.</DialogDescription>
             </DialogHeader>
             <div
                 ref={modalMapContainerRef}
@@ -643,20 +655,11 @@ export function TreatmentMapReport() {
             >
                 {mapUrl ? (
                   <>
-                    <div className="absolute w-full h-full">
-                       <NextImage
-                        src={mapUrl}
-                        alt="Mapa para carregar"
-                        fill
-                        className="object-contain invisible"
-                        onLoad={(e) => handleImageLoad(e, modalMapContainerRef, setModalImageRenderMetrics)}
-                       />
-                    </div>
-                    {modalImageRenderMetrics && (
+                    <div className="absolute inset-0 overflow-hidden flex justify-center items-center">
                         <div
                             style={{
-                                width: `${modalImageRenderMetrics.naturalWidth}px`,
-                                height: `${modalImageRenderMetrics.naturalHeight}px`,
+                                width: `${modalImageRenderMetrics?.naturalWidth}px`,
+                                height: `${modalImageRenderMetrics?.naturalHeight}px`,
                                 transformOrigin: 'center center',
                                 transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                             }}
@@ -667,12 +670,13 @@ export function TreatmentMapReport() {
                                 alt="Mapa ampliado"
                                 fill
                                 className="object-contain"
+                                onLoad={(e) => handleImageLoad(e, modalMapContainerRef, setModalImageRenderMetrics)}
                             />
                             <div className="absolute inset-0">
                               {renderPins}
                             </div>
                         </div>
-                    )}
+                    </div>
                   </>
                 ) : isLoadingMap ? (
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
