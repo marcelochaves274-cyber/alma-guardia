@@ -362,9 +362,13 @@ export function TreatmentMapReport() {
 
     const overflowX = Math.max(0, (scaledWidth - containerRect.width) / 2);
     const overflowY = Math.max(0, (scaledHeight - containerRect.height) / 2);
+    
+    // Adjust for the image offset within its container, scaled by the current zoom level
+    const adjustedOffsetX = modalImageRenderMetrics.offsetX * scale;
+    const adjustedOffsetY = modalImageRenderMetrics.offsetY * scale;
 
-    const clampedX = Math.max(-overflowX, Math.min(pos.x, overflowX));
-    const clampedY = Math.max(-overflowY, Math.min(pos.y, overflowY));
+    const clampedX = Math.max(-overflowX - adjustedOffsetX, Math.min(pos.x, overflowX - adjustedOffsetX));
+    const clampedY = Math.max(-overflowY - adjustedOffsetY, Math.min(pos.y, overflowY - adjustedOffsetY));
     
     return { x: clampedX, y: clampedY, scale: pos.scale };
   }, [modalImageRenderMetrics]);
@@ -379,8 +383,11 @@ export function TreatmentMapReport() {
   };
   
   const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('[data-pin="true"]')) {
+      return;
+    }
+    
     if (e.button !== 0 || !modalImageRenderMetrics) return;
-    e.preventDefault();
     document.body.style.cursor = 'grabbing';
     document.body.style.userSelect = 'none';
 
@@ -429,13 +436,13 @@ export function TreatmentMapReport() {
         <Popover key={clusterKey} open={activePopoverKey === clusterKey} onOpenChange={(open) => setActivePopoverKey(open ? clusterKey : null)}>
             <PopoverTrigger asChild>
                 <div
-                    className="absolute cursor-pointer pointer-events-auto"
+                    data-pin="true"
+                    className="absolute cursor-pointer"
                     style={{
                     left: `${cluster.x}%`,
                     top: `${cluster.y}%`,
                     transform: 'translate(-50%, -100%)',
                     }}
-                    onMouseDown={(e) => e.stopPropagation()}
                 >
                     <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
                     {cluster.treatments.length > 1 && (
@@ -557,7 +564,7 @@ export function TreatmentMapReport() {
       </Card>
 
       
-      <Dialog open={isMapModalOpen} onOpenChange={(isOpen) => { setIsMapModalOpen(isOpen); if (!isOpen) setModalImageRenderMetrics(null); }}>
+      <Dialog>
         <Card>
             <CardHeader>
               <div className='flex justify-between items-center gap-4'>
@@ -615,13 +622,12 @@ export function TreatmentMapReport() {
             </DialogHeader>
             <div
                 ref={modalMapContainerRef}
-                className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center", isPanning ? 'cursor-grabbing' : 'cursor-grab')}
+                className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center w-full h-full", isPanning ? 'cursor-grabbing' : 'cursor-grab')}
                 onMouseDown={handlePanStart}
                 onDragStart={(e) => e.preventDefault()}
             >
-              <div className="w-full h-full">
                 {mapUrl ? (
-                  <div className='w-full h-full flex items-center justify-center'>
+                  <>
                     <NextImage
                         src={mapUrl}
                         alt="Mapa para carregar"
@@ -636,8 +642,8 @@ export function TreatmentMapReport() {
                                 height: `${modalImageRenderMetrics.renderedHeight}px`,
                                 transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                                 transformOrigin: 'center center',
-                                position: 'relative'
                             }}
+                            className="relative"
                             onDragStart={(e) => e.preventDefault()}
                         >
                             <NextImage
@@ -652,13 +658,12 @@ export function TreatmentMapReport() {
                             </div>
                         </div>
                     )}
-                  </div>
+                  </>
                 ) : isLoadingMap ? (
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 ) : (
                 <p className="text-center p-4">Mapa não disponível.</p>
                 )}
-              </div>
             </div>
             <div className="absolute top-20 right-4 flex flex-col items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={!modalImageRenderMetrics || transform.scale >= 5}><ZoomIn/></Button>

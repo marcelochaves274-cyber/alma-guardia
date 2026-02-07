@@ -310,9 +310,13 @@ export function FaunaFloraGeoMapReport() {
 
     const overflowX = Math.max(0, (scaledWidth - containerRect.width) / 2);
     const overflowY = Math.max(0, (scaledHeight - containerRect.height) / 2);
+    
+    // Adjust for the image offset within its container, scaled by the current zoom level
+    const adjustedOffsetX = modalImageRenderMetrics.offsetX * scale;
+    const adjustedOffsetY = modalImageRenderMetrics.offsetY * scale;
 
-    const clampedX = Math.max(-overflowX, Math.min(pos.x, overflowX));
-    const clampedY = Math.max(-overflowY, Math.min(pos.y, overflowY));
+    const clampedX = Math.max(-overflowX - adjustedOffsetX, Math.min(pos.x, overflowX - adjustedOffsetX));
+    const clampedY = Math.max(-overflowY - adjustedOffsetY, Math.min(pos.y, overflowY - adjustedOffsetY));
     
     return { x: clampedX, y: clampedY, scale: pos.scale };
   }, [modalImageRenderMetrics]);
@@ -327,8 +331,11 @@ export function FaunaFloraGeoMapReport() {
   };
   
   const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('[data-pin="true"]')) {
+      return;
+    }
+    
     if (e.button !== 0 || !modalImageRenderMetrics) return;
-    e.preventDefault();
     document.body.style.cursor = 'grabbing';
     document.body.style.userSelect = 'none';
 
@@ -377,13 +384,13 @@ export function FaunaFloraGeoMapReport() {
         <Popover key={clusterKey} open={activePopoverKey === clusterKey} onOpenChange={(open) => setActivePopoverKey(open ? clusterKey : null)}>
             <PopoverTrigger asChild>
                 <div
-                    className="absolute cursor-pointer pointer-events-auto"
+                    data-pin="true"
+                    className="absolute cursor-pointer"
                     style={{
                     left: `${cluster.x}%`,
                     top: `${cluster.y}%`,
                     transform: 'translate(-50%, -100%)',
                     }}
-                    onMouseDown={(e) => e.stopPropagation()}
                 >
                     <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
                     {cluster.records.length > 1 && (
@@ -426,7 +433,7 @@ export function FaunaFloraGeoMapReport() {
         </Popover>
       )
     });
-  }, [clusters, isClient, availableYears, isLoading, activePopoverKey]);
+  }, [clusters, isClient, availableYears, isLoading, activePopoverKey, setActivePopoverKey, setIsDetailModalOpen, setDetailedRecord]);
 
   return (
     <div className="space-y-6">
@@ -484,72 +491,70 @@ export function FaunaFloraGeoMapReport() {
         </CardContent>
       </Card>
 
-      
-      <Dialog open={isMapModalOpen} onOpenChange={(isOpen) => { setIsMapModalOpen(isOpen); if (!isOpen) setModalImageRenderMetrics(null); }}>
-      <Card>
-        <CardHeader>
-          <div className='flex justify-between items-center gap-4'>
-            <div>
-              <CardTitle>Resultados no Mapa</CardTitle>
-              <CardDescription>
-                {isLoading ? 'Carregando...' : `Foram encontrados ${filteredRecords.length} registros com marcação no mapa, agrupados em ${clusters.length} pontos.`}
-              </CardDescription>
+      <Dialog>
+        <Card>
+          <CardHeader>
+            <div className='flex justify-between items-center gap-4'>
+              <div>
+                <CardTitle>Resultados no Mapa</CardTitle>
+                <CardDescription>
+                  {isLoading ? 'Carregando...' : `Foram encontrados ${filteredRecords.length} registros com marcação no mapa, agrupados em ${clusters.length} pontos.`}
+                </CardDescription>
+              </div>
+              <DialogTrigger asChild>
+                  <Button variant="outline" disabled={isLoadingMap || !mapUrl}>
+                      <ZoomIn className="mr-2 h-4 w-4" /> Ampliar Mapa
+                  </Button>
+              </DialogTrigger>
             </div>
-            <DialogTrigger asChild>
-                <Button variant="outline" disabled={isLoadingMap || !mapUrl}>
-                    <ZoomIn className="mr-2 h-4 w-4" /> Ampliar Mapa
-                </Button>
-            </DialogTrigger>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div ref={mainMapContainerRef} className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
-            {isLoadingMap || isLoading ? (
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            ) : mapUrl ? (
-              <>
-                  <NextImage
-                      src={mapUrl}
-                      alt="Mapa de registros"
-                      fill
-                      className="object-contain"
-                      onLoad={(e) => handleImageLoad(e, mainMapContainerRef, setMainMapRenderMetrics)}
-                  />
-                  {mainMapRenderMetrics && (
-                    <div className="absolute" style={{
-                      width: `${mainMapRenderMetrics.renderedWidth}px`,
-                      height: `${mainMapRenderMetrics.renderedHeight}px`,
-                      top: `${mainMapRenderMetrics.offsetY}px`,
-                      left: `${mainMapRenderMetrics.offsetX}px`,
-                    }}>
-                      <div className="relative w-full h-full">
-                        {renderPins}
+          </CardHeader>
+          <CardContent>
+            <div ref={mainMapContainerRef} className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+              {isLoadingMap || isLoading ? (
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              ) : mapUrl ? (
+                <>
+                    <NextImage
+                        src={mapUrl}
+                        alt="Mapa de registros"
+                        fill
+                        className="object-contain"
+                        onLoad={(e) => handleImageLoad(e, mainMapContainerRef, setMainMapRenderMetrics)}
+                    />
+                    {mainMapRenderMetrics && (
+                      <div className="absolute" style={{
+                        width: `${mainMapRenderMetrics.renderedWidth}px`,
+                        height: `${mainMapRenderMetrics.renderedHeight}px`,
+                        top: `${mainMapRenderMetrics.offsetY}px`,
+                        left: `${mainMapRenderMetrics.offsetX}px`,
+                      }}>
+                        <div className="relative w-full h-full">
+                          {renderPins}
+                        </div>
                       </div>
-                    </div>
-                  )}
-              </>
-            ) : (
-              <p className="text-muted-foreground text-center p-4">
-                Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
-          <DialogHeader className="p-4 border-b">
-              <DialogTitle>Mapa Interativo de Fauna, Flora & Geo</DialogTitle>
-              <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
-          </DialogHeader>
-          <div
-              ref={modalMapContainerRef}
-              className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center", isPanning ? 'cursor-grabbing' : 'cursor-grab')}
-              onMouseDown={handlePanStart}
-              onDragStart={(e) => e.preventDefault()}
-          >
-            <div className="w-full h-full">
-              {mapUrl ? (
-                <div className='w-full h-full flex items-center justify-center'>
+                    )}
+                </>
+              ) : (
+                <p className="text-muted-foreground text-center p-4">
+                  Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
+            <DialogHeader className="p-4 border-b">
+                <DialogTitle>Mapa Interativo de Fauna, Flora & Geo</DialogTitle>
+                <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
+            </DialogHeader>
+            <div
+                ref={modalMapContainerRef}
+                className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center w-full h-full", isPanning ? 'cursor-grabbing' : 'cursor-grab')}
+                onMouseDown={handlePanStart}
+                onDragStart={(e) => e.preventDefault()}
+            >
+                {mapUrl ? (
+                  <>
                     <NextImage
                       src={mapUrl}
                       alt="Mapa para carregar"
@@ -564,8 +569,8 @@ export function FaunaFloraGeoMapReport() {
                               height: `${modalImageRenderMetrics.renderedHeight}px`,
                               transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                               transformOrigin: 'center center',
-                              position: 'relative'
                           }}
+                          className="relative"
                           onDragStart={(e) => e.preventDefault()}
                       >
                           <NextImage
@@ -580,21 +585,19 @@ export function FaunaFloraGeoMapReport() {
                           </div>
                       </div>
                     )}
-                </div>
-              ) : isLoadingMap ? (
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              ) : (
-                <p className="text-center p-4">Mapa não disponível.</p>
-              )}
+                  </>
+                ) : isLoadingMap ? (
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                ) : (
+                  <p className="text-center p-4">Mapa não disponível.</p>
+                )}
             </div>
-          </div>
-          <div className="absolute top-20 right-4 flex flex-col items-center gap-2">
-              <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={!modalImageRenderMetrics || transform.scale >= 5}><ZoomIn/></Button>
-              <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={!modalImageRenderMetrics || transform.scale <= 1}><ZoomOut/></Button>
-          </div>
-      </DialogContent>
-    </Dialog>
-
+            <div className="absolute top-20 right-4 flex flex-col items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={!modalImageRenderMetrics || transform.scale >= 5}><ZoomIn/></Button>
+                <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={!modalImageRenderMetrics || transform.scale <= 1}><ZoomOut/></Button>
+            </div>
+        </DialogContent>
+      </Dialog>
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
