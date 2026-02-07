@@ -304,38 +304,47 @@ export function FaunaFloraGeoMapReport() {
     const containerRect = modalMapContainerRef.current.getBoundingClientRect();
     const { renderedWidth, renderedHeight } = modalImageRenderMetrics;
     const { scale } = pos;
-
+    
     const scaledWidth = renderedWidth * scale;
     const scaledHeight = renderedHeight * scale;
 
-    const overflowX = Math.max(0, (scaledWidth - containerRect.width) / 2);
-    const overflowY = Math.max(0, (scaledHeight - containerRect.height) / 2);
-    
-    // Adjust for the image offset within its container, scaled by the current zoom level
-    const adjustedOffsetX = modalImageRenderMetrics.offsetX * scale;
-    const adjustedOffsetY = modalImageRenderMetrics.offsetY * scale;
+    // Maximum and minimum coordinates to keep the image within the container
+    const minX = (containerRect.width - scaledWidth) / 2;
+    const maxX = (scaledWidth - containerRect.width) / 2;
+    const minY = (containerRect.height - scaledHeight) / 2;
+    const maxY = (scaledHeight - containerRect.height) / 2;
 
-    const clampedX = Math.max(-overflowX - adjustedOffsetX, Math.min(pos.x, overflowX - adjustedOffsetX));
-    const clampedY = Math.max(-overflowY - adjustedOffsetY, Math.min(pos.y, overflowY - adjustedOffsetY));
+    const clampedX = Math.max(minX, Math.min(pos.x, maxX));
+    const clampedY = Math.max(minY, Math.min(pos.y, maxY));
     
-    return { x: clampedX, y: clampedY, scale: pos.scale };
+    // If the scaled image is smaller than the container, center it
+    if (scaledWidth < containerRect.width) {
+       pos.x = 0;
+    } else {
+       pos.x = clampedX;
+    }
+    if (scaledHeight < containerRect.height) {
+        pos.y = 0;
+    } else {
+        pos.y = clampedY;
+    }
+
+    return pos;
   }, [modalImageRenderMetrics]);
 
 
   const handleZoom = (direction: 'in' | 'out') => {
+    if (!modalImageRenderMetrics || !modalMapContainerRef.current) return;
+    
     setTransform(prev => {
         const newScale = Math.max(1, Math.min(direction === 'in' ? prev.scale * 1.2 : prev.scale / 1.2, 5));
-        const newPos = { x: prev.x, y: prev.y, scale: newScale };
-        return clampPosition(newPos);
+        return clampPosition({ ...prev, scale: newScale });
     });
   };
   
   const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('[data-pin="true"]')) {
-      return;
-    }
-    
     if (e.button !== 0 || !modalImageRenderMetrics) return;
+    
     document.body.style.cursor = 'grabbing';
     document.body.style.userSelect = 'none';
 
@@ -384,12 +393,18 @@ export function FaunaFloraGeoMapReport() {
         <Popover key={clusterKey} open={activePopoverKey === clusterKey} onOpenChange={(open) => setActivePopoverKey(open ? clusterKey : null)}>
             <PopoverTrigger asChild>
                 <div
-                    data-pin="true"
                     className="absolute cursor-pointer"
                     style={{
                     left: `${cluster.x}%`,
                     top: `${cluster.y}%`,
                     transform: 'translate(-50%, -100%)',
+                    }}
+                    onDoubleClick={() => {
+                        if (cluster.records.length === 1) {
+                          setActivePopoverKey(null);
+                          setDetailedRecord(cluster.records[0]);
+                          setIsDetailModalOpen(true);
+                        }
                     }}
                 >
                     <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
@@ -491,7 +506,7 @@ export function FaunaFloraGeoMapReport() {
         </CardContent>
       </Card>
 
-      <Dialog>
+      <Dialog onOpenChange={setIsMapModalOpen} open={isMapModalOpen}>
         <Card>
           <CardHeader>
             <div className='flex justify-between items-center gap-4'>
@@ -528,7 +543,7 @@ export function FaunaFloraGeoMapReport() {
                         top: `${mainMapRenderMetrics.offsetY}px`,
                         left: `${mainMapRenderMetrics.offsetX}px`,
                       }}>
-                        <div className="relative w-full h-full">
+                        <div className="relative w-full h-full" onDragStart={(e) => e.preventDefault()}>
                           {renderPins}
                         </div>
                       </div>
@@ -555,30 +570,30 @@ export function FaunaFloraGeoMapReport() {
             >
                 {mapUrl ? (
                   <>
-                    <NextImage
-                      src={mapUrl}
-                      alt="Mapa para carregar"
-                      fill
-                      className="object-contain invisible" // invisible until metrics are calculated
-                      onLoad={(e) => handleImageLoad(e, modalMapContainerRef, setModalImageRenderMetrics)}
-                    />
+                    <div className="absolute w-full h-full">
+                       <NextImage
+                        src={mapUrl}
+                        alt="Mapa para carregar"
+                        fill
+                        className="object-contain invisible"
+                        onLoad={(e) => handleImageLoad(e, modalMapContainerRef, setModalImageRenderMetrics)}
+                       />
+                    </div>
                     {modalImageRenderMetrics && (
                       <div
                           style={{
-                              width: `${modalImageRenderMetrics.renderedWidth}px`,
-                              height: `${modalImageRenderMetrics.renderedHeight}px`,
-                              transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                              width: `${modalImageRenderMetrics.naturalWidth}px`,
+                              height: `${modalImageRenderMetrics.naturalHeight}px`,
                               transformOrigin: 'center center',
+                              transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                           }}
                           className="relative"
-                          onDragStart={(e) => e.preventDefault()}
                       >
                           <NextImage
                               src={mapUrl}
                               alt="Mapa ampliado"
                               fill
                               className="object-contain"
-                              onDragStart={(e) => e.preventDefault()}
                           />
                           <div className="absolute inset-0">
                               {renderPins}
