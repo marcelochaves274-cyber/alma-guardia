@@ -334,7 +334,7 @@ export function MapReport() {
   const handleZoom = (direction: 'in' | 'out') => {
     setTransform(prev => {
         const newScale = Math.max(1, Math.min(direction === 'in' ? prev.scale * 1.2 : prev.scale / 1.2, 5));
-        const newPos = { ...prev, scale: newScale };
+        const newPos = { x: prev.x, y: prev.y, scale: newScale };
         return clampPosition(newPos);
     });
   };
@@ -342,10 +342,11 @@ export function MapReport() {
   const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0 || !modalImageRenderMetrics) return;
     e.preventDefault();
+    document.body.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
 
     panStart.current = { x: e.clientX, y: e.clientY, startX: transform.x, startY: transform.y };
     setIsPanning(true);
-    document.body.classList.add('dragging-map');
     
     const handlePanMove = (moveEvent: globalThis.MouseEvent) => {
       moveEvent.preventDefault();
@@ -367,7 +368,8 @@ export function MapReport() {
     const handlePanEnd = () => {
       panStart.current = null;
       setIsPanning(false);
-      document.body.classList.remove('dragging-map');
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
       window.removeEventListener('mousemove', handlePanMove);
       window.removeEventListener('mouseup', handlePanEnd);
     };
@@ -422,9 +424,9 @@ export function MapReport() {
                               <p><strong className="font-medium">Local:</strong> {occ.occurrenceLocation}</p>
                             </div>
                             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
+                                  setActivePopoverKey(null);
                                   setDetailedOccurrence(occ);
                                   setIsDetailModalOpen(true);
-                                  setActivePopoverKey(null);
                               }}>
                                   <Eye className="h-4 w-4" />
                             </Button>
@@ -437,7 +439,7 @@ export function MapReport() {
         </Popover>
       )
     });
-  }, [clusters, isClient, availableYears, isLoading, activePopoverKey]);
+  }, [clusters, isClient, availableYears, isLoading, activePopoverKey, setActivePopoverKey, setIsDetailModalOpen, setDetailedOccurrence]);
 
   return (
     <div className="space-y-6">
@@ -495,7 +497,7 @@ export function MapReport() {
         </CardContent>
       </Card>
       
-      <Dialog open={isMapModalOpen} onOpenChange={setIsMapModalOpen}>
+      <Dialog open={isMapModalOpen} onOpenChange={(isOpen) => { setIsMapModalOpen(isOpen); if (!isOpen) setModalImageRenderMetrics(null); }}>
         <Card>
             <CardHeader>
               <div className='flex justify-between items-center gap-4'>
@@ -525,7 +527,7 @@ export function MapReport() {
                         onLoad={(e) => handleImageLoad(e, mainMapContainerRef, setMainMapRenderMetrics)}
                       />
                       {mainMapRenderMetrics && (
-                        <div className="absolute pointer-events-none" style={{
+                        <div className="absolute" style={{
                           width: `${mainMapRenderMetrics.renderedWidth}px`,
                           height: `${mainMapRenderMetrics.renderedHeight}px`,
                           top: `${mainMapRenderMetrics.offsetY}px`,
@@ -556,13 +558,14 @@ export function MapReport() {
                 onMouseDown={handlePanStart}
                 onDragStart={(e) => e.preventDefault()}
             >
+              <div className="w-full h-full">
                 {mapUrl ? (
-                <div className="w-full h-full flex justify-center items-center">
+                  <div className='w-full h-full flex items-center justify-center'>
                     <NextImage
                         src={mapUrl}
                         alt="Mapa para carregar"
                         fill
-                        className="object-contain invisible" // invisible until metrics are calculated
+                        className="object-contain invisible"
                         onLoad={(e) => handleImageLoad(e, modalMapContainerRef, setModalImageRenderMetrics)}
                     />
                     {modalImageRenderMetrics && (
@@ -580,24 +583,25 @@ export function MapReport() {
                                 src={mapUrl}
                                 alt="Mapa ampliado"
                                 fill
-                                className="object-contain pointer-events-none"
+                                className="object-contain"
                                 onDragStart={(e) => e.preventDefault()}
                             />
-                            <div className="absolute inset-0 pointer-events-none">
+                            <div className="absolute inset-0">
                               {renderPins}
                             </div>
                         </div>
                     )}
-                </div>
+                  </div>
                 ) : isLoadingMap ? (
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 ) : (
                 <p className="text-center p-4">Mapa não disponível.</p>
                 )}
+              </div>
             </div>
             <div className="absolute top-20 right-4 flex flex-col items-center gap-2">
-                <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={transform.scale >= 5}><ZoomIn/></Button>
-                <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={transform.scale <= 1}><ZoomOut/></Button>
+                <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={!modalImageRenderMetrics || transform.scale >= 5}><ZoomIn/></Button>
+                <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={!modalImageRenderMetrics || transform.scale <= 1}><ZoomOut/></Button>
             </div>
         </DialogContent>
       </Dialog>
