@@ -433,6 +433,7 @@ export function TreatmentMapReport() {
                     top: `${cluster.y}%`,
                     transform: 'translate(-50%, -100%)',
                     }}
+                    onMouseDown={(e) => e.stopPropagation()}
                 >
                     <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
                     {cluster.treatments.length > 1 && (
@@ -514,7 +515,7 @@ export function TreatmentMapReport() {
                     buttonText='Filtrar por Tipo'
                 />
             </div>
-            <div className="space-y-2">
+             <div className="space-y-2">
                 <Label>Nível de Risco (PxC)</Label>
                 <SheetFilter
                     title='Filtrar Níveis de Risco'
@@ -554,107 +555,113 @@ export function TreatmentMapReport() {
       </Card>
 
       
-      <Card>
-        <CardHeader>
-          <div className='flex justify-between items-center gap-4'>
-            <div>
-              <CardTitle>Resultados no Mapa</CardTitle>
-              <CardDescription>
-                {isLoading ? 'Carregando...' : `Foram encontrados ${filteredTreatments.length} tratamentos com marcação no mapa, agrupados em ${clusters.length} pontos.`}
-              </CardDescription>
-            </div>
-              <Dialog open={isMapModalOpen} onOpenChange={setIsMapModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" disabled={isLoadingMap || !mapUrl}>
-                      <ZoomIn className="mr-2 h-4 w-4" /> Ampliar Mapa
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
-                    <DialogHeader className="p-4 border-b">
-                        <DialogTitle>Mapa Interativo de Tratamentos de Risco</DialogTitle>
-                        <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
-                    </DialogHeader>
-                    <div
-                        ref={modalMapContainerRef}
-                        className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center", isPanning ? 'cursor-grabbing' : 'cursor-grab')}
-                        onMouseDown={handlePanStart}
-                        onDragStart={(e) => e.preventDefault()}
-                    >
-                      {modalImageRenderMetrics && mapUrl ? (
-                           <div
-                              style={{
-                                  width: `${modalImageRenderMetrics.renderedWidth}px`,
-                                  height: `${modalImageRenderMetrics.renderedHeight}px`,
-                                  transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-                                  transformOrigin: 'center center',
-                                  position: 'relative'
-                              }}
-                            >
-                                <NextImage
-                                    src={mapUrl}
-                                    alt="Mapa ampliado"
-                                    fill
-                                    className="object-contain pointer-events-none"
-                                    onDragStart={(e) => e.preventDefault()}
-                                />
-                                {renderPins}
-                            </div>
-                        ) : isLoadingMap ? (
-                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        ) : mapUrl ? (
-                          <NextImage
-                            src={mapUrl}
-                            alt="Mapa para carregar"
-                            fill
-                            className="object-contain"
-                            onLoad={(e) => handleImageLoad(e, modalMapContainerRef, setModalImageRenderMetrics)}
-                          />
-                        ) : (
-                          <p className="text-center p-4">Mapa não disponível.</p>
-                        )}
-                    </div>
-                    <div className="absolute top-20 right-4 flex flex-col items-center gap-2">
-                        <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={transform.scale >= 5}><ZoomIn/></Button>
-                        <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={transform.scale <= 1}><ZoomOut/></Button>
-                    </div>
-                </DialogContent>
-              </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div ref={mainMapContainerRef} className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
-            {isLoadingMap || isLoading ? (
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            ) : mapUrl ? (
-              <>
-                <NextImage
-                    src={mapUrl}
-                    alt="Mapa de tratamentos"
-                    fill
-                    className="object-contain"
-                    onLoad={(e) => handleImageLoad(e, mainMapContainerRef, setMainMapRenderMetrics)}
-                />
-                {mainMapRenderMetrics && (
-                    <div className="absolute pointer-events-none" style={{
-                      width: `${mainMapRenderMetrics.renderedWidth}px`,
-                      height: `${mainMapRenderMetrics.renderedHeight}px`,
-                      top: `${mainMapRenderMetrics.offsetY}px`,
-                      left: `${mainMapRenderMetrics.offsetX}px`,
-                    }}>
-                      <div className="relative w-full h-full">
-                        {renderPins}
-                      </div>
-                    </div>
+      <Dialog open={isMapModalOpen} onOpenChange={setIsMapModalOpen}>
+        <Card>
+            <CardHeader>
+              <div className='flex justify-between items-center gap-4'>
+                <div>
+                  <CardTitle>Resultados no Mapa</CardTitle>
+                  <CardDescription>
+                    {isLoading ? 'Carregando...' : `Foram encontrados ${filteredTreatments.length} tratamentos com marcação no mapa, agrupados em ${clusters.length} pontos.`}
+                  </CardDescription>
+                </div>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" disabled={isLoadingMap || !mapUrl}>
+                        <ZoomIn className="mr-2 h-4 w-4" /> Ampliar Mapa
+                    </Button>
+                  </DialogTrigger>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div ref={mainMapContainerRef} className="relative w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
+                {isLoadingMap || isLoading ? (
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                ) : mapUrl ? (
+                  <>
+                    <NextImage
+                        src={mapUrl}
+                        alt="Mapa de tratamentos"
+                        fill
+                        className="object-contain"
+                        onLoad={(e) => handleImageLoad(e, mainMapContainerRef, setMainMapRenderMetrics)}
+                    />
+                    {mainMapRenderMetrics && (
+                        <div className="absolute pointer-events-none" style={{
+                          width: `${mainMapRenderMetrics.renderedWidth}px`,
+                          height: `${mainMapRenderMetrics.renderedHeight}px`,
+                          top: `${mainMapRenderMetrics.offsetY}px`,
+                          left: `${mainMapRenderMetrics.offsetX}px`,
+                        }}>
+                          <div className="relative w-full h-full">
+                            {renderPins}
+                          </div>
+                        </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-muted-foreground text-center p-4">
+                    Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
+                  </p>
                 )}
-              </>
-            ) : (
-              <p className="text-muted-foreground text-center p-4">
-                Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+            </CardContent>
+        </Card>
+        <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
+            <DialogHeader className="p-4 border-b">
+                <DialogTitle>Mapa Interativo de Tratamentos de Risco</DialogTitle>
+                <DialogDescription>Use o scroll para ampliar e arraste para mover o mapa.</DialogDescription>
+            </DialogHeader>
+            <div
+                ref={modalMapContainerRef}
+                className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center", isPanning ? 'cursor-grabbing' : 'cursor-grab')}
+                onMouseDown={handlePanStart}
+                onDragStart={(e) => e.preventDefault()}
+            >
+                {mapUrl ? (
+                <div className="w-full h-full flex justify-center items-center">
+                    <NextImage
+                        src={mapUrl}
+                        alt="Mapa para carregar"
+                        fill
+                        className="object-contain invisible" // invisible until metrics are calculated
+                        onLoad={(e) => handleImageLoad(e, modalMapContainerRef, setModalImageRenderMetrics)}
+                    />
+                    {modalImageRenderMetrics && (
+                        <div
+                            style={{
+                                width: `${modalImageRenderMetrics.renderedWidth}px`,
+                                height: `${modalImageRenderMetrics.renderedHeight}px`,
+                                transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                                transformOrigin: 'center center',
+                                position: 'relative'
+                            }}
+                            onDragStart={(e) => e.preventDefault()}
+                        >
+                            <NextImage
+                                src={mapUrl}
+                                alt="Mapa ampliado"
+                                fill
+                                className="object-contain pointer-events-none"
+                                onDragStart={(e) => e.preventDefault()}
+                            />
+                            <div className="absolute inset-0 pointer-events-none">
+                              {renderPins}
+                            </div>
+                        </div>
+                    )}
+                </div>
+                ) : isLoadingMap ? (
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                ) : (
+                <p className="text-center p-4">Mapa não disponível.</p>
+                )}
+            </div>
+            <div className="absolute top-20 right-4 flex flex-col items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={transform.scale >= 5}><ZoomIn/></Button>
+                <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={transform.scale <= 1}><ZoomOut/></Button>
+            </div>
+        </DialogContent>
+      </Dialog>
       
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
         <DialogContent className="max-w-2xl">
