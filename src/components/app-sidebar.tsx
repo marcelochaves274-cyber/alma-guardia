@@ -14,7 +14,7 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSkeleton,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info, Map, X } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info, Map, X, Binoculars } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { SgsAppLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -82,6 +82,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
 
   const isAdmin = profile === 'admin';
+  const isObserver = profile === 'observer';
 
   const toggleSubMenu = (name: string) => {
     setOpenSubMenu(prev => prev === name ? null : name);
@@ -153,12 +154,14 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   const getProfileIcon = () => {
     if (profile === 'admin') return <User className="h-4 w-4" />;
     if (profile === 'supervisor') return <Users className="h-4 w-4" />;
+    if (profile === 'observer') return <Binoculars className="h-4 w-4" />;
     return null;
   }
   
   const getProfileName = () => {
     if (profile === 'admin') return 'Administrador';
     if (profile === 'supervisor') return 'Supervisor';
+    if (profile === 'observer') return 'Observador';
     return 'N/D';
   }
 
@@ -255,102 +258,106 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
               )}
             </SidebarMenuItem>
           )}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => toggleSubMenu('acidentes')}
-              tooltip={{
-                children: 'Acidentes/Incidentes',
-              }}
-            >
-              <Siren />
-              <span className="font-bold">Acidentes/Incidentes</span>
-              <ChevronDown
-                className={`ml-auto h-4 w-4 transition-transform ${
-                  openSubMenu === 'acidentes' ? 'rotate-180' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-            {openSubMenu === 'acidentes' && state === 'expanded' && (
-              <SidebarMenuSub>
-                {isAdmin && (
-                    <>
-                        <SidebarMenuSubItem>
-                            <SidebarMenuSubButton 
-                                isActive={activePage === 'register-occurrence'}
-                                onClick={() => handlePageChange('register-occurrence')}
-                            >
-                                Registrar Ocorrência
-                            </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                            <SidebarMenuSubButton 
-                                isActive={activePage === 'occurrence-report'}
-                                onClick={() => handlePageChange('occurrence-report')}
-                            >
-                                Relatório de Ocorrência
-                            </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                    </>
-                )}
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
-                    isActive={activePage === 'map-report'}
-                    onClick={() => handlePageChange('map-report')}
-                  >
-                    Mapa de Ocorrências
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
-           <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => toggleSubMenu('tratamento')}
-              tooltip={{
-                children: 'Tratamento de Risco',
-              }}
-            >
-              <ShieldCheck />
-              <span className="font-bold">Tratamento de Risco</span>
-              <ChevronDown
-                className={`ml-auto h-4 w-4 transition-transform ${
-                  openSubMenu === 'tratamento' ? 'rotate-180' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-            {openSubMenu === 'tratamento' && state === 'expanded' && (
-              <SidebarMenuSub>
-                 {isAdmin && (
-                    <>
-                        <SidebarMenuSubItem>
-                            <SidebarMenuSubButton 
-                                isActive={activePage === 'register-treatment'}
-                                onClick={() => handlePageChange('register-treatment')}
-                            >
-                                Registrar Tratamento
-                            </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                            <SidebarMenuSubButton 
-                                isActive={activePage === 'treatment-report'}
-                                onClick={() => handlePageChange('treatment-report')}
-                            >
-                                Relatório de Tratamento
-                            </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                    </>
-                 )}
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
-                    isActive={activePage === 'treatment-map-report'}
-                    onClick={() => handlePageChange('treatment-map-report')}
-                  >
-                    Mapa de Tratamentos
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
+          {!isObserver && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => toggleSubMenu('acidentes')}
+                tooltip={{
+                  children: 'Acidentes/Incidentes',
+                }}
+              >
+                <Siren />
+                <span className="font-bold">Acidentes/Incidentes</span>
+                <ChevronDown
+                  className={`ml-auto h-4 w-4 transition-transform ${
+                    openSubMenu === 'acidentes' ? 'rotate-180' : ''
+                  }`}
+                />
+              </SidebarMenuButton>
+              {openSubMenu === 'acidentes' && state === 'expanded' && (
+                <SidebarMenuSub>
+                  {isAdmin && (
+                      <>
+                          <SidebarMenuSubItem>
+                              <SidebarMenuSubButton 
+                                  isActive={activePage === 'register-occurrence'}
+                                  onClick={() => handlePageChange('register-occurrence')}
+                              >
+                                  Registrar Ocorrência
+                              </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
+                              <SidebarMenuSubButton 
+                                  isActive={activePage === 'occurrence-report'}
+                                  onClick={() => handlePageChange('occurrence-report')}
+                              >
+                                  Relatório de Ocorrência
+                              </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                      </>
+                  )}
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton 
+                      isActive={activePage === 'map-report'}
+                      onClick={() => handlePageChange('map-report')}
+                    >
+                      Mapa de Ocorrências
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              )}
+            </SidebarMenuItem>
+          )}
+          {!isObserver && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => toggleSubMenu('tratamento')}
+                tooltip={{
+                  children: 'Tratamento de Risco',
+                }}
+              >
+                <ShieldCheck />
+                <span className="font-bold">Tratamento de Risco</span>
+                <ChevronDown
+                  className={`ml-auto h-4 w-4 transition-transform ${
+                    openSubMenu === 'tratamento' ? 'rotate-180' : ''
+                  }`}
+                />
+              </SidebarMenuButton>
+              {openSubMenu === 'tratamento' && state === 'expanded' && (
+                <SidebarMenuSub>
+                  {isAdmin && (
+                      <>
+                          <SidebarMenuSubItem>
+                              <SidebarMenuSubButton 
+                                  isActive={activePage === 'register-treatment'}
+                                  onClick={() => handlePageChange('register-treatment')}
+                              >
+                                  Registrar Tratamento
+                              </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
+                              <SidebarMenuSubButton 
+                                  isActive={activePage === 'treatment-report'}
+                                  onClick={() => handlePageChange('treatment-report')}
+                              >
+                                  Relatório de Tratamento
+                              </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                      </>
+                  )}
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton 
+                      isActive={activePage === 'treatment-map-report'}
+                      onClick={() => handlePageChange('treatment-map-report')}
+                    >
+                      Mapa de Tratamentos
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              )}
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => toggleSubMenu('avisos')}
@@ -389,92 +396,96 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
               </SidebarMenuSub>
             )}
           </SidebarMenuItem>
-           <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => toggleSubMenu('fauna-flora-geo')}
+          {!isObserver && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => toggleSubMenu('fauna-flora-geo')}
+                tooltip={{
+                  children: 'Fauna Flora Geo',
+                }}
+              >
+                <Sprout />
+                <span className="font-bold">Fauna Flora Geo</span>
+                <ChevronDown
+                  className={`ml-auto h-4 w-4 transition-transform ${
+                    openSubMenu === 'fauna-flora-geo' ? 'rotate-180' : ''
+                  }`}
+                />
+              </SidebarMenuButton>
+              {openSubMenu === 'fauna-flora-geo' && state === 'expanded' && (
+                <SidebarMenuSub>
+                  {isAdmin && (
+                      <>
+                          <SidebarMenuSubItem>
+                          <SidebarMenuSubButton 
+                              isActive={activePage === 'register-fauna-flora-geo'}
+                              onClick={() => handlePageChange('register-fauna-flora-geo')}
+                          >
+                              Registrar F/F/G
+                          </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
+                          <SidebarMenuSubButton 
+                              isActive={activePage === 'fauna-flora-geo-report'}
+                              onClick={() => handlePageChange('fauna-flora-geo-report')}
+                          >
+                              Relatório F/F/G
+                          </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                      </>
+                  )}
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton 
+                      isActive={activePage === 'fauna-flora-geo-map-report'}
+                      onClick={() => handlePageChange('fauna-flora-geo-map-report')}
+                    >
+                      Mapa Fauna, Flora & Geo
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              )}
+            </SidebarMenuItem>
+          )}
+          {!isObserver && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+              onClick={() => toggleSubMenu('equipamentos')}
               tooltip={{
-                children: 'Fauna Flora Geo',
+                  children: 'Equipamentos',
               }}
-            >
-              <Sprout />
-              <span className="font-bold">Fauna Flora Geo</span>
+              >
+              <HardHat />
+              <span className="font-bold">Equipamentos</span>
               <ChevronDown
-                className={`ml-auto h-4 w-4 transition-transform ${
-                  openSubMenu === 'fauna-flora-geo' ? 'rotate-180' : ''
-                }`}
+                  className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'equipamentos' ? 'rotate-180' : ''
+                  }`}
               />
-            </SidebarMenuButton>
-            {openSubMenu === 'fauna-flora-geo' && state === 'expanded' && (
+              </SidebarMenuButton>
+              {openSubMenu === 'equipamentos' && state === 'expanded' && (
               <SidebarMenuSub>
-                {isAdmin && (
-                    <>
-                        <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                            isActive={activePage === 'register-fauna-flora-geo'}
-                            onClick={() => handlePageChange('register-fauna-flora-geo')}
-                        >
-                            Registrar F/F/G
-                        </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                            isActive={activePage === 'fauna-flora-geo-report'}
-                            onClick={() => handlePageChange('fauna-flora-geo-report')}
-                        >
-                            Relatório F/F/G
-                        </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                    </>
-                )}
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
-                    isActive={activePage === 'fauna-flora-geo-map-report'}
-                    onClick={() => handlePageChange('fauna-flora-geo-map-report')}
-                  >
-                    Mapa Fauna, Flora & Geo
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-            onClick={() => toggleSubMenu('equipamentos')}
-            tooltip={{
-                children: 'Equipamentos',
-            }}
-            >
-            <HardHat />
-            <span className="font-bold">Equipamentos</span>
-            <ChevronDown
-                className={`ml-auto h-4 w-4 transition-transform ${
-                openSubMenu === 'equipamentos' ? 'rotate-180' : ''
-                }`}
-            />
-            </SidebarMenuButton>
-            {openSubMenu === 'equipamentos' && state === 'expanded' && (
-            <SidebarMenuSub>
-                {isAdmin && (
+                  {isAdmin && (
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        isActive={activePage === 'register-equipment'}
+                        onClick={() => handlePageChange('register-equipment')}
+                    >
+                    Registrar Equipamento
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  )}
                   <SidebarMenuSubItem>
                   <SidebarMenuSubButton
-                      isActive={activePage === 'register-equipment'}
-                      onClick={() => handlePageChange('register-equipment')}
+                      isActive={activePage === 'equipment-report'}
+                      onClick={() => handlePageChange('equipment-report')}
                   >
-                  Registrar Equipamento
+                      Relatório Equipamentos
                   </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
-                )}
-                <SidebarMenuSubItem>
-                <SidebarMenuSubButton
-                    isActive={activePage === 'equipment-report'}
-                    onClick={() => handlePageChange('equipment-report')}
-                >
-                    Relatório Equipamentos
-                </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-            </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
+              </SidebarMenuSub>
+              )}
+            </SidebarMenuItem>
+          )}
           {isAdmin && (
             <>
                 <SidebarMenuItem>
@@ -726,5 +737,3 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     </>
   );
 }
-
-    

@@ -77,7 +77,7 @@ function MainAppLayout() {
   const router = useRouter();
 
   const getDefaultPageForProfile = (profile: string | null) => {
-    if (profile === 'supervisor') {
+    if (profile === 'supervisor' || profile === 'observer') {
       return 'register-notice';
     }
     return 'reminders';
@@ -253,6 +253,7 @@ function MainAppLayout() {
   const getProfileName = () => {
     if (profile === 'admin') return 'Administrador';
     if (profile === 'supervisor') return 'Supervisor';
+    if (profile === 'observer') return 'Observador';
     return '';
   }
 
@@ -303,5 +304,3 @@ function MainAppLayout() {
 export function AppLayout() {
   return <MainAppLayout />;
 }
-
-    

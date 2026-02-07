@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-export type Profile = 'admin' | 'supervisor';
+export type Profile = 'admin' | 'supervisor' | 'observer';
 
 interface ProfileContextType {
   profile: Profile | null;
@@ -16,14 +16,14 @@ interface ProfileContextType {
   validatePass: (profile: Profile, pass: string) => Promise<boolean>;
   isProfileLoading: boolean;
   isLoadingPasses: boolean;
-  passes: { adminPass: string; supervisorPass: string };
+  passes: { adminPass: string; supervisorPass: string; observerPass: string };
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<Profile | null>(null);
-  const [passes, setPasses] = useState<{ adminPass: string; supervisorPass: string }>({ adminPass: '', supervisorPass: '' });
+  const [passes, setPasses] = useState<{ adminPass: string; supervisorPass: string; observerPass: string }>({ adminPass: '', supervisorPass: '', observerPass: '' });
   const [isLoadingPasses, setIsLoadingPasses] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [redirectPage, setRedirectPage] = useState<string | null>(null);
@@ -67,7 +67,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     const fetchInitialData = async () => {
       const docRef = getSettingsDocRef();
       if (!docRef) {
-        setPasses({ adminPass: '123456', supervisorPass: '123456' });
+        setPasses({ adminPass: '123456', supervisorPass: '123456', observerPass: '123456' });
         setIsLoadingPasses(false);
         return;
       }
@@ -76,9 +76,13 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setPasses({ adminPass: data.adminPass || '123456', supervisorPass: data.supervisorPass || '123456' });
+          setPasses({ 
+              adminPass: data.adminPass || '123456', 
+              supervisorPass: data.supervisorPass || '123456',
+              observerPass: data.observerPass || '123456'
+            });
         } else {
-          const defaultPasses = { adminPass: '123456', supervisorPass: '123456' };
+          const defaultPasses = { adminPass: '123456', supervisorPass: '123456', observerPass: '123456' };
           await setDoc(docRef, defaultPasses);
           setPasses(defaultPasses);
         }
@@ -86,7 +90,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         if (error.code !== 'permission-denied') {
           console.error("Error fetching profile passes:", error);
         }
-        setPasses({ adminPass: '123456', supervisorPass: '123456' });
+        setPasses({ adminPass: '123456', supervisorPass: '123456', observerPass: '123456' });
       } finally {
         setIsLoadingPasses(false);
       }
@@ -130,7 +134,15 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const validatePass = async (profileToValidate: Profile, pass: string): Promise<boolean> => {
     if (isLoadingPasses) return false;
 
-    const correctPass = profileToValidate === 'admin' ? passes.adminPass : passes.supervisorPass;
+    let correctPass = '';
+    if (profileToValidate === 'admin') {
+      correctPass = passes.adminPass;
+    } else if (profileToValidate === 'supervisor') {
+      correctPass = passes.supervisorPass;
+    } else if (profileToValidate === 'observer') {
+      correctPass = passes.observerPass;
+    }
+
     const isValid = correctPass === pass;
     
     if (isValid) {
@@ -164,5 +176,3 @@ export function useProfile() {
   }
   return context;
 }
-
-    

@@ -585,7 +585,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ProfilePasses",
       "type": "object",
-      "description": "Stores the 6-digit numeric passes for Admin and Supervisor profiles.",
+      "description": "Stores the 6-digit numeric passes for Admin, Supervisor, and Observer profiles.",
       "properties": {
         "adminPass": {
           "type": "string",
@@ -596,11 +596,17 @@
           "type": "string",
           "description": "The 6-digit numeric pass for the Supervisor profile.",
           "pattern": "^[0-9]{6}$"
+        },
+        "observerPass": {
+          "type": "string",
+          "description": "The 6-digit numeric pass for the Observer profile.",
+          "pattern": "^[0-9]{6}$"
         }
       },
       "required": [
         "adminPass",
-        "supervisorPass"
+        "supervisorPass",
+        "observerPass"
       ]
     }
   },

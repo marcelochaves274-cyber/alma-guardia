@@ -22,14 +22,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from './ui/button';
-import { Loader2, Shield, Users, Eye, EyeOff, LogOut } from 'lucide-react';
+import { Loader2, Shield, Users, Eye, EyeOff, LogOut, Binoculars } from 'lucide-react';
 import { useProfile, type Profile } from '@/context/profile-context';
 import { useToast } from '@/hooks/use-toast';
 import { getAuth, signOut } from 'firebase/auth';
 import { useFirebaseApp } from '@/firebase';
 import { useRouter } from 'next/navigation';
 
-type SelectedProfile = 'admin' | 'supervisor' | null;
+type SelectedProfile = 'admin' | 'supervisor' | 'observer' | null;
 
 export function ProfileSelector() {
   const { setProfile, validatePass, isLoadingPasses, clearProfile, setProfileAndRedirect } = useProfile();
@@ -118,9 +118,16 @@ export function ProfileSelector() {
     }
   };
 
+  const getProfileTitle = () => {
+    if (selectedProfile === 'admin') return 'Administrador';
+    if (selectedProfile === 'supervisor') return 'Supervisor';
+    if (selectedProfile === 'observer') return 'Observador';
+    return '';
+  }
+
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
-        <div className="w-full max-w-lg p-4">
+        <div className="w-full max-w-2xl p-4">
             <div className="text-center mb-12">
                 <h1 className="text-3xl font-bold">
                     Selecione seu Perfil
@@ -128,7 +135,7 @@ export function ProfileSelector() {
                 </h1>
                 <p className="text-muted-foreground">Escolha como você quer acessar o sistema.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card 
                     className="cursor-pointer hover:bg-card/80 hover:border-primary/50 transition-all"
                     onClick={() => handleProfileSelect('admin')}
@@ -145,6 +152,15 @@ export function ProfileSelector() {
                     <CardContent className="flex flex-col items-center justify-center p-6 gap-4">
                         <Users className="h-12 w-12 text-primary" />
                         <span className="text-lg font-semibold">Supervisor</span>
+                    </CardContent>
+                </Card>
+                 <Card 
+                    className="cursor-pointer hover:bg-card/80 hover:border-primary/50 transition-all"
+                    onClick={() => handleProfileSelect('observer')}
+                >
+                    <CardContent className="flex flex-col items-center justify-center p-6 gap-4">
+                        <Binoculars className="h-12 w-12 text-primary" />
+                        <span className="text-lg font-semibold">Observador</span>
                     </CardContent>
                 </Card>
             </div>
@@ -165,7 +181,7 @@ export function ProfileSelector() {
         <AlertDialog open={!!selectedProfile} onOpenChange={() => setSelectedProfile(null)}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Acesso de {selectedProfile === 'admin' ? 'Administrador' : 'Supervisor'}</AlertDialogTitle>
+                    <AlertDialogTitle>Acesso de {getProfileTitle()}</AlertDialogTitle>
                     <AlertDialogDescription>
                         Por favor, insira o passe de 6 dígitos para continuar.
                     </AlertDialogDescription>
@@ -212,5 +228,3 @@ export function ProfileSelector() {
     </div>
   );
 }
-
-    
