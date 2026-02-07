@@ -10,6 +10,7 @@ import { useAppSettings } from '@/context/app-settings-context';
 import { GeneralSettings } from '@/components/general-settings';
 import { ManageProfile } from '@/components/manage-profile';
 import { RegisterOccurrence } from '@/components/register-occurrence';
+import { OccurrenceReport } from '@/components/occurrence-report';
 import { ManageOccurrences } from '@/components/manage-occurrences';
 import { ManageLocations } from '@/components/manage-locations';
 import { ManageMap } from '@/components/manage-map';
