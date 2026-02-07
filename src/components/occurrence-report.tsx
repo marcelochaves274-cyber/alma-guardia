@@ -349,88 +349,90 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
               Foram encontradas {filteredOccurrences.length} ocorrências.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Local</TableHead>
-                  <TableHead>Envolvido</TableHead>
-                  <TableHead>Faixa Etária</TableHead>
-                  <TableHead>Análise</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  renderSkeletons()
-                ) : filteredOccurrences.length > 0 ? (
-                  filteredOccurrences.map((occ) => (
-                    <TableRow key={occ.id}>
-                      <TableCell>{occ.occurrenceDate ? format(occ.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
-                      <TableCell>{occ.occurrenceType}</TableCell>
-                      <TableCell>{occ.occurrenceLocation}</TableCell>
-                      <TableCell>{occ.involvedPersonName}</TableCell>
-                      <TableCell>{ageGroupOptions.find(o => o.value === occ.ageGroup)?.label || occ.ageGroup}</TableCell>
-                      <TableCell>
-                        {occ.analysis && analysisMapping[occ.analysis] ? (
-                            <Badge className={cn(analysisMapping[occ.analysis].className)}>
-                                {analysisMapping[occ.analysis].label}
-                            </Badge>
-                        ) : 'N/A'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                         <DialogTrigger asChild>
-                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar ocorrência" onClick={() => setSelectedOccurrence(occ)}>
-                               <Eye className="h-4 w-4" />
-                           </Button>
-                         </DialogTrigger>
-                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar ocorrência" onClick={() => handleEdit(occ)}>
-                            <Pencil className="h-4 w-4" />
-                         </Button>
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                  aria-label="Excluir ocorrência"
-                                  disabled={isDeleting === occ.id}
-                                >
-                                  {isDeleting === occ.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro da ocorrência de <span className="font-semibold">{occ.involvedPersonName}</span> do dia <span className="font-semibold">{occ.occurrenceDate ? format(occ.occurrenceDate, 'dd/MM/yyyy') : ''}</span>.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction 
-                                        onClick={() => handleDelete(occ.id)}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                        Sim, excluir
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                         </AlertDialog>
+          <CardContent className="p-0 md:p-6 md:pt-0">
+            <div className="max-h-[65vh] overflow-y-auto md:max-h-none">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Local</TableHead>
+                    <TableHead>Envolvido</TableHead>
+                    <TableHead>Faixa Etária</TableHead>
+                    <TableHead>Análise</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    renderSkeletons()
+                  ) : filteredOccurrences.length > 0 ? (
+                    filteredOccurrences.map((occ) => (
+                      <TableRow key={occ.id}>
+                        <TableCell>{occ.occurrenceDate ? format(occ.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
+                        <TableCell>{occ.occurrenceType}</TableCell>
+                        <TableCell>{occ.occurrenceLocation}</TableCell>
+                        <TableCell>{occ.involvedPersonName}</TableCell>
+                        <TableCell>{ageGroupOptions.find(o => o.value === occ.ageGroup)?.label || occ.ageGroup}</TableCell>
+                        <TableCell>
+                          {occ.analysis && analysisMapping[occ.analysis] ? (
+                              <Badge className={cn(analysisMapping[occ.analysis].className)}>
+                                  {analysisMapping[occ.analysis].label}
+                              </Badge>
+                          ) : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar ocorrência" onClick={() => setSelectedOccurrence(occ)}>
+                                <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar ocorrência" onClick={() => handleEdit(occ)}>
+                              <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                    aria-label="Excluir ocorrência"
+                                    disabled={isDeleting === occ.id}
+                                  >
+                                    {isDeleting === occ.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                      Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro da ocorrência de <span className="font-semibold">{occ.involvedPersonName}</span> do dia <span className="font-semibold">{occ.occurrenceDate ? format(occ.occurrenceDate, 'dd/MM/yyyy') : ''}</span>.
+                                      </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                          onClick={() => handleDelete(occ.id)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                          Sim, excluir
+                                      </AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-24 text-center">
+                        {occurrences.length === 0 ? "Nenhuma ocorrência registrada ainda." : "Nenhuma ocorrência encontrada com os filtros selecionados."}
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
-                      {occurrences.length === 0 ? "Nenhuma ocorrência registrada ainda." : "Nenhuma ocorrência encontrada com os filtros selecionados."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
         
@@ -524,3 +526,5 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
     </div>
   );
 }
+
+    

@@ -304,84 +304,86 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
               Foram encontrados {filteredRecords.length} registros.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Espécie/Tipo</TableHead>
-                  <TableHead>Local</TableHead>
-                  <TableHead>Análise</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  renderSkeletons()
-                ) : filteredRecords.length > 0 ? (
-                  filteredRecords.map((rec) => (
-                    <TableRow key={rec.id}>
-                      <TableCell>{rec.date ? format(rec.date, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
-                      <TableCell>{rec.speciesType}</TableCell>
-                      <TableCell>{rec.location}</TableCell>
-                      <TableCell>
-                        {rec.analysis && analysisMapping[rec.analysis] ? (
-                            <Badge className={cn(analysisMapping[rec.analysis].className)}>
-                                {analysisMapping[rec.analysis].label}
-                            </Badge>
-                        ) : 'N/A'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                         <DialogTrigger asChild>
-                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar registro" onClick={() => setSelectedRecord(rec)}>
-                               <Eye className="h-4 w-4" />
-                           </Button>
-                         </DialogTrigger>
-                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar registro" onClick={() => handleEdit(rec)}>
-                            <Pencil className="h-4 w-4" />
-                         </Button>
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                  aria-label="Excluir registro"
-                                  disabled={isDeleting === rec.id}
-                                >
-                                  {isDeleting === rec.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro de <span className="font-semibold">{rec.speciesType}</span> do dia <span className="font-semibold">{rec.date ? format(rec.date, 'dd/MM/yyyy') : ''}</span>.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction 
-                                        onClick={() => handleDelete(rec.id)}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                        Sim, excluir
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                         </AlertDialog>
+          <CardContent className="p-0 md:p-6 md:pt-0">
+            <div className="max-h-[65vh] overflow-y-auto md:max-h-none">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Espécie/Tipo</TableHead>
+                    <TableHead>Local</TableHead>
+                    <TableHead>Análise</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    renderSkeletons()
+                  ) : filteredRecords.length > 0 ? (
+                    filteredRecords.map((rec) => (
+                      <TableRow key={rec.id}>
+                        <TableCell>{rec.date ? format(rec.date, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
+                        <TableCell>{rec.speciesType}</TableCell>
+                        <TableCell>{rec.location}</TableCell>
+                        <TableCell>
+                          {rec.analysis && analysisMapping[rec.analysis] ? (
+                              <Badge className={cn(analysisMapping[rec.analysis].className)}>
+                                  {analysisMapping[rec.analysis].label}
+                              </Badge>
+                          ) : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar registro" onClick={() => setSelectedRecord(rec)}>
+                                <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar registro" onClick={() => handleEdit(rec)}>
+                              <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                    aria-label="Excluir registro"
+                                    disabled={isDeleting === rec.id}
+                                  >
+                                    {isDeleting === rec.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                      Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro de <span className="font-semibold">{rec.speciesType}</span> do dia <span className="font-semibold">{rec.date ? format(rec.date, 'dd/MM/yyyy') : ''}</span>.
+                                      </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                          onClick={() => handleDelete(rec.id)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                          Sim, excluir
+                                      </AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        {records.length === 0 ? "Nenhum registro encontrado." : "Nenhum registro encontrado com os filtros selecionados."}
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      {records.length === 0 ? "Nenhum registro encontrado." : "Nenhum registro encontrado com os filtros selecionados."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
         <DialogContent className="max-w-2xl">
@@ -439,3 +441,5 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
     </div>
   );
 }
+
+    

@@ -378,128 +378,130 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
               Foram encontrados {filteredTreatments.length} tratamentos.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Tipo de Risco</TableHead>
-                  <TableHead>Local</TableHead>
-                  <TableHead>Nível de Risco</TableHead>
-                  <TableHead>Situação</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading || !clientToday ? (
-                  renderSkeletons()
-                ) : filteredTreatments.length > 0 ? (
-                  filteredTreatments.map((occ) => {
-                    const riskProps = getRiskLevelProperties(occ.riskLevel);
-                    
-                    let situationContent;
-                    const completionDate = occ.completionDate?.toDate();
+          <CardContent className="p-0 md:p-6 md:pt-0">
+            <div className="max-h-[65vh] overflow-y-auto md:max-h-none">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Tipo de Risco</TableHead>
+                    <TableHead>Local</TableHead>
+                    <TableHead>Nível de Risco</TableHead>
+                    <TableHead>Situação</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading || !clientToday ? (
+                    renderSkeletons()
+                  ) : filteredTreatments.length > 0 ? (
+                    filteredTreatments.map((occ) => {
+                      const riskProps = getRiskLevelProperties(occ.riskLevel);
+                      
+                      let situationContent;
+                      const completionDate = occ.completionDate?.toDate();
 
-                    if (occ.situation === 'pendente') {
-                      if (clientToday && completionDate) {
-                        const daysUntil = differenceInDays(startOfDay(completionDate), clientToday);
-                        if (daysUntil < 0) {
-                          situationContent = (
-                            <Badge className="bg-red-600 text-white">Atrasado</Badge>
-                          );
+                      if (occ.situation === 'pendente') {
+                        if (clientToday && completionDate) {
+                          const daysUntil = differenceInDays(startOfDay(completionDate), clientToday);
+                          if (daysUntil < 0) {
+                            situationContent = (
+                              <Badge className="bg-red-600 text-white">Atrasado</Badge>
+                            );
+                          } else {
+                            situationContent = (
+                              <div className="flex flex-col items-start gap-1">
+                                <Badge className={cn(getSituationProperties('pendente').className)}>
+                                  Pendente
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {daysUntil === 0 ? 'Vence hoje' : `Vence em ${daysUntil} dia(s)`}
+                                </span>
+                              </div>
+                            );
+                          }
                         } else {
+                          // Pendente sem data de conclusão
                           situationContent = (
-                            <div className="flex flex-col items-start gap-1">
-                              <Badge className={cn(getSituationProperties('pendente').className)}>
+                            <Badge className={cn(getSituationProperties('pendente').className)}>
                                 Pendente
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {daysUntil === 0 ? 'Vence hoje' : `Vence em ${daysUntil} dia(s)`}
-                              </span>
-                            </div>
+                            </Badge>
                           );
                         }
-                      } else {
-                        // Pendente sem data de conclusão
+                      } else { // situation is 'finalizado'
                         situationContent = (
-                           <Badge className={cn(getSituationProperties('pendente').className)}>
-                              Pendente
-                           </Badge>
+                          <Badge className={cn(getSituationProperties('finalizado').className)}>
+                            {getSituationProperties('finalizado').label}
+                          </Badge>
                         );
                       }
-                    } else { // situation is 'finalizado'
-                      situationContent = (
-                        <Badge className={cn(getSituationProperties('finalizado').className)}>
-                          {getSituationProperties('finalizado').label}
-                        </Badge>
-                      );
-                    }
 
-                    return (
-                      <TableRow key={occ.id}>
-                        <TableCell>{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
-                        <TableCell>{occ.treatmentType}</TableCell>
-                        <TableCell>{occ.treatmentLocation}</TableCell>
-                        <TableCell>
-                            <Badge className={cn(riskProps.className)}>
-                                {riskProps.label}
-                            </Badge>
-                        </TableCell>
-                         <TableCell>
-                           {situationContent}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar tratamento" onClick={() => setSelectedTreatment(occ)}>
-                                <Eye className="h-4 w-4" />
+                      return (
+                        <TableRow key={occ.id}>
+                          <TableCell>{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
+                          <TableCell>{occ.treatmentType}</TableCell>
+                          <TableCell>{occ.treatmentLocation}</TableCell>
+                          <TableCell>
+                              <Badge className={cn(riskProps.className)}>
+                                  {riskProps.label}
+                              </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {situationContent}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar tratamento" onClick={() => setSelectedTreatment(occ)}>
+                                  <Eye className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar tratamento" onClick={() => handleEdit(occ)}>
+                                <Pencil className="h-4 w-4" />
                             </Button>
-                          </DialogTrigger>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar tratamento" onClick={() => handleEdit(occ)}>
-                              <Pencil className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                    aria-label="Excluir tratamento"
-                                    disabled={isDeleting === occ.id}
-                                  >
-                                    {isDeleting === occ.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                      Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro de tratamento do dia <span className="font-semibold">{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy') : ''}</span>.
-                                      </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction 
-                                          onClick={() => handleDelete(occ.id)}
-                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      >
-                                          Sim, excluir
-                                      </AlertDialogAction>
-                                  </AlertDialogFooter>
-                              </AlertDialogContent>
-                          </AlertDialog>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      {treatments.length === 0 ? "Nenhum tratamento registrado ainda." : "Nenhum tratamento encontrado com os filtros selecionados."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                      aria-label="Excluir tratamento"
+                                      disabled={isDeleting === occ.id}
+                                    >
+                                      {isDeleting === occ.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro de tratamento do dia <span className="font-semibold">{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy') : ''}</span>.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction 
+                                            onClick={() => handleDelete(occ.id)}
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                            Sim, excluir
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        {treatments.length === 0 ? "Nenhum tratamento registrado ainda." : "Nenhum tratamento encontrado com os filtros selecionados."}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
         <DialogContent className="max-w-2xl">
@@ -587,3 +589,5 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
     </div>
   );
 }
+
+    
