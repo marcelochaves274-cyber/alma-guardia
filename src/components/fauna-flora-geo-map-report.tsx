@@ -332,9 +332,6 @@ export function FaunaFloraGeoMapReport() {
   };
   
   const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('[data-popover-trigger="true"]')) {
-      return;
-    }
     if (e.button !== 0 || !modalImageRenderMetrics) return;
     
     document.body.classList.add('dragging-map');
@@ -393,7 +390,6 @@ export function FaunaFloraGeoMapReport() {
             <PopoverTrigger asChild>
                 <div
                     className="cursor-pointer"
-                    data-popover-trigger="true"
                     onMouseDown={(e) => e.stopPropagation()}
                 >
                     <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
@@ -404,7 +400,7 @@ export function FaunaFloraGeoMapReport() {
                     )}
                 </div>
             </PopoverTrigger>
-            <PopoverContent className="w-80 z-[60]">
+            <PopoverContent className="w-80 z-[60]" onOpenAutoFocus={(e) => e.preventDefault()}>
                 <div className="grid gap-4">
                 <div className="space-y-2">
                     <h4 className="font-medium leading-none">{cluster.records.length > 1 ? 'Registros Agrupados' : 'Detalhes do Registro'}</h4>
