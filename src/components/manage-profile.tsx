@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -25,9 +26,9 @@ export function ManageProfile() {
   const { user, isUserLoading } = useUser();
 
   const [adminPass, setAdminPass] = useState('');
-  const [observerPass, setObserverPass] = useState('');
+  const [supervisorPass, setSupervisorPass] = useState('');
   const [showAdminPass, setShowAdminPass] = useState(false);
-  const [showObserverPass, setShowObserverPass] = useState(false);
+  const [showSupervisorPass, setShowSupervisorPass] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -55,7 +56,7 @@ export function ManageProfile() {
             if (isMounted && docSnap.exists()) {
                 const data = docSnap.data();
                 setAdminPass(data.adminPass || '');
-                setObserverPass(data.observerPass || '');
+                setSupervisorPass(data.supervisorPass || '');
             }
         } catch (error: any) {
              if (isMounted && error.code !== 'permission-denied') {
@@ -88,7 +89,7 @@ export function ManageProfile() {
 
     setIsSaving(true);
     try {
-        await setDoc(docRef, { adminPass, observerPass }, { merge: true });
+        await setDoc(docRef, { adminPass, supervisorPass }, { merge: true });
         toast({ title: 'Sucesso!', description: 'Os passes foram salvos.' });
     } catch (error) {
         console.error('Error saving passes:', error);
@@ -103,7 +104,7 @@ export function ManageProfile() {
         <Card>
             <CardHeader>
                 <CardTitle>Gerenciar Perfis</CardTitle>
-                <CardDescription>Defina os passes de 6 dígitos para os perfis de Administrador e Observador.</CardDescription>
+                <CardDescription>Defina os passes de 6 dígitos para os perfis de Administrador e Supervisor.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
                 <Skeleton className="h-24 w-full" />
@@ -123,7 +124,7 @@ export function ManageProfile() {
       <CardHeader>
         <CardTitle>Gerenciar Perfis</CardTitle>
         <CardDescription>
-          Defina os passes de 6 dígitos para os perfis de Administrador e Observador.
+          Defina os passes de 6 dígitos para os perfis de Administrador e Supervisor.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
@@ -157,15 +158,15 @@ export function ManageProfile() {
         <Separator />
 
          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Perfil Observador</h3>
+            <h3 className="font-semibold text-lg">Perfil Supervisor</h3>
             <div className="space-y-2">
-              <Label htmlFor="observer-pass">Passe</Label>
+              <Label htmlFor="supervisor-pass">Passe</Label>
               <div className="relative">
                 <Input
-                  id="observer-pass"
-                  type={showObserverPass ? 'text' : 'password'}
-                  value={observerPass}
-                  onChange={(e) => handlePassChange(e.target.value, setObserverPass)}
+                  id="supervisor-pass"
+                  type={showSupervisorPass ? 'text' : 'password'}
+                  value={supervisorPass}
+                  onChange={(e) => handlePassChange(e.target.value, setSupervisorPass)}
                   maxLength={6}
                   autoComplete="new-password"
                   className="pr-10"
@@ -175,9 +176,9 @@ export function ManageProfile() {
                   variant="ghost"
                   size="icon"
                   className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent"
-                  onClick={() => setShowObserverPass((prev) => !prev)}
+                  onClick={() => setShowSupervisorPass((prev) => !prev)}
                 >
-                  {showObserverPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showSupervisorPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </Button>
               </div>
             </div>
@@ -185,7 +186,7 @@ export function ManageProfile() {
       </CardContent>
       <CardFooter className='flex-col items-end gap-4'>
         <p className="text-sm text-muted-foreground">Após salvar os passes, atualize sua pagina.</p>
-        <Button onClick={handleSave} disabled={isSaving || adminPass.length !== 6 || observerPass.length !== 6}>
+        <Button onClick={handleSave} disabled={isSaving || adminPass.length !== 6 || supervisorPass.length !== 6}>
            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
            Salvar Passes
         </Button>
@@ -193,3 +194,5 @@ export function ManageProfile() {
     </Card>
   );
 }
+
+    

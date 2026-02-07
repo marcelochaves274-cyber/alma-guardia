@@ -152,13 +152,13 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
 
   const getProfileIcon = () => {
     if (profile === 'admin') return <User className="h-4 w-4" />;
-    if (profile === 'observer') return <Users className="h-4 w-4" />;
+    if (profile === 'supervisor') return <Users className="h-4 w-4" />;
     return null;
   }
   
   const getProfileName = () => {
     if (profile === 'admin') return 'Administrador';
-    if (profile === 'observer') return 'Observador';
+    if (profile === 'supervisor') return 'Supervisor';
     return 'N/D';
   }
 
@@ -726,3 +726,5 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     </>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, MouseEvent } from 'react';
@@ -28,7 +29,7 @@ import { getAuth, signOut } from 'firebase/auth';
 import { useFirebaseApp } from '@/firebase';
 import { useRouter } from 'next/navigation';
 
-type SelectedProfile = 'admin' | 'observer' | null;
+type SelectedProfile = 'admin' | 'supervisor' | null;
 
 export function ProfileSelector() {
   const { setProfile, validatePass, isLoadingPasses, clearProfile, setProfileAndRedirect } = useProfile();
@@ -139,11 +140,11 @@ export function ProfileSelector() {
                 </Card>
                  <Card 
                     className="cursor-pointer hover:bg-card/80 hover:border-primary/50 transition-all"
-                    onClick={() => handleProfileSelect('observer')}
+                    onClick={() => handleProfileSelect('supervisor')}
                 >
                     <CardContent className="flex flex-col items-center justify-center p-6 gap-4">
                         <Users className="h-12 w-12 text-primary" />
-                        <span className="text-lg font-semibold">Observador</span>
+                        <span className="text-lg font-semibold">Supervisor</span>
                     </CardContent>
                 </Card>
             </div>
@@ -164,7 +165,7 @@ export function ProfileSelector() {
         <AlertDialog open={!!selectedProfile} onOpenChange={() => setSelectedProfile(null)}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Acesso de {selectedProfile === 'admin' ? 'Administrador' : 'Observador'}</AlertDialogTitle>
+                    <AlertDialogTitle>Acesso de {selectedProfile === 'admin' ? 'Administrador' : 'Supervisor'}</AlertDialogTitle>
                     <AlertDialogDescription>
                         Por favor, insira o passe de 6 dígitos para continuar.
                     </AlertDialogDescription>
@@ -211,3 +212,5 @@ export function ProfileSelector() {
     </div>
   );
 }
+
+    

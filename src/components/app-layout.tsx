@@ -13,7 +13,6 @@ import { RegisterOccurrence } from '@/components/register-occurrence';
 import { ManageOccurrences } from '@/components/manage-occurrences';
 import { ManageLocations } from '@/components/manage-locations';
 import { ManageMap } from '@/components/manage-map';
-import { OccurrenceReport } from '@/components/occurrence-report';
 import { MapReport } from '@/components/map-report';
 import { AppSidebar } from '@/components/app-sidebar';
 import { RegisterTreatment } from '@/components/register-treatment';
@@ -78,7 +77,7 @@ function MainAppLayout() {
   const router = useRouter();
 
   const getDefaultPageForProfile = (profile: string | null) => {
-    if (profile === 'observer') {
+    if (profile === 'supervisor') {
       return 'register-notice';
     }
     return 'reminders';
@@ -253,7 +252,7 @@ function MainAppLayout() {
 
   const getProfileName = () => {
     if (profile === 'admin') return 'Administrador';
-    if (profile === 'observer') return 'Observador';
+    if (profile === 'supervisor') return 'Supervisor';
     return '';
   }
 
@@ -304,3 +303,5 @@ function MainAppLayout() {
 export function AppLayout() {
   return <MainAppLayout />;
 }
+
+    
