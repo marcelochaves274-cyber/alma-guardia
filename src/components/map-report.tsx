@@ -346,6 +346,9 @@ export function MapReport() {
   };
   
   const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('[data-popover-trigger="true"]')) {
+      return;
+    }
     if (e.button !== 0 || !modalImageRenderMetrics) return;
 
     document.body.classList.add('dragging-map');
@@ -404,6 +407,7 @@ export function MapReport() {
               <PopoverTrigger asChild>
                   <div
                     className="cursor-pointer"
+                    data-popover-trigger="true"
                     onMouseDown={(e) => e.stopPropagation()}
                   >
                     <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
