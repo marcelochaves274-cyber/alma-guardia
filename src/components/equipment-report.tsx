@@ -556,116 +556,118 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {showBulkActions && (
-                    <TableHead className="w-[50px]">
-                      <Checkbox
-                        checked={filteredEquipments.length > 0 && selectedEquipments.length === filteredEquipments.length}
-                        onCheckedChange={(checked) => {
-                          setSelectedEquipments(checked ? filteredEquipments.map((eq) => eq.id) : []);
-                        }}
-                        aria-label="Selecionar todos"
-                        disabled={filteredEquipments.length === 0}
-                      />
-                    </TableHead>
-                  )}
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Marca</TableHead>
-                  <TableHead>Local</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Inspeção</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading || !clientToday ? (
-                  renderSkeletons()
-                ) : filteredEquipments.length > 0 ? (
-                  filteredEquipments.map((eq) => {
-                    const statusProps = statusMapping[eq.status] || { label: 'Desconhecido', className: 'bg-gray-400' };
-                    const inspectionStatusProps = eq.status === 'descartado' 
-                      ? { label: 'Sem vistoria', className: 'bg-muted text-muted-foreground' }
-                      : getInspectionStatus(eq.nextInspectionDate?.toDate(), clientToday);
-                    
-                    return (
-                      <TableRow 
-                        key={eq.id}
-                        data-state={selectedEquipments.includes(eq.id) ? 'selected' : undefined}
-                        className={cn(eq.status === 'descartado' && 'bg-destructive/10 hover:bg-destructive/20')}
-                      >
-                         {showBulkActions && (
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedEquipments.includes(eq.id)}
-                              onCheckedChange={(checked) => {
-                                setSelectedEquipments((prev) =>
-                                  checked ? [...prev, eq.id] : prev.filter((id) => id !== eq.id)
-                                );
-                              }}
-                              aria-label={`Selecionar ${eq.equipmentType}`}
-                            />
-                          </TableCell>
-                        )}
-                        <TableCell>{eq.equipmentType}</TableCell>
-                        <TableCell>{eq.brand}</TableCell>
-                        <TableCell>{eq.storageLocation}</TableCell>
-                        <TableCell><Badge className={cn(statusProps.className)}>{statusProps.label}</Badge></TableCell>
-                        <TableCell>
-                          <Badge className={cn('flex items-center gap-1.5', inspectionStatusProps.className)}>
-                            {inspectionStatusProps.label === 'Vistoria Atrasada' && <TriangleAlert className="h-3.5 w-3.5" />}
-                            {inspectionStatusProps.label}
-                          </Badge>
+          <CardContent className="p-0 md:p-6 md:pt-0">
+            <div className="max-h-[65vh] overflow-y-auto md:max-h-none">
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    {showBulkActions && (
+                        <TableHead className="w-[50px]">
+                        <Checkbox
+                            checked={filteredEquipments.length > 0 && selectedEquipments.length === filteredEquipments.length}
+                            onCheckedChange={(checked) => {
+                            setSelectedEquipments(checked ? filteredEquipments.map((eq) => eq.id) : []);
+                            }}
+                            aria-label="Selecionar todos"
+                            disabled={filteredEquipments.length === 0}
+                        />
+                        </TableHead>
+                    )}
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Marca</TableHead>
+                    <TableHead>Local</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Inspeção</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {isLoading || !clientToday ? (
+                    renderSkeletons()
+                    ) : filteredEquipments.length > 0 ? (
+                    filteredEquipments.map((eq) => {
+                        const statusProps = statusMapping[eq.status] || { label: 'Desconhecido', className: 'bg-gray-400' };
+                        const inspectionStatusProps = eq.status === 'descartado' 
+                        ? { label: 'Sem vistoria', className: 'bg-muted text-muted-foreground' }
+                        : getInspectionStatus(eq.nextInspectionDate?.toDate(), clientToday);
+                        
+                        return (
+                        <TableRow 
+                            key={eq.id}
+                            data-state={selectedEquipments.includes(eq.id) ? 'selected' : undefined}
+                            className={cn(eq.status === 'descartado' && 'bg-destructive/10 hover:bg-destructive/20')}
+                        >
+                            {showBulkActions && (
+                            <TableCell>
+                                <Checkbox
+                                checked={selectedEquipments.includes(eq.id)}
+                                onCheckedChange={(checked) => {
+                                    setSelectedEquipments((prev) =>
+                                    checked ? [...prev, eq.id] : prev.filter((id) => id !== eq.id)
+                                    );
+                                }}
+                                aria-label={`Selecionar ${eq.equipmentType}`}
+                                />
+                            </TableCell>
+                            )}
+                            <TableCell>{eq.equipmentType}</TableCell>
+                            <TableCell>{eq.brand}</TableCell>
+                            <TableCell>{eq.storageLocation}</TableCell>
+                            <TableCell><Badge className={cn(statusProps.className)}>{statusProps.label}</Badge></TableCell>
+                            <TableCell>
+                            <Badge className={cn('flex items-center gap-1.5', inspectionStatusProps.className)}>
+                                {inspectionStatusProps.label === 'Vistoria Atrasada' && <TriangleAlert className="h-3.5 w-3.5" />}
+                                {inspectionStatusProps.label}
+                            </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                            <DialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar equipamento" onClick={() => setSelectedEquipment(eq)}>
+                                    <Eye className="h-4 w-4" />
+                                </Button>
+                            </DialogTrigger>
+                            {profile === 'admin' && (
+                                <>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar equipamento" onClick={() => onEdit(eq)}>
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir equipamento" disabled={isDeleting === eq.id}>
+                                            {isDeleting === eq.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                            Esta ação excluirá permanentemente o equipamento "{eq.equipmentType} - {eq.brand}".
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDelete(eq.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                                Sim, excluir
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                                </>
+                            )}
+                            </TableCell>
+                        </TableRow>
+                        );
+                    })
+                    ) : (
+                    <TableRow>
+                        <TableCell colSpan={showBulkActions ? 7 : 6} className="h-24 text-center">
+                        {equipments.length === 0 ? "Nenhum equipamento registrado ainda." : "Nenhum equipamento encontrado com os filtros selecionados."}
                         </TableCell>
-                        <TableCell className="text-right">
-                           <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar equipamento" onClick={() => setSelectedEquipment(eq)}>
-                                  <Eye className="h-4 w-4" />
-                              </Button>
-                           </DialogTrigger>
-                           {profile === 'admin' && (
-                            <>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar equipamento" onClick={() => onEdit(eq)}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir equipamento" disabled={isDeleting === eq.id}>
-                                        {isDeleting === eq.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                        Esta ação excluirá permanentemente o equipamento "{eq.equipmentType} - {eq.brand}".
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDelete(eq.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                            Sim, excluir
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </>
-                           )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={showBulkActions ? 7 : 6} className="h-24 text-center">
-                      {equipments.length === 0 ? "Nenhum equipamento registrado ainda." : "Nenhum equipamento encontrado com os filtros selecionados."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                    </TableRow>
+                    )}
+                </TableBody>
+                </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
