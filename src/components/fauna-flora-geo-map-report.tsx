@@ -91,6 +91,8 @@ export function FaunaFloraGeoMapReport() {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [activePopoverKey, setActivePopoverKey] = useState<string | null>(null);
+  const [modalActivePopoverKey, setModalActivePopoverKey] = useState<string | null>(null);
+
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
@@ -368,8 +370,11 @@ export function FaunaFloraGeoMapReport() {
     window.addEventListener('mouseup', handlePanEnd);
   }, [transform.x, transform.y, modalImageRenderMetrics, clampPosition]);
 
-  const renderPins = useMemo(() => {
+  const renderPins = (isModal: boolean) => {
     if (!isClient || isLoading) return null;
+
+    const activeKey = isModal ? modalActivePopoverKey : activePopoverKey;
+    const setActiveKey = isModal ? setModalActivePopoverKey : setActivePopoverKey;
     
     return clusters.map((cluster, index) => {
       const clusterKey = `fauna-cluster-${index}`;
@@ -386,11 +391,13 @@ export function FaunaFloraGeoMapReport() {
             transform: 'translate(-50%, -100%)',
             }}
         >
-        <Popover key={clusterKey} open={activePopoverKey === clusterKey} onOpenChange={(open) => setActivePopoverKey(open ? clusterKey : null)}>
+        <Popover open={activeKey === clusterKey} onOpenChange={(open) => setActiveKey(open ? clusterKey : null)}>
             <PopoverTrigger asChild>
                 <div
                     className="cursor-pointer"
-                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => {
+                        if (isModal) e.stopPropagation();
+                    }}
                 >
                     <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
                     {cluster.records.length > 1 && (
@@ -418,7 +425,7 @@ export function FaunaFloraGeoMapReport() {
                             <p><strong className="font-medium">Local:</strong> {rec.location}</p>
                           </div>
                           <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
-                              setActivePopoverKey(null);
+                              setActiveKey(null);
                               setDetailedRecord(rec);
                               setIsDetailModalOpen(true);
                             }}>
@@ -434,7 +441,7 @@ export function FaunaFloraGeoMapReport() {
         </div>
       )
     });
-  }, [clusters, isClient, availableYears, isLoading, activePopoverKey, setActivePopoverKey, setIsDetailModalOpen, setDetailedRecord]);
+  };
 
   return (
     <div className="space-y-6">
@@ -536,7 +543,7 @@ export function FaunaFloraGeoMapReport() {
                         left: `${mainMapRenderMetrics.offsetX}px`,
                       }}>
                         <div className="relative w-full h-full">
-                          {renderPins}
+                          {renderPins(false)}
                         </div>
                       </div>
                     )}
@@ -587,7 +594,7 @@ export function FaunaFloraGeoMapReport() {
                                 }}
                             >
                                 <div className="relative w-full h-full">
-                                    {renderPins}
+                                    {renderPins(true)}
                                 </div>
                             </div>
                             )}

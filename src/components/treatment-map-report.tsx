@@ -121,6 +121,7 @@ export function TreatmentMapReport() {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [activePopoverKey, setActivePopoverKey] = useState<string | null>(null);
+  const [modalActivePopoverKey, setModalActivePopoverKey] = useState<string | null>(null);
 
 
   // Filter states
@@ -421,8 +422,11 @@ export function TreatmentMapReport() {
     window.addEventListener('mouseup', handlePanEnd);
   }, [transform.x, transform.y, modalImageRenderMetrics, clampPosition]);
 
-  const renderPins = useMemo(() => {
+  const renderPins = (isModal: boolean) => {
     if (!isClient || isLoading) return null;
+
+    const activeKey = isModal ? modalActivePopoverKey : activePopoverKey;
+    const setActiveKey = isModal ? setModalActivePopoverKey : setActivePopoverKey;
 
     return clusters.map((cluster, index) => {
       const clusterKey = `treatment-cluster-${index}`;
@@ -439,11 +443,13 @@ export function TreatmentMapReport() {
             transform: 'translate(-50%, -100%)',
           }}
         >
-          <Popover open={activePopoverKey === clusterKey} onOpenChange={(open) => setActivePopoverKey(open ? clusterKey : null)}>
+          <Popover open={activeKey === clusterKey} onOpenChange={(open) => setActiveKey(open ? clusterKey : null)}>
             <PopoverTrigger asChild>
                 <div
                   className="cursor-pointer"
-                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => {
+                    if (isModal) e.stopPropagation();
+                  }}
                 >
                   <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
                   {cluster.treatments.length > 1 && (
@@ -471,7 +477,7 @@ export function TreatmentMapReport() {
                             <p><strong className="font-medium">Local:</strong> {t.treatmentLocation}</p>
                           </div>
                           <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
-                                setActivePopoverKey(null);
+                                setActiveKey(null);
                                 setDetailedTreatment(t);
                                 setIsDetailModalOpen(true);
                             }}>
@@ -487,7 +493,7 @@ export function TreatmentMapReport() {
         </div>
       )
     })
-  }, [clusters, isClient, availableYears, isLoading, activePopoverKey, setActivePopoverKey, setIsDetailModalOpen, setDetailedTreatment]);
+  };
   
   return (
     <div className="space-y-6">
@@ -610,7 +616,7 @@ export function TreatmentMapReport() {
                           left: `${mainMapRenderMetrics.offsetX}px`,
                         }}>
                           <div className="relative w-full h-full">
-                            {renderPins}
+                            {renderPins(false)}
                           </div>
                         </div>
                     )}
@@ -661,7 +667,7 @@ export function TreatmentMapReport() {
                                 }}
                             >
                                 <div className="relative w-full h-full">
-                                    {renderPins}
+                                    {renderPins(true)}
                                 </div>
                             </div>
                             )}
