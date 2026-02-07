@@ -351,11 +351,11 @@ export function TreatmentMapReport() {
     if (!modalMapContainerRef.current || !modalImageRenderMetrics) return pos;
 
     const containerRect = modalMapContainerRef.current.getBoundingClientRect();
-    const { naturalWidth, naturalHeight } = modalImageRenderMetrics;
+    const { renderedWidth, renderedHeight } = modalImageRenderMetrics;
     const { scale } = pos;
     
-    const scaledWidth = naturalWidth * scale;
-    const scaledHeight = naturalHeight * scale;
+    const scaledWidth = renderedWidth * scale;
+    const scaledHeight = renderedHeight * scale;
 
     const overflowX = Math.max(0, (scaledWidth - containerRect.width) / 2);
     const overflowY = Math.max(0, (scaledHeight - containerRect.height) / 2);
@@ -387,11 +387,6 @@ export function TreatmentMapReport() {
   const handlePanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0 || !modalImageRenderMetrics) return;
 
-    const target = e.target as HTMLElement;
-    if (target.closest('[data-pin="true"]')) {
-      return; 
-    }
-    
     document.body.classList.add('dragging-map');
 
     panStart.current = { x: e.clientX, y: e.clientY, startX: transform.x, startY: transform.y };
@@ -447,14 +442,8 @@ export function TreatmentMapReport() {
           <Popover open={activePopoverKey === clusterKey} onOpenChange={(open) => setActivePopoverKey(open ? clusterKey : null)}>
             <PopoverTrigger asChild>
                 <div
-                  data-pin="true"
                   className="cursor-pointer"
-                  onDoubleClick={() => {
-                    if (cluster.treatments.length === 1) {
-                      setDetailedTreatment(cluster.treatments[0]);
-                      setIsDetailModalOpen(true);
-                    }
-                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
                 >
                   <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
                   {cluster.treatments.length > 1 && (
@@ -637,25 +626,23 @@ export function TreatmentMapReport() {
         <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
             <DialogHeader className="p-4 border-b">
                 <DialogTitle>Mapa Interativo de Tratamentos de Risco</DialogTitle>
-                <DialogDescription>Clique e arraste para mover. Dê um duplo clique em um pino para ver os detalhes.</DialogDescription>
+                <DialogDescription>Clique e arraste para mover. Dê um clique em um pino para ver os detalhes.</DialogDescription>
             </DialogHeader>
             <div
                 ref={modalMapContainerRef}
-                className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center w-full h-full", isPanning ? '' : 'cursor-grab')}
+                className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center w-full h-full", isPanning ? 'dragging-map' : 'cursor-grab')}
                 onMouseDown={handlePanStart}
             >
                 {mapUrl ? (
-                  <>
-                    <div className="absolute inset-0 overflow-hidden flex justify-center items-center" onDragStart={(e) => e.preventDefault()}>
-                        <div
-                            style={{
-                                width: `${modalImageRenderMetrics?.naturalWidth}px`,
-                                height: `${modalImageRenderMetrics?.naturalHeight}px`,
-                                transformOrigin: 'center center',
-                                transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-                            }}
-                            className="relative"
-                        >
+                    <div
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                        }}
+                        onDragStart={(e) => e.preventDefault()}
+                    >
+                        <div className="relative w-full h-full">
                             <NextImage
                                 src={mapUrl}
                                 alt="Mapa ampliado"
@@ -663,12 +650,23 @@ export function TreatmentMapReport() {
                                 className="object-contain"
                                 onLoad={(e) => handleImageLoad(e, modalMapContainerRef, setModalImageRenderMetrics)}
                             />
-                            <div className="absolute inset-0">
-                              {renderPins}
+                            {modalImageRenderMetrics && (
+                            <div
+                                className="absolute"
+                                style={{
+                                    width: `${modalImageRenderMetrics.renderedWidth}px`,
+                                    height: `${modalImageRenderMetrics.renderedHeight}px`,
+                                    top: `${modalImageRenderMetrics.offsetY}px`,
+                                    left: `${modalImageRenderMetrics.offsetX}px`,
+                                }}
+                            >
+                                <div className="relative w-full h-full">
+                                    {renderPins}
+                                </div>
                             </div>
+                            )}
                         </div>
                     </div>
-                  </>
                 ) : isLoadingMap ? (
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 ) : (
