@@ -14,15 +14,14 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // If loading is done and a user exists, redirect to the dashboard.
-    if (!isUserLoading && user) {
+    // If loading is done and a "real" (non-anonymous) user exists, redirect to the dashboard.
+    if (!isUserLoading && user && !user.isAnonymous) {
       router.replace('/dashboard');
     }
   }, [isUserLoading, user, router]);
 
-  // While we are checking for the user, show a loader to prevent flicker.
-  // Also show a loader if a user exists, as we are about to redirect.
-  if (isUserLoading || user) {
+  // While we are checking for the user, or if a real user exists (and we are about to redirect), show a loader.
+  if (isUserLoading || (user && !user.isAnonymous)) {
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background text-foreground">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -31,7 +30,8 @@ export default function HomePage() {
     );
   }
 
-  // If no user is found and loading is complete, show the marketing page.
+  // If no "real" user is found and loading is complete, show the marketing page.
+  // This will correctly show for anonymous users.
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="px-4 lg:px-6 h-16 flex items-center border-b">

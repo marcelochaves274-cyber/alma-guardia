@@ -49,16 +49,16 @@ export default function LoginPage() {
   const [resetEmail, setResetEmail] = useState('');
   
   useEffect(() => {
-    // If user is already logged in, redirect them away from the login page.
-    if (!isUserLoading && user) {
+    // If a real user is already logged in, redirect them away from the login page.
+    if (!isUserLoading && user && !user.isAnonymous) {
       router.replace('/dashboard');
     }
   }, [isUserLoading, user, router]);
 
 
-  // If we're still loading the user state, or if a user exists (and we're about to redirect),
+  // If we're still loading the user state, or if a real user exists (and we're about to redirect),
   // show a loader to prevent the login form from flashing.
-  if (isUserLoading || user) {
+  if (isUserLoading || (user && !user.isAnonymous)) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

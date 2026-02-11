@@ -22,15 +22,15 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // If loading is finished and there's no user, it's a protected route. Redirect to login.
-    if (!isUserLoading && !user) {
+    // If loading is finished and there's no user or the user is anonymous, it's a protected route. Redirect to login.
+    if (!isUserLoading && (!user || user.isAnonymous)) {
       router.replace('/login');
     }
   }, [isUserLoading, user, router]);
 
   // Show a loader while we check for user auth state and profile info.
-  // Also show a loader if user is null, as we're about to redirect.
-  if (isUserLoading || isProfileLoading || !user) {
+  // Also show a loader if user is null or anonymous, as we're about to redirect.
+  if (isUserLoading || isProfileLoading || !user || user.isAnonymous) {
     return <Loader />;
   }
   

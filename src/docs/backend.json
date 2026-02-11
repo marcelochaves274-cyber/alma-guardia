@@ -585,11 +585,16 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ProfilePasses",
       "type": "object",
-      "description": "Stores the 6-digit numeric passes for Admin and Observer profiles.",
+      "description": "Stores the 6-digit numeric passes for Admin, Supervisor, and Observer profiles.",
       "properties": {
         "adminPass": {
           "type": "string",
           "description": "The 6-digit numeric pass for the Administrator profile.",
+          "pattern": "^[0-9]{6}$"
+        },
+        "supervisorPass": {
+          "type": "string",
+          "description": "The 6-digit numeric pass for the Supervisor profile.",
           "pattern": "^[0-9]{6}$"
         },
         "observerPass": {
@@ -600,14 +605,14 @@
       },
       "required": [
         "adminPass",
+        "supervisorPass",
         "observerPass"
       ]
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
@@ -665,11 +670,24 @@
       },
       "description": "Stores notice records for a user."
     },
-    "/sgs_genius/{userId}/settings/{settingId}": {
+    "/sgs_genius/{userId}/settings/profiles": {
       "schema": {
         "$ref": "#/entities/ProfilePasses"
       },
-      "description": "Stores profile passcodes and other settings for a user."
+      "description": "Stores profile passcodes for a user."
+    },
+    "/sgs_genius/{userId}/settings/mapDetails": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "mapUrl": {
+            "type": "string",
+            "format": "data-url",
+            "description": "A Base64 encoded data URI of the uploaded map image."
+          }
+        }
+      },
+      "description": "Stores configuration for the user-defined map."
     }
   }
 }
