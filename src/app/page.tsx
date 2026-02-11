@@ -1,9 +1,37 @@
+'use client';
+
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SgsAppLogo } from '@/components/icons';
 import { ArrowRight, ShieldCheck, LayoutList, BarChart } from 'lucide-react';
 import Link from 'next/link';
 
-export default function MarketingPage() {
+export default function HomePage() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    // If loading is done and a user exists, redirect to the dashboard.
+    if (!isUserLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [isUserLoading, user, router]);
+
+  // While we are checking for the user, show a loader to prevent flicker.
+  // Also show a loader if a user exists, as we are about to redirect.
+  if (isUserLoading || user) {
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background text-foreground">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  // If no user is found and loading is complete, show the marketing page.
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="px-4 lg:px-6 h-16 flex items-center border-b">

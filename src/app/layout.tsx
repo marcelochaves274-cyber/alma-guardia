@@ -5,7 +5,6 @@ import { AppSettingsProvider } from '@/context/app-settings-context';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { HelpProvider } from '@/context/help-context';
 import { ProfileProvider } from '@/context/profile-context';
-import { AuthRedirector } from '@/components/auth-redirector';
 
 const iconUrl = "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Logo%20da%20SGS%20APP%20Arenito.jpg?alt=media&token=56ad9d35-b9ec-42cd-bc0f-d9ade32406db";
 
@@ -38,7 +37,6 @@ export default function RootLayout({
           <ProfileProvider>
             <AppSettingsProvider>
               <HelpProvider>
-                <AuthRedirector />
                 {children}
               </HelpProvider>
             </AppSettingsProvider>
