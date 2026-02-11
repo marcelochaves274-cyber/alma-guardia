@@ -2,7 +2,6 @@
 
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SgsAppLogo } from '@/components/icons';
@@ -13,15 +12,7 @@ export default function HomePage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
-  useEffect(() => {
-    // If loading is done and a "real" (non-anonymous) user exists, redirect to the dashboard.
-    if (!isUserLoading && user && !user.isAnonymous) {
-      router.replace('/dashboard');
-    }
-  }, [isUserLoading, user, router]);
-
-  // While we are checking for the user, or if a real user exists (and we are about to redirect), show a loader.
-  if (isUserLoading || (user && !user.isAnonymous)) {
+  if (isUserLoading) {
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background text-foreground">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -30,8 +21,17 @@ export default function HomePage() {
     );
   }
 
-  // If no "real" user is found and loading is complete, show the marketing page.
-  // This will correctly show for anonymous users.
+  if (user && !user.isAnonymous) {
+    router.replace('/dashboard');
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background text-foreground">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground">Redirecionando para o painel...</p>
+      </div>
+    );
+  }
+
+  // Para visitantes (não logados) ou usuários anônimos, mostre o site.
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="px-4 lg:px-6 h-16 flex items-center border-b">
