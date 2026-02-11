@@ -6,6 +6,7 @@ import { Loader2, ArrowRight, ShieldCheck, LayoutList, BarChart } from 'lucide-r
 import { useProfile } from '@/context/profile-context';
 import { Button } from '@/components/ui/button';
 import { SgsAppLogo } from '@/components/icons';
+import { useRouter } from 'next/navigation';
 
 function Loader() {
   return (
@@ -17,6 +18,9 @@ function Loader() {
 }
 
 function LandingPage() {
+  const router = useRouter();
+  const handleRedirect = () => router.push('/login');
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="px-4 lg:px-6 h-16 flex items-center border-b">
@@ -25,10 +29,10 @@ function LandingPage() {
           <span className="sr-only">SGS APP</span>
         </a>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Button variant="ghost" onClick={() => window.location.href = '/login'}>
+          <Button variant="ghost" onClick={handleRedirect}>
             Entrar
           </Button>
-          <Button onClick={() => window.location.href = '/login'}>
+          <Button onClick={handleRedirect}>
             Criar Conta
           </Button>
         </nav>
@@ -44,7 +48,7 @@ function LandingPage() {
               <p className="text-lg text-muted-foreground md:text-xl">
                 Digitalize seus processos, centralize informações e garanta a conformidade com a NBR 21101 de forma inteligente e eficiente.
               </p>
-              <Button size="lg" onClick={() => window.location.href = '/login'}>
+              <Button size="lg" onClick={handleRedirect}>
                 Comece Agora
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -100,7 +104,7 @@ function LandingPage() {
               </p>
             </div>
             <div className="mx-auto w-full max-w-sm space-y-2">
-               <Button size="lg" className="w-full" onClick={() => window.location.href = '/login'}>
+               <Button size="lg" className="w-full" onClick={handleRedirect}>
                 Começar a Usar
               </Button>
             </div>
