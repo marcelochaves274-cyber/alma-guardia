@@ -1,17 +1,10 @@
-'use client';
-
-import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { SgsAppLogo } from '@/components/icons';
 import { ArrowRight, ShieldCheck, LayoutList, BarChart } from 'lucide-react';
 import Link from 'next/link';
 
 export default function HomePage() {
-  // A verificação do usuário é usada apenas para alterar dinamicamente o link do botão "Entrar".
-  // A página em si não redireciona mais, garantindo que o site seja sempre exibido para novos visitantes.
-  const { user } = useUser();
-
-  const loginOrDashboardLink = user && !user.isAnonymous ? '/dashboard' : '/login';
+  const loginOrDashboardLink = '/login';
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
