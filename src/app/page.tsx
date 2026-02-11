@@ -116,31 +116,28 @@ function MarketingPage() {
         <p className="text-xs text-muted-foreground">&copy; 2024 SGS APP. Todos os direitos reservados.</p>
       </footer>
     </div>
-    );
-  }
+  );
+}
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
-  // Show a loader while Firebase checks the auth state.
-  if (isUserLoading) {
-    return <Loader />;
-  }
-
-  // If a user is logged in, redirect them to the dashboard.
-  if (user) {
-    // We use useEffect to perform the redirect after the initial render
-    // to prevent any errors about updating a component during render.
-    useEffect(() => {
+  useEffect(() => {
+    // This effect handles redirection based on auth state.
+    // It runs whenever the loading status or user object changes.
+    if (!isUserLoading && user) {
+      // If loading is complete and a user exists, redirect to the dashboard.
       router.replace('/dashboard');
-    }, [router]);
+    }
+  }, [isUserLoading, user, router]);
 
-    // Show a loader while redirecting
+  // While checking auth state, or if a user exists (and we're about to redirect),
+  // show a loader. This prevents the marketing page from flashing for logged-in users.
+  if (isUserLoading || user) {
     return <Loader />;
   }
 
-  // If there's no user and we're not loading, it's a new visitor.
-  // Show the marketing page.
+  // If loading is complete and there's no user, show the marketing page.
   return <MarketingPage />;
 }
