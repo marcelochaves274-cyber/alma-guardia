@@ -1,39 +1,22 @@
-'use client';
-
-import { useUser } from '@/firebase';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-
 import { Button } from '@/components/ui/button';
 import { SgsAppLogo } from '@/components/icons';
-import { ArrowRight, ShieldCheck, LayoutList, BarChart, Loader2 } from 'lucide-react';
+import { ArrowRight, ShieldCheck, LayoutList, BarChart } from 'lucide-react';
+import Link from 'next/link';
 
-function Loader() {
-  return (
-    <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background text-foreground">
-      <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      <p className="text-muted-foreground">Aguarde, carregando...</p>
-    </div>
-  );
-}
-
-function MarketingPage() {
-  const router = useRouter();
-  const handleRedirect = () => router.push('/login');
-
+export default function MarketingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="px-4 lg:px-6 h-16 flex items-center border-b">
-        <a className="flex items-center justify-center" href="#">
+        <Link className="flex items-center justify-center" href="/">
           <SgsAppLogo className="h-6 w-6 text-primary" />
           <span className="sr-only">SGS APP</span>
-        </a>
+        </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Button variant="ghost" onClick={handleRedirect}>
-            Entrar
+          <Button variant="ghost" asChild>
+            <Link href="/login">Entrar</Link>
           </Button>
-          <Button onClick={handleRedirect}>
-            Criar Conta
+          <Button asChild>
+            <Link href="/login">Criar Conta</Link>
           </Button>
         </nav>
       </header>
@@ -48,9 +31,11 @@ function MarketingPage() {
               <p className="text-lg text-muted-foreground md:text-xl">
                 Digitalize seus processos, centralize informações e garanta a conformidade com a NBR 21101 de forma inteligente e eficiente.
               </p>
-              <Button size="lg" onClick={handleRedirect}>
-                Comece Agora
-                <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="lg" asChild>
+                <Link href="/login">
+                  Comece Agora
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
             </div>
           </div>
@@ -104,8 +89,8 @@ function MarketingPage() {
               </p>
             </div>
             <div className="mx-auto w-full max-w-sm space-y-2">
-               <Button size="lg" className="w-full" onClick={handleRedirect}>
-                Começar a Usar
+               <Button size="lg" className="w-full" asChild>
+                <Link href="/login">Começar a Usar</Link>
               </Button>
             </div>
           </div>
@@ -117,27 +102,4 @@ function MarketingPage() {
       </footer>
     </div>
   );
-}
-
-export default function Home() {
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    // This effect handles redirection based on auth state.
-    // It runs whenever the loading status or user object changes.
-    if (!isUserLoading && user) {
-      // If loading is complete and a user exists, redirect to the dashboard.
-      router.replace('/dashboard');
-    }
-  }, [isUserLoading, user, router]);
-
-  // While checking auth state, or if a user exists (and we're about to redirect),
-  // show a loader. This prevents the marketing page from flashing for logged-in users.
-  if (isUserLoading || user) {
-    return <Loader />;
-  }
-
-  // If loading is complete and there's no user, show the marketing page.
-  return <MarketingPage />;
 }
