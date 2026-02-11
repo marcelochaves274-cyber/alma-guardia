@@ -1,12 +1,12 @@
 'use client';
 
-import { AppLayout } from '@/components/app-layout';
 import { useUser } from '@/firebase';
-import { Loader2, ArrowRight, ShieldCheck, LayoutList, BarChart } from 'lucide-react';
-import { useProfile } from '@/context/profile-context';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { SgsAppLogo } from '@/components/icons';
-import { useRouter } from 'next/navigation';
+import { ArrowRight, ShieldCheck, LayoutList, BarChart, Loader2 } from 'lucide-react';
 
 function Loader() {
   return (
@@ -17,7 +17,7 @@ function Loader() {
   );
 }
 
-function LandingPage() {
+function MarketingPage() {
   const router = useRouter();
   const handleRedirect = () => router.push('/login');
 
@@ -116,20 +116,30 @@ function LandingPage() {
         <p className="text-xs text-muted-foreground">&copy; 2024 SGS APP. Todos os direitos reservados.</p>
       </footer>
     </div>
-  );
-}
+    );
+  }
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
-  const { isProfileLoading } = useProfile();
+  const router = useRouter();
 
-  if (isUserLoading || isProfileLoading) {
+  useEffect(() => {
+    // If we have a logged-in user, redirect them to the main app dashboard.
+    if (!isUserLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
+
+  // While we check auth state, show a loader.
+  if (isUserLoading) {
     return <Loader />;
   }
   
+  // If a user is found, they are being redirected. Show a loader to prevent flicker.
   if (user) {
-    return <AppLayout />;
+    return <Loader />;
   }
-  
-  return <LandingPage />;
+
+  // If there's no user and we're not loading, it's a new visitor. Show the marketing page.
+  return <MarketingPage />;
 }

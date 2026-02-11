@@ -47,9 +47,17 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isAuthInProgress, setIsAuthInProgress] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  
+  useEffect(() => {
+    // If user is already logged in, redirect them away from the login page.
+    if (!isUserLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [isUserLoading, user, router]);
 
-  // Se o usuário está logado e tentou acessar /login, ele será redirecionado
-  // pela página principal. Apenas mostramos um loader aqui para a transição.
+
+  // If we're still loading the user state, or if a user exists (and we're about to redirect),
+  // show a loader to prevent the login form from flashing.
   if (isUserLoading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -92,9 +100,8 @@ export default function LoginPage() {
       } else {
         await createUserWithEmailAndPassword(initializedAuth, email, password);
       }
-      // On success, the main page will handle the redirection.
-      // We wait for the useUser hook to update.
-      router.push('/');
+      // On success, redirect to the main app dashboard.
+      router.push('/dashboard');
 
     } catch (error: any) {
       toast({

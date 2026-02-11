@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -94,6 +93,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     try {
       await signOut(auth);
       clearProfile();
+      // Redirect to the public landing page after sign out.
       router.push('/');
       toast({
         title: 'Logout realizado',

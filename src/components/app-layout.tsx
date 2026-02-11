@@ -1,9 +1,7 @@
-
-
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { useAppSettings } from '@/context/app-settings-context';
 
@@ -119,8 +117,8 @@ function MainAppLayout() {
     return <ProfileSelector />;
   }
 
-  // If there's no user and we are past the loading state, redirect has been initiated
-  // by the root page.tsx. Render a loader to prevent flicker during redirect.
+  // If there's no user and we are past the loading state, the redirect to /login
+  // is handled by the /dashboard route. Render a loader to prevent flicker.
   if (!user) {
     return <Loader />;
   }
