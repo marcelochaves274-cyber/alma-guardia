@@ -94,7 +94,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
     try {
       await signOut(auth);
       clearProfile();
-      router.push('/login');
+      router.push('/');
       toast({
         title: 'Logout realizado',
         description: 'Você foi desconectado com sucesso.',
