@@ -1,42 +1,18 @@
 'use client';
 
 import { useUser } from '@/firebase';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SgsAppLogo } from '@/components/icons';
 import { ArrowRight, ShieldCheck, LayoutList, BarChart } from 'lucide-react';
 import Link from 'next/link';
 
 export default function HomePage() {
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
+  // A verificação do usuário é usada apenas para alterar dinamicamente o link do botão "Entrar".
+  // A página em si não redireciona mais, garantindo que o site seja sempre exibido para novos visitantes.
+  const { user } = useUser();
 
-  // useEffect é o local correto para efeitos colaterais como a navegação.
-  // Isso será executado após a renderização do componente e sempre que o estado do usuário mudar.
-  useEffect(() => {
-    // Se o estado do usuário foi carregado e temos um usuário REAL (não anônimo),
-    // então devemos redirecionar para o painel.
-    if (!isUserLoading && user && !user.isAnonymous) {
-      router.replace('/dashboard');
-    }
-  }, [user, isUserLoading, router]); // Dependências para o efeito
+  const loginOrDashboardLink = user && !user.isAnonymous ? '/dashboard' : '/login';
 
-  // Enquanto estamos determinando o estado de autenticação do usuário, mostre um carregador.
-  // OU se tivermos um usuário real e estivermos prestes a redirecionar, também mostre um carregador
-  // para evitar que a página de destino pisque brevemente.
-  if (isUserLoading || (user && !user.isAnonymous)) {
-    return (
-      <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background text-foreground">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-muted-foreground">Carregando...</p>
-      </div>
-    );
-  }
-
-  // Se o estado do usuário for carregado e o usuário for nulo (não logado)
-  // ou for anônimo, mostramos a página de apresentação pública.
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="px-4 lg:px-6 h-16 flex items-center border-b">
@@ -46,7 +22,7 @@ export default function HomePage() {
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
           <Button variant="ghost" asChild>
-            <Link href="/login">Entrar</Link>
+            <Link href={loginOrDashboardLink}>Entrar</Link>
           </Button>
           <Button asChild>
             <Link href="/login">Criar Conta</Link>
@@ -65,7 +41,7 @@ export default function HomePage() {
                 Digitalize seus processos, centralize informações e garanta a conformidade com a NBR 21101 de forma inteligente e eficiente.
               </p>
               <Button size="lg" asChild>
-                <Link href="/login">
+                <Link href={loginOrDashboardLink}>
                   Comece Agora
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
@@ -123,7 +99,7 @@ export default function HomePage() {
             </div>
             <div className="mx-auto w-full max-w-sm space-y-2">
                <Button size="lg" className="w-full" asChild>
-                <Link href="/login">Começar a Usar</Link>
+                <Link href={loginOrDashboardLink}>Começar a Usar</Link>
               </Button>
             </div>
           </div>
