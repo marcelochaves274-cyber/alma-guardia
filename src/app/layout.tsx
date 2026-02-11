@@ -1,10 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { AppSettingsProvider } from '@/context/app-settings-context';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
-import { HelpProvider } from '@/context/help-context';
-import { ProfileProvider } from '@/context/profile-context';
+import { Providers } from '@/components/providers';
 
 const iconUrl = "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Logo%20da%20SGS%20APP%20Arenito.jpg?alt=media&token=56ad9d35-b9ec-42cd-bc0f-d9ade32406db";
 
@@ -33,16 +30,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <FirebaseClientProvider>
-          <ProfileProvider>
-            <AppSettingsProvider>
-              <HelpProvider>
-                {children}
-              </HelpProvider>
-            </AppSettingsProvider>
-          </ProfileProvider>
-          <Toaster />
-        </FirebaseClientProvider>
+        <Providers>
+          {children}
+        </Providers>
+        <Toaster />
       </body>
     </html>
   );
