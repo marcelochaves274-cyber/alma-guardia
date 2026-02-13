@@ -54,8 +54,8 @@ export default function SolicitarInformacoesPage() {
         className="flex min-h-screen w-full flex-col items-center justify-center bg-cover bg-center p-4"
         style={{ backgroundImage: `url('https://i.ibb.co/TxQh0pBC/Fundo-Rel-Informa-es.png')` }}
     >
-      <div className="relative w-full">
-        <Card className="mx-auto w-full max-w-lg border-none bg-card/10 shadow-2xl backdrop-blur-sm">
+      
+        <Card className="mx-auto w-full max-w-lg border-none bg-card/10 shadow-2xl">
           <CardHeader className="text-center">
             <Link href="/" className="absolute left-4 top-4 text-muted-foreground hover:text-foreground transition-colors" aria-label="Voltar para a página inicial">
               <Button variant="ghost" size="icon">
@@ -123,7 +123,7 @@ export default function SolicitarInformacoesPage() {
             </CardFooter>
           </form>
         </Card>
-        </div>
+        
     </div>
   );
 }
