@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { SgsAppLogo } from '@/components/icons';
 import { ArrowRight, ShieldCheck, HardHat, FileText, BarChart, CheckCircle, Smartphone, BarChart3, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,13 +12,9 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import Image from 'next/image';
-import { useAppSettings } from '@/context/app-settings-context';
-import { Skeleton } from '@/components/ui/skeleton';
-
 
 export default function HomePage() {
   const loginOrDashboardLink = '/login';
-  const { logoUrl, isLoading: isSettingsLoading } = useAppSettings();
 
   const features = [
     {
@@ -77,34 +72,34 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 px-4 lg:px-6 h-20 flex items-center border-b bg-background/95 backdrop-blur-sm">
-        <Link className="flex items-center justify-center gap-2" href="/">
-          {isSettingsLoading ? (
-            <Skeleton className="h-8 w-8 rounded-md" />
-          ) : logoUrl ? (
-            <Image
-              src={logoUrl}
+      <header className="sticky top-0 z-50 px-4 lg:px-6 h-24 flex items-center justify-between border-b bg-card/95 backdrop-blur-sm">
+        <div className="flex-1 flex justify-start">
+          <Link className="flex items-center justify-center gap-2" href="/">
+             <Image
+              src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Logo%20da%20SGS%20APP%20Arenito.jpg?alt=media&token=56ad9d35-b9ec-42cd-bc0f-d9ade32406db"
               alt="SGS APP Logo"
-              width={32}
-              height={32}
+              width={56}
+              height={56}
               className="object-contain"
             />
-          ) : (
-            <SgsAppLogo className="h-8 w-8 text-primary" />
-          )}
-          <span className="font-bold text-lg">SGS APP</span>
-        </Link>
-        <nav className="ml-auto flex items-center gap-4 sm:gap-6">
+            <span className="font-bold text-xl">SGS APP</span>
+          </Link>
+        </div>
+        
+        <nav className="hidden md:flex items-center justify-center gap-6">
            <Button variant="ghost" asChild>
             <Link href="#funcionalidades">Funcionalidades</Link>
           </Button>
            <Button variant="ghost" asChild>
             <Link href="#beneficios">Benefícios</Link>
           </Button>
+        </nav>
+
+        <div className="flex-1 flex justify-end">
           <Button variant="secondary" asChild>
             <Link href={loginOrDashboardLink}>Entrar</Link>
           </Button>
-        </nav>
+        </div>
       </header>
 
       <main className="flex-1">
