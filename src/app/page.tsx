@@ -82,24 +82,24 @@ export default function HomePage() {
               height={56}
               className="object-contain"
             />
-            <span className="font-bold text-xl">SGS APP</span>
+            <span className="font-bold text-xl text-primary">SGS APP</span>
           </Link>
         </div>
         
         <nav className="hidden md:flex items-center justify-center gap-6">
-           <Button variant="ghost" asChild className="text-lg">
+           <Button variant="link" asChild className="text-lg">
             <Link href="#funcionalidades">Funcionalidades</Link>
           </Button>
-           <Button variant="ghost" asChild className="text-lg">
+           <Button variant="link" asChild className="text-lg">
             <Link href="#beneficios">Benefícios</Link>
           </Button>
-          <Button variant="ghost" asChild className="text-lg">
+          <Button variant="link" asChild className="text-lg">
             <Link href="/solicitar-informacoes">Solicite Informações</Link>
           </Button>
         </nav>
 
         <div className="flex-1 flex justify-end">
-          <Button variant="secondary" asChild className="text-lg">
+          <Button variant="link" asChild className="text-lg">
             <Link href={loginOrDashboardLink}>Entrar</Link>
           </Button>
         </div>
