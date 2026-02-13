@@ -55,8 +55,8 @@ export default function SolicitarInformacoesPage() {
       style={{ backgroundImage: "url('https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/backgrounds%2Fjungle-stream-background.jpg?alt=media&token=38a80d3f-1d41-4c6e-9848-1c4b81c62642')" }}
       data-ai-hint="jungle stream"
     >
-      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-black/50 p-4">
-        <Card className="w-full max-w-lg shadow-2xl relative bg-card/80 backdrop-blur-md border-none">
+      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-black/60 p-4">
+        <Card className="w-full max-w-lg shadow-2xl relative bg-card/90 backdrop-blur-sm border-none">
           <CardHeader className="text-center">
             <Link href="/" className="absolute left-4 top-4 text-muted-foreground hover:text-foreground transition-colors" aria-label="Voltar para a página inicial">
               <Button variant="ghost" size="icon">

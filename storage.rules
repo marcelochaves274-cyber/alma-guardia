@@ -5,14 +5,18 @@ service firebase.storage {
   match /b/{bucket}/o {
     // Permite que usuários autenticados leiam e gravem arquivos
     // em seu próprio diretório dentro da pasta 'notices'.
-    match /notices/{userId}/{fileName} {
+    match /notices/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Regra pública para a logo da empresa (se aplicável).
-    // Permite que qualquer pessoa (mesmo não autenticada) leia a logo.
-    match /public/logo/{fileName} {
+    // Permite leitura pública da logo do app, que está na raiz.
+    match /Logo da SGS APP Arenito.jpg {
        allow read;
+    }
+
+    // Permite leitura pública de qualquer imagem na pasta 'backgrounds'.
+    match /backgrounds/{imageName} {
+      allow read;
     }
   }
 }
