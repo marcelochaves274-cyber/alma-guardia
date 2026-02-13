@@ -96,17 +96,16 @@ export default function HomePage() {
       <main className="flex-1">
         <section className="w-full py-20 md:py-28 lg:py-32">
           <div className="container grid items-stretch gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
-            <div className="flex flex-col justify-center space-y-6">
-              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl text-primary">
+            <div className="flex flex-col justify-center space-y-6 text-center items-center">
+              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl text-primary">
                 Gestão de Segurança Completa e Inteligente.
               </h1>
               <p className="max-w-[600px] text-muted-foreground md:text-xl">
                 O SGS APP é a plataforma definitiva para digitalizar seus processos de segurança, garantir conformidade e tomar decisões baseadas em dados.
               </p>
-              <Button size="lg" asChild className="w-fit">
+              <Button size="lg" asChild>
                 <Link href="/solicitar-informacoes">
                   Solicite Informações Aqui
-                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
             </div>
