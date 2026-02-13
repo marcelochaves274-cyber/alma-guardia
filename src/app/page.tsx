@@ -87,16 +87,19 @@ export default function HomePage() {
         </div>
         
         <nav className="hidden md:flex items-center justify-center gap-6">
-           <Button variant="ghost" asChild>
+           <Button variant="ghost" asChild className="text-lg">
             <Link href="#funcionalidades">Funcionalidades</Link>
           </Button>
-           <Button variant="ghost" asChild>
+           <Button variant="ghost" asChild className="text-lg">
             <Link href="#beneficios">Benefícios</Link>
+          </Button>
+          <Button variant="ghost" asChild className="text-lg">
+            <Link href="/solicitar-informacoes">Solicite Informações</Link>
           </Button>
         </nav>
 
         <div className="flex-1 flex justify-end">
-          <Button variant="secondary" asChild>
+          <Button variant="secondary" asChild className="text-lg">
             <Link href={loginOrDashboardLink}>Entrar</Link>
           </Button>
         </div>
@@ -112,11 +115,6 @@ export default function HomePage() {
               <p className="max-w-[600px] text-muted-foreground md:text-xl text-center">
                 O SGS APP é a plataforma definitiva para digitalizar seus processos de segurança, garantir conformidade e tomar decisões baseadas em dados.
               </p>
-              <Button size="lg" asChild>
-                <Link href="/solicitar-informacoes">
-                  Solicite Informações Aqui
-                </Link>
-              </Button>
             </div>
             <div className="flex items-center justify-center">
               <Card className="overflow-hidden shadow-2xl border-primary/20 w-full h-full flex flex-col">
