@@ -99,7 +99,7 @@ export default function HomePage() {
         </nav>
 
         <div className="flex-1 flex justify-end">
-          <Button variant="link" asChild className="text-lg">
+          <Button variant="link" asChild className="text-lg hover:no-underline">
             <Link href={loginOrDashboardLink}>Entrar</Link>
           </Button>
         </div>
