@@ -94,35 +94,34 @@ export default function HomePage() {
       </header>
 
       <main className="flex-1">
-        <section className="w-full py-20 md:py-28 lg:py-32 xl:py-40 bg-card/20 relative">
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent z-10"></div>
-          <div className="container px-4 md:px-6 text-center relative z-20">
-            <div className="max-w-4xl mx-auto space-y-6">
-              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl text-primary">
+        <section className="w-full py-20 md:py-28 lg:py-32">
+          <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12 xl:gap-24">
+            <div className="flex flex-col justify-center space-y-6">
+              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl text-primary">
                 Gestão de Segurança Completa e Inteligente.
               </h1>
-              <p className="text-lg text-muted-foreground md:text-xl">
+              <p className="max-w-[600px] text-muted-foreground md:text-xl">
                 O SGS APP é a plataforma definitiva para digitalizar seus processos de segurança, garantir conformidade e tomar decisões baseadas em dados.
               </p>
-              <Button size="lg" asChild>
+              <Button size="lg" asChild className="w-fit">
                 <Link href={loginOrDashboardLink}>
                   Comece Agora
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
             </div>
-            <div className="mt-16 max-w-4xl mx-auto">
-              <Card className="overflow-hidden shadow-2xl border-primary/20">
+            <div className="flex items-center justify-center">
+              <Card className="overflow-hidden shadow-2xl border-primary/20 w-full max-w-lg">
                 <CardContent className="p-0">
                   <div className="aspect-video">
-                     <iframe
-                        className="w-full h-full"
-                        src="https://www.youtube.com/embed/7xVsIRKq1dE?autoplay=1&mute=1&loop=1&playlist=7xVsIRKq1dE&controls=0&showinfo=0&rel=0"
-                        title="YouTube video player"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen>
-                      </iframe>
+                    <iframe
+                      className="w-full h-full"
+                      src="https://www.youtube.com/embed/7xVsIRKq1dE?autoplay=1&mute=1&loop=1&playlist=7xVsIRKq1dE&controls=0&showinfo=0&rel=0"
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen>
+                    </iframe>
                   </div>
                 </CardContent>
               </Card>
@@ -130,7 +129,7 @@ export default function HomePage() {
           </div>
         </section>
         
-        <section id="funcionalidades" className="w-full py-20 md:py-32">
+        <section id="funcionalidades" className="w-full py-20 md:py-32 bg-card/20">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Funcionalidades em Destaque</div>
@@ -179,7 +178,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="w-full py-20 md:py-32 bg-card/20">
+        <section className="w-full py-20 md:py-32">
           <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
             <Image
               src="https://picsum.photos/seed/sgs-cta/600/600"
@@ -205,7 +204,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="beneficios" className="w-full py-20 md:py-32">
+        <section id="beneficios" className="w-full py-20 md:py-32 bg-card/20">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
                <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Nossos Benefícios</div>
