@@ -52,7 +52,7 @@ export default function SolicitarInformacoesPage() {
   return (
     <div 
         className="flex min-h-screen w-full flex-col items-center justify-center bg-cover bg-center p-4"
-        style={{ backgroundImage: `url('https://i.ibb.co/L6V6dG9/Design-sem-nome-1.png')` }}
+        style={{ backgroundImage: `url('https://i.ibb.co/Q3WmHzF/Design-sem-nome-1.png')` }}
     >
       <div className="absolute inset-0 bg-black/60" />
       <div className="relative w-full">
