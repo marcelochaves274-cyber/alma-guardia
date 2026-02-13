@@ -87,19 +87,19 @@ export default function HomePage() {
         </div>
         
         <nav className="hidden md:flex items-center justify-center gap-6">
-           <Button variant="link" asChild className="text-lg">
+           <Button variant="link" asChild className="text-lg text-primary hover:underline">
             <Link href="#funcionalidades">Funcionalidades</Link>
           </Button>
-           <Button variant="link" asChild className="text-lg">
+           <Button variant="link" asChild className="text-lg text-primary hover:underline">
             <Link href="#beneficios">Benefícios</Link>
           </Button>
-          <Button variant="link" asChild className="text-lg">
+          <Button variant="link" asChild className="text-lg text-primary hover:underline">
             <Link href="/solicitar-informacoes">Solicite Informações</Link>
           </Button>
         </nav>
 
         <div className="flex-1 flex justify-end">
-          <Button variant="link" asChild className="text-lg hover:no-underline">
+          <Button variant="link" asChild className="text-lg text-primary hover:no-underline">
             <Link href={loginOrDashboardLink}>Entrar</Link>
           </Button>
         </div>
@@ -110,7 +110,7 @@ export default function HomePage() {
           <div className="container grid items-stretch gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
             <div className="flex flex-col justify-center space-y-6 text-center items-center">
               <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl text-primary">
-                Gestão de Segurança Completa e Inteligente.
+                Sistema de Gestão de Segurança Completa e Inteligente.
               </h1>
               <p className="max-w-[600px] text-muted-foreground md:text-xl text-center">
                 O SGS APP é a plataforma definitiva para digitalizar seus processos de segurança, garantir conformidade e tomar decisões baseadas em dados.
