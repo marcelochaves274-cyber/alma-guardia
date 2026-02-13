@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { SgsAppLogo } from '@/components/icons';
 import { ArrowRight, ShieldCheck, HardHat, FileText, BarChart, CheckCircle, Smartphone, BarChart3, TrendingUp } from 'lucide-react';
@@ -11,10 +13,13 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import Image from 'next/image';
+import { useAppSettings } from '@/context/app-settings-context';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function HomePage() {
   const loginOrDashboardLink = '/login';
+  const { logoUrl, isLoading: isSettingsLoading } = useAppSettings();
 
   const features = [
     {
@@ -72,9 +77,21 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 px-4 lg:px-6 h-16 flex items-center border-b bg-background/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 px-4 lg:px-6 h-20 flex items-center border-b bg-background/95 backdrop-blur-sm">
         <Link className="flex items-center justify-center gap-2" href="/">
-          <SgsAppLogo className="h-6 w-6 text-primary" />
+          {isSettingsLoading ? (
+            <Skeleton className="h-8 w-8 rounded-md" />
+          ) : logoUrl ? (
+            <Image
+              src={logoUrl}
+              alt="SGS APP Logo"
+              width={32}
+              height={32}
+              className="object-contain"
+            />
+          ) : (
+            <SgsAppLogo className="h-8 w-8 text-primary" />
+          )}
           <span className="font-bold text-lg">SGS APP</span>
         </Link>
         <nav className="ml-auto flex items-center gap-4 sm:gap-6">
@@ -87,9 +104,6 @@ export default function HomePage() {
           <Button variant="secondary" asChild>
             <Link href={loginOrDashboardLink}>Entrar</Link>
           </Button>
-          <Button asChild>
-            <Link href="/login">Criar Conta</Link>
-          </Button>
         </nav>
       </header>
 
@@ -100,7 +114,7 @@ export default function HomePage() {
               <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl text-primary">
                 Gestão de Segurança Completa e Inteligente.
               </h1>
-              <p className="max-w-[600px] text-muted-foreground md:text-xl">
+              <p className="max-w-[600px] text-muted-foreground md:text-xl text-center">
                 O SGS APP é a plataforma definitiva para digitalizar seus processos de segurança, garantir conformidade e tomar decisões baseadas em dados.
               </p>
               <Button size="lg" asChild>
