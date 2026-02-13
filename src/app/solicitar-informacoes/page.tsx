@@ -52,7 +52,7 @@ export default function SolicitarInformacoesPage() {
   return (
     <div 
       className="min-h-screen w-full bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url('https://picsum.photos/seed/jungle-stream/1920/1080')" }}
+      style={{ backgroundImage: "url('https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/backgrounds%2Fjungle-stream-background.jpg?alt=media&token=38a80d3f-1d41-4c6e-9848-1c4b81c62642')" }}
       data-ai-hint="jungle stream"
     >
       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-black/50 p-4">
