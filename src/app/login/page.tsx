@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SgsAppLogo } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +34,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import Link from 'next/link';
 
 export default function LoginPage() {
   const { auth: initializedAuth } = initializeFirebase();
@@ -141,6 +142,12 @@ export default function LoginPage() {
           <p className='text-foreground/80'>
             A implementação de um Sistema de Gestão de Segurança (SGS), conforme orienta a NBR 21101, é essencial para garantir um ambiente de trabalho seguro, reduzir riscos de acidentes, atender às exigências legais e melhorar a eficiência operacional, promovendo uma cultura de segurança que beneficia tanto os colaboradores quanto a sustentabilidade da empresa.
           </p>
+          <Button asChild variant="outline" className="mt-8">
+            <Link href="/">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar ao Site
+            </Link>
+          </Button>
         </div>
       </div>
       <div className="flex items-center justify-center p-4">
