@@ -257,12 +257,12 @@ export default function HomePage() {
         <section className="w-full py-20 md:py-24">
           <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
             <Image
-              src="https://picsum.photos/seed/sgs-cta/600/600"
-              alt="Digitalize sua Gestão"
+              src="https://i.ibb.co/JwhBV69n/Conhe-a-Nossos-Planos.jpg"
+              alt="Transformação Digital"
               width={600}
               height={600}
               className="mx-auto aspect-square overflow-hidden rounded-xl object-cover sm:w-full"
-              data-ai-hint="safety audit checklist"
+              data-ai-hint="plans pricing"
             />
             <div className="space-y-4">
               <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">TRANSFORMAÇÃO DIGITAL</div>
