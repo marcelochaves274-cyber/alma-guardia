@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ListTodo, Siren, ShieldCheck, Megaphone, Sprout, HardHat, ClipboardList, Route, BookText, FileText, HeartPulse, Files, Settings, CheckCircle, Smartphone, BarChart3, TrendingUp } from 'lucide-react';
+import { ArrowRight, ListTodo, Siren, ShieldCheck, Megaphone, Sprout, HardHat, ClipboardList, Route, BookText, FileText, HeartPulse, Files, Settings, CheckCircle, Smartphone, BarChart3, TrendingUp, Map } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -100,6 +100,13 @@ export default function HomePage() {
       icon: <Files className="h-10 w-10 text-primary" />,
       image: "https://picsum.photos/seed/sgsdocs/600/400",
       imageHint: "document management"
+    },
+    {
+      title: "Mapa Interativo",
+      description: "Visualize todos os seus registros em um mapa dinâmico. Aplique filtros por tipo, data, local e situação para analisar padrões e tomar decisões estratégicas.",
+      icon: <Map className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/mapa/600/400",
+      imageHint: "interactive map"
     },
     {
       title: "Configurações",
