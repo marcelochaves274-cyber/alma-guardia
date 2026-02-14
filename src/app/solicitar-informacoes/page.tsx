@@ -57,7 +57,7 @@ export default function SolicitarInformacoesPage() {
       
         <Card className="relative mx-auto w-full max-w-lg border-none bg-card/10 shadow-2xl">
           <CardHeader className="text-center">
-            <Link href="/" className="absolute left-4 top-4 text-zinc-800 hover:text-black transition-colors" aria-label="Voltar para a página inicial">
+            <Link href="/" className="absolute left-4 top-4 text-white hover:text-gray-200 transition-colors [text-shadow:0_1px_3px_rgba(0,0,0,0.7)]" aria-label="Voltar para a página inicial">
               <Button variant="ghost">
                   <ArrowLeft className="h-5 w-5 mr-2" />
                   Voltar
@@ -72,12 +72,12 @@ export default function SolicitarInformacoesPage() {
                     height={40}
                     className="object-contain rounded-md"
                 />
-                <span className="text-2xl font-bold text-zinc-900">SGS APP</span>
+                <span className="text-2xl font-bold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.7)]">SGS APP</span>
             </div>
             
             <div className="pt-6">
-                <CardTitle className="text-3xl font-bold text-zinc-800">Solicitar Informações</CardTitle>
-                <CardDescription className="pt-2 text-base text-zinc-700">
+                <CardTitle className="text-3xl font-bold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.7)]">Solicitar Informações</CardTitle>
+                <CardDescription className="pt-2 text-base text-gray-200 [text-shadow:0_1px_3px_rgba(0,0,0,0.7)]">
                     Preencha o formulário e nossa equipe entrará em contato.
                 </CardDescription>
             </div>
@@ -85,7 +85,7 @@ export default function SolicitarInformacoesPage() {
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4 pt-6">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-zinc-800 font-medium">Nome</Label>
+                <Label htmlFor="name" className="text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] font-medium">Nome</Label>
                 <Input
                   id="name"
                   value={name}
@@ -96,7 +96,7 @@ export default function SolicitarInformacoesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="companyName" className="text-zinc-800 font-medium">Nome da Empresa</Label>
+                <Label htmlFor="companyName" className="text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] font-medium">Nome da Empresa</Label>
                 <Input
                   id="companyName"
                   value={companyName}
@@ -107,7 +107,7 @@ export default function SolicitarInformacoesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-zinc-800 font-medium">Email</Label>
+                <Label htmlFor="email" className="text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] font-medium">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -119,7 +119,7 @@ export default function SolicitarInformacoesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-zinc-800 font-medium">Telefone / WhatsApp</Label>
+                <Label htmlFor="phone" className="text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.7)] font-medium">Telefone / WhatsApp</Label>
                 <Input
                   id="phone"
                   type="tel"
