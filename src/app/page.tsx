@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ShieldCheck, HardHat, FileText, Sprout, CheckCircle, Smartphone, BarChart3, TrendingUp } from 'lucide-react';
+import { ArrowRight, ListTodo, Siren, ShieldCheck, Megaphone, Sprout, HardHat, ClipboardList, Route, BookText, FileText, HeartPulse, Files, Settings, CheckCircle, Smartphone, BarChart3, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -18,32 +18,95 @@ export default function HomePage() {
 
   const features = [
     {
-      title: "Gestão Integrada de Riscos",
-      description: "Registre ocorrências, avalie riscos e gerencie tratamentos de forma centralizada, tudo com geolocalização.",
+      title: "Lembretes",
+      description: "Painel central para visualizar pendências como tratamentos atrasados, vistorias de equipamentos e avisos de campo.",
+      icon: <ListTodo className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/lembretes/600/400",
+      imageHint: "dashboard reminders"
+    },
+    {
+      title: "Acidentes/Incidentes",
+      description: "Registre, relate e visualize ocorrências em um mapa interativo para identificar áreas de risco e tomar ações preventivas.",
+      icon: <Siren className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/acidentes/600/400",
+      imageHint: "accident report"
+    },
+    {
+      title: "Tratamento de Risco",
+      description: "Documente riscos, defina tratamentos, monitore a situação (pendente, finalizado) e visualize os pontos em um mapa.",
       icon: <ShieldCheck className="h-10 w-10 text-primary" />,
-      image: "https://picsum.photos/seed/risks/600/400",
-      imageHint: "risk management chart"
+      image: "https://picsum.photos/seed/tratamento/600/400",
+      imageHint: "risk management"
     },
     {
-      title: "Controle de Ativos e Equipamentos",
-      description: "Mantenha um inventário completo dos seus equipamentos, agende e registre vistorias para garantir a conformidade e a segurança.",
-      icon: <HardHat className="h-10 w-10 text-primary" />,
-      image: "https://picsum.photos/seed/equipment/600/400",
-      imageHint: "safety gear inspection"
+      title: "Central de Avisos",
+      description: "Canal direto para a equipe de campo reportar observações, agilizando a comunicação e a resposta da gestão.",
+      icon: <Megaphone className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/avisos/600/400",
+      imageHint: "communication alert"
     },
     {
-      title: "Documentação e Procedimentos Digitais",
-      description: "Acesse e gerencie seus POPs, TCRs, RAMEs e outros documentos essenciais do SGS de qualquer lugar.",
-      icon: <FileText className="h-10 w-10 text-primary" />,
-      image: "https://picsum.photos/seed/docs/600/400",
-      imageHint: "digital documents"
-    },
-    {
-      title: "Monitoramento Ambiental e de Campo",
-      description: "Registre avistamentos de fauna e flora e permita que sua equipe envie avisos de campo com fotos e localização em tempo real.",
+      title: "Fauna Flora Geo",
+      description: "Registre e monitore avistamentos e características ambientais com localização no mapa, para gestão e estudos.",
       icon: <Sprout className="h-10 w-10 text-primary" />,
-      image: "https://picsum.photos/seed/monitoring/600/400",
+      image: "https://picsum.photos/seed/fauna/600/400",
       imageHint: "environmental monitoring"
+    },
+    {
+      title: "Equipamentos",
+      description: "Gerencie o inventário completo de equipamentos, controle vistorias, datas de validade e status de cada item.",
+      icon: <HardHat className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/equipamentos/600/400",
+      imageHint: "safety equipment"
+    },
+    {
+      title: "Avaliação de Riscos",
+      description: "Realize avaliações formais detalhando causa, perigo, dano e controles para cada etapa de uma atividade.",
+      icon: <ClipboardList className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/avaliacao/600/400",
+      imageHint: "risk assessment"
+    },
+    {
+      title: "Atividades",
+      description: "Associe POPs, TCRs e Avaliações de Risco a cada atividade registrada, garantindo conformidade e controle.",
+      icon: <Route className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/atividades/600/400",
+      imageHint: "activity planning"
+    },
+    {
+      title: "POP",
+      description: "Acesse e gerencie seus Procedimentos Operacionais Padrão de forma centralizada e digital.",
+      icon: <BookText className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/pop/600/400",
+      imageHint: "standard procedures"
+    },
+    {
+      title: "TCR",
+      description: "Consulte e gerencie os Termos de Conhecimento de Risco para garantir que todos estejam cientes dos perigos.",
+      icon: <FileText className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/tcr/600/400",
+      imageHint: "risk agreement"
+    },
+    {
+      title: "RAME",
+      description: "Visualize o Recurso de Atendimento Médico de Emergência, com edição online para administradores.",
+      icon: <HeartPulse className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/rame/600/400",
+      imageHint: "emergency plan"
+    },
+    {
+      title: "Documentos SGS",
+      description: "Centralize todos os documentos essenciais do seu Sistema de Gestão de Segurança em um único lugar.",
+      icon: <Files className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/sgsdocs/600/400",
+      imageHint: "document management"
+    },
+    {
+      title: "Configurações",
+      description: "Personalize o sistema, gerencie perfis de acesso e configure as opções dos formulários para adaptar o app à sua realidade.",
+      icon: <Settings className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/configuracoes/600/400",
+      imageHint: "system settings"
     }
   ];
 
@@ -138,10 +201,10 @@ export default function HomePage() {
         <section id="funcionalidades" className="w-full py-20 md:py-24 bg-card/20">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-              <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Funcionalidades em Destaque</div>
+              <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Funcionalidades do SGS APP</div>
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Uma Ferramenta para Cada Necessidade</h2>
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                Centralize toda a sua operação de segurança em uma plataforma poderosa e intuitiva.
+                Explore os módulos que transformam a gestão de segurança da sua operação, tornando-a mais digital, inteligente e em conformidade.
               </p>
             </div>
             <Carousel
