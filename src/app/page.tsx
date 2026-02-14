@@ -321,7 +321,7 @@ export default function HomePage() {
             </div>
             <div className="mx-auto w-full max-w-sm space-y-2">
                <Button size="lg" className="w-full" asChild>
-                <Link href={loginOrDashboardLink}>Começar Gratuitamente</Link>
+                <Link href={loginOrDashboardLink}>Faça um mês de teste gratuito</Link>
               </Button>
             </div>
           </div>
