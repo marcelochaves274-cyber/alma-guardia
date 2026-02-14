@@ -12,8 +12,16 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
 
 export default function HomePage() {
+  const { toast } = useToast();
+  const handleComingSoon = () => {
+    toast({
+      title: 'Aguarde',
+      description: 'Esta funcionalidade estará disponível em breve.',
+    });
+  };
   const loginOrDashboardLink = '/login';
 
   const features = [
@@ -279,7 +287,7 @@ export default function HomePage() {
                   <CardDescription className="text-4xl font-bold text-primary">R$9.500,00</CardDescription>
                 </Card>
               </div>
-              <Button size="lg" className="w-full sm:w-auto mt-4">
+              <Button size="lg" className="w-full sm:w-auto mt-4" onClick={handleComingSoon}>
                 Faça um mês de teste gratuito
               </Button>
             </div>
@@ -320,8 +328,8 @@ export default function HomePage() {
               </p>
             </div>
             <div className="mx-auto w-full max-w-sm space-y-2">
-               <Button size="lg" className="w-full" asChild>
-                <Link href={loginOrDashboardLink}>Faça um mês de teste gratuito</Link>
+               <Button size="lg" className="w-full" onClick={handleComingSoon}>
+                Faça um mês de teste gratuito
               </Button>
             </div>
           </div>
