@@ -258,23 +258,29 @@ export default function HomePage() {
           <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
             <Image
               src="https://i.ibb.co/JwhBV69n/Conhe-a-Nossos-Planos.jpg"
-              alt="Transformação Digital"
+              alt="Conheça Nossos Planos"
               width={600}
               height={600}
               className="mx-auto aspect-square overflow-hidden rounded-xl object-cover sm:w-full"
               data-ai-hint="plans pricing"
             />
-            <div className="space-y-4">
-              <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">TRANSFORMAÇÃO DIGITAL</div>
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Digitalize, Otimize, Previna.</h2>
+            <div className="space-y-6">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Conheça Nossos Planos</h2>
               <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                Abandone as planilhas e papéis. Com o SGS APP, você centraliza toda a sua gestão de segurança em uma plataforma intuitiva e acessível, transformando dados em ações preventivas e otimizando cada etapa do seu processo.
+                Escolha o plano que melhor se adapta à sua operação e comece a transformar sua gestão de segurança hoje mesmo. Todos os planos incluem acesso a todas as funcionalidades e suporte dedicado.
               </p>
-              <Button size="lg" asChild>
-                <Link href={loginOrDashboardLink}>
-                  Crie sua Conta Agora
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
+                <Card className="flex flex-col items-center justify-center p-6 text-center bg-card/50">
+                  <CardTitle className="text-2xl mb-2">Plano Mensal</CardTitle>
+                  <CardDescription className="text-4xl font-bold text-primary">R$950,00</CardDescription>
+                </Card>
+                <Card className="flex flex-col items-center justify-center p-6 text-center bg-card/50">
+                  <CardTitle className="text-2xl mb-2">Plano Anual</CardTitle>
+                  <CardDescription className="text-4xl font-bold text-primary">R$9.500,00</CardDescription>
+                </Card>
+              </div>
+              <Button size="lg" className="w-full sm:w-auto mt-4">
+                Faça um mês de teste gratuito
               </Button>
             </div>
           </div>
