@@ -6,9 +6,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { SgsAppLogo } from '@/components/icons';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function SolicitarInformacoesPage() {
   const { toast } = useToast();
@@ -55,23 +55,34 @@ export default function SolicitarInformacoesPage() {
         style={{ backgroundImage: `url('https://i.ibb.co/TxQh0pBC/Fundo-Rel-Informa-es.png')` }}
     >
       
-        <Card className="mx-auto w-full max-w-lg border-none bg-card/10 shadow-2xl">
+        <Card className="mx-auto w-full max-w-lg border-none bg-card/10 shadow-2xl backdrop-blur-sm">
           <CardHeader className="text-center">
             <Link href="/" className="absolute left-4 top-4 text-muted-foreground hover:text-foreground transition-colors" aria-label="Voltar para a página inicial">
               <Button variant="ghost" size="icon">
                   <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <div className="mb-4 flex justify-center pt-8 md:pt-0">
-              <SgsAppLogo className="h-12 w-12 text-primary" />
+            
+            <div className="flex justify-center items-center gap-3 pt-8 md:pt-0">
+                <Image
+                    src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Logo%20da%20SGS%20APP%20Arenito.jpg?alt=media&token=56ad9d35-b9ec-42cd-bc0f-d9ade32406db"
+                    alt="SGS APP Logo"
+                    width={40}
+                    height={40}
+                    className="object-contain rounded-md"
+                />
+                <span className="text-2xl font-bold text-primary">SGS APP</span>
             </div>
-            <CardTitle className="text-2xl">Solicitar Informações</CardTitle>
-            <CardDescription>
-              Preencha o formulário e nossa equipe entrará em contato.
-            </CardDescription>
+            
+            <div className="pt-6">
+                <CardTitle className="text-3xl font-bold">Solicitar Informações</CardTitle>
+                <CardDescription className="pt-2 text-base text-foreground/90">
+                    Preencha o formulário e nossa equipe entrará em contato.
+                </CardDescription>
+            </div>
           </CardHeader>
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome</Label>
                 <Input
