@@ -55,11 +55,12 @@ export default function SolicitarInformacoesPage() {
         style={{ backgroundImage: `url('https://i.ibb.co/TxQh0pBC/Fundo-Rel-Informa-es.png')` }}
     >
       
-        <Card className="relative mx-auto w-full max-w-lg border-none bg-card/10 shadow-2xl">
+        <Card className="relative mx-auto w-full max-w-lg border-none bg-card/10 shadow-2xl backdrop-blur-sm">
           <CardHeader className="text-center">
             <Link href="/" className="absolute left-4 top-4 text-muted-foreground hover:text-foreground transition-colors" aria-label="Voltar para a página inicial">
-              <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-5 w-5" />
+              <Button variant="ghost">
+                  <ArrowLeft className="h-5 w-5 mr-2" />
+                  Voltar
               </Button>
             </Link>
             
