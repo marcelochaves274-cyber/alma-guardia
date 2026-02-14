@@ -389,12 +389,12 @@ export default function HomePage() {
           <div className="mt-12 border-t border-muted-foreground/20 pt-6 flex flex-col sm:flex-row items-center justify-between">
              <p className="text-xs text-muted-foreground">&copy; 2024 SGS APP. Todos os direitos reservados.</p>
              <nav className="flex gap-4 sm:gap-6 mt-4 sm:mt-0">
-                <Link className="text-xs hover:underline underline-offset-4" href="#">
+                <button onClick={handleComingSoon} className="text-xs hover:underline underline-offset-4">
                     Termos de Serviço
-                </Link>
-                <Link className="text-xs hover:underline underline-offset-4" href="#">
+                </button>
+                <button onClick={handleComingSoon} className="text-xs hover:underline underline-offset-4">
                     Política de Privacidade
-                </Link>
+                </button>
              </nav>
           </div>
         </div>
