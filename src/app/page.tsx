@@ -265,10 +265,10 @@ export default function HomePage() {
               data-ai-hint="safety audit checklist"
             />
             <div className="space-y-4">
-              <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">TEXTO AQUI</div>
+              <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">TRANSFORMAÇÃO DIGITAL</div>
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Digitalize, Otimize, Previna.</h2>
               <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                TEXTO AQUI
+                Abandone as planilhas e papéis. Com o SGS APP, você centraliza toda a sua gestão de segurança em uma plataforma intuitiva e acessível, transformando dados em ações preventivas e otimizando cada etapa do seu processo.
               </p>
               <Button size="lg" asChild>
                 <Link href={loginOrDashboardLink}>
@@ -286,7 +286,7 @@ export default function HomePage() {
                <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Nossos Benefícios</div>
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Por que escolher o SGS APP?</h2>
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                TEXTO AQUI
+                Mais do que um aplicativo, o SGS APP é o seu parceiro estratégico para uma cultura de segurança robusta e eficiente. Centralize informações, digitalize processos e tome decisões baseadas em dados para elevar a segurança da sua operação a um novo patamar de excelência.
               </p>
             </div>
             <div className="mx-auto grid max-w-5xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -326,10 +326,10 @@ export default function HomePage() {
         <p className="text-xs text-muted-foreground">&copy; 2024 SGS APP. Todos os direitos reservados.</p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           <Link className="text-xs hover:underline underline-offset-4" href="#">
-            TEXTO AQUI
+            Termos de Serviço
           </Link>
           <Link className="text-xs hover:underline underline-offset-4" href="#">
-            TEXTO AQUI
+            Política de Privacidade
           </Link>
         </nav>
       </footer>
