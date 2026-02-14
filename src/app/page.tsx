@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ListTodo, Siren, ShieldCheck, Megaphone, Sprout, HardHat, ClipboardList, Route, BookText, FileText, HeartPulse, Files, Settings, CheckCircle, Smartphone, BarChart3, TrendingUp, Map } from 'lucide-react';
+import { ArrowRight, ListTodo, Siren, ShieldCheck, Megaphone, Sprout, HardHat, ClipboardList, Route, BookText, FileText, HeartPulse, Files, Settings, CheckCircle, Smartphone, BarChart3, TrendingUp, Map, Phone, Instagram } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -328,16 +328,68 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-muted-foreground">&copy; 2024 SGS APP. Todos os direitos reservados.</p>
-        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-xs hover:underline underline-offset-4" href="#">
-            Termos de Serviço
-          </Link>
-          <Link className="text-xs hover:underline underline-offset-4" href="#">
-            Política de Privacidade
-          </Link>
-        </nav>
+      <footer className="bg-card/90 text-card-foreground border-t">
+        <div className="container mx-auto py-12 px-4 md:px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            
+            <div className="lg:col-span-2 space-y-4">
+              <Link className="flex items-center gap-2" href="/">
+                <Image
+                  src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Logo%20da%20SGS%20APP%20Arenito.jpg?alt=media&token=56ad9d35-b9ec-42cd-bc0f-d9ade32406db"
+                  alt="SGS APP Logo"
+                  width={40}
+                  height={40}
+                  className="object-contain rounded-md"
+                />
+                <span className="font-bold text-xl">SGS APP</span>
+              </Link>
+              <p className="text-sm text-muted-foreground">ALMA softwares e soluções Ltda</p>
+              <p className="text-sm text-muted-foreground">CNPJ: 00.000.000/0001-00</p>
+              <p className="text-sm text-muted-foreground">Peri Pereira Costa. Setor Cercadinho - Distrito de Itaiacoca, Ponta Grossa - PR, 84110-000</p>
+              <div className="flex space-x-4 mt-4">
+                <Link href="/solicitar-informacoes" aria-label="WhatsApp">
+                  <Phone className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
+                </Link>
+                <a href="https://www.instagram.com/_marcelovaz" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                  <Instagram className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
+                </a>
+              </div>
+            </div>
+
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-8 lg:col-span-2">
+              <div>
+                <h4 className="font-semibold mb-3">
+                    <Link href="#funcionalidades" className="hover:underline">Funcionalidades</Link>
+                </h4>
+                <p className="text-sm text-muted-foreground">Explore os módulos e recursos que o SGS APP oferece para digitalizar sua gestão.</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-3">
+                    <Link href="#beneficios" className="hover:underline">Benefícios</Link>
+                </h4>
+                <p className="text-sm text-muted-foreground">Veja como nossa plataforma pode aumentar a segurança e eficiência da sua operação.</p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-3">
+                    <Link href="/solicitar-informacoes" className="hover:underline">Contato</Link>
+                </h4>
+                <p className="text-sm text-muted-foreground">Tire dúvidas, agende uma demonstração ou comece seu teste gratuito.</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-12 border-t border-muted-foreground/20 pt-6 flex flex-col sm:flex-row items-center justify-between">
+             <p className="text-xs text-muted-foreground">&copy; 2024 SGS APP. Todos os direitos reservados.</p>
+             <nav className="flex gap-4 sm:gap-6 mt-4 sm:mt-0">
+                <Link className="text-xs hover:underline underline-offset-4" href="#">
+                    Termos de Serviço
+                </Link>
+                <Link className="text-xs hover:underline underline-offset-4" href="#">
+                    Política de Privacidade
+                </Link>
+             </nav>
+          </div>
+        </div>
       </footer>
     </div>
   );
