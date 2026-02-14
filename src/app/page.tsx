@@ -317,6 +317,40 @@ export default function HomePage() {
           </div>
         </section>
 
+        <section className="w-full py-20 md:py-24">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Veja o que nossos clientes têm a dizer sobre o SGS APP</h2>
+            </div>
+            <div className="mx-auto grid max-w-5xl items-center gap-8 sm:grid-cols-2">
+              <Card className="overflow-hidden shadow-2xl border-primary/20">
+                <CardContent className="p-0 aspect-video">
+                    <iframe
+                      className="w-full h-full"
+                      src="https://www.youtube.com/embed/7xVsIRKq1dE?controls=1&rel=0&showinfo=0"
+                      title="YouTube video player 1"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen>
+                    </iframe>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden shadow-2xl border-primary/20">
+                <CardContent className="p-0 aspect-video">
+                    <iframe
+                      className="w-full h-full"
+                      src="https://www.youtube.com/embed/7xVsIRKq1dE?controls=1&rel=0&showinfo=0"
+                      title="YouTube video player 2"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen>
+                    </iframe>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
         <section className="w-full py-20 md:py-24 bg-card/20 border-t">
           <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6">
             <div className="space-y-3">
