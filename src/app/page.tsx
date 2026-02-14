@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ShieldCheck, HardHat, FileText, BarChart, CheckCircle, Smartphone, BarChart3, TrendingUp } from 'lucide-react';
+import { ArrowRight, ShieldCheck, HardHat, FileText, Sprout, CheckCircle, Smartphone, BarChart3, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -18,32 +18,32 @@ export default function HomePage() {
 
   const features = [
     {
-      title: "Gestão de Riscos e Ocorrências",
-      description: "Registre, analise e trate riscos e incidentes de forma centralizada.",
+      title: "Gestão Integrada de Riscos",
+      description: "Registre ocorrências, avalie riscos e gerencie tratamentos de forma centralizada, tudo com geolocalização.",
       icon: <ShieldCheck className="h-10 w-10 text-primary" />,
-      image: "https://picsum.photos/seed/sgs1/600/400",
-      imageHint: "safety management"
+      image: "https://picsum.photos/seed/risks/600/400",
+      imageHint: "risk management chart"
     },
     {
-      title: "Controle de Equipamentos",
-      description: "Gerencie o inventário e as vistorias de todos os seus equipamentos de segurança.",
+      title: "Controle de Ativos e Equipamentos",
+      description: "Mantenha um inventário completo dos seus equipamentos, agende e registre vistorias para garantir a conformidade e a segurança.",
       icon: <HardHat className="h-10 w-10 text-primary" />,
-      image: "https://picsum.photos/seed/sgs2/600/400",
-      imageHint: "safety equipment"
+      image: "https://picsum.photos/seed/equipment/600/400",
+      imageHint: "safety gear inspection"
     },
     {
-      title: "Documentação Digital",
-      description: "Acesse e gerencie POPs, TCRs e outros documentos importantes em um só lugar.",
+      title: "Documentação e Procedimentos Digitais",
+      description: "Acesse e gerencie seus POPs, TCRs, RAMEs e outros documentos essenciais do SGS de qualquer lugar.",
       icon: <FileText className="h-10 w-10 text-primary" />,
-      image: "https://picsum.photos/seed/sgs3/600/400",
-      imageHint: "documents"
+      image: "https://picsum.photos/seed/docs/600/400",
+      imageHint: "digital documents"
     },
     {
-      title: "Relatórios e Mapas",
-      description: "Visualize dados com relatórios detalhados e mapas interativos georreferenciados.",
-      icon: <BarChart className="h-10 w-10 text-primary" />,
-      image: "https://picsum.photos/seed/sgs4/600/400",
-      imageHint: "charts map"
+      title: "Monitoramento Ambiental e de Campo",
+      description: "Registre avistamentos de fauna e flora e permita que sua equipe envie avisos de campo com fotos e localização em tempo real.",
+      icon: <Sprout className="h-10 w-10 text-primary" />,
+      image: "https://picsum.photos/seed/monitoring/600/400",
+      imageHint: "environmental monitoring"
     }
   ];
 
