@@ -159,10 +159,14 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     if (!mapContainerRef.current) return;
     const { naturalWidth, naturalHeight } = e.currentTarget;
-    const containerRect = mapContainerRef.current.getBoundingClientRect();
+    const container = mapContainerRef.current;
+    
+    // Use clientWidth/clientHeight to get dimensions inside the border
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
     
     const imageAspectRatio = naturalWidth / naturalHeight;
-    const containerAspectRatio = containerRect.width / containerRect.height;
+    const containerAspectRatio = containerWidth / containerHeight;
     
     let renderedWidth: number;
     let renderedHeight: number;
@@ -170,13 +174,13 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
     let offsetY = 0;
 
     if (imageAspectRatio > containerAspectRatio) {
-      renderedWidth = containerRect.width;
+      renderedWidth = containerWidth;
       renderedHeight = renderedWidth / imageAspectRatio;
-      offsetY = (containerRect.height - renderedHeight) / 2;
+      offsetY = (containerHeight - renderedHeight) / 2;
     } else {
-      renderedHeight = containerRect.height;
+      renderedHeight = containerHeight;
       renderedWidth = renderedHeight * imageAspectRatio;
-      offsetX = (containerRect.width - renderedWidth) / 2;
+      offsetX = (containerWidth - renderedWidth) / 2;
     }
 
     setImageRenderMetrics({ offsetX, offsetY, renderedWidth, renderedHeight });
@@ -187,9 +191,12 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
     
     const { offsetX, offsetY, renderedWidth, renderedHeight } = imageRenderMetrics;
     const rect = e.currentTarget.getBoundingClientRect();
+    const style = window.getComputedStyle(e.currentTarget);
+    const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+    const borderTop = parseFloat(style.borderTopWidth) || 0;
 
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
+    const clickX = e.clientX - rect.left - borderLeft;
+    const clickY = e.clientY - rect.top - borderTop;
 
     if (
         clickX >= offsetX &&

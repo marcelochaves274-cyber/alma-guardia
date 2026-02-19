@@ -327,12 +327,15 @@ export function TreatmentMapReport() {
   const calculateMetrics = useCallback((container: HTMLDivElement | null, naturalDims: {width: number, height: number} | null) => {
     if (!container || !naturalDims) return null;
 
-    const containerRect = container.getBoundingClientRect();
-    if (containerRect.width === 0 || containerRect.height === 0) return null;
+    // Use clientWidth/Height to exclude border dimensions from calculations
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
+    if (containerWidth === 0 || containerHeight === 0) return null;
 
     const { width: naturalWidth, height: naturalHeight } = naturalDims;
     const imageAspectRatio = naturalWidth / naturalHeight;
-    const containerAspectRatio = containerRect.width / containerRect.height;
+    const containerAspectRatio = containerWidth / containerHeight;
     
     let renderedWidth: number;
     let renderedHeight: number;
@@ -340,13 +343,13 @@ export function TreatmentMapReport() {
     let offsetY = 0;
 
     if (imageAspectRatio > containerAspectRatio) {
-      renderedWidth = containerRect.width;
+      renderedWidth = containerWidth;
       renderedHeight = renderedWidth / imageAspectRatio;
-      offsetY = (containerRect.height - renderedHeight) / 2;
+      offsetY = (containerHeight - renderedHeight) / 2;
     } else {
-      renderedHeight = containerRect.height;
+      renderedHeight = containerHeight;
       renderedWidth = renderedHeight * imageAspectRatio;
-      offsetX = (containerRect.width - renderedWidth) / 2;
+      offsetX = (containerWidth - renderedWidth) / 2;
     }
 
     return { offsetX, offsetY, renderedWidth, renderedHeight, naturalWidth, naturalHeight };
