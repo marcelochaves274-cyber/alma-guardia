@@ -311,7 +311,6 @@ export function FaunaFloraGeoMapReport() {
         if (metrics) setMainMapRenderMetrics(metrics);
     }
     
-    observerCallback();
     const resizeObserver = new ResizeObserver(observerCallback);
     resizeObserver.observe(container);
     return () => resizeObserver.disconnect();
@@ -327,7 +326,6 @@ export function FaunaFloraGeoMapReport() {
         if (metrics) setModalImageRenderMetrics(metrics);
     }
     
-    observerCallback();
     const resizeObserver = new ResizeObserver(observerCallback);
     resizeObserver.observe(container);
     return () => resizeObserver.disconnect();
