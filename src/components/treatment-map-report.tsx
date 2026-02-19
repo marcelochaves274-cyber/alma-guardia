@@ -628,7 +628,7 @@ export function TreatmentMapReport() {
                   </CardDescription>
                 </div>
                   <DialogTrigger asChild>
-                    <Button variant="outline" disabled={isLoadingMap || !mapUrl}>
+                    <Button variant="outline" disabled={isLoadingMap || !mapUrl || clusters.length === 0}>
                         <ZoomIn className="mr-2 h-4 w-4" /> Ampliar Mapa
                     </Button>
                   </DialogTrigger>
