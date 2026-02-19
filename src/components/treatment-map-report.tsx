@@ -321,9 +321,7 @@ export function TreatmentMapReport() {
   }
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (!naturalImageDimensions) {
-      setNaturalImageDimensions({ width: e.currentTarget.naturalWidth, height: e.currentTarget.naturalHeight });
-    }
+    setNaturalImageDimensions({ width: e.currentTarget.naturalWidth, height: e.currentTarget.naturalHeight });
   };
 
   const calculateMetrics = useCallback((container: HTMLDivElement | null, naturalDims: {width: number, height: number} | null) => {
