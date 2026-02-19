@@ -139,6 +139,8 @@ export function TreatmentMapReport() {
   const [isClient, setIsClient] = useState(false);
   const [clientToday, setClientToday] = useState<Date | null>(null);
 
+  const [naturalImageDimensions, setNaturalImageDimensions] = useState<{width: number, height: number} | null>(null);
+
   // State for main map
   const [mainMapRenderMetrics, setMainMapRenderMetrics] = useState<ImageRenderMetrics | null>(null);
   const mainMapContainerRef = useRef<HTMLDivElement>(null);
@@ -318,35 +320,70 @@ export function TreatmentMapReport() {
     setFilterSituation([]);
   }
 
-  const handleImageLoad = (
-    e: React.SyntheticEvent<HTMLImageElement>,
-    containerRef: React.RefObject<HTMLDivElement>,
-    setMetrics: React.Dispatch<React.SetStateAction<ImageRenderMetrics | null>>
-  ) => {
-      if (!containerRef.current) return;
-      const { naturalWidth, naturalHeight } = e.currentTarget;
-      const containerRect = containerRef.current.getBoundingClientRect();
-      
-      const imageAspectRatio = naturalWidth / naturalHeight;
-      const containerAspectRatio = containerRect.width / containerRect.height;
-      
-      let renderedWidth: number;
-      let renderedHeight: number;
-      let offsetX = 0;
-      let offsetY = 0;
-  
-      if (imageAspectRatio > containerAspectRatio) {
-        renderedWidth = containerRect.width;
-        renderedHeight = renderedWidth / imageAspectRatio;
-        offsetY = (containerRect.height - renderedHeight) / 2;
-      } else {
-        renderedHeight = containerRect.height;
-        renderedWidth = renderedHeight * imageAspectRatio;
-        offsetX = (containerRect.width - renderedWidth) / 2;
-      }
-  
-      setMetrics({ offsetX, offsetY, renderedWidth, renderedHeight, naturalWidth, naturalHeight });
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    if (!naturalImageDimensions) {
+      setNaturalImageDimensions({ width: e.currentTarget.naturalWidth, height: e.currentTarget.naturalHeight });
+    }
   };
+
+  const calculateMetrics = useCallback((container: HTMLDivElement | null, naturalDims: {width: number, height: number} | null) => {
+    if (!container || !naturalDims) return null;
+
+    const containerRect = container.getBoundingClientRect();
+    if (containerRect.width === 0 || containerRect.height === 0) return null;
+
+    const { width: naturalWidth, height: naturalHeight } = naturalDims;
+    const imageAspectRatio = naturalWidth / naturalHeight;
+    const containerAspectRatio = containerRect.width / containerRect.height;
+    
+    let renderedWidth: number;
+    let renderedHeight: number;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (imageAspectRatio > containerAspectRatio) {
+      renderedWidth = containerRect.width;
+      renderedHeight = renderedWidth / imageAspectRatio;
+      offsetY = (containerRect.height - renderedHeight) / 2;
+    } else {
+      renderedHeight = containerRect.height;
+      renderedWidth = renderedHeight * imageAspectRatio;
+      offsetX = (containerRect.width - renderedWidth) / 2;
+    }
+
+    return { offsetX, offsetY, renderedWidth, renderedHeight, naturalWidth, naturalHeight };
+  }, []);
+
+  useEffect(() => {
+    const container = mainMapContainerRef.current;
+    if (!container || !naturalImageDimensions) return;
+
+    const observerCallback = () => {
+        const metrics = calculateMetrics(container, naturalImageDimensions);
+        if (metrics) setMainMapRenderMetrics(metrics);
+    }
+    
+    observerCallback();
+    const resizeObserver = new ResizeObserver(observerCallback);
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  }, [naturalImageDimensions, calculateMetrics]);
+
+  useEffect(() => {
+    if (!isMapModalOpen) return;
+    const container = modalMapContainerRef.current;
+    if (!container || !naturalImageDimensions) return;
+
+    const observerCallback = () => {
+        const metrics = calculateMetrics(container, naturalImageDimensions);
+        if (metrics) setModalImageRenderMetrics(metrics);
+    }
+    
+    observerCallback();
+    const resizeObserver = new ResizeObserver(observerCallback);
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  }, [naturalImageDimensions, calculateMetrics, isMapModalOpen]);
 
   const clampPosition = useCallback((pos: {x: number; y: number; scale: number}) => {
     if (!modalMapContainerRef.current || !modalImageRenderMetrics) return pos;
@@ -610,7 +647,7 @@ export function TreatmentMapReport() {
                         alt="Mapa de tratamentos"
                         fill
                         className="object-contain"
-                        onLoad={(e) => handleImageLoad(e, mainMapContainerRef, setMainMapRenderMetrics)}
+                        onLoad={handleImageLoad}
                         onDragStart={(e) => e.preventDefault()}
                     />
                     {mainMapRenderMetrics && (
@@ -659,7 +696,7 @@ export function TreatmentMapReport() {
                                 alt="Mapa ampliado"
                                 fill
                                 className="object-contain"
-                                onLoad={(e) => handleImageLoad(e, modalMapContainerRef, setModalImageRenderMetrics)}
+                                onLoad={handleImageLoad}
                             />
                             {modalImageRenderMetrics && (
                             <div
