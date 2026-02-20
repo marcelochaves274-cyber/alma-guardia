@@ -318,9 +318,6 @@ export function GraphicsReport() {
   const filtersForTooltip = {
     filteredData,
     reportType,
-    filterYear,
-    filterType,
-    filterLocation,
   };
 
   const areAllFiltersActive = filterYear.length > 0 && filterType.length > 0 && filterLocation.length > 0;
@@ -393,18 +390,21 @@ export function GraphicsReport() {
               </SelectContent>
             </Select>
           </div>
-          {reportType && renderFilters()}
-          {reportType && <p className="text-sm text-muted-foreground pt-2 text-center">Para exibir o gráfico, é necessário ter uma seleção em todos os filtros: Ano, Tipo e Local.</p>}
+          {reportType && (
+            <>
+              {renderFilters()}
+              <p className="text-sm text-muted-foreground pt-2 text-center">Para exibir o gráfico, é necessário ter ao menos uma seleção em todos os filtros: Ano, Tipo e Local.</p>
+            </>
+          )}
         </CardContent>
       </Card>
       
       <Card>
         <CardHeader>
-            <CardTitle>Resultados</CardTitle>
             {showChart && filterYear.length > 0 && (
-                <CardDescription className="text-foreground">
+                <CardTitle className="text-foreground">
                     Exibindo: {filterYear.join(' - ')}
-                </CardDescription>
+                </CardTitle>
             )}
         </CardHeader>
         <CardContent className="pt-0">
@@ -426,7 +426,9 @@ export function GraphicsReport() {
                     "Selecione um tipo de relatório para começar."
                 ) : showNoDataMessage ? (
                     "Nenhum dado para exibir com os filtros selecionados."
-                ) : null}
+                ) : (
+                    reportType && <p>Para exibir o gráfico, é necessário ter ao menos uma seleção em todos os filtros: Ano, Tipo e Local.</p>
+                )}
             </div>
         </CardContent>
       </Card>
