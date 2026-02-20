@@ -71,15 +71,26 @@ const monthColors = [
   '#E7E9ED', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF5722'
 ];
 
-const CustomTooltip = ({ active, payload, label, filters }: any) => {
+const CustomTooltip = ({ active, payload, label, reportType, filteredData, filters }: any) => {
   if (active && payload && payload.length) {
-    const filteredPayload = payload.filter((p: any) => p.value > 0);
-    if (filteredPayload.length === 0) return null;
-
+    const typeName = label;
     const { filterYear, filterMonths, filterType, filterLocation, typeOptions, locationOptions } = filters;
 
+    const locationField = reportType === 'occurrences' ? 'occurrenceLocation' : reportType === 'treatments' ? 'treatmentLocation' : 'location';
+    const typeField = reportType === 'occurrences' ? 'occurrenceType' : reportType === 'treatments' ? 'treatmentType' : 'speciesType';
+
+    const itemsForType = filteredData.filter((item: any) => (item[typeField] || 'Outros') === typeName);
+
+    const countsByLocation = itemsForType.reduce((acc: any, item: any) => {
+        const loc = item[locationField] || 'Sem Local';
+        acc[loc] = (acc[loc] || 0) + 1;
+        return acc;
+    }, {});
+    
+    const locationEntries = Object.entries(countsByLocation).filter(([, count]) => (count as number) > 0);
+
+
     const renderFilterList = (title: string, selected: string[], allOptions?: {label:string, value:string}[]) => {
-      // Don't render if "Todos" is implied
       if (selected.length === 0) return null;
       
       const labels = allOptions 
@@ -102,17 +113,19 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
             <p className="font-bold text-lg text-card-foreground">{label}</p>
         </div>
         
-        <ul className="list-none p-0 my-3 space-y-1.5">
-          {filteredPayload.map((entry: any, index: number) => (
-            <li key={`item-${index}`} className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: entry.color }} />
-                <span className="text-muted-foreground">{entry.name}</span>
-              </div>
-              <span className="font-semibold text-foreground">{entry.value}</span>
-            </li>
-          ))}
-        </ul>
+        {locationEntries.length > 0 && (
+            <ul className="list-none p-0 my-3 space-y-1.5">
+            {locationEntries.map(([location, count], index) => (
+                <li key={`item-${index}`} className="flex items-center justify-between">
+                <div className="flex items-center">
+                    <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: payload[0].color }} />
+                    <span className="text-muted-foreground">{location}</span>
+                </div>
+                <span className="font-semibold text-foreground">{count as number}</span>
+                </li>
+            ))}
+            </ul>
+        )}
 
         {hasFilters && (
             <div className="border-t pt-2 mt-2 space-y-1.5 text-xs">
@@ -343,15 +356,17 @@ export function GraphicsReport() {
                 <Label>Filtrar por Local</Label>
                 <SheetFilter title='Filtrar Locais' options={locationOptions} selected={filterLocation} onChange={setFilterLocation} disabled={isLoading || locations.length === 0} buttonText='Filtrar por Local' />
             </div>
-            <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
+            <div className="flex gap-2">
+                <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
+            </div>
         </div>
       </div>
     );
   };
   
-  const areFiltersActive = filterYear.length > 0 || filterMonths.length > 0 || filterType.length > 0 || filterLocation.length > 0;
-  const showChart = !isLoading && reportType && areFiltersActive && chartData.length > 0;
-  const showNoDataMessage = !isLoading && reportType && areFiltersActive && chartData.length === 0;
+  const areAllFiltersActive = filterYear.length > 0 && filterMonths.length > 0 && filterType.length > 0 && filterLocation.length > 0;
+  const showChart = !isLoading && reportType && areAllFiltersActive && chartData.length > 0;
+  const showNoDataMessage = !isLoading && reportType && areAllFiltersActive && chartData.length === 0;
 
   return (
     <div className="space-y-6">
@@ -379,41 +394,37 @@ export function GraphicsReport() {
       <Card>
         <CardHeader>
             <CardTitle>Resultados</CardTitle>
-            {showChart && filterYear.length > 0 && (
+            {showChart && (
                 <CardDescription>
-                    Exibindo dados para o(s) ano(s): {filterYear.join(', ')}
+                    Exibindo: {filterYear.join(' - ')}
                 </CardDescription>
             )}
         </CardHeader>
         <CardContent className="pt-0">
-            {showChart ? (
-                <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                        <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
-                        <YAxis axisLine={false} tickLine={false} allowDecimals={false} />
-                        <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
-                        {months.map((month, index) => (
-                          <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
-                        ))}
-                    </BarChart>
-                </ResponsiveContainer>
-            ) : (
-                <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                    {isLoading ? (
-                         <Skeleton className="h-full w-full" />
-                    ) : showNoDataMessage ? (
-                        "Nenhum dado para exibir com os filtros selecionados."
-                    ) : !reportType ? (
-                        "Selecione um tipo de relatório para começar."
-                    ) : (
-                        "Selecione ao menos um filtro para exibir o gráfico."
-                    )}
-                </div>
-            )}
+            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                {isLoading ? (
+                     <Skeleton className="h-full w-full" />
+                ) : showChart ? (
+                    <ResponsiveContainer width="100%" height={400}>
+                        <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                            <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                            <YAxis width={0} axisLine={false} tickLine={false} />
+                            <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip reportType={reportType} filteredData={filteredData} filters={filtersForTooltip} />} />
+                            {months.map((month, index) => (
+                              <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
+                            ))}
+                        </BarChart>
+                    </ResponsiveContainer>
+                ) : showNoDataMessage ? (
+                    "Nenhum dado para exibir com os filtros selecionados."
+                ) : !reportType ? (
+                    "Selecione um tipo de relatório para começar."
+                ) : (
+                    "Todos os filtros (Ano, Mês, Tipo e Local) devem ser selecionados para exibir o gráfico."
+                )}
+            </div>
         </CardContent>
       </Card>
     </div>
   )
 }
-
-    
