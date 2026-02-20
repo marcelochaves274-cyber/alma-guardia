@@ -41,6 +41,7 @@ import { ProfileSelector } from './profile-selector';
 import { useProfile } from '@/context/profile-context';
 import { TutorialPage } from './tutorial-page';
 import { ViewRame } from './view-rame';
+import { GraphicsReport } from './graphics-report';
 
 
 import {
@@ -231,6 +232,8 @@ function MainAppLayout() {
         return <RegisterActivity activityToEdit={activityToEdit} setPage={handlePageChange} />;
       case 'activity-report':
         return <ActivityReport onEdit={handleEditActivity} />;
+      case 'graphics-report':
+        return <GraphicsReport />;
       case 'register-notice':
         return <RegisterNotice noticeToEdit={noticeToEdit} setPage={handlePageChange} />;
       case 'pending-notices':

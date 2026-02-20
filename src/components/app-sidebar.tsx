@@ -13,7 +13,7 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSkeleton,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info, Map, X, Binoculars } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info, Map, X, Binoculars, BarChart3 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { SgsAppLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -213,6 +213,20 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                 >
                 <ListTodo />
                 <span className="font-bold">Lembretes</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+          {isAdmin && (
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                isActive={activePage === 'graphics-report'}
+                onClick={() => handlePageChange('graphics-report')}
+                tooltip={{
+                    children: 'Gráficos',
+                }}
+                >
+                <BarChart3 />
+                <span className="font-bold">Gráficos</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
           )}
