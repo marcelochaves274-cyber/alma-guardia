@@ -20,7 +20,7 @@ import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { MonthSelector } from './month-selector';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
@@ -69,6 +69,27 @@ const monthColors = [
   '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
   '#E7E9ED', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF5722'
 ];
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const filteredPayload = payload.filter((p: any) => p.value > 0);
+    if (filteredPayload.length === 0) return null;
+
+    return (
+      <div className="p-2 bg-card border rounded-md shadow-lg text-sm">
+        <p className="font-bold text-card-foreground">{label}</p>
+        <ul className="list-none p-0 mt-1">
+          {filteredPayload.map((entry: any, index: number) => (
+            <li key={`item-${index}`} style={{ color: entry.color }}>
+              {`${entry.name}: ${entry.value}`}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+  return null;
+};
 
 export function GraphicsReport() {
   const { toast } = useToast();
@@ -234,6 +255,24 @@ export function GraphicsReport() {
 
     return Object.values(groupedData);
   }, [filteredData, reportType]);
+  
+  const filterSummary = useMemo(() => {
+    const yearText = filterYear.length > 0 ? filterYear.join(', ') : 'Todos';
+    const monthLabels = filterMonths.map(m => months[parseInt(m, 10)]).join(', ');
+    const monthText = filterMonths.length > 0 ? monthLabels : 'Todos';
+
+    let typeOptions: { value: string, label: string }[] = [];
+    if (reportType === 'occurrences') typeOptions = occurrenceTypes.map(t => ({value: t, label: t}));
+    if (reportType === 'treatments') typeOptions = treatmentTypes.map(t => ({value: t, label: t}));
+    if (reportType === 'faunaFloraGeo') typeOptions = faunaFloraGeoTypes.map(t => ({value: t, label: t}));
+    const typeLabels = filterType.map(v => typeOptions.find(o => o.value === v)?.label || v).join(', ');
+    const typeText = filterType.length > 0 ? typeLabels : 'Todos';
+    
+    const locationLabels = filterLocation.join(', ');
+    const locationText = filterLocation.length > 0 ? locationLabels : 'Todos';
+
+    return `Totais para - Ano(s): ${yearText} | Mês(es): ${monthText} | Tipo(s): ${typeText} | Local(is): ${locationText}`;
+  }, [filterYear, filterMonths, filterType, filterLocation, reportType, occurrenceTypes, treatmentTypes, faunaFloraGeoTypes]);
 
 
   const renderFilters = () => {
@@ -292,21 +331,19 @@ export function GraphicsReport() {
       
       <Card>
         <CardHeader>
-            <CardTitle>Gráfico de Totais por Mês</CardTitle>
+            <CardTitle className="text-base font-normal text-muted-foreground">{filterSummary}</CardTitle>
         </CardHeader>
         <CardContent>
             {isLoading ? (
                 <Skeleton className="h-[400px] w-full" />
             ) : chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
+                    <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                        <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                        <YAxis width={0} />
+                        <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip />} />
                         {months.map((month, index) => (
-                          <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index]} />
+                          <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index]} radius={[4, 4, 0, 0]} />
                         ))}
                     </BarChart>
                 </ResponsiveContainer>
