@@ -22,7 +22,6 @@ import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { MonthSelector } from './month-selector';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
 import { Separator } from './ui/separator';
@@ -73,7 +72,7 @@ const monthColors = [
 
 const CustomTooltip = ({ active, payload, label, filters }: any) => {
     if (active && payload && payload.length) {
-      const { filteredData, reportType, filterMonths, filterLocation, locationOptions } = filters;
+      const { filteredData, reportType, filterLocation, locationOptions } = filters;
       const typeName = label;
   
       // --- Location Breakdown ---
@@ -101,7 +100,7 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
         )
       }
   
-      const hasFilters = filterMonths.length > 0 || filterLocation.length > 0;
+      const hasFilters = filterLocation.length > 0;
   
       return (
         <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[220px] max-w-xs">
@@ -148,7 +147,6 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
           {hasFilters && (
               <div className="border-t pt-2 mt-2 space-y-1.5 text-xs">
                   <p className="font-bold text-muted-foreground text-center mb-2">Filtros Aplicados</p>
-                  {renderFilterList('Mês(es)', filterMonths.map(m => months[parseInt(m,10)]))}
                   {renderFilterList('Local(is)', filterLocation, locationOptions)}
               </div>
           )}
@@ -176,7 +174,6 @@ export function GraphicsReport() {
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
-  const [filterMonths, setFilterMonths] = useState<string[]>([]);
   const [filterType, setFilterType] = useState<string[]>([]);
   const [filterLocation, setFilterLocation] = useState<string[]>([]);
 
@@ -271,7 +268,6 @@ export function GraphicsReport() {
 
   const clearFilters = () => {
     setFilterYear([]);
-    setFilterMonths([]);
     setFilterType([]);
     setFilterLocation([]);
   };
@@ -292,14 +288,13 @@ export function GraphicsReport() {
       const itemDate = item[dateField];
       if (!itemDate) return false;
       const yearMatch = filterYear.length === 0 || filterYear.includes(itemDate.getFullYear().toString());
-      const monthMatch = filterMonths.length === 0 || filterMonths.includes(itemDate.getMonth().toString());
       const locationMatch = filterLocation.length === 0 || filterLocation.includes(item.occurrenceLocation || item.treatmentLocation || item.location);
       const typeMatch = filterType.length === 0 || filterType.includes(item.occurrenceType || item.treatmentType || item.speciesType);
       
-      return yearMatch && monthMatch && locationMatch && typeMatch;
+      return yearMatch && locationMatch && typeMatch;
     });
 
-  }, [reportType, occurrences, treatments, faunaFloraGeo, filterYear, filterMonths, filterLocation, filterType, isClient]);
+  }, [reportType, occurrences, treatments, faunaFloraGeo, filterYear, filterLocation, filterType, isClient]);
 
   const chartData = useMemo(() => {
     if (!isClient || !reportType || filteredData.length === 0) return [];
@@ -344,7 +339,6 @@ export function GraphicsReport() {
   const filtersForTooltip = {
     filteredData,
     reportType,
-    filterMonths,
     filterLocation,
     locationOptions,
   };
@@ -352,10 +346,6 @@ export function GraphicsReport() {
   const renderFilters = () => {
     return (
       <div className="space-y-4">
-        <div className="space-y-2">
-            <Label>Filtrar por Mês</Label>
-            <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
-        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
                 <Label>Filtrar Ano</Label>
@@ -377,7 +367,7 @@ export function GraphicsReport() {
     );
   };
   
-  const areAllFiltersActive = filterYear.length > 0 && filterMonths.length > 0 && filterType.length > 0 && filterLocation.length > 0;
+  const areAllFiltersActive = filterYear.length > 0 && filterType.length > 0 && filterLocation.length > 0;
   const showChart = !isLoading && reportType && areAllFiltersActive && chartData.length > 0;
   const showNoDataMessage = !isLoading && reportType && areAllFiltersActive && chartData.length === 0;
 
@@ -407,7 +397,7 @@ export function GraphicsReport() {
       <Card>
         <CardHeader>
             <CardTitle>Resultados</CardTitle>
-            {showChart && (
+            {showChart && filterYear.length > 0 && (
                 <CardDescription>
                     Exibindo: {filterYear.join(' - ')}
                 </CardDescription>
@@ -433,7 +423,7 @@ export function GraphicsReport() {
                 ) : !reportType ? (
                     "Selecione um tipo de relatório para começar."
                 ) : (
-                    "Todos os filtros (Ano, Mês, Tipo e Local) devem ser selecionados para exibir o gráfico."
+                    "Todos os filtros (Ano, Tipo e Local) devem ser selecionados para exibir o gráfico."
                 )}
             </div>
         </CardContent>
