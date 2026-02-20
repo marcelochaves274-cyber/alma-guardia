@@ -21,7 +21,7 @@ import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
 import { Separator } from './ui/separator';
@@ -72,7 +72,7 @@ const monthColors = [
 
 const CustomTooltip = ({ active, payload, label, filters }: any) => {
     if (active && payload && payload.length) {
-      const { filteredData, reportType } = filters;
+      const { filteredData, reportType, filterYear, filterType, filterLocation } = filters;
       const typeName = label;
   
       // --- Location Breakdown ---
@@ -90,7 +90,7 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
       const monthPayload = payload.map(p => ({ month: p.dataKey, count: p.value, color: p.fill })).filter(p => p.count > 0);
   
       return (
-        <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[220px] max-w-xs">
+        <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[280px] max-w-sm">
           <div className="border-b pb-2 mb-2">
               <p className="font-bold text-lg text-card-foreground">{label}</p>
           </div>
@@ -317,8 +317,13 @@ export function GraphicsReport() {
   const filtersForTooltip = {
     filteredData,
     reportType,
+    filterYear,
+    filterType,
+    filterLocation,
   };
 
+  const areAllFiltersActive = filterYear.length > 0 && filterType.length > 0 && filterLocation.length > 0;
+  
   const renderFilters = () => {
     return (
       <div className="space-y-4">
@@ -339,11 +344,15 @@ export function GraphicsReport() {
                 <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
             </div>
         </div>
+        {reportType && !areAllFiltersActive && (
+          <p className="text-sm text-muted-foreground pt-4 text-center border-t mt-4">
+            Todos os filtros (Ano, Tipo e Local) devem ter ao menos uma seleção para que o gráfico seja exibido.
+          </p>
+        )}
       </div>
     );
   };
   
-  const areAllFiltersActive = filterYear.length > 0 && filterType.length > 0 && filterLocation.length > 0;
   const showChart = !isLoading && reportType && areAllFiltersActive && chartData.length > 0;
   const showNoDataMessage = !isLoading && reportType && areAllFiltersActive && chartData.length === 0;
 
@@ -359,7 +368,7 @@ export function GraphicsReport() {
             <Label>Tipo de Relatório</Label>
             <Select onValueChange={(v: ReportType) => { setReportType(v); clearFilters(); }} value={reportType ?? ''}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecione um tipo de relatório" />
+                <SelectValue placeholder="Selecione o tipo de Relatório" />
               </SelectTrigger>
               <SelectContent>
                 {reportTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
@@ -387,20 +396,19 @@ export function GraphicsReport() {
                     <ResponsiveContainer width="100%" height={400}>
                         <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                             <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }} />
-                            <YAxis width={0} axisLine={false} tickLine={false} />
                             <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
                             {months.map((month, index) => (
                               <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
                             ))}
                         </BarChart>
                     </ResponsiveContainer>
-                ) : showNoDataMessage ? (
-                    "Nenhum dado para exibir com os filtros selecionados."
                 ) : !reportType ? (
                     "Selecione um tipo de relatório para começar."
-                ) : (
-                    "Todos os filtros (Ano, Tipo e Local) devem ser selecionados para exibir o gráfico."
-                )}
+                ) : !areAllFiltersActive ? (
+                     null
+                ) : showNoDataMessage ? (
+                    "Nenhum dado para exibir com os filtros selecionados."
+                ) : null}
             </div>
         </CardContent>
       </Card>
