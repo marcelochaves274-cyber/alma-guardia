@@ -58,6 +58,7 @@ import { SheetFilter } from './sheet-filter';
 import { ScrollArea } from './ui/scroll-area';
 import { Checkbox } from './ui/checkbox';
 import { Calendar } from './ui/calendar';
+import { Input } from './ui/input';
 
 interface Equipment {
   id: string;
@@ -130,6 +131,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterInspection, setFilterInspection] = useState<string[]>(preFilter?.status === 'overdue' ? ['overdue'] : []);
   const [filterStorageLocation, setFilterStorageLocation] = useState<string[]>([]);
+  const [filterLotCaUiaa, setFilterLotCaUiaa] = useState<string>('');
 
   // Bulk update states
   const [selectedEquipments, setSelectedEquipments] = useState<string[]>([]);
@@ -294,8 +296,9 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
         return false;
       });
       const storageLocationMatch = filterStorageLocation.length === 0 || filterStorageLocation.includes(eq.storageLocation);
+      const lotCaUiaaMatch = !filterLotCaUiaa || eq.lotCaUiaa?.toLowerCase().startsWith(filterLotCaUiaa.toLowerCase());
 
-      return typeMatch && brandMatch && statusMatch && inspectionMatch && storageLocationMatch;
+      return typeMatch && brandMatch && statusMatch && inspectionMatch && storageLocationMatch && lotCaUiaaMatch;
     }).sort((a,b) => {
         if (a.status === 'descartado' && b.status !== 'descartado') {
           return 1;
@@ -307,7 +310,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
         const dateB = b.nextInspectionDate?.toDate()?.getTime() || Infinity;
         return dateA - dateB;
     });
-  }, [equipments, filterType, filterBrand, filterStatus, filterInspection, filterStorageLocation, clientToday]);
+  }, [equipments, filterType, filterBrand, filterStatus, filterInspection, filterStorageLocation, clientToday, filterLotCaUiaa]);
 
   const clearFilters = () => {
     setFilterType([]);
@@ -315,6 +318,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     setFilterStatus([]);
     setFilterInspection([]);
     setFilterStorageLocation([]);
+    setFilterLotCaUiaa('');
   }
 
   const handleExportToWord = () => {
@@ -425,7 +429,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
             <CardDescription>Filtre e visualize os equipamentos registrados no sistema.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
                <div className="space-y-2">
                   <Label>Filtrar por Tipo</Label>
                   <SheetFilter
@@ -478,6 +482,15 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                       disabled={locations.length === 0}
                       buttonText='Filtrar por Local'
                   />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lot-filter">Lote/CA/UIAA</Label>
+                <Input
+                  id="lot-filter"
+                  placeholder="Digite para filtrar..."
+                  value={filterLotCaUiaa}
+                  onChange={(e) => setFilterLotCaUiaa(e.target.value)}
+                />
               </div>
               <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
             </div>
