@@ -48,6 +48,10 @@ export function SheetFilter({ title, options, selected, onChange, buttonText = "
     setTempSelected([]);
   };
 
+  const handleSelectAll = () => {
+    setTempSelected(options.map(o => o.value));
+  };
+
   const handleApply = () => {
     onChange(tempSelected);
     setIsOpen(false);
@@ -55,6 +59,7 @@ export function SheetFilter({ title, options, selected, onChange, buttonText = "
 
   const getButtonText = () => {
     if (selected.length === 0) return buttonText;
+    if (selected.length === options.length) return "Todos selecionados";
     if (selected.length === 1) return options.find(o => o.value === selected[0])?.label || `1 selecionado`;
     return `${selected.length} selecionados`;
   }
@@ -101,10 +106,11 @@ export function SheetFilter({ title, options, selected, onChange, buttonText = "
             )}
           </div>
         </ScrollArea>
-        <SheetFooter className='pt-4 border-t'>
-          <Button variant="ghost" onClick={handleClear}>Limpar</Button>
+        <SheetFooter className='pt-4 border-t flex-col sm:flex-row sm:justify-end sm:gap-2'>
+          <Button variant="ghost" onClick={handleClear} className="w-full sm:w-auto sm:mr-auto">Limpar</Button>
+          <Button variant="outline" onClick={handleSelectAll} className="w-full sm:w-auto">Selecionar Todos</Button>
           <SheetClose asChild>
-            <Button onClick={handleApply}>Aplicar</Button>
+            <Button onClick={handleApply} className="w-full sm:w-auto">Aplicar</Button>
           </SheetClose>
         </SheetFooter>
       </SheetContent>

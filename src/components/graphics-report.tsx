@@ -20,7 +20,7 @@ import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { MonthSelector } from './month-selector';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
@@ -75,8 +75,7 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
     const filteredPayload = payload.filter((p: any) => p.value > 0);
     if (filteredPayload.length === 0) return null;
 
-    const { filterYear, filterMonths, filterType, filterLocation, typeOptions } = filters;
-    const locationOptions = filters.locationOptions || [];
+    const { filterYear, filterMonths, filterType, filterLocation, typeOptions, locationOptions } = filters;
 
     const renderFilterList = (title: string, selected: string[], allOptions?: {label:string, value:string}[]) => {
       // Don't render if "Todos" is implied
@@ -135,7 +134,7 @@ export function GraphicsReport() {
   const firestore = useFirestore();
   const { user } = useUser();
 
-  const [reportType, setReportType] = useState<ReportType>('occurrences');
+  const [reportType, setReportType] = useState<ReportType | null>(null);
   
   // Data
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
@@ -251,7 +250,7 @@ export function GraphicsReport() {
   };
 
   const filteredData = useMemo(() => {
-    if (!isClient) return [];
+    if (!isClient || !reportType) return [];
     let data;
     switch (reportType) {
       case 'occurrences': data = occurrences; break;
@@ -340,6 +339,10 @@ export function GraphicsReport() {
     );
   };
   
+  const areFiltersActive = filterYear.length > 0 || filterMonths.length > 0 || filterType.length > 0 || filterLocation.length > 0;
+  const showChart = !isLoading && reportType && areFiltersActive && chartData.length > 0;
+  const showNoDataMessage = !isLoading && reportType && areFiltersActive && chartData.length === 0;
+
   return (
     <div className="space-y-6">
       <Card>
@@ -350,7 +353,7 @@ export function GraphicsReport() {
         <CardContent className="space-y-6">
           <div className="space-y-2 max-w-sm">
             <Label>Tipo de Relatório</Label>
-            <Select onValueChange={(v: ReportType) => setReportType(v)} value={reportType}>
+            <Select onValueChange={(v: ReportType) => { setReportType(v); clearFilters(); }} value={reportType ?? ''}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um tipo de relatório" />
               </SelectTrigger>
@@ -359,19 +362,17 @@ export function GraphicsReport() {
               </SelectContent>
             </Select>
           </div>
-          {renderFilters()}
+          {reportType && renderFilters()}
         </CardContent>
       </Card>
       
       <Card>
         <CardContent className="pt-6">
-            {isLoading ? (
-                <Skeleton className="h-[400px] w-full" />
-            ) : chartData.length > 0 ? (
+            {showChart ? (
                 <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                         <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
-                        <YAxis width={0} />
+                        <YAxis width={0} axisLine={false} tickLine={false} />
                         <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
                         {months.map((month, index) => (
                           <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index]} radius={[4, 4, 0, 0]} />
@@ -380,7 +381,15 @@ export function GraphicsReport() {
                 </ResponsiveContainer>
             ) : (
                 <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                    Nenhum dado para exibir com os filtros selecionados.
+                    {isLoading ? (
+                         <Skeleton className="h-full w-full" />
+                    ) : showNoDataMessage ? (
+                        "Nenhum dado para exibir com os filtros selecionados."
+                    ) : !reportType ? (
+                        "Selecione um tipo de relatório para começar."
+                    ) : (
+                        "Selecione ao menos um filtro para exibir o gráfico."
+                    )}
                 </div>
             )}
         </CardContent>
