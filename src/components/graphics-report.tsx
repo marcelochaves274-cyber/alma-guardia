@@ -21,7 +21,7 @@ import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
 import { Separator } from './ui/separator';
@@ -72,13 +72,14 @@ const monthColors = [
 
 const CustomTooltip = ({ active, payload, label, filters }: any) => {
     if (active && payload && payload.length) {
-      const { filteredData, reportType, filterYear, filterType, filterLocation } = filters;
+      const { filteredData, reportType } = filters;
       const typeName = label;
   
       // --- Location Breakdown ---
       const locationField = reportType === 'occurrences' ? 'occurrenceLocation' : reportType === 'treatments' ? 'treatmentLocation' : 'location';
       const typeField = reportType === 'occurrences' ? 'occurrenceType' : reportType === 'treatments' ? 'treatmentType' : 'speciesType';
       const itemsForType = filteredData.filter((item: any) => (item[typeField] || 'Outros') === typeName);
+      
       const countsByLocation = itemsForType.reduce((acc: any, item: any) => {
           const loc = item[locationField] || 'Sem Local';
           acc[loc] = (acc[loc] || 0) + 1;
@@ -393,6 +394,7 @@ export function GraphicsReport() {
             </Select>
           </div>
           {reportType && renderFilters()}
+          {reportType && <p className="text-sm text-muted-foreground pt-2 text-center">Para exibir o gráfico, é necessário ter uma seleção em todos os filtros: Ano, Tipo e Local.</p>}
         </CardContent>
       </Card>
       
@@ -422,10 +424,6 @@ export function GraphicsReport() {
                     </ResponsiveContainer>
                 ) : !reportType ? (
                     "Selecione um tipo de relatório para começar."
-                ) : !areAllFiltersActive ? (
-                      <p className="text-sm text-center">
-                        Todos os filtros (Ano, Tipo e Local) devem ter ao menos uma seleção para que o gráfico seja exibido.
-                      </p>
                 ) : showNoDataMessage ? (
                     "Nenhum dado para exibir com os filtros selecionados."
                 ) : null}
