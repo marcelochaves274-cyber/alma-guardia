@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -35,6 +34,21 @@ export function TutorialPage() {
               <AccordionTrigger>Lembretes</AccordionTrigger>
               <AccordionContent>
                 A tela de Lembretes é seu painel principal. Ela exibe um resumo rápido de todas as pendências que exigem sua atenção, como tratamentos de risco em aberto, vistorias de equipamentos atrasadas e avisos de campo pendentes. Clique nos botões "Ver" para ser direcionado à tela correspondente já filtrada.
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
+          {isAdmin && (
+             <AccordionItem value="item-graficos">
+              <AccordionTrigger>Gráficos</AccordionTrigger>
+              <AccordionContent>
+                Esta tela permite visualizar dados de forma gráfica para uma análise mais rápida.
+                <ul className="list-disc space-y-2 pl-5 mt-2">
+                  <li><strong>Como Usar:</strong> Primeiro, selecione o "Tipo de Relatório" que deseja analisar (ex: Acidentes/Incidentes).</li>
+                  <li><strong>Filtros Obrigatórios:</strong> Para que o gráfico seja exibido, é necessário aplicar ao menos uma seleção em cada um dos filtros: Ano, Tipo e Local.</li>
+                  <li><strong>Visualização:</strong> O gráfico exibirá a contagem de registros por "Tipo" no eixo horizontal. Acima do gráfico, você verá o(s) ano(s) selecionado(s).</li>
+                  <li><strong>Detalhes no Tooltip:</strong> Ao passar o mouse sobre uma barra, uma caixa de informações (tooltip) aparecerá, mostrando o detalhamento daquele tipo por mês e por local, além do total de registros.</li>
+                </ul>
               </AccordionContent>
             </AccordionItem>
           )}
