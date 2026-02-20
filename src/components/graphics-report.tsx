@@ -106,7 +106,7 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
                 <p className="font-bold text-muted-foreground">Total: <span className="font-semibold text-foreground">{totalCount}</span></p>
               </div>
               <ul className="list-none p-0 space-y-1.5">
-              {monthPayload.map(({ month, count, color }, index) => (
+              {monthPayload.map(({ month, count, color }: { month: string, count: number, color: string }, index) => (
                   <li key={`month-${index}`} className="flex items-center justify-between">
                   <div className="flex items-center">
                       <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: color }} />
@@ -374,7 +374,6 @@ export function GraphicsReport() {
             </Button>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground pt-2 text-center">Para exibir o gráfico, é necessário ter ao menos uma seleção em todos os filtros: Ano, Tipo e Local.</p>
       </div>
     );
   };
@@ -403,6 +402,7 @@ export function GraphicsReport() {
           {reportType && (
             <>
               {renderFilters()}
+              <p className="text-sm text-muted-foreground pt-2 text-center">Para exibir o gráfico, é necessário ter ao menos uma seleção em todos os filtros: Ano, Tipo e Local.</p>
             </>
           )}
         </CardContent>
