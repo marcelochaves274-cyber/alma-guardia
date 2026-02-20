@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -20,7 +21,7 @@ import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { MonthSelector } from './month-selector';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
@@ -99,7 +100,6 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
       <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[220px] max-w-xs">
         <div className="border-b pb-2 mb-2">
             <p className="font-bold text-lg text-card-foreground">{label}</p>
-            <p className="text-xs text-muted-foreground">Total de Registros: {filteredPayload.reduce((sum: number, p: any) => sum + p.value, 0)}</p>
         </div>
         
         <ul className="list-none p-0 my-3 space-y-1.5">
@@ -107,7 +107,7 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
             <li key={`item-${index}`} className="flex items-center justify-between">
               <div className="flex items-center">
                 <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: entry.color }} />
-                <span className="text-muted-foreground">{entry.name}</span>
+                <span className="text-muted-foreground">{months[months.indexOf(entry.name)]}</span>
               </div>
               <span className="font-semibold text-foreground">{entry.value}</span>
             </li>
@@ -275,24 +275,32 @@ export function GraphicsReport() {
   }, [reportType, occurrences, treatments, faunaFloraGeo, filterYear, filterMonths, filterLocation, filterType, isClient]);
 
   const chartData = useMemo(() => {
-    const groupedData: { [key: string]: { [month: string]: number } & { name: string } } = {};
+    if (!isClient || !reportType || filteredData.length === 0) return [];
+    
     const typeField = reportType === 'occurrences' ? 'occurrenceType' : reportType === 'treatments' ? 'treatmentType' : 'speciesType';
     const dateField = reportType === 'occurrences' ? 'occurrenceDate' : reportType === 'treatments' ? 'treatmentDate' : 'date';
+    
+    // Group by month
+    const monthlyData = months.map((monthName, monthIndex) => {
+      const monthEntry: { name: string; [key: string]: number | string } = { name: monthName };
+      
+      const typesPresent = new Set(filteredData.map((item: any) => item[typeField] || 'Outros'));
+      
+      typesPresent.forEach(type => {
+        monthEntry[type] = 0;
+      });
 
-    filteredData.forEach((item: any) => {
-      const type = item[typeField] || 'Outros';
-      const monthIndex = item[dateField].getMonth();
-      const monthName = months[monthIndex];
-
-      if (!groupedData[type]) {
-        groupedData[type] = { name: type };
-        months.forEach(m => groupedData[type][m] = 0);
-      }
-      groupedData[type][monthName]++;
+      filteredData.forEach((item: any) => {
+        if (item[dateField].getMonth() === monthIndex) {
+          const type = item[typeField] || 'Outros';
+          (monthEntry[type] as number)++;
+        }
+      });
+      return monthEntry;
     });
 
-    return Object.values(groupedData);
-  }, [filteredData, reportType]);
+    return monthlyData;
+  }, [filteredData, reportType, isClient]);
   
   const typeOptions = useMemo(() => {
     let options: {value: string, label: string}[] = [];
@@ -312,6 +320,20 @@ export function GraphicsReport() {
     typeOptions,
     locationOptions,
   };
+  
+  const uniqueTypesInChart = useMemo(() => {
+    if (chartData.length === 0) return [];
+    const types = new Set<string>();
+    chartData.forEach(monthData => {
+      Object.keys(monthData).forEach(key => {
+        if (key !== 'name') {
+          types.add(key);
+        }
+      });
+    });
+    return Array.from(types);
+  }, [chartData]);
+
 
   const renderFilters = () => {
     return (
@@ -374,8 +396,8 @@ export function GraphicsReport() {
                         <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                         <YAxis width={0} axisLine={false} tickLine={false} />
                         <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
-                        {months.map((month, index) => (
-                          <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index]} radius={[4, 4, 0, 0]} />
+                        {uniqueTypesInChart.map((type, index) => (
+                          <Bar key={type} dataKey={type} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
                         ))}
                     </BarChart>
                 </ResponsiveContainer>
@@ -397,3 +419,5 @@ export function GraphicsReport() {
     </div>
   )
 }
+
+    
