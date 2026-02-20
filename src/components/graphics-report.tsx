@@ -83,7 +83,7 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
       const typeField = reportType === 'occurrences' ? 'occurrenceType' : reportType === 'treatments' ? 'treatmentType' : 'speciesType';
       const itemsForType = filteredData.filter((item: any) => (item[typeField] || 'Outros') === typeName);
       
-      const countsByLocation = itemsForType.reduce((acc: any, item: any) => {
+      const countsByLocation: Record<string, number> = itemsForType.reduce((acc: Record<string, number>, item: any) => {
           const loc = item[locationField] || 'Sem Local';
           acc[loc] = (acc[loc] || 0) + 1;
           return acc;
@@ -91,12 +91,12 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
       const locationEntries = Object.entries(countsByLocation).filter(([, count]) => (count as number) > 0);
 
       // --- Month Breakdown ---
-      const monthPayload = payload.map((p: any) => ({ month: p.dataKey, count: p.value, color: p.fill })).filter((p: any) => p.count > 0);
+      const monthPayload = payload.map((p: { dataKey: string, value: number, fill: string }) => ({ month: p.dataKey, count: p.value, color: p.fill })).filter((p: { count: number }) => p.count > 0);
   
       return (
         <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[320px] max-w-sm">
           <div className="border-b pb-2 mb-2">
-              <p className="font-bold text-lg text-card-foreground">{label}</p>
+              <p className="font-bold text-lg text-foreground">{label}</p>
           </div>
           
           {monthPayload.length > 0 && (
@@ -106,7 +106,7 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
                 <p className="font-bold text-muted-foreground">Total: <span className="font-semibold text-foreground">{totalCount}</span></p>
               </div>
               <ul className="list-none p-0 space-y-1.5">
-              {monthPayload.map(({ month, count, color }: { month: string, count: number, color: string }, index) => (
+              {monthPayload.map(({ month, count, color }: { month: string, count: number, color: string }, index: number) => (
                   <li key={`month-${index}`} className="flex items-center justify-between">
                   <div className="flex items-center">
                       <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: color }} />
@@ -128,7 +128,7 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
                  <p className="font-bold text-muted-foreground">Total: <span className="font-semibold text-foreground">{totalCount}</span></p>
               </div>
               <ul className="list-none p-0 space-y-1.5">
-              {locationEntries.map(([location, count], index) => (
+              {locationEntries.map(([location, count], index: number) => (
                   <li key={`loc-${index}`} className="flex items-center justify-between">
                   <div className="flex items-center">
                       <span className="w-2.5 h-2.5 rounded-full mr-2 bg-muted" />
