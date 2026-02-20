@@ -72,7 +72,7 @@ const monthColors = [
 
 const CustomTooltip = ({ active, payload, label, filters }: any) => {
     if (active && payload && payload.length) {
-      const { filteredData, reportType, filterLocation, locationOptions } = filters;
+      const { filteredData, reportType } = filters;
       const typeName = label;
   
       // --- Location Breakdown ---
@@ -88,19 +88,6 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
 
       // --- Month Breakdown ---
       const monthPayload = payload.map(p => ({ month: p.dataKey, count: p.value, color: p.fill })).filter(p => p.count > 0);
-
-      const renderFilterList = (title: string, selected: string[], allOptions?: {label:string, value:string}[]) => {
-        if (selected.length === 0) return null;
-        const labels = allOptions ? selected.map(v => allOptions.find(o => o.value === v)?.label || v) : selected;
-        return (
-          <div>
-            <p className="font-semibold text-muted-foreground/80">{title}:</p>
-            <p className="text-xs pl-2 text-foreground">{labels.join(', ')}</p>
-          </div>
-        )
-      }
-  
-      const hasFilters = filterLocation.length > 0;
   
       return (
         <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[220px] max-w-xs">
@@ -142,13 +129,6 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
               ))}
               </ul>
             </div>
-          )}
-  
-          {hasFilters && (
-              <div className="border-t pt-2 mt-2 space-y-1.5 text-xs">
-                  <p className="font-bold text-muted-foreground text-center mb-2">Filtros Aplicados</p>
-                  {renderFilterList('Local(is)', filterLocation, locationOptions)}
-              </div>
           )}
         </div>
       );
@@ -334,13 +314,9 @@ export function GraphicsReport() {
     return options;
   }, [reportType, occurrenceTypes, treatmentTypes, faunaFloraGeoTypes]);
   
-  const locationOptions = useMemo(() => locations.map(l => ({value: l, label: l})), [locations]);
-
   const filtersForTooltip = {
     filteredData,
     reportType,
-    filterLocation,
-    locationOptions,
   };
 
   const renderFilters = () => {
@@ -357,7 +333,7 @@ export function GraphicsReport() {
             </div>
              <div className="space-y-2">
                 <Label>Filtrar por Local</Label>
-                <SheetFilter title='Filtrar Locais' options={locationOptions} selected={filterLocation} onChange={setFilterLocation} disabled={isLoading || locations.length === 0} buttonText='Filtrar por Local' />
+                <SheetFilter title='Filtrar Locais' options={locations.map(l => ({value: l, label: l}))} selected={filterLocation} onChange={setFilterLocation} disabled={isLoading || locations.length === 0} buttonText='Filtrar por Local' />
             </div>
             <div className="flex gap-2">
                 <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
@@ -398,7 +374,7 @@ export function GraphicsReport() {
         <CardHeader>
             <CardTitle>Resultados</CardTitle>
             {showChart && filterYear.length > 0 && (
-                <CardDescription>
+                <CardDescription className="text-foreground">
                     Exibindo: {filterYear.join(' - ')}
                 </CardDescription>
             )}
@@ -410,7 +386,7 @@ export function GraphicsReport() {
                 ) : showChart ? (
                     <ResponsiveContainer width="100%" height={400}>
                         <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                            <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                            <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }} />
                             <YAxis width={0} axisLine={false} tickLine={false} />
                             <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
                             {months.map((month, index) => (
