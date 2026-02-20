@@ -21,7 +21,7 @@ import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
 import { Separator } from './ui/separator';
@@ -328,27 +328,45 @@ export function GraphicsReport() {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-            <div className="space-y-2">
-                <Label>Filtrar Ano</Label>
-                <SheetFilter title='Filtrar Anos' options={availableYears.map(y => ({ value: y, label: y }))} selected={filterYear} onChange={setFilterYear} disabled={isLoading} buttonText='Filtrar por Ano' />
-            </div>
-            <div className="space-y-2">
-                <Label>Filtrar por Tipo</Label>
-                <SheetFilter title='Filtrar Tipos' options={typeOptions} selected={filterType} onChange={setFilterType} disabled={isLoading || typeOptions.length === 0} buttonText='Filtrar por Tipo' />
-            </div>
-             <div className="space-y-2">
-                <Label>Filtrar por Local</Label>
-                <SheetFilter title='Filtrar Locais' options={locations.map(l => ({value: l, label: l}))} selected={filterLocation} onChange={setFilterLocation} disabled={isLoading || locations.length === 0} buttonText='Filtrar por Local' />
-            </div>
-            <div className="flex gap-2">
-                <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
-            </div>
+          <div className="space-y-2">
+            <Label>Filtrar Ano</Label>
+            <SheetFilter
+              title="Filtrar Anos"
+              options={availableYears.map((y) => ({ value: y, label: y }))}
+              selected={filterYear}
+              onChange={setFilterYear}
+              disabled={isLoading}
+              buttonText="Filtrar por Ano"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Filtrar por Tipo</Label>
+            <SheetFilter
+              title="Filtrar Tipos"
+              options={typeOptions}
+              selected={filterType}
+              onChange={setFilterType}
+              disabled={isLoading || typeOptions.length === 0}
+              buttonText="Filtrar por Tipo"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Filtrar por Local</Label>
+            <SheetFilter
+              title="Filtrar Locais"
+              options={locations.map((l) => ({ value: l, label: l }))}
+              selected={filterLocation}
+              onChange={setFilterLocation}
+              disabled={isLoading || locations.length === 0}
+              buttonText="Filtrar por Local"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={clearFilters} variant="outline" className="w-full">
+              Limpar Filtros
+            </Button>
+          </div>
         </div>
-        {reportType && !areAllFiltersActive && (
-          <p className="text-sm text-muted-foreground pt-4 text-center border-t mt-4">
-            Todos os filtros (Ano, Tipo e Local) devem ter ao menos uma seleção para que o gráfico seja exibido.
-          </p>
-        )}
       </div>
     );
   };
@@ -361,7 +379,6 @@ export function GraphicsReport() {
       <Card>
         <CardHeader>
           <CardTitle>Gráficos</CardTitle>
-          <CardDescription>Selecione o tipo de relatório e aplique filtros para visualizar os dados em um gráfico de barras.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2 max-w-sm">
@@ -396,6 +413,7 @@ export function GraphicsReport() {
                     <ResponsiveContainer width="100%" height={400}>
                         <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                             <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }} />
+                            <YAxis width={0} axisLine={false} tickLine={false} />
                             <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
                             {months.map((month, index) => (
                               <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
@@ -405,7 +423,9 @@ export function GraphicsReport() {
                 ) : !reportType ? (
                     "Selecione um tipo de relatório para começar."
                 ) : !areAllFiltersActive ? (
-                     null
+                      <p className="text-sm text-center">
+                        Todos os filtros (Ano, Tipo e Local) devem ter ao menos uma seleção para que o gráfico seja exibido.
+                      </p>
                 ) : showNoDataMessage ? (
                     "Nenhum dado para exibir com os filtros selecionados."
                 ) : null}
