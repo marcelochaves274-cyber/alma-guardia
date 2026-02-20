@@ -70,13 +70,14 @@ const monthColors = [
   '#E7E9ED', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF5722'
 ];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, filterSummary }: any) => {
   if (active && payload && payload.length) {
     const filteredPayload = payload.filter((p: any) => p.value > 0);
     if (filteredPayload.length === 0) return null;
 
     return (
-      <div className="p-2 bg-card border rounded-md shadow-lg text-sm">
+      <div className="p-2 bg-card border rounded-md shadow-lg text-sm max-w-xs">
+        {filterSummary && <p className="text-xs text-muted-foreground mb-2">{filterSummary}</p>}
         <p className="font-bold text-card-foreground">{label}</p>
         <ul className="list-none p-0 mt-1">
           {filteredPayload.map((entry: any, index: number) => (
@@ -271,7 +272,7 @@ export function GraphicsReport() {
     const locationLabels = filterLocation.join(', ');
     const locationText = filterLocation.length > 0 ? locationLabels : 'Todos';
 
-    return `Totais para - Ano(s): ${yearText} | Mês(es): ${monthText} | Tipo(s): ${typeText} | Local(is): ${locationText}`;
+    return `Ano(s): ${yearText} | Mês(es): ${monthText} | Tipo(s): ${typeText} | Local(is): ${locationText}`;
   }, [filterYear, filterMonths, filterType, filterLocation, reportType, occurrenceTypes, treatmentTypes, faunaFloraGeoTypes]);
 
 
@@ -330,10 +331,7 @@ export function GraphicsReport() {
       </Card>
       
       <Card>
-        <CardHeader>
-            <CardTitle className="text-base font-normal text-muted-foreground">{filterSummary}</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
             {isLoading ? (
                 <Skeleton className="h-[400px] w-full" />
             ) : chartData.length > 0 ? (
@@ -341,7 +339,7 @@ export function GraphicsReport() {
                     <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                         <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                         <YAxis width={0} />
-                        <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip />} />
+                        <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filterSummary={filterSummary} />} />
                         {months.map((month, index) => (
                           <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index]} radius={[4, 4, 0, 0]} />
                         ))}
