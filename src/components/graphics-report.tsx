@@ -74,6 +74,9 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
     if (active && payload && payload.length) {
       const { filteredData, reportType } = filters;
       const typeName = label;
+
+      // --- Total ---
+      const totalCount = payload.reduce((sum: number, p: any) => sum + p.value, 0);
   
       // --- Location Breakdown ---
       const locationField = reportType === 'occurrences' ? 'occurrenceLocation' : reportType === 'treatments' ? 'treatmentLocation' : 'location';
@@ -91,14 +94,17 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
       const monthPayload = payload.map(p => ({ month: p.dataKey, count: p.value, color: p.fill })).filter(p => p.count > 0);
   
       return (
-        <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[280px] max-w-sm">
+        <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[320px] max-w-sm">
           <div className="border-b pb-2 mb-2">
               <p className="font-bold text-lg text-card-foreground">{label}</p>
           </div>
           
           {monthPayload.length > 0 && (
             <div className="my-3">
-              <p className="font-bold text-muted-foreground mb-1.5">Por Mês:</p>
+              <div className="flex justify-between items-center mb-1.5">
+                <p className="font-bold text-muted-foreground">Por Mês:</p>
+                <p className="font-bold text-muted-foreground">Total: <span className="font-semibold text-foreground">{totalCount}</span></p>
+              </div>
               <ul className="list-none p-0 space-y-1.5">
               {monthPayload.map(({ month, count, color }, index) => (
                   <li key={`month-${index}`} className="flex items-center justify-between">
@@ -117,7 +123,10 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
 
           {locationEntries.length > 0 && (
             <div className="my-3">
-              <p className="font-bold text-muted-foreground mb-1.5">Por Local:</p>
+               <div className="flex justify-between items-center mb-1.5">
+                <p className="font-bold text-muted-foreground">Por Local:</p>
+                 <p className="font-bold text-muted-foreground">Total: <span className="font-semibold text-foreground">{totalCount}</span></p>
+              </div>
               <ul className="list-none p-0 space-y-1.5">
               {locationEntries.map(([location, count], index) => (
                   <li key={`loc-${index}`} className="flex items-center justify-between">
@@ -427,7 +436,7 @@ export function GraphicsReport() {
                 ) : showNoDataMessage ? (
                     "Nenhum dado para exibir com os filtros selecionados."
                 ) : (
-                    reportType && <p>Para exibir o gráfico, é necessário ter ao menos uma seleção em todos os filtros: Ano, Tipo e Local.</p>
+                    reportType && null
                 )}
             </div>
         </CardContent>
