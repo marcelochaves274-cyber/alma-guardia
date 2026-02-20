@@ -25,7 +25,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 import { MonthSelector } from './month-selector';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
-import { startOfDay, isBefore } from 'date-fns';
+import { Separator } from './ui/separator';
 
 // Data types from other components
 interface Occurrence {
@@ -71,76 +71,92 @@ const monthColors = [
   '#E7E9ED', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF5722'
 ];
 
-const CustomTooltip = ({ active, payload, label, reportType, filteredData, filters }: any) => {
-  if (active && payload && payload.length) {
-    const typeName = label;
-    const { filterYear, filterMonths, filterType, filterLocation, typeOptions, locationOptions } = filters;
+const CustomTooltip = ({ active, payload, label, filters }: any) => {
+    if (active && payload && payload.length) {
+      const { filteredData, reportType, filterMonths, filterLocation, locationOptions } = filters;
+      const typeName = label;
+  
+      // --- Location Breakdown ---
+      const locationField = reportType === 'occurrences' ? 'occurrenceLocation' : reportType === 'treatments' ? 'treatmentLocation' : 'location';
+      const typeField = reportType === 'occurrences' ? 'occurrenceType' : reportType === 'treatments' ? 'treatmentType' : 'speciesType';
+      const itemsForType = filteredData.filter((item: any) => (item[typeField] || 'Outros') === typeName);
+      const countsByLocation = itemsForType.reduce((acc: any, item: any) => {
+          const loc = item[locationField] || 'Sem Local';
+          acc[loc] = (acc[loc] || 0) + 1;
+          return acc;
+      }, {});
+      const locationEntries = Object.entries(countsByLocation).filter(([, count]) => (count as number) > 0);
 
-    const locationField = reportType === 'occurrences' ? 'occurrenceLocation' : reportType === 'treatments' ? 'treatmentLocation' : 'location';
-    const typeField = reportType === 'occurrences' ? 'occurrenceType' : reportType === 'treatments' ? 'treatmentType' : 'speciesType';
+      // --- Month Breakdown ---
+      const monthPayload = payload.map(p => ({ month: p.dataKey, count: p.value, color: p.fill })).filter(p => p.count > 0);
 
-    const itemsForType = filteredData.filter((item: any) => (item[typeField] || 'Outros') === typeName);
-
-    const countsByLocation = itemsForType.reduce((acc: any, item: any) => {
-        const loc = item[locationField] || 'Sem Local';
-        acc[loc] = (acc[loc] || 0) + 1;
-        return acc;
-    }, {});
-    
-    const locationEntries = Object.entries(countsByLocation).filter(([, count]) => (count as number) > 0);
-
-
-    const renderFilterList = (title: string, selected: string[], allOptions?: {label:string, value:string}[]) => {
-      if (selected.length === 0) return null;
-      
-      const labels = allOptions 
-        ? selected.map(v => allOptions.find(o => o.value === v)?.label || v)
-        : selected;
-
+      const renderFilterList = (title: string, selected: string[], allOptions?: {label:string, value:string}[]) => {
+        if (selected.length === 0) return null;
+        const labels = allOptions ? selected.map(v => allOptions.find(o => o.value === v)?.label || v) : selected;
+        return (
+          <div>
+            <p className="font-semibold text-muted-foreground/80">{title}:</p>
+            <p className="text-xs pl-2 text-foreground">{labels.join(', ')}</p>
+          </div>
+        )
+      }
+  
+      const hasFilters = filterMonths.length > 0 || filterLocation.length > 0;
+  
       return (
-        <div>
-          <p className="font-semibold text-muted-foreground/80">{title}:</p>
-          <p className="text-xs pl-2 text-foreground">{labels.join(', ')}</p>
-        </div>
-      )
-    }
-
-    const hasFilters = filterYear.length > 0 || filterMonths.length > 0 || filterType.length > 0 || filterLocation.length > 0;
-
-    return (
-      <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[220px] max-w-xs">
-        <div className="border-b pb-2 mb-2">
-            <p className="font-bold text-lg text-card-foreground">{label}</p>
-        </div>
-        
-        {locationEntries.length > 0 && (
-            <ul className="list-none p-0 my-3 space-y-1.5">
-            {locationEntries.map(([location, count], index) => (
-                <li key={`item-${index}`} className="flex items-center justify-between">
-                <div className="flex items-center">
-                    <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: payload[0].color }} />
-                    <span className="text-muted-foreground">{location}</span>
-                </div>
-                <span className="font-semibold text-foreground">{count as number}</span>
-                </li>
-            ))}
-            </ul>
-        )}
-
-        {hasFilters && (
-            <div className="border-t pt-2 mt-2 space-y-1.5 text-xs">
-                <p className="font-bold text-muted-foreground text-center mb-2">Filtros Aplicados</p>
-                {renderFilterList('Ano(s)', filterYear)}
-                {renderFilterList('Mês(es)', filterMonths.map(m => months[parseInt(m,10)]))}
-                {renderFilterList('Tipo(s)', filterType, typeOptions)}
-                {renderFilterList('Local(is)', filterLocation, locationOptions)}
+        <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[220px] max-w-xs">
+          <div className="border-b pb-2 mb-2">
+              <p className="font-bold text-lg text-card-foreground">{label}</p>
+          </div>
+          
+          {monthPayload.length > 0 && (
+            <div className="my-3">
+              <p className="font-bold text-muted-foreground mb-1.5">Por Mês:</p>
+              <ul className="list-none p-0 space-y-1.5">
+              {monthPayload.map(({ month, count, color }, index) => (
+                  <li key={`month-${index}`} className="flex items-center justify-between">
+                  <div className="flex items-center">
+                      <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: color }} />
+                      <span className="text-muted-foreground">{month}</span>
+                  </div>
+                  <span className="font-semibold text-foreground">{count as number}</span>
+                  </li>
+              ))}
+              </ul>
             </div>
-        )}
-      </div>
-    );
-  }
-  return null;
-};
+          )}
+
+          {locationEntries.length > 0 && monthPayload.length > 0 && <Separator className="my-3" />}
+
+          {locationEntries.length > 0 && (
+            <div className="my-3">
+              <p className="font-bold text-muted-foreground mb-1.5">Por Local:</p>
+              <ul className="list-none p-0 space-y-1.5">
+              {locationEntries.map(([location, count], index) => (
+                  <li key={`loc-${index}`} className="flex items-center justify-between">
+                  <div className="flex items-center">
+                      <span className="w-2.5 h-2.5 rounded-full mr-2 bg-muted" />
+                      <span className="text-muted-foreground">{location}</span>
+                  </div>
+                  <span className="font-semibold text-foreground">{count as number}</span>
+                  </li>
+              ))}
+              </ul>
+            </div>
+          )}
+  
+          {hasFilters && (
+              <div className="border-t pt-2 mt-2 space-y-1.5 text-xs">
+                  <p className="font-bold text-muted-foreground text-center mb-2">Filtros Aplicados</p>
+                  {renderFilterList('Mês(es)', filterMonths.map(m => months[parseInt(m,10)]))}
+                  {renderFilterList('Local(is)', filterLocation, locationOptions)}
+              </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
 
 export function GraphicsReport() {
   const { toast } = useToast();
@@ -157,7 +173,6 @@ export function GraphicsReport() {
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
-  const [clientToday, setClientToday] = useState<Date | null>(null);
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
@@ -174,7 +189,6 @@ export function GraphicsReport() {
 
   useEffect(() => {
     setIsClient(true);
-    setClientToday(startOfDay(new Date()));
   }, []);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
@@ -328,11 +342,10 @@ export function GraphicsReport() {
   const locationOptions = useMemo(() => locations.map(l => ({value: l, label: l})), [locations]);
 
   const filtersForTooltip = {
-    filterYear,
+    filteredData,
+    reportType,
     filterMonths,
-    filterType,
     filterLocation,
-    typeOptions,
     locationOptions,
   };
 
@@ -409,7 +422,7 @@ export function GraphicsReport() {
                         <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                             <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                             <YAxis width={0} axisLine={false} tickLine={false} />
-                            <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip reportType={reportType} filteredData={filteredData} filters={filtersForTooltip} />} />
+                            <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
                             {months.map((month, index) => (
                               <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
                             ))}
