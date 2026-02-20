@@ -70,22 +70,60 @@ const monthColors = [
   '#E7E9ED', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF5722'
 ];
 
-const CustomTooltip = ({ active, payload, label, filterSummary }: any) => {
+const CustomTooltip = ({ active, payload, label, filters }: any) => {
   if (active && payload && payload.length) {
     const filteredPayload = payload.filter((p: any) => p.value > 0);
     if (filteredPayload.length === 0) return null;
 
+    const { filterYear, filterMonths, filterType, filterLocation, typeOptions } = filters;
+    const locationOptions = filters.locationOptions || [];
+
+    const renderFilterList = (title: string, selected: string[], allOptions?: {label:string, value:string}[]) => {
+      // Don't render if "Todos" is implied
+      if (selected.length === 0) return null;
+      
+      const labels = allOptions 
+        ? selected.map(v => allOptions.find(o => o.value === v)?.label || v)
+        : selected;
+
+      return (
+        <div>
+          <p className="font-semibold text-muted-foreground/80">{title}:</p>
+          <p className="text-xs pl-2 text-foreground">{labels.join(', ')}</p>
+        </div>
+      )
+    }
+
+    const hasFilters = filterYear.length > 0 || filterMonths.length > 0 || filterType.length > 0 || filterLocation.length > 0;
+
     return (
-      <div className="p-2 bg-card border rounded-md shadow-lg text-sm max-w-xs">
-        {filterSummary && <p className="text-xs text-muted-foreground mb-2">{filterSummary}</p>}
-        <p className="font-bold text-card-foreground">{label}</p>
-        <ul className="list-none p-0 mt-1">
+      <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[220px] max-w-xs">
+        <div className="border-b pb-2 mb-2">
+            <p className="font-bold text-lg text-card-foreground">{label}</p>
+            <p className="text-xs text-muted-foreground">Total de Registros: {filteredPayload.reduce((sum: number, p: any) => sum + p.value, 0)}</p>
+        </div>
+        
+        <ul className="list-none p-0 my-3 space-y-1.5">
           {filteredPayload.map((entry: any, index: number) => (
-            <li key={`item-${index}`} style={{ color: entry.color }}>
-              {`${entry.name}: ${entry.value}`}
+            <li key={`item-${index}`} className="flex items-center justify-between">
+              <div className="flex items-center">
+                <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: entry.color }} />
+                <span className="text-muted-foreground">{entry.name}</span>
+              </div>
+              <span className="font-semibold text-foreground">{entry.value}</span>
             </li>
           ))}
         </ul>
+
+        {hasFilters && (
+            <div className="border-t pt-2 mt-2 space-y-1.5 text-xs">
+                <p className="font-bold text-muted-foreground text-center mb-2">Filtros Aplicados</p>
+                {renderFilterList('Ano(s)', filterYear)}
+                {renderFilterList('Mês(es)', filterMonths.map(m => months[parseInt(m,10)]))}
+                {renderFilterList('Tipo(s)', filterType, typeOptions)}
+                {renderFilterList('Local(is)', filterLocation, locationOptions)}
+            </div>
+        )}
       </div>
     );
   }
@@ -257,31 +295,26 @@ export function GraphicsReport() {
     return Object.values(groupedData);
   }, [filteredData, reportType]);
   
-  const filterSummary = useMemo(() => {
-    const yearText = filterYear.length > 0 ? filterYear.join(', ') : 'Todos';
-    const monthLabels = filterMonths.map(m => months[parseInt(m, 10)]).join(', ');
-    const monthText = filterMonths.length > 0 ? monthLabels : 'Todos';
+  const typeOptions = useMemo(() => {
+    let options: {value: string, label: string}[] = [];
+    if (reportType === 'occurrences') options = occurrenceTypes.map(t => ({value: t, label: t}));
+    if (reportType === 'treatments') options = treatmentTypes.map(t => ({value: t, label: t}));
+    if (reportType === 'faunaFloraGeo') options = faunaFloraGeoTypes.map(t => ({value: t, label: t}));
+    return options;
+  }, [reportType, occurrenceTypes, treatmentTypes, faunaFloraGeoTypes]);
+  
+  const locationOptions = useMemo(() => locations.map(l => ({value: l, label: l})), [locations]);
 
-    let typeOptions: { value: string, label: string }[] = [];
-    if (reportType === 'occurrences') typeOptions = occurrenceTypes.map(t => ({value: t, label: t}));
-    if (reportType === 'treatments') typeOptions = treatmentTypes.map(t => ({value: t, label: t}));
-    if (reportType === 'faunaFloraGeo') typeOptions = faunaFloraGeoTypes.map(t => ({value: t, label: t}));
-    const typeLabels = filterType.map(v => typeOptions.find(o => o.value === v)?.label || v).join(', ');
-    const typeText = filterType.length > 0 ? typeLabels : 'Todos';
-    
-    const locationLabels = filterLocation.join(', ');
-    const locationText = filterLocation.length > 0 ? locationLabels : 'Todos';
-
-    return `Ano(s): ${yearText} | Mês(es): ${monthText} | Tipo(s): ${typeText} | Local(is): ${locationText}`;
-  }, [filterYear, filterMonths, filterType, filterLocation, reportType, occurrenceTypes, treatmentTypes, faunaFloraGeoTypes]);
-
+  const filtersForTooltip = {
+    filterYear,
+    filterMonths,
+    filterType,
+    filterLocation,
+    typeOptions,
+    locationOptions,
+  };
 
   const renderFilters = () => {
-    let typeOptions: { value: string, label: string }[] = [];
-    if (reportType === 'occurrences') typeOptions = occurrenceTypes.map(t => ({value: t, label: t}));
-    if (reportType === 'treatments') typeOptions = treatmentTypes.map(t => ({value: t, label: t}));
-    if (reportType === 'faunaFloraGeo') typeOptions = faunaFloraGeoTypes.map(t => ({value: t, label: t}));
-
     return (
       <div className="space-y-4">
         <div className="space-y-2">
@@ -299,7 +332,7 @@ export function GraphicsReport() {
             </div>
              <div className="space-y-2">
                 <Label>Filtrar por Local</Label>
-                <SheetFilter title='Filtrar Locais' options={locations.map(l => ({ value: l, label: l }))} selected={filterLocation} onChange={setFilterLocation} disabled={isLoading || locations.length === 0} buttonText='Filtrar por Local' />
+                <SheetFilter title='Filtrar Locais' options={locationOptions} selected={filterLocation} onChange={setFilterLocation} disabled={isLoading || locations.length === 0} buttonText='Filtrar por Local' />
             </div>
             <Button onClick={clearFilters} variant="outline" className="w-full">Limpar Filtros</Button>
         </div>
@@ -339,7 +372,7 @@ export function GraphicsReport() {
                     <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                         <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                         <YAxis width={0} />
-                        <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filterSummary={filterSummary} />} />
+                        <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
                         {months.map((month, index) => (
                           <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index]} radius={[4, 4, 0, 0]} />
                         ))}
