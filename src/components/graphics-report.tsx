@@ -91,7 +91,7 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
       const locationEntries = Object.entries(countsByLocation).filter(([, count]) => (count as number) > 0);
 
       // --- Month Breakdown ---
-      const monthPayload = payload.map(p => ({ month: p.dataKey, count: p.value, color: p.fill })).filter(p => p.count > 0);
+      const monthPayload = payload.map((p: any) => ({ month: p.dataKey, count: p.value, color: p.fill })).filter((p: any) => p.count > 0);
   
       return (
         <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[320px] max-w-sm">
@@ -374,6 +374,7 @@ export function GraphicsReport() {
             </Button>
           </div>
         </div>
+        <p className="text-sm text-muted-foreground pt-2 text-center">Para exibir o gráfico, é necessário ter ao menos uma seleção em todos os filtros: Ano, Tipo e Local.</p>
       </div>
     );
   };
@@ -402,7 +403,6 @@ export function GraphicsReport() {
           {reportType && (
             <>
               {renderFilters()}
-              <p className="text-sm text-muted-foreground pt-2 text-center">Para exibir o gráfico, é necessário ter ao menos uma seleção em todos os filtros: Ano, Tipo e Local.</p>
             </>
           )}
         </CardContent>
