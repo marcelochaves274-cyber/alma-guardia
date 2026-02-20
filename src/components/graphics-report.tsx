@@ -107,7 +107,7 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
             <li key={`item-${index}`} className="flex items-center justify-between">
               <div className="flex items-center">
                 <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: entry.color }} />
-                <span className="text-muted-foreground">{months[months.indexOf(entry.name)]}</span>
+                <span className="text-muted-foreground">{entry.name}</span>
               </div>
               <span className="font-semibold text-foreground">{entry.value}</span>
             </li>
@@ -280,26 +280,28 @@ export function GraphicsReport() {
     const typeField = reportType === 'occurrences' ? 'occurrenceType' : reportType === 'treatments' ? 'treatmentType' : 'speciesType';
     const dateField = reportType === 'occurrences' ? 'occurrenceDate' : reportType === 'treatments' ? 'treatmentDate' : 'date';
     
-    // Group by month
-    const monthlyData = months.map((monthName, monthIndex) => {
-      const monthEntry: { name: string; [key: string]: number | string } = { name: monthName };
-      
-      const typesPresent = new Set(filteredData.map((item: any) => item[typeField] || 'Outros'));
-      
-      typesPresent.forEach(type => {
-        monthEntry[type] = 0;
-      });
+    const uniqueTypes = Array.from(new Set(filteredData.map((item: any) => item[typeField] || 'Outros'))).sort();
 
-      filteredData.forEach((item: any) => {
-        if (item[dateField].getMonth() === monthIndex) {
-          const type = item[typeField] || 'Outros';
-          (monthEntry[type] as number)++;
-        }
-      });
-      return monthEntry;
+    const dataByType = uniqueTypes.map(type => {
+        const typeEntry: { name: string; [key: string]: number | string } = { name: type };
+        
+        months.forEach((monthName) => {
+            typeEntry[monthName] = 0;
+        });
+
+        filteredData.forEach((item: any) => {
+            if ((item[typeField] || 'Outros') === type) {
+                const monthIndex = item[dateField].getMonth();
+                const monthName = months[monthIndex];
+                (typeEntry[monthName] as number)++;
+            }
+        });
+        return typeEntry;
     });
 
-    return monthlyData;
+    return dataByType.filter(entry => {
+      return months.some(month => (entry[month] as number) > 0);
+    });
   }, [filteredData, reportType, isClient]);
   
   const typeOptions = useMemo(() => {
@@ -320,20 +322,6 @@ export function GraphicsReport() {
     typeOptions,
     locationOptions,
   };
-  
-  const uniqueTypesInChart = useMemo(() => {
-    if (chartData.length === 0) return [];
-    const types = new Set<string>();
-    chartData.forEach(monthData => {
-      Object.keys(monthData).forEach(key => {
-        if (key !== 'name') {
-          types.add(key);
-        }
-      });
-    });
-    return Array.from(types);
-  }, [chartData]);
-
 
   const renderFilters = () => {
     return (
@@ -389,15 +377,23 @@ export function GraphicsReport() {
       </Card>
       
       <Card>
-        <CardContent className="pt-6">
+        <CardHeader>
+            <CardTitle>Resultados</CardTitle>
+            {showChart && filterYear.length > 0 && (
+                <CardDescription>
+                    Exibindo dados para o(s) ano(s): {filterYear.join(', ')}
+                </CardDescription>
+            )}
+        </CardHeader>
+        <CardContent className="pt-0">
             {showChart ? (
                 <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                         <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
-                        <YAxis width={0} axisLine={false} tickLine={false} />
+                        <YAxis axisLine={false} tickLine={false} allowDecimals={false} />
                         <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
-                        {uniqueTypesInChart.map((type, index) => (
-                          <Bar key={type} dataKey={type} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
+                        {months.map((month, index) => (
+                          <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
                         ))}
                     </BarChart>
                 </ResponsiveContainer>
