@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -18,12 +18,13 @@ import {
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
+import { collection, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Bar, BarChart, ResponsiveContainer, XAxis, Tooltip as RechartsTooltip, Cell } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
-import { ClipboardList, Info } from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
+import { Separator } from './ui/separator';
 
 interface Occurrence {
   id: string;
@@ -69,22 +70,58 @@ const monthColors = [
 ];
 
 const CustomXAxisTick = (props: any) => {
-  const { x, y, payload, onMouseEnter, onMouseLeave } = props;
-
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <foreignObject x={-20} y={0} width={40} height={40}>
-        <div
-          className="flex h-full w-full items-center justify-center cursor-pointer"
-          onMouseEnter={(e) => onMouseEnter(e, payload.value)}
-          onMouseLeave={onMouseLeave}
-        >
-          <ClipboardList className="h-5 w-5" />
-        </div>
-      </foreignObject>
-    </g>
-  );
+    const { x, y, payload, onMouseEnter, onMouseLeave } = props;
+  
+    return (
+      <g
+        transform={`translate(${x},${y})`}
+        onMouseEnter={(e) => onMouseEnter(e, payload.value)}
+        onMouseLeave={onMouseLeave}
+      >
+        <foreignObject x={-20} y={0} width={40} height={40}>
+          <div
+            className="flex h-full w-full items-center justify-center"
+          >
+            <ClipboardList className="h-5 w-5 cursor-pointer" />
+          </div>
+        </foreignObject>
+      </g>
+    );
 };
+
+const CustomBarTooltip = ({ active, payload, label, chartData }: any) => {
+    if (active && payload && payload.length && chartData) {
+      const data = chartData.find((d: any) => d.name === label);
+      if (!data) return null;
+
+      const total = Object.keys(data)
+        .filter(key => months.includes(key))
+        .reduce((sum, key) => sum + (data[key] || 0), 0);
+
+      return (
+        <div className="rounded-lg border bg-popover p-3 text-popover-foreground shadow-sm max-w-xs">
+          <p className="text-sm font-bold mb-2">{label}</p>
+          <ul className="space-y-1 text-xs">
+            {months.map((month, index) => (
+              <li key={month} className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <span className="block h-2 w-2 rounded-full mr-2" style={{ backgroundColor: monthColors[index % monthColors.length] }}></span>
+                  <span>{month}:</span>
+                </div>
+                <span className="font-semibold">{data[month] || 0}</span>
+              </li>
+            ))}
+          </ul>
+           <Separator className="my-2" />
+            <p className="flex justify-between text-sm font-bold">
+                <span>Total:</span>
+                <span>{total}</span>
+            </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
 
 export function GraphicsReport() {
@@ -94,29 +131,26 @@ export function GraphicsReport() {
 
   const [reportType, setReportType] = useState<ReportType | null>(null);
   
-  // Data
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [faunaFloraGeo, setFaunaFloraGeo] = useState<FaunaFloraGeoRecord[]>([]);
 
-  // Loading states
   const [isLoading, setIsLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
 
-  // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
   const [filterType, setFilterType] = useState<string[]>([]);
   const [filterLocation, setFilterLocation] = useState<string[]>([]);
   
-  const [tooltip, setTooltip] = useState({
+  const [iconTooltip, setIconTooltip] = useState({
     visible: false,
     content: '',
     x: 0,
     y: 0,
   });
 
-  const handleTickMouseEnter = (e: React.MouseEvent, content: string) => {
-    setTooltip({
+  const handleIconTooltip = (e: React.MouseEvent, content: string) => {
+    setIconTooltip({
         visible: true,
         content,
         x: e.clientX,
@@ -124,12 +158,10 @@ export function GraphicsReport() {
     });
   };
 
-  const handleTickMouseLeave = () => {
-      setTooltip({ ...tooltip, visible: false });
+  const hideIconTooltip = () => {
+      setIconTooltip({ ...iconTooltip, visible: false });
   };
 
-
-  // Filter options
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
   const [treatmentTypes, setTreatmentTypes] = useState<string[]>([]);
@@ -140,33 +172,6 @@ export function GraphicsReport() {
     setIsClient(true);
   }, []);
 
-  const getSettingsDocRef = useCallback((collectionName: string) => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'sgs_genius', user.uid, 'settings', collectionName);
-  }, [firestore, user]);
-
-  // Fetch filter options
-  useEffect(() => {
-    const fetchOptions = async (docName: string, setData: (data: string[]) => void, field: 'types' | 'locations') => {
-      const docRef = getSettingsDocRef(docName);
-      if (!docRef) return;
-      try {
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setData((data[field] || []).sort());
-        }
-      } catch (error) {
-        console.error(`Error fetching ${docName}:`, error);
-      }
-    };
-    fetchOptions('occurrenceTypes', setOccurrenceTypes, 'types');
-    fetchOptions('occurrenceTypes', setTreatmentTypes, 'types'); // Re-using for now
-    fetchOptions('faunaFloraGeoTypes', setFaunaFloraGeoTypes, 'types');
-    fetchOptions('locations', setLocations, 'locations');
-  }, [getSettingsDocRef]);
-
-  // Fetch all data
   useEffect(() => {
     const fetchData = async () => {
         if (!user || !firestore) {
@@ -176,17 +181,39 @@ export function GraphicsReport() {
         setIsLoading(true);
 
         try {
-            const [occurrencesSnap, treatmentsSnap, faunaFloraGeoSnap] = await Promise.all([
+            const [
+                occurrencesSnap, 
+                treatmentsSnap, 
+                faunaFloraGeoSnap, 
+                occurrenceTypesSnap, 
+                treatmentTypesSnap, 
+                faunaFloraGeoTypesSnap,
+                locationsSnap
+            ] = await Promise.all([
                 getDocs(collection(firestore, 'sgs_genius', user.uid, 'chat_messages')),
                 getDocs(collection(firestore, 'sgs_genius', user.uid, 'risk_treatments')),
                 getDocs(collection(firestore, 'sgs_genius', user.uid, 'fauna_flora_geo')),
+                getDocs(collection(firestore, 'sgs_genius', user.uid, 'settings')),
             ]);
+
+            const settingsDoc = (await getDoc(doc(firestore, 'sgs_genius', user.uid, 'settings', 'occurrenceTypes')));
+            if(settingsDoc.exists()) setOccurrenceTypes(settingsDoc.data().types || []);
+
+            const treatmentSettingsDoc = (await getDoc(doc(firestore, 'sgs_genius', user.uid, 'settings', 'occurrenceTypes')));
+            if(treatmentSettingsDoc.exists()) setTreatmentTypes(treatmentSettingsDoc.data().types || []);
+            
+            const faunaFloraGeoSettingsDoc = (await getDoc(doc(firestore, 'sgs_genius', user.uid, 'settings', 'faunaFloraGeoTypes')));
+            if(faunaFloraGeoSettingsDoc.exists()) setFaunaFloraGeoTypes(faunaFloraGeoSettingsDoc.data().types || []);
+
+            const locationsSettingsDoc = (await getDoc(doc(firestore, 'sgs_genius', user.uid, 'settings', 'locations')));
+            if(locationsSettingsDoc.exists()) setLocations(locationsSettingsDoc.data().locations || []);
+
 
             const safeToDate = (timestamp: any) => timestamp instanceof Timestamp ? timestamp.toDate() : new Date(0);
 
-            const occurrencesData = occurrencesSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), occurrenceDate: safeToDate(doc.data().occurrenceDate) })) as Occurrence[];
-            const treatmentsData = treatmentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), treatmentDate: safeToDate(doc.data().treatmentDate) })) as Treatment[];
-            const faunaFloraGeoData = faunaFloraGeoSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), date: safeToDate(doc.data().date) })) as FaunaFloraGeoRecord[];
+            const occurrencesData = occurrencesSnap.docs.map(d => ({ id: d.id, ...d.data(), occurrenceDate: safeToDate(d.data().occurrenceDate) })) as Occurrence[];
+            const treatmentsData = treatmentsSnap.docs.map(d => ({ id: d.id, ...d.data(), treatmentDate: safeToDate(d.data().treatmentDate) })) as Treatment[];
+            const faunaFloraGeoData = faunaFloraGeoSnap.docs.map(d => ({ id: d.id, ...d.data(), date: safeToDate(d.data().date) })) as FaunaFloraGeoRecord[];
 
             setOccurrences(occurrencesData);
             setTreatments(treatmentsData);
@@ -350,15 +377,15 @@ export function GraphicsReport() {
 
   return (
     <div>
-      {tooltip.visible && (
+      {iconTooltip.visible && (
         <div
           className="pointer-events-none fixed z-50 rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md"
           style={{
-              left: tooltip.x + 15,
-              top: tooltip.y + 15,
+              left: iconTooltip.x + 15,
+              top: iconTooltip.y + 15,
           }}
         >
-          {tooltip.content}
+          {iconTooltip.content}
         </div>
       )}
       <div className="space-y-6">
@@ -403,18 +430,14 @@ export function GraphicsReport() {
                       <ResponsiveContainer width="100%" height={Math.max(600, chartData.length * 50)}>
                           <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 60 }} barGap={4}>
                               <RechartsTooltip 
-                                cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }}
-                                contentStyle={{
-                                  background: 'hsl(var(--background))',
-                                  borderColor: 'hsl(var(--border))',
-                                  borderRadius: 'var(--radius)',
-                                }}
+                                  content={<CustomBarTooltip chartData={chartData} />}
+                                  cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }}
                               />
                               <XAxis 
                                   dataKey="name" 
                                   tickLine={false} 
                                   axisLine={false} 
-                                  tick={<CustomXAxisTick onMouseEnter={handleTickMouseEnter} onMouseLeave={handleTickMouseLeave} />}
+                                  tick={<CustomXAxisTick onMouseEnter={handleIconTooltip} onMouseLeave={hideIconTooltip} />}
                                   height={80}
                                   interval={0}
                               />
