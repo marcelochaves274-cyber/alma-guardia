@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -21,15 +20,10 @@ import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Bar, BarChart, ResponsiveContainer, XAxis } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
-import { 
-    Info, HardHat, HandMetal, MoveVertical, User, Shield, TrendingDown, 
-    Scissors, Bug, HeartPulse, Activity, Flame, Stethoscope, Siren, 
-    Sprout, Mountain, Waves, Cloud, Car, Zap, FlaskConical, MessageCircle, 
-    ClipboardList 
-} from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
 
 interface Occurrence {
   id: string;
@@ -75,56 +69,26 @@ const monthColors = [
 ];
 
 const getIconForLabel = (label: string): React.ReactElement => {
-    const lowerLabel = label.toLowerCase();
-    
-    // Safety & Equipment
-    if (lowerLabel.includes('capacete')) return <HardHat className="h-5 w-5" />;
-    if (lowerLabel.includes('luva')) return <HandMetal className="h-5 w-5" />;
-    if (lowerLabel.includes('corda')) return <MoveVertical className="h-5 w-5" />;
-    if (lowerLabel.includes('cinto')) return <User className="h-5 w-5" />;
-    if (lowerLabel.includes('epi') || lowerLabel.includes('proteção')) return <Shield className="h-5 w-5" />;
-
-    // Accidents & Health
-    if (lowerLabel.includes('queda') || lowerLabel.includes('caiu')) return <TrendingDown className="h-5 w-5" />;
-    if (lowerLabel.includes('corte') || lowerLabel.includes('ferimento')) return <Scissors className="h-5 w-5" />;
-    if (lowerLabel.includes('picada') || lowerLabel.includes('inseto') || lowerLabel.includes('animal')) return <Bug className="h-5 w-5" />;
-    if (lowerLabel.includes('coração') || lowerLabel.includes('cardíaco')) return <HeartPulse className="h-5 w-5" />;
-    if (lowerLabel.includes('fratura') || lowerLabel.includes('osso')) return <Activity className="h-5 w-5" />;
-    if (lowerLabel.includes('queimadura') || lowerLabel.includes('fogo') || lowerLabel.includes('incêndio')) return <Flame className="h-5 w-5" />;
-    if (lowerLabel.includes('saúde') || lowerLabel.includes('médico')) return <Stethoscope className="h-5 w-5" />;
-    if (lowerLabel.includes('acidente')) return <Siren className="h-5 w-5" />;
-
-    // Nature & Environment
-    if (lowerLabel.includes('galho') || lowerLabel.includes('árvore') || lowerLabel.includes('planta')) return <Sprout className="h-5 w-5" />;
-    if (lowerLabel.includes('pedra') || lowerLabel.includes('rocha')) return <Mountain className="h-5 w-5" />;
-    if (lowerLabel.includes('água') || lowerLabel.includes('rio')) return <Waves className="h-5 w-5" />;
-    if (lowerLabel.includes('clima') || lowerLabel.includes('tempo')) return <Cloud className="h-5 w-5" />;
-
-    // General & Other
-    if (lowerLabel.includes('veículo') || lowerLabel.includes('carro')) return <Car className="h-5 w-5" />;
-    if (lowerLabel.includes('elétrico') || lowerLabel.includes('eletricidade')) return <Zap className="h-5 w-5" />;
-    if (lowerLabel.includes('químico')) return <FlaskConical className="h-5 w-5" />;
-    if (lowerLabel.includes('comunicação')) return <MessageCircle className="h-5 w-5" />;
-    
-    // Default Icon
     return <ClipboardList className="h-5 w-5" />;
 };
-
 
 const CustomXAxisTick = (props: any) => {
   const { x, y, payload, onMouseEnter, onMouseLeave } = props;
 
   if (payload && payload.value) {
     const icon = getIconForLabel(payload.value);
-
+    
+    // A ForeignObject is used to embed HTML within an SVG, which is needed to render the icon component.
+    // A transparent rectangle is placed behind to ensure mouse events are captured reliably.
     return (
       <g
         transform={`translate(${x},${y})`}
         onMouseEnter={(e) => onMouseEnter(e, payload.value)}
         onMouseLeave={onMouseLeave}
       >
-        <foreignObject x={-20} y={0} width={40} height={40} style={{ overflow: 'visible' }}>
-          <div className="flex h-full w-full cursor-default items-center justify-center">
+        <rect x={-20} y={0} width={40} height={40} fill="transparent" />
+        <foreignObject x={-20} y={0} width={40} height={40} style={{ pointerEvents: 'none' }}>
+          <div className="flex h-full w-full items-center justify-center">
             {icon}
           </div>
         </foreignObject>
@@ -451,6 +415,14 @@ export function GraphicsReport() {
                   ) : showChart ? (
                       <ResponsiveContainer width="100%" height={Math.max(600, chartData.length * 50)}>
                           <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 60 }} barGap={4}>
+                              <RechartsTooltip 
+                                cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }}
+                                contentStyle={{
+                                  background: 'hsl(var(--background))',
+                                  borderColor: 'hsl(var(--border))',
+                                  borderRadius: 'var(--radius)',
+                                }}
+                              />
                               <XAxis 
                                   dataKey="name" 
                                   tickLine={false} 
