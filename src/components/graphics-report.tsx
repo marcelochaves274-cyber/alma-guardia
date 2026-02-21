@@ -21,17 +21,16 @@ import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Bar, BarChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis } from 'recharts';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
 import { Separator } from './ui/separator';
-import { Info } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { 
+    Info, HardHat, HandMetal, MoveVertical, User, Shield, TrendingDown, 
+    Scissors, Bug, HeartPulse, Activity, Flame, Stethoscope, Siren, 
+    Sprout, Mountain, Waves, Cloud, Car, Zap, FlaskConical, MessageCircle, 
+    ClipboardList 
+} from 'lucide-react';
 
 
 // Data types from other components
@@ -77,6 +76,43 @@ const monthColors = [
   '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
   '#E7E9ED', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF5722'
 ];
+
+const getIconForLabel = (label: string): React.ReactElement => {
+    const lowerLabel = label.toLowerCase();
+    
+    // Safety & Equipment
+    if (lowerLabel.includes('capacete')) return <HardHat className="h-5 w-5" />;
+    if (lowerLabel.includes('luva')) return <HandMetal className="h-5 w-5" />;
+    if (lowerLabel.includes('corda')) return <MoveVertical className="h-5 w-5" />;
+    if (lowerLabel.includes('cinto')) return <User className="h-5 w-5" />;
+    if (lowerLabel.includes('epi') || lowerLabel.includes('proteção')) return <Shield className="h-5 w-5" />;
+
+    // Accidents & Health
+    if (lowerLabel.includes('queda') || lowerLabel.includes('caiu')) return <TrendingDown className="h-5 w-5" />;
+    if (lowerLabel.includes('corte') || lowerLabel.includes('ferimento')) return <Scissors className="h-5 w-5" />;
+    if (lowerLabel.includes('picada') || lowerLabel.includes('inseto') || lowerLabel.includes('animal')) return <Bug className="h-5 w-5" />;
+    if (lowerLabel.includes('coração') || lowerLabel.includes('cardíaco')) return <HeartPulse className="h-5 w-5" />;
+    if (lowerLabel.includes('fratura') || lowerLabel.includes('osso')) return <Activity className="h-5 w-5" />;
+    if (lowerLabel.includes('queimadura') || lowerLabel.includes('fogo') || lowerLabel.includes('incêndio')) return <Flame className="h-5 w-5" />;
+    if (lowerLabel.includes('saúde') || lowerLabel.includes('médico')) return <Stethoscope className="h-5 w-5" />;
+    if (lowerLabel.includes('acidente')) return <Siren className="h-5 w-5" />;
+
+    // Nature & Environment
+    if (lowerLabel.includes('galho') || lowerLabel.includes('árvore') || lowerLabel.includes('planta')) return <Sprout className="h-5 w-5" />;
+    if (lowerLabel.includes('pedra') || lowerLabel.includes('rocha')) return <Mountain className="h-5 w-5" />;
+    if (lowerLabel.includes('água') || lowerLabel.includes('rio')) return <Waves className="h-5 w-5" />;
+    if (lowerLabel.includes('clima') || lowerLabel.includes('tempo')) return <Cloud className="h-5 w-5" />;
+
+    // General & Other
+    if (lowerLabel.includes('veículo') || lowerLabel.includes('carro')) return <Car className="h-5 w-5" />;
+    if (lowerLabel.includes('elétrico') || lowerLabel.includes('eletricidade')) return <Zap className="h-5 w-5" />;
+    if (lowerLabel.includes('químico')) return <FlaskConical className="h-5 w-5" />;
+    if (lowerLabel.includes('comunicação')) return <MessageCircle className="h-5 w-5" />;
+    
+    // Default Icon
+    return <ClipboardList className="h-5 w-5" />;
+};
+
 
 const CustomTooltip = ({ active, payload, label, filters }: any) => {
     if (active && payload && payload.length) {
@@ -154,36 +190,22 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
     return null;
   };
 
-const getIconForLabel = (label: string): React.ReactElement => {
-    // Return a single, static icon for debugging purposes.
-    return <Info className="h-5 w-5" />;
-};
-
-
 const CustomXAxisTick = (props: any) => {
-  const { x, y, payload } = props;
+  const { x, y, payload, onMouseEnter, onMouseLeave } = props;
 
   if (payload && payload.value) {
     const icon = getIconForLabel(payload.value);
 
-    // Use a foreignObject to allow HTML/React components (like the tooltip) inside the SVG.
     return (
-      <g transform={`translate(${x},${y})`}>
-        {/* The foreignObject creates a space for HTML content. It's crucial for the tooltip to work. */}
-        {/* The overflow: 'visible' is important so the tooltip content isn't clipped. */}
+      <g
+        transform={`translate(${x},${y})`}
+        onMouseEnter={(e) => onMouseEnter(e, payload.value)}
+        onMouseLeave={onMouseLeave}
+      >
         <foreignObject x={-20} y={0} width={40} height={40} style={{ overflow: 'visible' }}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                {/* This div is the invisible trigger area. It has a default cursor. */}
-                <div className="flex h-full w-full cursor-default items-center justify-center">
-                  {icon}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                {/* The content of the tooltip, which is the full text label. */}
-                <p>{payload.value}</p>
-              </TooltipContent>
-            </Tooltip>
+          <div className="flex h-full w-full cursor-default items-center justify-center">
+            {icon}
+          </div>
         </foreignObject>
       </g>
     );
@@ -191,6 +213,7 @@ const CustomXAxisTick = (props: any) => {
 
   return null;
 };
+
 
 export function GraphicsReport() {
   const { toast } = useToast();
@@ -212,6 +235,32 @@ export function GraphicsReport() {
   const [filterYear, setFilterYear] = useState<string[]>([]);
   const [filterType, setFilterType] = useState<string[]>([]);
   const [filterLocation, setFilterLocation] = useState<string[]>([]);
+  
+  const [tooltip, setTooltip] = useState({
+    visible: false,
+    content: '',
+    x: 0,
+    y: 0,
+  });
+
+  const handleTickMouseEnter = (e: React.MouseEvent, content: string) => {
+    setTooltip({
+        visible: true,
+        content,
+        x: e.clientX,
+        y: e.clientY,
+    });
+  };
+
+  const handleTickMouseLeave = () => {
+      setTooltip({
+          visible: false,
+          content: '',
+          x: 0,
+          y: 0,
+      });
+  };
+
 
   // Filter options
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -427,7 +476,18 @@ export function GraphicsReport() {
   const showNoDataMessage = !isLoading && reportType && areAllFiltersActive && chartData.length === 0;
 
   return (
-    <TooltipProvider>
+    <div>
+      {tooltip.visible && (
+        <div
+          className="pointer-events-none fixed z-50 rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md"
+          style={{
+              left: tooltip.x + 15,
+              top: tooltip.y + 15,
+          }}
+        >
+          {tooltip.content}
+        </div>
+      )}
       <div className="space-y-6">
         <Card>
           <CardHeader>
@@ -473,11 +533,16 @@ export function GraphicsReport() {
                                   dataKey="name" 
                                   tickLine={false} 
                                   axisLine={false} 
-                                  tick={<CustomXAxisTick />}
+                                  tick={(props) => (
+                                    <CustomXAxisTick 
+                                        {...props} 
+                                        onMouseEnter={handleTickMouseEnter} 
+                                        onMouseLeave={handleTickMouseLeave}
+                                    />
+                                  )}
                                   height={80}
                                   interval={0}
                               />
-                              <YAxis axisLine={false} tickLine={false} width={0} ticks={[0]} />
                               <RechartsTooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
                               {months.map((month, index) => (
                                 <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
@@ -495,6 +560,6 @@ export function GraphicsReport() {
           </CardContent>
         </Card>
       </div>
-    </TooltipProvider>
+    </div>
   )
 }
