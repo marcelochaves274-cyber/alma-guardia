@@ -18,7 +18,7 @@ import {
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, Timestamp, getDocs } from 'firebase/firestore';
+import { collection, Timestamp, getDocs, doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Bar, BarChart, ResponsiveContainer, XAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { SheetFilter } from './sheet-filter';
@@ -69,26 +69,6 @@ const monthColors = [
   '#E7E9ED', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF5722'
 ];
 
-const CustomXAxisTick = (props: any) => {
-    const { x, y, payload, onMouseEnter, onMouseLeave } = props;
-  
-    return (
-      <g
-        transform={`translate(${x},${y})`}
-        onMouseEnter={(e) => onMouseEnter(e, payload.value)}
-        onMouseLeave={onMouseLeave}
-      >
-        <foreignObject x={-20} y={0} width={40} height={40}>
-          <div
-            className="flex h-full w-full items-center justify-center"
-          >
-            <ClipboardList className="h-5 w-5 cursor-pointer" />
-          </div>
-        </foreignObject>
-      </g>
-    );
-};
-
 const CustomBarTooltip = ({ active, payload, label, chartData }: any) => {
     if (active && payload && payload.length && chartData) {
       const data = chartData.find((d: any) => d.name === label);
@@ -121,8 +101,7 @@ const CustomBarTooltip = ({ active, payload, label, chartData }: any) => {
       );
     }
     return null;
-  };
-
+};
 
 export function GraphicsReport() {
   const { toast } = useToast();
@@ -149,17 +128,31 @@ export function GraphicsReport() {
     y: 0,
   });
 
-  const handleIconTooltip = (e: React.MouseEvent, content: string) => {
-    setIconTooltip({
-        visible: true,
-        content,
-        x: e.clientX,
-        y: e.clientY,
-    });
-  };
-
-  const hideIconTooltip = () => {
-      setIconTooltip({ ...iconTooltip, visible: false });
+  const CustomXAxisTick = (props: any) => {
+    const { x, y, payload } = props;
+    
+    return (
+      <g
+        transform={`translate(${x},${y})`}
+        onMouseEnter={(e) => {
+            setIconTooltip({
+              visible: true,
+              content: payload.value,
+              x: e.clientX,
+              y: e.clientY,
+            });
+        }}
+        onMouseLeave={() => setIconTooltip({ ...iconTooltip, visible: false })}
+      >
+        <foreignObject x={-20} y={0} width={40} height={40}>
+          <div
+            className="flex h-full w-full items-center justify-center"
+          >
+            <ClipboardList className="h-5 w-5" />
+          </div>
+        </foreignObject>
+      </g>
+    );
   };
 
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -184,16 +177,11 @@ export function GraphicsReport() {
             const [
                 occurrencesSnap, 
                 treatmentsSnap, 
-                faunaFloraGeoSnap, 
-                occurrenceTypesSnap, 
-                treatmentTypesSnap, 
-                faunaFloraGeoTypesSnap,
-                locationsSnap
+                faunaFloraGeoSnap
             ] = await Promise.all([
                 getDocs(collection(firestore, 'sgs_genius', user.uid, 'chat_messages')),
                 getDocs(collection(firestore, 'sgs_genius', user.uid, 'risk_treatments')),
                 getDocs(collection(firestore, 'sgs_genius', user.uid, 'fauna_flora_geo')),
-                getDocs(collection(firestore, 'sgs_genius', user.uid, 'settings')),
             ]);
 
             const settingsDoc = (await getDoc(doc(firestore, 'sgs_genius', user.uid, 'settings', 'occurrenceTypes')));
@@ -437,7 +425,7 @@ export function GraphicsReport() {
                                   dataKey="name" 
                                   tickLine={false} 
                                   axisLine={false} 
-                                  tick={<CustomXAxisTick onMouseEnter={handleIconTooltip} onMouseLeave={hideIconTooltip} />}
+                                  tick={<CustomXAxisTick />}
                                   height={80}
                                   interval={0}
                               />
