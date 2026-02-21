@@ -21,10 +21,9 @@ import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Bar, BarChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis } from 'recharts';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
-import { Separator } from './ui/separator';
 import { 
     Info, HardHat, HandMetal, MoveVertical, User, Shield, TrendingDown, 
     Scissors, Bug, HeartPulse, Activity, Flame, Stethoscope, Siren, 
@@ -32,18 +31,16 @@ import {
     ClipboardList 
 } from 'lucide-react';
 
-
-// Data types from other components
 interface Occurrence {
   id: string;
-  occurrenceDate: Timestamp;
+  occurrenceDate: Date;
   occurrenceType: string;
   occurrenceLocation: string;
 }
 
 interface Treatment {
   id: string;
-  treatmentDate: Timestamp;
+  treatmentDate: Date;
   treatmentType: string;
   treatmentLocation: string;
   riskLevel: number;
@@ -53,7 +50,7 @@ interface Treatment {
 
 interface FaunaFloraGeoRecord {
   id: string;
-  date: Timestamp;
+  date: Date;
   speciesType: string;
   location: string;
   analysis: 'alta' | 'media' | 'baixa';
@@ -110,85 +107,9 @@ const getIconForLabel = (label: string): React.ReactElement => {
     if (lowerLabel.includes('comunicação')) return <MessageCircle className="h-5 w-5" />;
     
     // Default Icon
-    return <Info className="h-5 w-5" />;
+    return <ClipboardList className="h-5 w-5" />;
 };
 
-
-const CustomTooltip = ({ active, payload, label, filters }: any) => {
-    if (active && payload && payload.length) {
-      const { filteredData, reportType } = filters;
-      const typeName = label;
-
-      // --- Total ---
-      const totalCount = payload.reduce((sum: number, p: any) => sum + p.value, 0);
-  
-      // --- Location Breakdown ---
-      const locationField = reportType === 'occurrences' ? 'occurrenceLocation' : reportType === 'treatments' ? 'treatmentLocation' : 'location';
-      const typeField = reportType === 'occurrences' ? 'occurrenceType' : reportType === 'treatments' ? 'treatmentType' : 'speciesType';
-      const itemsForType = filteredData.filter((item: any) => (item[typeField] || 'Outros') === typeName);
-      
-      const countsByLocation: Record<string, number> = itemsForType.reduce((acc: Record<string, number>, item: any) => {
-          const loc = item[locationField] || 'Sem Local';
-          acc[loc] = (acc[loc] || 0) + 1;
-          return acc;
-      }, {});
-      const locationEntries = Object.entries(countsByLocation).filter(([, count]) => (count as number) > 0);
-
-      // --- Month Breakdown ---
-      const monthPayload = payload.map((p: { dataKey: string; value: number; fill: string; }) => ({ month: p.dataKey, count: p.value, color: p.fill })).filter((p: {count: number}) => p.count > 0);
-  
-      return (
-        <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[320px] max-w-sm">
-          <div className="border-b pb-2 mb-2">
-              <p className="font-bold text-lg text-foreground">{label}</p>
-          </div>
-          
-          {monthPayload.length > 0 && (
-            <div className="my-3">
-              <div className="flex justify-between items-center mb-1.5">
-                <p className="font-bold text-muted-foreground">Por Mês:</p>
-                <p className="font-bold text-muted-foreground">Total: <span className="font-semibold text-foreground">{totalCount}</span></p>
-              </div>
-              <ul className="list-none p-0 space-y-1.5">
-              {monthPayload.map(({ month, count, color }: { month: string, count: number, color: string }, index: number) => (
-                  <li key={`month-${index}`} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                      <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: color }} />
-                      <span className="text-muted-foreground">{month}</span>
-                  </div>
-                  <span className="font-semibold text-foreground">{count}</span>
-                  </li>
-              ))}
-              </ul>
-            </div>
-          )}
-
-          {locationEntries.length > 0 && monthPayload.length > 0 && <Separator className="my-3" />}
-
-          {locationEntries.length > 0 && (
-            <div className="my-3">
-               <div className="flex justify-between items-center mb-1.5">
-                <p className="font-bold text-muted-foreground">Por Local:</p>
-                 <p className="font-bold text-muted-foreground">Total: <span className="font-semibold text-foreground">{totalCount}</span></p>
-              </div>
-              <ul className="list-none p-0 space-y-1.5">
-              {locationEntries.map(([location, count], index: number) => (
-                  <li key={`loc-${index}`} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                      <span className="w-2.5 h-2.5 rounded-full mr-2 bg-muted" />
-                      <span className="text-muted-foreground">{location}</span>
-                  </div>
-                  <span className="font-semibold text-foreground">{count as number}</span>
-                  </li>
-              ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      );
-    }
-    return null;
-  };
 
 const CustomXAxisTick = (props: any) => {
   const { x, y, payload, onMouseEnter, onMouseLeave } = props;
@@ -296,55 +217,63 @@ export function GraphicsReport() {
 
   // Fetch all data
   useEffect(() => {
-    if (!user || !firestore) return;
-    
-    const collectionsToFetch = [
-      { ref: collection(firestore, 'sgs_genius', user.uid, 'chat_messages'), setter: setOccurrences, dateField: 'occurrenceDate' },
-      { ref: collection(firestore, 'sgs_genius', user.uid, 'risk_treatments'), setter: setTreatments, dateField: 'treatmentDate' },
-      { ref: collection(firestore, 'sgs_genius', user.uid, 'fauna_flora_geo'), setter: setFaunaFloraGeo, dateField: 'date' },
-    ];
+    const fetchData = async () => {
+        if (!user || !firestore) {
+            setIsLoading(false);
+            return;
+        }
+        setIsLoading(true);
 
-    setIsLoading(true);
-    const unsubscribes = collectionsToFetch.map(({ ref, setter, dateField }) => {
-      return onSnapshot(ref, (snapshot) => {
-        const data = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          [dateField]: doc.data()[dateField] instanceof Timestamp ? doc.data()[dateField].toDate() : new Date(0),
-        })) as any[];
-        setter(data);
-      }, (error) => {
-        console.error(`Error fetching collection:`, error);
-        toast({
-          variant: "destructive",
-          title: "Erro de conexão",
-          description: "Não foi possível buscar os dados para os gráficos."
-        });
-      });
-    });
+        try {
+            const [occurrencesSnap, treatmentsSnap, faunaFloraGeoSnap] = await Promise.all([
+                getDocs(collection(firestore, 'sgs_genius', user.uid, 'chat_messages')),
+                getDocs(collection(firestore, 'sgs_genius', user.uid, 'risk_treatments')),
+                getDocs(collection(firestore, 'sgs_genius', user.uid, 'fauna_flora_geo')),
+            ]);
 
-    // Combine all data to calculate available years
-    Promise.all([
-      getDocs(collectionsToFetch[0].ref),
-      getDocs(collectionsToFetch[1].ref),
-      getDocs(collectionsToFetch[2].ref)
-    ]).then(snapshots => {
-        const allYears = new Set<string>();
-        snapshots.forEach((snapshot, index) => {
-            snapshot.docs.forEach(doc => {
-                const date = doc.data()[collectionsToFetch[index].dateField];
-                if (date instanceof Timestamp) {
-                    allYears.add(date.toDate().getFullYear().toString());
-                }
-            })
-        });
-        setAvailableYears(Array.from(allYears).sort((a,b) => Number(b) - Number(a)));
-        setIsLoading(false);
-    });
+            const safeToDate = (timestamp: any) => timestamp instanceof Timestamp ? timestamp.toDate() : new Date(0);
 
-    return () => unsubscribes.forEach(unsub => unsub());
+            const occurrencesData = occurrencesSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), occurrenceDate: safeToDate(doc.data().occurrenceDate) })) as Occurrence[];
+            const treatmentsData = treatmentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), treatmentDate: safeToDate(doc.data().treatmentDate) })) as Treatment[];
+            const faunaFloraGeoData = faunaFloraGeoSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), date: safeToDate(doc.data().date) })) as FaunaFloraGeoRecord[];
 
+            setOccurrences(occurrencesData);
+            setTreatments(treatmentsData);
+            setFaunaFloraGeo(faunaFloraGeoData);
+
+            const allYears = new Set<string>();
+            const processYears = (items: any[], dateField: string) => {
+                items.forEach(item => {
+                    const date = item[dateField];
+                    if (date && date.getFullYear() > 1970) {
+                        allYears.add(date.getFullYear().toString());
+                    }
+                });
+            };
+
+            processYears(occurrencesData, 'occurrenceDate');
+            processYears(treatmentsData, 'treatmentDate');
+            processYears(faunaFloraGeoData, 'date');
+            
+            setAvailableYears(Array.from(allYears).sort((a, b) => Number(b) - Number(a)));
+
+        } catch (error) {
+            console.error("Error fetching data for charts:", error);
+            toast({
+                variant: "destructive",
+                title: "Erro de conexão",
+                description: "Não foi possível buscar os dados para os gráficos."
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if(user && firestore) {
+      fetchData();
+    }
   }, [user, firestore, toast]);
+
 
   const clearFilters = () => {
     setFilterYear([]);
@@ -392,9 +321,12 @@ export function GraphicsReport() {
 
         filteredData.forEach((item: any) => {
             if ((item[typeField] || 'Outros') === type) {
-                const monthIndex = item[dateField].getMonth();
-                const monthName = months[monthIndex];
-                (typeEntry[monthName] as number)++;
+                const itemDate = item[dateField];
+                if(itemDate && itemDate.getFullYear() > 1970) {
+                  const monthIndex = itemDate.getMonth();
+                  const monthName = months[monthIndex];
+                  (typeEntry[monthName] as number)++;
+                }
             }
         });
         return typeEntry;
@@ -413,11 +345,6 @@ export function GraphicsReport() {
     return options;
   }, [reportType, occurrenceTypes, treatmentTypes, faunaFloraGeoTypes]);
   
-  const filtersForTooltip = {
-    filteredData,
-    reportType,
-  };
-
   const areAllFiltersActive = filterYear.length > 0 && filterType.length > 0 && filterLocation.length > 0;
   
   const renderFilters = () => {
@@ -532,7 +459,6 @@ export function GraphicsReport() {
                                   height={80}
                                   interval={0}
                               />
-                              <RechartsTooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
                               {months.map((month, index) => (
                                 <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
                               ))}
@@ -552,5 +478,3 @@ export function GraphicsReport() {
     </div>
   )
 }
-
-    
