@@ -232,20 +232,19 @@ const CustomXAxisTick = (props: any) => {
 
     return (
       <g transform={`translate(${x},${y})`}>
-        <foreignObject x={-12} y={5} width={24} height={24}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex h-full w-full cursor-pointer items-center justify-center">
-                  {icon}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{payload.value}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </foreignObject>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <rect x={-12} y={0} width={24} height={30} fill="transparent" className="cursor-pointer" />
+          </TooltipTrigger>
+          <foreignObject x={-12} y={5} width={24} height={24} className="pointer-events-none">
+            <div className="flex h-full w-full items-center justify-center">
+              {icon}
+            </div>
+          </foreignObject>
+          <TooltipContent>
+            <p>{payload.value}</p>
+          </TooltipContent>
+        </Tooltip>
       </g>
     );
   }
@@ -370,12 +369,11 @@ export function GraphicsReport() {
 
   const filteredData = useMemo(() => {
     if (!isClient || !reportType) return [];
-    let data: any[];
+    let data: any[] = [];
     switch (reportType) {
       case 'occurrences': data = occurrences; break;
       case 'treatments': data = treatments; break;
       case 'faunaFloraGeo': data = faunaFloraGeo; break;
-      default: data = [];
     }
 
     const dateField = reportType === 'occurrences' ? 'occurrenceDate' : reportType === 'treatments' ? 'treatmentDate' : 'date';
@@ -529,7 +527,7 @@ export function GraphicsReport() {
                 ) : showChart ? (
                     <TooltipProvider>
                       <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 40 }}>
+                          <BarChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 60 }}>
                               <XAxis 
                                   dataKey="name" 
                                   tickLine={false} 
@@ -538,7 +536,7 @@ export function GraphicsReport() {
                                   height={60} 
                                   interval={0} 
                               />
-                              <YAxis width={0} axisLine={false} tickLine={false} />
+                              <YAxis width={30} axisLine={false} tickLine={false} />
                               <RechartsTooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
                               {months.map((month, index) => (
                                 <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
