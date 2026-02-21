@@ -112,7 +112,7 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
                       <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: color }} />
                       <span className="text-muted-foreground">{month}</span>
                   </div>
-                  <span className="font-semibold text-foreground">{count as number}</span>
+                  <span className="font-semibold text-foreground">{count}</span>
                   </li>
               ))}
               </ul>
@@ -145,6 +145,26 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
     }
     return null;
   };
+
+const CustomXAxisTick = (props: any) => {
+  const { x, y, payload } = props;
+
+  if (payload && payload.value) {
+    const words = String(payload.value).split(' ');
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text x={0} y={0} dy={16} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={12}>
+          {words.map((word: string, index: number) => (
+            <tspan x={0} dy={index > 0 ? '1.2em' : '0'} key={index}>
+              {word}
+            </tspan>
+          ))}
+        </text>
+      </g>
+    );
+  }
+  return null;
+};
 
 export function GraphicsReport() {
   const { toast } = useToast();
@@ -417,13 +437,20 @@ export function GraphicsReport() {
             )}
         </CardHeader>
         <CardContent className="pt-0">
-            <div className="h-[600px] flex items-center justify-center text-muted-foreground">
+            <div className="h-[700px] flex items-center justify-center text-muted-foreground">
                 {isLoading ? (
                      <Skeleton className="h-full w-full" />
                 ) : showChart ? (
-                    <ResponsiveContainer width="100%" height={600}>
-                        <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                            <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }} />
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 80 }}>
+                            <XAxis 
+                                dataKey="name" 
+                                tickLine={false} 
+                                axisLine={false} 
+                                tick={<CustomXAxisTick />} 
+                                height={80} 
+                                interval={0} 
+                            />
                             <YAxis width={0} axisLine={false} tickLine={false} />
                             <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
                             {months.map((month, index) => (
