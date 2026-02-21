@@ -21,10 +21,34 @@ import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from 'recharts';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
 import { Separator } from './ui/separator';
+import {
+  Activity,
+  Ambulance,
+  Bird,
+  Bug,
+  ClipboardList,
+  Droplets,
+  Fish,
+  Flame,
+  Footprints,
+  HeartPulse,
+  Leaf,
+  Mountain,
+  Siren,
+  Skull,
+  TreeDeciduous,
+} from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
 
 // Data types from other components
 interface Occurrence {
@@ -146,20 +170,49 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
     return null;
   };
 
+const getIconForLabel = (label: string): React.ReactElement => {
+    const lowerLabel = label.toLowerCase();
+    if (lowerLabel.includes('queda')) return <Activity className="h-5 w-5" />;
+    if (lowerLabel.includes('picada') || lowerLabel.includes('inseto') || lowerLabel.includes('animal')) return <Bug className="h-5 w-5" />;
+    if (lowerLabel.includes('corte') || lowerLabel.includes('lesão')) return <HeartPulse className="h-5 w-5" />;
+    if (lowerLabel.includes('mal súbito') || lowerLabel.includes('hipotensão')) return <HeartPulse className="h-5 w-5" />;
+    if (lowerLabel.includes('incidente') || lowerLabel.includes('acidente')) return <Siren className="h-5 w-5" />;
+    if (lowerLabel.includes('árvore') || lowerLabel.includes('galho')) return <TreeDeciduous className="h-5 w-5" />;
+    if (lowerLabel.includes('planta') || lowerLabel.includes('folha') || lowerLabel.includes('flora')) return <Leaf className="h-5 w-5" />;
+    if (lowerLabel.includes('geo') || lowerLabel.includes('rocha') || lowerLabel.includes('montanha')) return <Mountain className="h-5 w-5" />;
+    if (lowerLabel.includes('fauna') || lowerLabel.includes('bicho')) return <Footprints className="h-5 w-5" />;
+    if (lowerLabel.includes('fogo') || lowerLabel.includes('incêndio')) return <Flame className="h-5 w-5" />;
+    if (lowerLabel.includes('água') || lowerLabel.includes('afogamento')) return <Droplets className="h-5 w-5" />;
+    if (lowerLabel.includes('ave')) return <Bird className="h-5 w-5" />;
+    if (lowerLabel.includes('peixe')) return <Fish className="h-5 w-5" />;
+    if (lowerLabel.includes('morte') || lowerLabel.includes('óbito') || lowerLabel.includes('fatalidade')) return <Skull className="h-5 w-5" />;
+    if (lowerLabel.includes('resgate') || lowerLabel.includes('remoção')) return <Ambulance className="h-5 w-5" />;
+    return <ClipboardList className="h-5 w-5" />; // Default icon
+};
+
+
 const CustomXAxisTick = (props: any) => {
   const { x, y, payload } = props;
 
   if (payload && payload.value) {
-    const words = String(payload.value).split(' ');
+    const icon = getIconForLabel(payload.value);
+
     return (
       <g transform={`translate(${x},${y})`}>
-        <text x={0} y={0} dy={16} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={12}>
-          {words.map((word: string, index: number) => (
-            <tspan x={0} dy={index > 0 ? '1.2em' : '0'} key={index}>
-              {word}
-            </tspan>
-          ))}
-        </text>
+        <foreignObject x={-12} y={5} width={24} height={24}>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center justify-center w-full h-full cursor-pointer">
+                  {icon}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{payload.value}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </foreignObject>
       </g>
     );
   }
@@ -442,17 +495,17 @@ export function GraphicsReport() {
                      <Skeleton className="h-full w-full" />
                 ) : showChart ? (
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 80 }}>
+                        <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 20 }}>
                             <XAxis 
                                 dataKey="name" 
                                 tickLine={false} 
                                 axisLine={false} 
                                 tick={<CustomXAxisTick />} 
-                                height={80} 
+                                height={40} 
                                 interval={0} 
                             />
                             <YAxis width={0} axisLine={false} tickLine={false} />
-                            <Tooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
+                            <RechartsTooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
                             {months.map((month, index) => (
                               <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
                             ))}
