@@ -265,7 +265,7 @@ export default function HomePage() {
         <section className="w-full py-20 md:py-24">
           <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
             <Image
-              src="https://i.ibb.co/Pz9J29Pq/Image-202602210939.jpg"
+              src="https://i.ibb.co/Fq0cQ0yR/Image-202602210939.jpg"
               alt="Conheça Nossos Planos"
               width={600}
               height={600}
@@ -392,7 +392,7 @@ export default function HomePage() {
                 <Link href="/solicitar-informacoes" aria-label="WhatsApp">
                   <Phone className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
                 </Link>
-                <a href="https://www.instagram.com/_marcelovaz" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <a href="https://www.instagram.com/sgs.app" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
                   <Instagram className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
                 </a>
               </div>
