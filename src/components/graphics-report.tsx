@@ -110,7 +110,7 @@ const getIconForLabel = (label: string): React.ReactElement => {
     if (lowerLabel.includes('comunicação')) return <MessageCircle className="h-5 w-5" />;
     
     // Default Icon
-    return <ClipboardList className="h-5 w-5" />;
+    return <Info className="h-5 w-5" />;
 };
 
 
@@ -253,12 +253,7 @@ export function GraphicsReport() {
   };
 
   const handleTickMouseLeave = () => {
-      setTooltip({
-          visible: false,
-          content: '',
-          x: 0,
-          y: 0,
-      });
+      setTooltip({ ...tooltip, visible: false });
   };
 
 
@@ -533,13 +528,7 @@ export function GraphicsReport() {
                                   dataKey="name" 
                                   tickLine={false} 
                                   axisLine={false} 
-                                  tick={(props) => (
-                                    <CustomXAxisTick 
-                                        {...props} 
-                                        onMouseEnter={handleTickMouseEnter} 
-                                        onMouseLeave={handleTickMouseLeave}
-                                    />
-                                  )}
+                                  tick={<CustomXAxisTick onMouseEnter={handleTickMouseEnter} onMouseLeave={handleTickMouseLeave} />}
                                   height={80}
                                   interval={0}
                               />
@@ -563,3 +552,5 @@ export function GraphicsReport() {
     </div>
   )
 }
+
+    
