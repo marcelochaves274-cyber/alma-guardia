@@ -231,21 +231,25 @@ const CustomXAxisTick = (props: any) => {
     const icon = getIconForLabel(payload.value);
 
     return (
-      <g transform={`translate(${x},${y})`}>
+      <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <rect x={-12} y={0} width={24} height={30} fill="transparent" className="cursor-pointer" />
+            <g transform={`translate(${x},${y})`} className="cursor-pointer">
+              {/* This rect is an invisible trigger area for the tooltip */}
+              <rect x={-20} y={0} width={40} height={30} fill="transparent" />
+              {/* The visual icon, with pointer events disabled to not interfere with the trigger */}
+              <foreignObject x={-12} y={5} width={24} height={24} className="pointer-events-none">
+                <div className="flex h-full w-full items-center justify-center">
+                  {icon}
+                </div>
+              </foreignObject>
+            </g>
           </TooltipTrigger>
-          <foreignObject x={-12} y={5} width={24} height={24} className="pointer-events-none">
-            <div className="flex h-full w-full items-center justify-center">
-              {icon}
-            </div>
-          </foreignObject>
           <TooltipContent>
             <p>{payload.value}</p>
           </TooltipContent>
         </Tooltip>
-      </g>
+      </TooltipProvider>
     );
   }
   return null;
@@ -521,29 +525,27 @@ export function GraphicsReport() {
             )}
         </CardHeader>
         <CardContent className="pt-0">
-            <div className="h-[800px] flex items-center justify-center text-muted-foreground">
+            <div className="min-h-[600px] h-auto flex items-center justify-center text-muted-foreground">
                 {isLoading ? (
-                     <Skeleton className="h-full w-full" />
+                     <Skeleton className="h-[600px] w-full" />
                 ) : showChart ? (
-                    <TooltipProvider>
-                      <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 60 }}>
-                              <XAxis 
-                                  dataKey="name" 
-                                  tickLine={false} 
-                                  axisLine={false} 
-                                  tick={<CustomXAxisTick />} 
-                                  height={60} 
-                                  interval={0} 
-                              />
-                              <YAxis width={30} axisLine={false} tickLine={false} />
-                              <RechartsTooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
-                              {months.map((month, index) => (
-                                <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
-                              ))}
-                          </BarChart>
-                      </ResponsiveContainer>
-                    </TooltipProvider>
+                    <ResponsiveContainer width="100%" height={Math.max(600, chartData.length * 50)}>
+                        <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 60 }} barGap={4}>
+                            <XAxis 
+                                dataKey="name" 
+                                tickLine={false} 
+                                axisLine={false} 
+                                tick={<CustomXAxisTick />}
+                                height={80}
+                                interval={0}
+                            />
+                            <YAxis axisLine={false} tickLine={false} width={0} />
+                            <RechartsTooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
+                            {months.map((month, index) => (
+                              <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
+                            ))}
+                        </BarChart>
+                    </ResponsiveContainer>
                 ) : !reportType ? (
                     "Selecione um tipo de relatório para começar."
                 ) : showNoDataMessage ? (
@@ -557,3 +559,5 @@ export function GraphicsReport() {
     </div>
   )
 }
+
+    
