@@ -187,7 +187,7 @@ const getIconForLabel = (label: string): React.ReactElement => {
     const lowerLabel = label.toLowerCase();
     
     // Specific
-    if (lowerLabel.includes('mal súbito') || lowerLabel.includes('hipotensão')) return <HeartPulse className="h-5 w-5 text-red-500" />;
+    if (lowerLabel.includes('mal súbito') || lowerLabel.includes('hipotensão') || lowerLabel.includes('entorse')) return <HeartPulse className="h-5 w-5 text-red-500" />;
     if (lowerLabel.includes('resgate') || lowerLabel.includes('remoção')) return <Ambulance className="h-5 w-5" />;
     if (lowerLabel.includes('morte') || lowerLabel.includes('óbito') || lowerLabel.includes('fatalidade')) return <Skull className="h-5 w-5" />;
     if (lowerLabel.includes('psicológico') || lowerLabel.includes('estresse') || lowerLabel.includes('stress')) return <Brain className="h-5 w-5" />;
@@ -230,28 +230,30 @@ const CustomXAxisTick = (props: any) => {
   if (payload && payload.value) {
     const icon = getIconForLabel(payload.value);
 
+    // This <g> element is what Recharts renders. We use foreignObject to embed HTML inside the SVG.
+    // This allows the shadcn Tooltip to function correctly.
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <g transform={`translate(${x},${y})`} className="cursor-pointer">
-              {/* This rect is an invisible trigger area for the tooltip */}
-              <rect x={-20} y={0} width={40} height={30} fill="transparent" />
-              {/* The visual icon, with pointer events disabled to not interfere with the trigger */}
-              <foreignObject x={-12} y={5} width={24} height={24} className="pointer-events-none">
-                <div className="flex h-full w-full items-center justify-center">
+      <g transform={`translate(${x},${y})`}>
+        <foreignObject x={-20} y={0} width={40} height={40}>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {/* This div becomes the trigger area. It's styled to be invisible but cover the icon area. */}
+                {/* The cursor-default ensures the pointer doesn't change to a hand. */}
+                <div className="flex h-full w-full cursor-default items-center justify-center">
                   {icon}
                 </div>
-              </foreignObject>
-            </g>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{payload.value}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{payload.value}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </foreignObject>
+      </g>
     );
   }
+
   return null;
 };
 
