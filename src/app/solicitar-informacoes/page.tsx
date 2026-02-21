@@ -66,7 +66,7 @@ export default function SolicitarInformacoesPage() {
             
             <div className="flex justify-center items-center gap-3 pt-8 md:pt-0">
                 <Image
-                    src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Logo%20da%20SGS%20APP%20Arenito.jpg?alt=media&token=56ad9d35-b9ec-42cd-bc0f-d9ade32406db"
+                    src="https://i.ibb.co/Z17vbKys/Logo-da-SGS-APP-Arenito.jpg"
                     alt="SGS APP Logo"
                     width={40}
                     height={40}

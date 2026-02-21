@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Providers } from '@/components/providers';
 
-const iconUrl = "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Logo%20da%20SGS%20APP%20Arenito.jpg?alt=media&token=56ad9d35-b9ec-42cd-bc0f-d9ade32406db";
+const iconUrl = "https://i.ibb.co/Z17vbKys/Logo-da-SGS-APP-Arenito.jpg";
 
 export const metadata: Metadata = {
   title: 'SGS APP',

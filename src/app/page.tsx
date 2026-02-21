@@ -154,7 +154,7 @@ export default function HomePage() {
         <div className="flex-1 flex justify-start">
           <Link className="flex items-center justify-center gap-2" href="/">
              <Image
-              src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Logo%20da%20SGS%20APP%20Arenito.jpg?alt=media&token=56ad9d35-b9ec-42cd-bc0f-d9ade32406db"
+              src="https://i.ibb.co/Z17vbKys/Logo-da-SGS-APP-Arenito.jpg"
               alt="SGS APP Logo"
               width={56}
               height={56}
@@ -265,7 +265,7 @@ export default function HomePage() {
         <section className="w-full py-20 md:py-24">
           <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
             <Image
-              src="https://i.ibb.co/XzqbW79/Image-202602210939.jpg"
+              src="https://i.ibb.co/Pz9J29P/Image-202602210939.jpg"
               alt="Conheça Nossos Planos"
               width={600}
               height={600}
@@ -377,7 +377,7 @@ export default function HomePage() {
             <div className="lg:col-span-2 space-y-4">
               <Link className="flex items-center gap-2" href="/">
                 <Image
-                  src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Logo%20da%20SGS%20APP%20Arenito.jpg?alt=media&token=56ad9d35-b9ec-42cd-bc0f-d9ade32406db"
+                  src="https://i.ibb.co/Z17vbKys/Logo-da-SGS-APP-Arenito.jpg"
                   alt="SGS APP Logo"
                   width={40}
                   height={40}
