@@ -417,11 +417,11 @@ export function GraphicsReport() {
             )}
         </CardHeader>
         <CardContent className="pt-0">
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+            <div className="h-[600px] flex items-center justify-center text-muted-foreground">
                 {isLoading ? (
                      <Skeleton className="h-full w-full" />
                 ) : showChart ? (
-                    <ResponsiveContainer width="100%" height={400}>
+                    <ResponsiveContainer width="100%" height={600}>
                         <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                             <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }} />
                             <YAxis width={0} axisLine={false} tickLine={false} />
