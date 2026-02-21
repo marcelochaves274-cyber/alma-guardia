@@ -25,35 +25,7 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, 
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
 import { Separator } from './ui/separator';
-import {
-  Activity,
-  Ambulance,
-  Bird,
-  Bug,
-  ClipboardList,
-  Droplets,
-  Fish,
-  Flame,
-  Footprints,
-  HeartPulse,
-  Leaf,
-  Mountain,
-  Siren,
-  Skull,
-  TreeDeciduous,
-  Bone,
-  Car,
-  Bike,
-  HardHat,
-  Zap,
-  Wind,
-  Sun,
-  Brain,
-  PersonStanding,
-  Swords,
-  FlaskConical,
-  Info,
-} from 'lucide-react';
+import { Info } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -183,44 +155,8 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
   };
 
 const getIconForLabel = (label: string): React.ReactElement => {
-    if (!label) return <Info className="h-5 w-5" />;
-    const lowerLabel = label.toLowerCase();
-    
-    // Specific
-    if (lowerLabel.includes('mal súbito') || lowerLabel.includes('hipotensão') || lowerLabel.includes('entorse')) return <HeartPulse className="h-5 w-5 text-red-500" />;
-    if (lowerLabel.includes('resgate') || lowerLabel.includes('remoção')) return <Ambulance className="h-5 w-5" />;
-    if (lowerLabel.includes('morte') || lowerLabel.includes('óbito') || lowerLabel.includes('fatalidade')) return <Skull className="h-5 w-5" />;
-    if (lowerLabel.includes('psicológico') || lowerLabel.includes('estresse') || lowerLabel.includes('stress')) return <Brain className="h-5 w-5" />;
-    if (lowerLabel.includes('ataque') || lowerLabel.includes('briga')) return <Swords className="h-5 w-5" />;
-    if (lowerLabel.includes('exposição') || lowerLabel.includes('sol')) return <Sun className="h-5 w-5 text-yellow-500" />;
-    if (lowerLabel.includes('fogo') || lowerLabel.includes('incêndio') || lowerLabel.includes('queimadura')) return <Flame className="h-5 w-5 text-orange-500" />;
-    if (lowerLabel.includes('água') || lowerLabel.includes('afogamento')) return <Droplets className="h-5 w-5 text-blue-500" />;
-    if (lowerLabel.includes('asfixia') || lowerLabel.includes('sufocamento')) return <Wind className="h-5 w-5" />;
-    if (lowerLabel.includes('alergia')) return <ClipboardList className="h-5 w-5 text-pink-500" />;
-    if (lowerLabel.includes('químico')) return <FlaskConical className="h-5 w-5" />;
-    if (lowerLabel.includes('elétrico') || lowerLabel.includes('eletricidade')) return <Zap className="h-5 w-5 text-yellow-400" />;
-    if (lowerLabel.includes('ergonômico')) return <PersonStanding className="h-5 w-5" />;
-
-
-    // Broader categories
-    if (lowerLabel.includes('queda')) return <Activity className="h-5 w-5" />;
-    if (lowerLabel.includes('picada') || lowerLabel.includes('inseto') || lowerLabel.includes('animal')) return <Bug className="h-5 w-5" />;
-    if (lowerLabel.includes('corte') || lowerLabel.includes('lesão') || lowerLabel.includes('fratura') || lowerLabel.includes('torção')) return <Bone className="h-5 w-5" />;
-    if (lowerLabel.includes('incidente') || lowerLabel.includes('acidente')) return <Siren className="h-5 w-5 text-red-500" />;
-    if (lowerLabel.includes('veículo') || lowerLabel.includes('carro') || lowerLabel.includes('moto')) return <Car className="h-5 w-5" />;
-    if (lowerLabel.includes('bicicleta')) return <Bike className="h-5 w-5" />;
-    if (lowerLabel.includes('epi')) return <HardHat className="h-5 w-5" />;
-
-    // Environmental
-    if (lowerLabel.includes('árvore') || lowerLabel.includes('galho')) return <TreeDeciduous className="h-5 w-5 text-green-600" />;
-    if (lowerLabel.includes('planta') || lowerLabel.includes('folha') || lowerLabel.includes('flora')) return <Leaf className="h-5 w-5 text-green-500" />;
-    if (lowerLabel.includes('geo') || lowerLabel.includes('rocha') || lowerLabel.includes('montanha')) return <Mountain className="h-5 w-5" />;
-    if (lowerLabel.includes('fauna') || lowerLabel.includes('bicho')) return <Footprints className="h-5 w-5" />;
-    if (lowerLabel.includes('ave')) return <Bird className="h-5 w-5" />;
-    if (lowerLabel.includes('peixe')) return <Fish className="h-5 w-5" />;
-
-
-    return <Info className="h-5 w-5" />; // Default icon
+    // Return a single, static icon for debugging purposes.
+    return <Info className="h-5 w-5" />;
 };
 
 
@@ -541,7 +477,7 @@ export function GraphicsReport() {
                                   height={80}
                                   interval={0}
                               />
-                              <YAxis axisLine={false} tickLine={false} width={0} />
+                              <YAxis axisLine={false} tickLine={false} width={0} ticks={[0]} />
                               <RechartsTooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
                               {months.map((month, index) => (
                                 <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
@@ -562,5 +498,3 @@ export function GraphicsReport() {
     </TooltipProvider>
   )
 }
-
-    
