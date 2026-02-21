@@ -230,25 +230,24 @@ const CustomXAxisTick = (props: any) => {
   if (payload && payload.value) {
     const icon = getIconForLabel(payload.value);
 
-    // This <g> element is what Recharts renders. We use foreignObject to embed HTML inside the SVG.
-    // This allows the shadcn Tooltip to function correctly.
+    // Use a foreignObject to allow HTML/React components (like the tooltip) inside the SVG.
     return (
       <g transform={`translate(${x},${y})`}>
-        <foreignObject x={-20} y={0} width={40} height={40}>
-          <TooltipProvider>
+        {/* The foreignObject creates a space for HTML content. It's crucial for the tooltip to work. */}
+        {/* The overflow: 'visible' is important so the tooltip content isn't clipped. */}
+        <foreignObject x={-20} y={0} width={40} height={40} style={{ overflow: 'visible' }}>
             <Tooltip>
               <TooltipTrigger asChild>
-                {/* This div becomes the trigger area. It's styled to be invisible but cover the icon area. */}
-                {/* The cursor-default ensures the pointer doesn't change to a hand. */}
+                {/* This div is the invisible trigger area. It has a default cursor. */}
                 <div className="flex h-full w-full cursor-default items-center justify-center">
                   {icon}
                 </div>
               </TooltipTrigger>
               <TooltipContent>
+                {/* The content of the tooltip, which is the full text label. */}
                 <p>{payload.value}</p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
         </foreignObject>
       </g>
     );
@@ -492,73 +491,75 @@ export function GraphicsReport() {
   const showNoDataMessage = !isLoading && reportType && areAllFiltersActive && chartData.length === 0;
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Gráficos</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2 max-w-sm">
-            <Label>Tipo de Relatório</Label>
-            <Select onValueChange={(v: ReportType) => { setReportType(v); clearFilters(); }} value={reportType ?? ''}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o tipo de Relatório" />
-              </SelectTrigger>
-              <SelectContent>
-                {reportTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          {reportType && (
-            <>
-              {renderFilters()}
-              <p className="text-sm text-muted-foreground pt-2 text-center">Para exibir o gráfico, é necessário ter ao menos uma seleção em todos os filtros: Ano, Tipo e Local.</p>
-            </>
-          )}
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-            {showChart && filterYear.length > 0 && (
-                <CardTitle className="text-foreground">
-                    Exibindo: {filterYear.join(' - ')}
-                </CardTitle>
-            )}
-        </CardHeader>
-        <CardContent className="pt-0">
-            <div className="min-h-[600px] h-auto flex items-center justify-center text-muted-foreground">
-                {isLoading ? (
-                     <Skeleton className="h-[600px] w-full" />
-                ) : showChart ? (
-                    <ResponsiveContainer width="100%" height={Math.max(600, chartData.length * 50)}>
-                        <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 60 }} barGap={4}>
-                            <XAxis 
-                                dataKey="name" 
-                                tickLine={false} 
-                                axisLine={false} 
-                                tick={<CustomXAxisTick />}
-                                height={80}
-                                interval={0}
-                            />
-                            <YAxis axisLine={false} tickLine={false} width={0} />
-                            <RechartsTooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
-                            {months.map((month, index) => (
-                              <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
-                            ))}
-                        </BarChart>
-                    </ResponsiveContainer>
-                ) : !reportType ? (
-                    "Selecione um tipo de relatório para começar."
-                ) : showNoDataMessage ? (
-                    "Nenhum dado para exibir com os filtros selecionados."
-                ) : (
-                    reportType && null
-                )}
+    <TooltipProvider>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Gráficos</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2 max-w-sm">
+              <Label>Tipo de Relatório</Label>
+              <Select onValueChange={(v: ReportType) => { setReportType(v); clearFilters(); }} value={reportType ?? ''}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo de Relatório" />
+                </SelectTrigger>
+                <SelectContent>
+                  {reportTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-        </CardContent>
-      </Card>
-    </div>
+            {reportType && (
+              <>
+                {renderFilters()}
+                <p className="text-sm text-muted-foreground pt-2 text-center">Para exibir o gráfico, é necessário ter ao menos uma seleção em todos os filtros: Ano, Tipo e Local.</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+              {showChart && filterYear.length > 0 && (
+                  <CardTitle className="text-foreground">
+                      Exibindo: {filterYear.join(' - ')}
+                  </CardTitle>
+              )}
+          </CardHeader>
+          <CardContent className="pt-0">
+              <div className="min-h-[600px] h-auto flex items-center justify-center text-muted-foreground">
+                  {isLoading ? (
+                       <Skeleton className="h-[600px] w-full" />
+                  ) : showChart ? (
+                      <ResponsiveContainer width="100%" height={Math.max(600, chartData.length * 50)}>
+                          <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 60 }} barGap={4}>
+                              <XAxis 
+                                  dataKey="name" 
+                                  tickLine={false} 
+                                  axisLine={false} 
+                                  tick={<CustomXAxisTick />}
+                                  height={80}
+                                  interval={0}
+                              />
+                              <YAxis axisLine={false} tickLine={false} width={0} />
+                              <RechartsTooltip cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }} content={<CustomTooltip filters={filtersForTooltip} />} />
+                              {months.map((month, index) => (
+                                <Bar key={month} dataKey={month} stackId="a" fill={monthColors[index % monthColors.length]} radius={[4, 4, 0, 0]} />
+                              ))}
+                          </BarChart>
+                      </ResponsiveContainer>
+                  ) : !reportType ? (
+                      "Selecione um tipo de relatório para começar."
+                  ) : showNoDataMessage ? (
+                      "Nenhum dado para exibir com os filtros selecionados."
+                  ) : (
+                      reportType && null
+                  )}
+              </div>
+          </CardContent>
+        </Card>
+      </div>
+    </TooltipProvider>
   )
 }
 
