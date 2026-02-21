@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -77,21 +77,40 @@ const CustomBarTooltip = ({ active, payload, label, chartData }: any) => {
       const total = Object.keys(data)
         .filter(key => months.includes(key))
         .reduce((sum, key) => sum + (data[key] || 0), 0);
+      
+      const locationEntries = data.locations ? Object.entries(data.locations) : [];
 
       return (
         <div className="rounded-lg border bg-popover p-3 text-popover-foreground shadow-sm max-w-xs">
           <p className="text-sm font-bold mb-2">{label}</p>
-          <ul className="space-y-1 text-xs">
-            {months.map((month, index) => (
-              <li key={month} className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <span className="block h-2 w-2 rounded-full mr-2" style={{ backgroundColor: monthColors[index % monthColors.length] }}></span>
-                  <span>{month}:</span>
-                </div>
-                <span className="font-semibold">{data[month] || 0}</span>
+          
+          <p className="text-xs font-semibold text-muted-foreground mt-2">Por Mês:</p>
+          <ul className="space-y-1 text-xs mt-1">
+            {months.map((month, index) => {
+              if (!data[month] || data[month] === 0) return null;
+              return (
+                <li key={month} className="flex justify-between items-center">
+                    <div className="flex items-center">
+                    <span className="block h-2 w-2 rounded-full mr-2" style={{ backgroundColor: monthColors[index % monthColors.length] }}></span>
+                    <span>{month}:</span>
+                    </div>
+                    <span className="font-semibold">{data[month]}</span>
+                </li>
+              );
+            })}
+          </ul>
+          
+          {locationEntries.length > 0 && <Separator className="my-2" />}
+          {locationEntries.length > 0 && <p className="text-xs font-semibold text-muted-foreground">Por Local:</p>}
+          <ul className="space-y-1 text-xs mt-1">
+            {locationEntries.map(([location, count]) => (
+              <li key={location} className="flex justify-between items-center">
+                <span>{location}:</span>
+                <span className="font-semibold">{count as number}</span>
               </li>
             ))}
           </ul>
+           
            <Separator className="my-2" />
             <p className="flex justify-between text-sm font-bold">
                 <span>Total:</span>
@@ -127,8 +146,14 @@ export function GraphicsReport() {
     x: 0,
     y: 0,
   });
-
-  const CustomXAxisTick = (props: any) => {
+  
+  const [availableYears, setAvailableYears] = useState<string[]>([]);
+  const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
+  const [treatmentTypes, setTreatmentTypes] = useState<string[]>([]);
+  const [faunaFloraGeoTypes, setFaunaFloraGeoTypes] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
+  
+  const CustomXAxisTick = useCallback((props: any) => {
     const { x, y, payload } = props;
     
     return (
@@ -148,22 +173,22 @@ export function GraphicsReport() {
           <div
             className="flex h-full w-full items-center justify-center"
           >
-            <ClipboardList className="h-5 w-5" />
+            <ClipboardList className="h-5 w-5 text-muted-foreground" />
           </div>
         </foreignObject>
       </g>
     );
-  };
-
-  const [availableYears, setAvailableYears] = useState<string[]>([]);
-  const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
-  const [treatmentTypes, setTreatmentTypes] = useState<string[]>([]);
-  const [faunaFloraGeoTypes, setFaunaFloraGeoTypes] = useState<string[]>([]);
-  const [locations, setLocations] = useState<string[]>([]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const getSettingsDocRef = useCallback((collectionName: string) => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'sgs_genius', user.uid, 'settings', collectionName);
+  }, [firestore, user]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -174,6 +199,7 @@ export function GraphicsReport() {
         setIsLoading(true);
 
         try {
+            // Fetch main data collections
             const [
                 occurrencesSnap, 
                 treatmentsSnap, 
@@ -184,25 +210,37 @@ export function GraphicsReport() {
                 getDocs(collection(firestore, 'sgs_genius', user.uid, 'fauna_flora_geo')),
             ]);
 
-            const settingsDoc = (await getDoc(doc(firestore, 'sgs_genius', user.uid, 'settings', 'occurrenceTypes')));
-            if(settingsDoc.exists()) setOccurrenceTypes(settingsDoc.data().types || []);
+            // Fetch settings documents
+            const getSettingsList = async (docName: string, field: 'types' | 'locations') => {
+                const docRef = getSettingsDocRef(docName);
+                if (!docRef) return [];
+                const docSnap = await getDoc(docRef);
+                return docSnap.exists() ? (docSnap.data()[field] || []) : [];
+            };
 
-            const treatmentSettingsDoc = (await getDoc(doc(firestore, 'sgs_genius', user.uid, 'settings', 'occurrenceTypes')));
-            if(treatmentSettingsDoc.exists()) setTreatmentTypes(treatmentSettingsDoc.data().types || []);
+            const [
+              occurrenceTypesList,
+              treatmentTypesList,
+              faunaFloraGeoTypesList,
+              locationsList
+            ] = await Promise.all([
+              getSettingsList('occurrenceTypes', 'types'),
+              getSettingsList('occurrenceTypes', 'types'), // Using occurrence types for treatments
+              getSettingsList('faunaFloraGeoTypes', 'types'),
+              getSettingsList('locations', 'locations'),
+            ]);
             
-            const faunaFloraGeoSettingsDoc = (await getDoc(doc(firestore, 'sgs_genius', user.uid, 'settings', 'faunaFloraGeoTypes')));
-            if(faunaFloraGeoSettingsDoc.exists()) setFaunaFloraGeoTypes(faunaFloraGeoSettingsDoc.data().types || []);
-
-            const locationsSettingsDoc = (await getDoc(doc(firestore, 'sgs_genius', user.uid, 'settings', 'locations')));
-            if(locationsSettingsDoc.exists()) setLocations(locationsSettingsDoc.data().locations || []);
-
+            setOccurrenceTypes(occurrenceTypesList);
+            setTreatmentTypes(treatmentTypesList);
+            setFaunaFloraGeoTypes(faunaFloraGeoTypesList);
+            setLocations(locationsList);
 
             const safeToDate = (timestamp: any) => timestamp instanceof Timestamp ? timestamp.toDate() : new Date(0);
 
             const occurrencesData = occurrencesSnap.docs.map(d => ({ id: d.id, ...d.data(), occurrenceDate: safeToDate(d.data().occurrenceDate) })) as Occurrence[];
             const treatmentsData = treatmentsSnap.docs.map(d => ({ id: d.id, ...d.data(), treatmentDate: safeToDate(d.data().treatmentDate) })) as Treatment[];
             const faunaFloraGeoData = faunaFloraGeoSnap.docs.map(d => ({ id: d.id, ...d.data(), date: safeToDate(d.data().date) })) as FaunaFloraGeoRecord[];
-
+            
             setOccurrences(occurrencesData);
             setTreatments(treatmentsData);
             setFaunaFloraGeo(faunaFloraGeoData);
@@ -238,6 +276,7 @@ export function GraphicsReport() {
     if(user && firestore) {
       fetchData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, firestore, toast]);
 
 
@@ -257,13 +296,15 @@ export function GraphicsReport() {
     }
 
     const dateField = reportType === 'occurrences' ? 'occurrenceDate' : reportType === 'treatments' ? 'treatmentDate' : 'date';
+    const locationField = reportType === 'occurrences' ? 'occurrenceLocation' : reportType === 'treatments' ? 'treatmentLocation' : 'location';
+    const typeField = reportType === 'occurrences' ? 'occurrenceType' : reportType === 'treatments' ? 'treatmentType' : 'speciesType';
 
     return data.filter((item: any) => {
       const itemDate = item[dateField];
       if (!itemDate) return false;
       const yearMatch = filterYear.length === 0 || filterYear.includes(itemDate.getFullYear().toString());
-      const locationMatch = filterLocation.length === 0 || filterLocation.includes(item.occurrenceLocation || item.treatmentLocation || item.location);
-      const typeMatch = filterType.length === 0 || filterType.includes(item.occurrenceType || item.treatmentType || item.speciesType);
+      const locationMatch = filterLocation.length === 0 || filterLocation.includes(item[locationField]);
+      const typeMatch = filterType.length === 0 || filterType.includes(item[typeField]);
       
       return yearMatch && locationMatch && typeMatch;
     });
@@ -275,11 +316,15 @@ export function GraphicsReport() {
     
     const typeField = reportType === 'occurrences' ? 'occurrenceType' : reportType === 'treatments' ? 'treatmentType' : 'speciesType';
     const dateField = reportType === 'occurrences' ? 'occurrenceDate' : reportType === 'treatments' ? 'treatmentDate' : 'date';
+    const locationField = reportType === 'occurrences' ? 'occurrenceLocation' : reportType === 'treatments' ? 'treatmentLocation' : 'location';
     
     const uniqueTypes = Array.from(new Set(filteredData.map((item: any) => item[typeField] || 'Outros'))).sort();
 
     const dataByType = uniqueTypes.map(type => {
-        const typeEntry: { name: string; [key: string]: number | string } = { name: type };
+        const typeEntry: { name: string; locations: Record<string, number>; [key: string]: number | string | Record<string, number> } = { 
+            name: type,
+            locations: {}
+        };
         
         months.forEach((monthName) => {
             typeEntry[monthName] = 0;
@@ -287,11 +332,20 @@ export function GraphicsReport() {
 
         filteredData.forEach((item: any) => {
             if ((item[typeField] || 'Outros') === type) {
+                // Month count
                 const itemDate = item[dateField];
                 if(itemDate && itemDate.getFullYear() > 1970) {
                   const monthIndex = itemDate.getMonth();
                   const monthName = months[monthIndex];
                   (typeEntry[monthName] as number)++;
+                }
+
+                // Location count
+                const itemLocation = item[locationField] || 'Não especificado';
+                if (typeEntry.locations[itemLocation]) {
+                    (typeEntry.locations[itemLocation] as number)++;
+                } else {
+                    typeEntry.locations[itemLocation] = 1;
                 }
             }
         });
@@ -308,7 +362,7 @@ export function GraphicsReport() {
     if (reportType === 'occurrences') options = occurrenceTypes.map(t => ({value: t, label: t}));
     if (reportType === 'treatments') options = treatmentTypes.map(t => ({value: t, label: t}));
     if (reportType === 'faunaFloraGeo') options = faunaFloraGeoTypes.map(t => ({value: t, label: t}));
-    return options;
+    return options.sort((a,b) => a.label.localeCompare(b.label));
   }, [reportType, occurrenceTypes, treatmentTypes, faunaFloraGeoTypes]);
   
   const areAllFiltersActive = filterYear.length > 0 && filterType.length > 0 && filterLocation.length > 0;
