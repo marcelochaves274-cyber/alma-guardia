@@ -91,7 +91,7 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
       const locationEntries = Object.entries(countsByLocation).filter(([, count]) => (count as number) > 0);
 
       // --- Month Breakdown ---
-      const monthPayload = payload.map((p: { dataKey: string, value: number, fill: string }) => ({ month: p.dataKey, count: p.value, color: p.fill })).filter((p: { count: number }) => p.count > 0);
+      const monthPayload = payload.map((p: { dataKey: string; value: number; fill: string; }) => ({ month: p.dataKey, count: p.value, color: p.fill })).filter((p: {count: number}) => p.count > 0);
   
       return (
         <div className="p-3 bg-card/95 backdrop-blur-sm border rounded-lg shadow-xl text-sm min-w-[320px] max-w-sm">
@@ -264,7 +264,7 @@ export function GraphicsReport() {
 
   const filteredData = useMemo(() => {
     if (!isClient || !reportType) return [];
-    let data;
+    let data: (Occurrence | Treatment | FaunaFloraGeoRecord)[];
     switch (reportType) {
       case 'occurrences': data = occurrences; break;
       case 'treatments': data = treatments; break;
