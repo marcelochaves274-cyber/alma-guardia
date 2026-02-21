@@ -20,10 +20,10 @@ import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, doc, getDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Bar, BarChart, ResponsiveContainer, XAxis, Tooltip as RechartsTooltip } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, Tooltip as RechartsTooltip, Cell } from 'recharts';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, Info } from 'lucide-react';
 
 interface Occurrence {
   id: string;
@@ -68,35 +68,22 @@ const monthColors = [
   '#E7E9ED', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF5722'
 ];
 
-const getIconForLabel = (label: string): React.ReactElement => {
-    return <ClipboardList className="h-5 w-5" />;
-};
-
 const CustomXAxisTick = (props: any) => {
   const { x, y, payload, onMouseEnter, onMouseLeave } = props;
 
-  if (payload && payload.value) {
-    const icon = getIconForLabel(payload.value);
-    
-    // A ForeignObject is used to embed HTML within an SVG, which is needed to render the icon component.
-    // A transparent rectangle is placed behind to ensure mouse events are captured reliably.
-    return (
-      <g
-        transform={`translate(${x},${y})`}
-        onMouseEnter={(e) => onMouseEnter(e, payload.value)}
-        onMouseLeave={onMouseLeave}
-      >
-        <rect x={-20} y={0} width={40} height={40} fill="transparent" />
-        <foreignObject x={-20} y={0} width={40} height={40} style={{ pointerEvents: 'none' }}>
-          <div className="flex h-full w-full items-center justify-center">
-            {icon}
-          </div>
-        </foreignObject>
-      </g>
-    );
-  }
-
-  return null;
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <foreignObject x={-20} y={0} width={40} height={40}>
+        <div
+          className="flex h-full w-full items-center justify-center cursor-pointer"
+          onMouseEnter={(e) => onMouseEnter(e, payload.value)}
+          onMouseLeave={onMouseLeave}
+        >
+          <ClipboardList className="h-5 w-5" />
+        </div>
+      </foreignObject>
+    </g>
+  );
 };
 
 
