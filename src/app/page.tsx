@@ -265,7 +265,7 @@ export default function HomePage() {
         <section className="w-full py-20 md:py-24">
           <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
             <Image
-              src="https://i.ibb.co/0RFv2qCJ/Conhe-a-Nossos-Planos.jpg"
+              src="https://i.ibb.co/Pz9J29Pq/Image-202602210939.jpg"
               alt="Conheça Nossos Planos"
               width={600}
               height={600}
