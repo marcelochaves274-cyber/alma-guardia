@@ -46,7 +46,6 @@ import {
   Bike,
   HardHat,
   Zap,
-  Allergy,
   Wind,
   Sun,
   Brain,
@@ -184,13 +183,24 @@ const CustomTooltip = ({ active, payload, label, filters }: any) => {
   };
 
 const getIconForLabel = (label: string): React.ReactElement => {
+    if (!label) return <Info className="h-5 w-5" />;
     const lowerLabel = label.toLowerCase();
+    
     // Specific
     if (lowerLabel.includes('mal súbito') || lowerLabel.includes('hipotensão')) return <HeartPulse className="h-5 w-5 text-red-500" />;
     if (lowerLabel.includes('resgate') || lowerLabel.includes('remoção')) return <Ambulance className="h-5 w-5" />;
     if (lowerLabel.includes('morte') || lowerLabel.includes('óbito') || lowerLabel.includes('fatalidade')) return <Skull className="h-5 w-5" />;
     if (lowerLabel.includes('psicológico') || lowerLabel.includes('estresse') || lowerLabel.includes('stress')) return <Brain className="h-5 w-5" />;
     if (lowerLabel.includes('ataque') || lowerLabel.includes('briga')) return <Swords className="h-5 w-5" />;
+    if (lowerLabel.includes('exposição') || lowerLabel.includes('sol')) return <Sun className="h-5 w-5 text-yellow-500" />;
+    if (lowerLabel.includes('fogo') || lowerLabel.includes('incêndio') || lowerLabel.includes('queimadura')) return <Flame className="h-5 w-5 text-orange-500" />;
+    if (lowerLabel.includes('água') || lowerLabel.includes('afogamento')) return <Droplets className="h-5 w-5 text-blue-500" />;
+    if (lowerLabel.includes('asfixia') || lowerLabel.includes('sufocamento')) return <Wind className="h-5 w-5" />;
+    if (lowerLabel.includes('alergia')) return <ClipboardList className="h-5 w-5 text-pink-500" />;
+    if (lowerLabel.includes('químico')) return <FlaskConical className="h-5 w-5" />;
+    if (lowerLabel.includes('elétrico') || lowerLabel.includes('eletricidade')) return <Zap className="h-5 w-5 text-yellow-400" />;
+    if (lowerLabel.includes('ergonômico')) return <PersonStanding className="h-5 w-5" />;
+
 
     // Broader categories
     if (lowerLabel.includes('queda')) return <Activity className="h-5 w-5" />;
@@ -199,25 +209,15 @@ const getIconForLabel = (label: string): React.ReactElement => {
     if (lowerLabel.includes('incidente') || lowerLabel.includes('acidente')) return <Siren className="h-5 w-5 text-red-500" />;
     if (lowerLabel.includes('veículo') || lowerLabel.includes('carro') || lowerLabel.includes('moto')) return <Car className="h-5 w-5" />;
     if (lowerLabel.includes('bicicleta')) return <Bike className="h-5 w-5" />;
+    if (lowerLabel.includes('epi')) return <HardHat className="h-5 w-5" />;
 
     // Environmental
     if (lowerLabel.includes('árvore') || lowerLabel.includes('galho')) return <TreeDeciduous className="h-5 w-5 text-green-600" />;
     if (lowerLabel.includes('planta') || lowerLabel.includes('folha') || lowerLabel.includes('flora')) return <Leaf className="h-5 w-5 text-green-500" />;
     if (lowerLabel.includes('geo') || lowerLabel.includes('rocha') || lowerLabel.includes('montanha')) return <Mountain className="h-5 w-5" />;
     if (lowerLabel.includes('fauna') || lowerLabel.includes('bicho')) return <Footprints className="h-5 w-5" />;
-    if (lowerLabel.includes('fogo') || lowerLabel.includes('incêndio') || lowerLabel.includes('queimadura')) return <Flame className="h-5 w-5 text-orange-500" />;
-    if (lowerLabel.includes('água') || lowerLabel.includes('afogamento')) return <Droplets className="h-5 w-5 text-blue-500" />;
     if (lowerLabel.includes('ave')) return <Bird className="h-5 w-5" />;
     if (lowerLabel.includes('peixe')) return <Fish className="h-5 w-5" />;
-    if (lowerLabel.includes('exposição') || lowerLabel.includes('sol')) return <Sun className="h-5 w-5 text-yellow-500" />;
-    
-    // Safety & Work
-    if (lowerLabel.includes('epi')) return <HardHat className="h-5 w-5" />;
-    if (lowerLabel.includes('elétrico') || lowerLabel.includes('eletricidade')) return <Zap className="h-5 w-5 text-yellow-400" />;
-    if (lowerLabel.includes('alergia')) return <Allergy className="h-5 w-5" />;
-    if (lowerLabel.includes('asfixia') || lowerLabel.includes('sufocamento')) return <Wind className="h-5 w-5" />;
-    if (lowerLabel.includes('ergonômico')) return <PersonStanding className="h-5 w-5" />;
-    if (lowerLabel.includes('químico')) return <FlaskConical className="h-5 w-5" />;
 
 
     return <Info className="h-5 w-5" />; // Default icon
@@ -232,10 +232,11 @@ const CustomXAxisTick = (props: any) => {
 
     return (
       <g transform={`translate(${x},${y})`}>
-        <foreignObject x={-12} y={5} width={24} height={24} style={{ overflow: 'visible' }}>
+        <foreignObject x={-12} y={5} width={24} height={24}>
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center justify-center w-full h-full cursor-pointer">
+                <div className="flex h-full w-full cursor-pointer items-center justify-center">
                   {icon}
                 </div>
               </TooltipTrigger>
@@ -243,6 +244,7 @@ const CustomXAxisTick = (props: any) => {
                 <p>{payload.value}</p>
               </TooltipContent>
             </Tooltip>
+          </TooltipProvider>
         </foreignObject>
       </g>
     );
@@ -368,7 +370,7 @@ export function GraphicsReport() {
 
   const filteredData = useMemo(() => {
     if (!isClient || !reportType) return [];
-    let data: (Occurrence | Treatment | FaunaFloraGeoRecord)[];
+    let data: any[];
     switch (reportType) {
       case 'occurrences': data = occurrences; break;
       case 'treatments': data = treatments; break;
@@ -521,19 +523,19 @@ export function GraphicsReport() {
             )}
         </CardHeader>
         <CardContent className="pt-0">
-            <div className="h-[700px] flex items-center justify-center text-muted-foreground">
+            <div className="h-[800px] flex items-center justify-center text-muted-foreground">
                 {isLoading ? (
                      <Skeleton className="h-full w-full" />
                 ) : showChart ? (
                     <TooltipProvider>
                       <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 20 }}>
+                          <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 40 }}>
                               <XAxis 
                                   dataKey="name" 
                                   tickLine={false} 
                                   axisLine={false} 
                                   tick={<CustomXAxisTick />} 
-                                  height={40} 
+                                  height={60} 
                                   interval={0} 
                               />
                               <YAxis width={0} axisLine={false} tickLine={false} />
