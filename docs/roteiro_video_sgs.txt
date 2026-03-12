@@ -1,0 +1,61 @@
+ROTEIRO DE VÍDEO: APRESENTAÇÃO SGS APP
+Apresentador: Marcelo Chaves
+Tempo estimado: 6 a 7 minutos
+
+1. INTRODUÇÃO E AUTORIDADE (0:00 - 0:50)
+"Olá, eu sou Marcelo Chaves. Minha trajetória na área de segurança foi construída no campo e na teoria: sou Socorrista Resgatista, Brigadista, possuo certificação internacional de Resgate em Áreas Remotas pela WFA, NR 35 para técnicas verticais, entre outros. Mas, acima de tudo, sou Auditor Interno de Sistemas de Gestão de Segurança. Atualmente, atuo também como Supervisor de Atividades de Turismo."
+[Ação: Certificados aparecem um a um na tela]
+
+"Ao longo de anos operando e auditando, percebi uma lacuna crítica: muitas empresas de turismo de aventura e parques possuem excelentes profissionais, mas pecam na gestão documental e na rastreabilidade. Segurança não pode ser baseada na sorte ou apenas na memória; ela precisa de método. É por isso que desenvolvemos o SGS APP."
+
+2. O PROBLEMA E A NORMA NBR 21101 (0:50 - 1:30)
+"Se você opera no turismo de aventura, sabe que a norma NBR ISO 21101 é a nossa bíblia. Ela exige que a gente identifique perigos, trate riscos e mantenha tudo documentado. Mas, na correria da operação, preencher papel, controlar validade de equipamento e lembrar de vistorias se torna um pesadelo logístico. 
+
+O SGS APP nasceu para tirar essa carga das suas costas e digitalizar todo o seu sistema de segurança, garantindo conformidade total com a norma, de forma simples e na palma da mão."
+
+3. O CÉREBRO DO SISTEMA: LEMBRETES (1:30 - 2:10)
+"Quando você abre o SGS APP como administrador, a primeira coisa que vê é o painel de Lembretes. Ele é o cérebro da sua operação. Aqui, o sistema avisa automaticamente o que está pendente:
+• Tratamentos de risco que passaram do prazo;
+• Equipamentos que precisam de vistoria hoje ou que estão atrasados;
+• E novos avisos enviados pela sua equipe de campo. 
+Com um olhar, você sabe exatamente onde a sua segurança está vulnerável."
+[Ação: Imagens da tela de Lembretes]
+
+4. MÓDULOS OPERACIONAIS: OCORRÊNCIAS E RISCOS (2:10 - 3:30)
+"Vamos falar de como ele funciona na prática. O aplicativo é dividido em módulos inteligentes:
+
+Registro de Ocorrências: Em caso de acidente ou incidente, o registro é imediato. Você coleta dados do envolvido, descreve o evento e, o mais importante, marca o local exato em um Mapa Interativo. Isso gera inteligência geográfica para você saber quais áreas são mais críticas."
+[Ação: Vídeo demonstração: Registrando ocorrência e marcação no mapa]
+
+"Tratamento de Risco: Identificou um perigo? Registre-o. O app calcula o nível de risco baseado em probabilidade e consequência. Você define a ação, o responsável e o prazo. Se o prazo vencer e a situação estiver 'pendente', o alerta no dashboard não te deixa esquecer."
+[Ação: Vídeo demonstração: Tela de tratamento de risco e cálculo de PxC]
+
+5. GESTÃO DE ATIVOS E ATIVIDADES (3:30 - 4:45)
+"Gestão de Equipamentos: Chega de planilhas de Excel perdidas. Cadastre seus mosquetões, cordas e cadeirinhas por lote, CA ou UIAA. O sistema controla a data de fabricação e as inspeções periódicas. Você pode até importar seus dados via CSV para começar rápido."
+[Ação: Vídeo demonstração: Lista de equipamentos e importação CSV]
+
+"Atividades e Avaliação de Risco: Para cada atividade, como uma trilha ou rapel, você associa o seu POP (Procedimento Operacional Padrão) e o seu TCR (Termo de Conhecimento de Risco). O app vincula isso à Avaliação de Risco específica de cada local, garantindo que a equipe em campo tenha a informação certa no momento certo."
+[Ação: Vídeo demonstração: Vinculando documentos em uma Atividade]
+
+6. DOCUMENTAÇÃO ESTRUTURAL: RAME E DOCUMENTOS SGS (4:45 - 5:30)
+"Mas o SGS vai além do operacional. Temos a seção de Documentos do SGS, onde organizamos toda a estrutura exigida pela NBR 21101, desde o Escopo e Liderança até a Melhoria Contínua. 
+
+E um ponto vital para qualquer auditoria e resposta a emergências: o RAME (Recurso de Atendimento Médico de Emergência). Aqui, você mantém seus Planos de Emergência (PE) e Planos de Atendimento a Emergência (PAE) digitalizados para consulta rápida e edição em tempo real."
+[Ação: Vídeo demonstração: Navegando RAME e Seções do SGS]
+
+7. MONITORAMENTO AMBIENTAL E COLABORAÇÃO (5:30 - 6:15)
+"Outro diferencial é o módulo Fauna, Flora e Geo. Ele permite que você registre avistamentos ou características geográficas importantes, com análise de situação e localização no mapa. É a gestão ambiental integrada à segurança.
+
+E como a segurança é feita por todos, criamos a Central de Avisos. Através dos perfis de Supervisor ou Observador, sua equipe de campo pode enviar alertas em tempo real — com foto — sobre qualquer condição insegura. O administrador recebe e decide se aquilo vira uma Ocorrência ou um Tratamento de Risco."
+[Ação: Vídeo demonstração: Registro Fauna/Flora e Aviso do Observador]
+
+8. PERSONALIZAÇÃO E INTELIGÊNCIA DE DADOS (6:15 - 7:00)
+"O sistema é totalmente adaptável. Nas Configurações, você personaliza a identidade visual com sua logo e cores, gerencia seus locais, tipos de ocorrência e marcas de equipamentos. O app se molda à sua empresa.
+
+Tudo isso alimenta nossa área de Relatórios Geográficos e o módulo de Gráficos. Quer saber qual tipo de incidente é mais comum ou onde eles ocorrem com mais frequência? O sistema gera estatísticas detalhadas para você tomar decisões baseadas em dados reais."
+[Ação: Vídeo demonstração: Configurações e Gráficos]
+
+9. CONCLUSÃO (7:00 - 7:30)
+"Ter um SGS não é apenas uma obrigação legal; é o compromisso de que seu cliente vai se divertir e voltar para casa em segurança. O SGS APP foi feito por quem entende de resgate e auditoria, para quem entende de aventura. 
+
+Digitalize sua segurança. Transforme sua gestão. Eu sou Marcelo Chaves, e a segurança da sua operação é o nosso objetivo. Muito obrigado."
