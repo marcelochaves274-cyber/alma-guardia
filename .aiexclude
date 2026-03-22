@@ -3,3 +3,7 @@ node_modules/
 dist/
 build/
 .git/
+*.zip
+*.rar
+tmp/
+out/
