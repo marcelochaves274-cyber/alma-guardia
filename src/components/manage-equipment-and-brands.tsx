@@ -91,9 +91,9 @@ export function ManageEquipmentAndBrands() {
               const data = docSnap.data();
               setState(s => ({ ...s, [itemType]: { ...s[itemType], items: (data[fieldMap[itemType]] || []).sort() } }));
             }
-          } catch (error: any) {
-            if (error.code !== 'permission-denied') {
-              console.error(`Error fetching ${itemType}:`, error);
+          } catch (error: unknown) {
+            const err = error as { code?: string };
+            if (err.code !== 'permission-denied') {
               toast({ variant: "destructive", title: "Erro ao carregar", description: `Não foi possível buscar ${itemType === 'equipmentTypes' ? 'tipos' : 'marcas'}.` });
             }
           } finally {
@@ -117,8 +117,7 @@ export function ManageEquipmentAndBrands() {
     try {
         await setDoc(docRef, { [fieldMap[itemType]]: items }, { merge: true });
         return true;
-    } catch (error) {
-        console.error(`Error saving ${itemType}:`, error);
+    } catch (error: unknown) {
         toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar os dados.' });
         return false;
     } finally {
@@ -271,8 +270,7 @@ export function ManageEquipmentAndBrands() {
           
           await batch.commit();
           toast({ title: 'Importação Concluída!', description: `${data.length} equipamentos foram importados com sucesso.` });
-        } catch (error) {
-          console.error("Error importing data:", error);
+        } catch (error: unknown) {
           toast({ variant: 'destructive', title: 'Erro na Importação', description: 'Não foi possível importar os dados. Verifique o formato do arquivo e os dados.' });
         } finally {
           setIsImporting(false);
@@ -281,8 +279,7 @@ export function ManageEquipmentAndBrands() {
           }
         }
       },
-      error: (error) => {
-        console.error("CSV parsing error:", error);
+      error: (error: unknown) => {
         toast({ variant: 'destructive', title: 'Erro de Leitura', description: 'Não foi possível ler o arquivo CSV.' });
         setIsImporting(false);
       }

@@ -67,12 +67,13 @@ export function GeneralSettings() {
         title: 'Sucesso!',
         description: 'O nome da empresa/usuário foi salvo.',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       toast({
         variant: 'destructive',
         title: 'Erro ao salvar',
         description:
-          error.message || 'Não foi possível salvar o nome.',
+          err.message || 'Não foi possível salvar o nome.',
       });
     } finally {
       setIsSavingName(false);

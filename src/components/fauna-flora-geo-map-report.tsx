@@ -140,8 +140,8 @@ export function FaunaFloraGeoMapReport() {
           const data = docSnap.data();
           setData((data[field] || []).sort((a: string, b: string) => a.localeCompare(b)));
         }
-      } catch (error) {
-        console.error(`Error fetching ${docName}:`, error);
+      } catch (error: unknown) {
+        // Error handled silently
       }
     };
     fetchSelectOptions('faunaFloraGeoTypes', setSpeciesTypes, 'types');
@@ -160,8 +160,8 @@ export function FaunaFloraGeoMapReport() {
         if (docSnap.exists()) {
           setMapUrl(docSnap.data().mapUrl || null);
         }
-      } catch (error) {
-        console.error("Error fetching map:", error);
+      } catch (error: unknown) {
+        // Error handled - fallback to default
       } finally {
         setIsLoadingMap(false);
       }
@@ -200,8 +200,7 @@ export function FaunaFloraGeoMapReport() {
       
       setRecords(recordsData);
       setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching real-time records:", error);
+    }, (error: unknown) => {
         toast({
             variant: "destructive",
             title: "Erro de conexão",

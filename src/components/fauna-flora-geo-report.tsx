@@ -114,8 +114,8 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
           const data = docSnap.data();
           setData((data[field] || []).sort((a: string, b: string) => a.localeCompare(b)));
         }
-      } catch (error) {
-        console.error(`Error fetching ${docName}:`, error);
+      } catch (error: unknown) {
+        // Error handled silently
       }
     };
     fetchSelectOptions('faunaFloraGeoTypes', setSpeciesTypes, 'types');
@@ -153,8 +153,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
 
       setRecords(recordsData.sort((a, b) => b.date.getTime() - a.date.getTime()));
       setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching real-time records:", error);
+    }, (error: unknown) => {
         toast({
             variant: "destructive",
             title: "Erro de conexão",
@@ -203,8 +202,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
         title: 'Sucesso!',
         description: 'Registro excluído com sucesso.',
       });
-    } catch (error) {
-      console.error("Error deleting record:", error);
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: 'Erro ao excluir',

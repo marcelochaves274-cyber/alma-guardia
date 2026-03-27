@@ -61,8 +61,13 @@ const chatWithGeminiSGSFlow = ai.defineFlow(
     const {
       output
     } = await chatWithGeminiSGSPrompt(input);
+    
+    if (!output?.response) {
+      throw new Error('No response from Gemini flow');
+    }
+    
     return {
-      response: output!.response
+      response: output.response
     };
   }
 );

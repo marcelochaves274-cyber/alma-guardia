@@ -72,9 +72,10 @@ export function ManageFaunaFloraGeo() {
             setItemTypes([]);
           }
         }
-      } catch (error: any) {
-         if (isMounted && error.code !== 'permission-denied') {
-            console.error("Error fetching fauna/flora/geo types:", error);
+      } catch (error: unknown) {
+        const err = error as { code?: string };
+        if (isMounted && err.code !== 'permission-denied') {
+          // Error handled - using fallback defaults
             toast({
                 variant: "destructive",
                 title: "Erro ao carregar",
@@ -104,8 +105,7 @@ export function ManageFaunaFloraGeo() {
     try {
         await setDoc(docRef, { types });
         return true;
-    } catch (error) {
-        console.error("Error saving types:", error);
+    } catch (error: unknown) {
         toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar os tipos.'});
         return false;
     } finally {

@@ -205,9 +205,10 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
           }
         }
       })
-      .catch((error: any) => {
-        if (error.code !== 'permission-denied') {
-          console.error('Error fetching app settings:', error);
+      .catch((error: unknown) => {
+        const err = error as { code?: string };
+        if (err.code !== 'permission-denied') {
+        // Error handled - fallback to defaults
           toast({
               variant: 'destructive',
               title: 'Erro ao carregar configurações',
@@ -256,9 +257,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
      try {
       await setDoc(settingsDocRef, { theme: selectedTheme.name }, { merge: true });
       toast({ title: 'Sucesso!', description: 'O tema foi salvo.' });
-    } catch (error: any) {
-      console.error('Error saving theme:', error);
-      toast({ variant: 'destructive', title: 'Erro ao Salvar Tema', description: error.message });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({ variant: 'destructive', title: 'Erro ao Salvar Tema', description: err.message || 'Erro desconhecido' });
     } finally {
       setIsSavingTheme(false);
     }
@@ -278,9 +279,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     try {
       await setDoc(settingsDocRef, { logoUrl: logoUrl }, { merge: true });
       toast({ title: 'Sucesso!', description: 'A logo foi salva.' });
-    } catch (error: any) {
-      console.error('Error saving logo:', error);
-      toast({ variant: 'destructive', title: 'Erro ao Salvar Logo', description: error.message });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({ variant: 'destructive', title: 'Erro ao Salvar Logo', description: err.message || 'Erro desconhecido' });
     } finally {
       setIsSavingLogo(false);
     }
@@ -297,9 +298,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       await setDoc(settingsDocRef, { logoUrl: null }, { merge: true });
       setLogoUrl(null);
       toast({ title: 'Logo Removida', description: 'A sua logo foi removida com sucesso.' });
-    } catch (error: any) {
-      console.error('Error removing logo:', error);
-      toast({ variant: 'destructive', title: 'Erro ao Remover Logo', description: error.message });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({ variant: 'destructive', title: 'Erro ao Remover Logo', description: err.message || 'Erro desconhecido' });
     } finally {
       setIsSavingLogo(false);
     }

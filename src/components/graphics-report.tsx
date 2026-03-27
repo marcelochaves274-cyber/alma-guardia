@@ -261,8 +261,7 @@ export function GraphicsReport() {
             
             setAvailableYears(Array.from(allYears).sort((a, b) => Number(b) - Number(a)));
 
-        } catch (error) {
-            console.error("Error fetching data for charts:", error);
+        } catch (error: unknown) {
             toast({
                 variant: "destructive",
                 title: "Erro de conexão",

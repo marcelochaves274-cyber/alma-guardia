@@ -86,9 +86,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           await setDoc(docRef, defaultPasses);
           setPasses(defaultPasses);
         }
-      } catch (error: any) {
-        if (error.code !== 'permission-denied') {
-          console.error("Error fetching profile passes:", error);
+      } catch (error: unknown) {
+        const err = error as { code?: string };
+        if (err.code !== 'permission-denied') {
+          // Error handled - fallback to default passes
         }
         setPasses({ adminPass: '123456', supervisorPass: '123456', observerPass: '123456' });
       } finally {

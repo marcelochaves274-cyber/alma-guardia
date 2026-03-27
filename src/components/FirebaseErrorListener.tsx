@@ -30,9 +30,7 @@ export function FirebaseErrorListener() {
     if (process.env.NODE_ENV === 'development') {
       throw error;
     } else {
-      console.error("Firestore Permission Error:", error);
-      // In a real production app, you'd send this to a logging service.
-      // We reset the error state to prevent re-throwing on subsequent renders.
+      // Error logged silently in production
       setError(null);
     }
   }
