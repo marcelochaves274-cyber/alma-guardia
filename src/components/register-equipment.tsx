@@ -193,7 +193,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="equipment-type">Tipo de Equipamento</Label>
-              <Select key={`type-${equipmentToEdit?.id || 'new'}`} name="equipmentType" required onValueChange={setEquipmentType} defaultValue={equipmentType} disabled={isLoadingTypes}>
+              <Select key={`type-${equipmentToEdit?.id || 'new'}`} name="equipmentType" required onValueChange={setEquipmentType} value={equipmentType} disabled={isLoadingTypes}>
                 <SelectTrigger id="equipment-type">
                   <SelectValue placeholder={isLoadingTypes ? "Carregando..." : "Selecione o tipo"} />
                 </SelectTrigger>
@@ -204,7 +204,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
             </div>
             <div className="space-y-2">
               <Label htmlFor="brand">Marca</Label>
-              <Select key={`brand-${equipmentToEdit?.id || 'new'}`} name="brand" required onValueChange={setBrand} defaultValue={brand} disabled={isLoadingBrands}>
+              <Select key={`brand-${equipmentToEdit?.id || 'new'}`} name="brand" required onValueChange={setBrand} value={brand} disabled={isLoadingBrands}>
                 <SelectTrigger id="brand">
                   <SelectValue placeholder={isLoadingBrands ? "Carregando..." : "Selecione a marca"} />
                 </SelectTrigger>
@@ -243,7 +243,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
             </div>
             <div className="space-y-2">
               <Label htmlFor="storage-location">Local Armazenado</Label>
-              <Select key={`location-${equipmentToEdit?.id || 'new'}`} name="storageLocation" onValueChange={setStorageLocation} defaultValue={storageLocation} disabled={isLoadingLocations}>
+              <Select key={`location-${equipmentToEdit?.id || 'new'}`} name="storageLocation" onValueChange={setStorageLocation} value={storageLocation} disabled={isLoadingLocations}>
                 <SelectTrigger id="storage-location">
                   <SelectValue placeholder={isLoadingLocations ? "Carregando..." : "Selecione o local"} />
                 </SelectTrigger>
@@ -261,7 +261,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Status do Equipamento</Label>
-              <Select key={`status-${equipmentToEdit?.id || 'new'}`} name="status" required onValueChange={setStatus} defaultValue={status}>
+              <Select key={`status-${equipmentToEdit?.id || 'new'}`} name="status" required onValueChange={setStatus} value={status}>
                 <SelectTrigger id="status">
                   <SelectValue />
                 </SelectTrigger>

@@ -306,7 +306,7 @@ export function ManageEquipmentAndBrands() {
     return (
       <div>
         <h3 className="text-xl font-semibold">{title}</h3>
-        <form onSubmit={(e) => handleAddItem(e, itemType)} className="flex items-end gap-4 mt-4">
+        <form onSubmit={(e) => handleAddItem(e, itemType)} className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 mt-4">
           <div className="w-full space-y-2">
             <Label htmlFor={`new-${itemType}`}>Novo Item</Label>
             <Input
@@ -317,34 +317,36 @@ export function ManageEquipmentAndBrands() {
               disabled={current.isSaving}
             />
           </div>
-          <Button type="submit" disabled={current.isSaving || !current.newItem.trim()}>
+          <Button type="submit" disabled={current.isSaving || !current.newItem.trim()} className="w-full sm:w-auto">
             {current.isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
             Adicionar
           </Button>
         </form>
 
-        <Separator className="my-6" />
+        <Separator className="my-4 md:my-6" />
         
         <div>
           <h4 className="mb-4 text-lg font-medium">Itens Existentes</h4>
           {current.items.length > 0 ? (
             <ul className="space-y-3">
               {current.items.map((item) => (
-                <li key={item} className="flex items-center justify-between rounded-md border bg-card p-3">
+                <li key={item} className="flex flex-col sm:flex-row sm:items-center justify-between rounded-md border bg-card p-3 gap-3">
                   {current.editingItem === item ? (
-                    <div className='flex-1 flex items-center gap-2'>
-                        <Input value={current.editingValue} onChange={(e) => setState(s => ({ ...s, [itemType]: { ...s[itemType], editingValue: e.target.value } }))} className="h-8" autoFocus onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit(itemType)} />
-                        <Button variant="ghost" size="icon" onClick={() => handleSaveEdit(itemType)} className='h-8 w-8 text-green-500 hover:text-green-600'><Check className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleCancelEditing(itemType)} className='h-8 w-8 text-muted-foreground hover:text-destructive'><X className="h-4 w-4" /></Button>
+                    <div className='flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2'>
+                        <Input value={current.editingValue} onChange={(e) => setState(s => ({ ...s, [itemType]: { ...s[itemType], editingValue: e.target.value } }))} className="h-9 sm:h-8 flex-1" autoFocus onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit(itemType)} />
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => handleSaveEdit(itemType)} className='h-9 w-9 sm:h-8 sm:w-8 text-green-500 hover:text-green-600 border sm:border-0'><Check className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleCancelEditing(itemType)} className='h-9 w-9 sm:h-8 sm:w-8 text-muted-foreground hover:text-destructive border sm:border-0'><X className="h-4 w-4" /></Button>
+                        </div>
                     </div>
                   ) : (
                     <>
-                      <span className="text-sm font-medium">{item}</span>
-                      <div className="flex items-center">
-                          <Button variant="ghost" size="icon" onClick={() => handleStartEditing(itemType, item)} disabled={current.isSaving} className="h-8 w-8 text-muted-foreground hover:text-primary"><Pencil className="h-4 w-4" /></Button>
+                      <span className="text-sm font-medium break-all">{item}</span>
+                      <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleStartEditing(itemType, item)} disabled={current.isSaving} className="h-9 w-9 sm:h-8 sm:w-8 text-muted-foreground hover:text-primary border sm:border-0"><Pencil className="h-4 w-4" /></Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" disabled={current.isSaving} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" disabled={current.isSaving} className="h-9 w-9 sm:h-8 sm:w-8 text-muted-foreground hover:text-destructive border sm:border-0"><Trash2 className="h-4 w-4" /></Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
@@ -373,13 +375,13 @@ export function ManageEquipmentAndBrands() {
   
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8 md:space-y-12">
       <Card>
         <CardHeader>
           <CardTitle>Gerenciar Equipamentos e Marcas</CardTitle>
           <CardDescription>Adicione ou remova os tipos de equipamentos e as marcas que aparecerão no formulário de registro.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-12">
+        <CardContent className="space-y-8 md:space-y-12">
           {renderSection('equipmentTypes', 'Tipos de Equipamento', 'Ex: Mosquetão')}
           <Separator />
           {renderSection('equipmentBrands', 'Marcas de Equipamento', 'Ex: Petzl')}

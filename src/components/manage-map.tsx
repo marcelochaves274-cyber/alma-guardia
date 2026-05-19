@@ -58,11 +58,12 @@ export function ManageMap() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit for base64
+      // Limite de 800KB para segurança, pois o Firestore aceita documentos de até 1MB
+      if (file.size > 0.8 * 1024 * 1024) { 
         toast({
           variant: 'destructive',
-          title: 'Arquivo muito grande',
-          description: 'Por favor, escolha uma imagem menor que 2MB.',
+          title: 'Imagem muito pesada',
+          description: 'Para salvar no banco de dados, a imagem deve ter menos de 800KB.',
         });
         return;
       }
@@ -185,7 +186,7 @@ export function ManageMap() {
                 accept="image/png, image/jpeg, image/gif, image/webp"
               />
               <p className="text-xs text-muted-foreground">
-                Recomendado: Imagem com boa resolução, máx 2MB.
+                Recomendado: Imagem com boa resolução, máx 800KB.
               </p>
             </div>
           </div>

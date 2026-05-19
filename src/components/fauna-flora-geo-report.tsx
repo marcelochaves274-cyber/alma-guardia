@@ -303,7 +303,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0 md:p-6 md:pt-0">
-            <div className="max-h-[65vh] overflow-y-auto md:max-h-none">
+            <div className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>

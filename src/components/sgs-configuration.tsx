@@ -15,10 +15,22 @@ import { handleSuggestCapabilities } from '@/app/actions';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock data, in a real app this would be dynamic
 const sgsStructure = {
-  name: 'SGS App Básico',
-  modules: ['Autenticação de Usuário', 'Painel de Controle', 'Gerenciamento de Dados'],
+  name: 'ALMA Guardia',
+  modules: [
+    'Dashboard de Lembretes e Pendências Críticas',
+    'Registro e Relatório de Acidentes/Incidentes (Ocorrências)',
+    'Tratamento de Riscos com cálculo de Probabilidade e Consequência',
+    'Central de Avisos de Campo com evidência fotográfica',
+    'Monitoramento Ambiental (Fauna, Flora e Geodiversidade)',
+    'Gestão de Inventário e Vistorias de Equipamentos (Lote/CA/UIAA)',
+    'Avaliações de Risco Operacional por Local',
+    'Registro de Atividades Integrado a POPs e TCRs',
+    'Visualização de Documentos SGS (Escopo, Liderança, Operação, RAME)',
+    'Relatórios Geográficos (Mapas) e Gráficos de Desempenho',
+    'Gerenciamento de Perfis de Acesso (Admin, Supervisor, Observador)',
+    'Personalização de Identidade Visual e Temas'
+  ],
 };
 
 export function SgsConfiguration() {
@@ -60,7 +72,7 @@ export function SgsConfiguration() {
         <CardHeader>
           <CardTitle>Estrutura SGS Atual</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
+        <CardContent className="space-y-2 text-sm px-4 sm:px-6">
           <p>
             <strong>Nome:</strong> {sgsStructure.name}
           </p>

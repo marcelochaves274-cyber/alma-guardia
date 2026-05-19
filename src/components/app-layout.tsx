@@ -2,7 +2,9 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { getAuth, signOut } from 'firebase/auth';
 import { useAppSettings } from '@/context/app-settings-context';
 
 import { GeneralSettings } from '@/components/general-settings';
@@ -72,7 +74,7 @@ type ReportFilters = {
 }
 
 function MainAppLayout() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const { profile, isProfileLoading, getRedirectPage } = useProfile();
   const router = useRouter();
 
@@ -85,6 +87,9 @@ function MainAppLayout() {
 
   const [activePage, setActivePage] = useState(getDefaultPageForProfile(profile));
   const [reportFilters, setReportFilters] = useState<ReportFilters | null>(null);
+  const firestore = useFirestore();
+  const [isVerifyingStatus, setIsVerifyingStatus] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [prefillData, setPrefillData] = useState<any | null>(null);
 
   const [occurrenceToEdit, setOccurrenceToEdit] = useState<any | null>(null);
@@ -108,11 +113,58 @@ function MainAppLayout() {
     }
   }, [profile, isProfileLoading, getRedirectPage]);
 
+  useEffect(() => {
+    async function verifySubscription() {
+      // Se não há usuário ou é anônimo, não verificamos aqui
+      if (!user || user.isAnonymous || !firestore) {
+        setIsAuthorized(false);
+        return;
+      }
+
+      // Chave Mestra de Admin: Acesso total imediato pule a consulta
+      if (user.email === 'sgsburacodopadre@gmail.com') {
+        setIsAuthorized(true);
+        return;
+      }
+
+      setIsVerifyingStatus(true);
+      try {
+        // Consulta obrigatória na coleção sgs_genius usando o UID como ID
+        const userDocRef = doc(firestore, 'sgs_genius', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists() && userDocSnap.data()?.status === 'active') {
+          setIsAuthorized(true);
+        } else {
+          // Trava de segurança: Se o status não for 'active', encerra sessão e redireciona
+          const auth = getAuth();
+          await signOut(auth);
+          window.location.href = `https://buy.stripe.com/test_3cIdR90xubvh3Is6WGAo00?client_reference_id=${user.uid}`;
+        }
+      } catch (error) {
+        console.error("Erro crítico na trava de segurança do Dashboard:", error);
+        // Bloqueio preventivo em caso de erro de permissão (ex: permission-denied) ou rede
+        const auth = getAuth();
+        await signOut(auth);
+        window.location.href = `https://buy.stripe.com/test_3cIdR90xubvh3Is6WGAo01?client_reference_id=${user.uid}`;
+      } finally {
+        setIsVerifyingStatus(false);
+      }
+    }
+
+    verifySubscription();
+  }, [user, firestore]);
+
   // Main loading gate. Waits for both user and profile information.
-  if (isProfileLoading) {
+  if (isUserLoading || isProfileLoading || isVerifyingStatus) {
     return <Loader />;
   }
   
+  // Se o usuário está presente mas não foi autorizado pela trava de segurança (redirecionamento em curso)
+  if (user && !user.isAnonymous && !isAuthorized) {
+    return null;
+  }
+
   // If user is logged in, but no profile is selected, show selector.
   if (user && !profile) {
     return <ProfileSelector />;
@@ -285,7 +337,7 @@ function MainAppLayout() {
                   Sistema de Gestão de Segurança
                 </span>
                 <span className="text-sm md:text-lg font-bold text-muted-foreground text-center">
-                    {appName || 'SGS APP'}
+                    {appName || 'ALMA Guard.ia'}
                 </span>
               </div>
             </div>

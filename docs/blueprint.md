@@ -1,4 +1,4 @@
-# **App Name**: SGS Genius
+# **App Name**: ALMA Guardia
 
 ## Core Features:
 
@@ -16,3 +16,17 @@
 - Use ícones simples e claros para representar diferentes recursos e funcionalidades do SGS, garantindo navegação intuitiva e compreensão visual.
 - Mantenha um layout limpo e estruturado com amplo espaço em branco, melhorando a legibilidade e reduzindo a desordem visual.
 - Incorpore animações sutis, como telas de carregamento ou transições, para fornecer feedback ao usuário e aprimorar a experiência geral sem causar distração.
+
+## Log de Progresso e Decisões:
+
+### Sessão: [Data de Hoje]
+- **Imagens:** Decidido migrar imagens do imgBB para o Firebase Storage para maior confiabilidade.
+- **Configuração de Deploy:** Ajustado `next.config.mjs` com `unoptimized: true`, `trailingSlash: true` e `output: 'export'`.
+- **Firebase Hosting:** Corrigido o `firebase.json` para apontar para a pasta `out`.
+- **Identidade Visual:** Logotipo atualizado para usar URL definitiva com token do Firebase Storage no cabeçalho e rodapé.
+- **Novos Ativos de Logo:** Recebidos novos links do Firebase Storage para a Logo Final.
+  - **PNG (Uso em páginas):** `https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo%20Final.png?alt=media&token=0a7e892a-be30-4d41-818f-c224f142af68`
+  - **ICO (Favicon/App Icon):** `https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-Final-ico.ico?alt=media&token=7b88f673-93d1-4e01-a1c7-bf0da7beaa86`
+- **Domínio:** Registrado e configurado o domínio `almasoftwares.com`. Firebase em processo de geração de certificado SSL.
+
+**Próximos Passos:** Validar o acesso via novo domínio e migrar as demais imagens do carrossel para o Storage.

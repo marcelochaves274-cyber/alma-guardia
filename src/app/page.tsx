@@ -1,8 +1,15 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ListTodo, Siren, ShieldCheck, Megaphone, Sprout, HardHat, ClipboardList, Route, BookText, FileText, HeartPulse, Files, Settings, CheckCircle, Smartphone, BarChart3, TrendingUp, Map, Phone, Instagram } from 'lucide-react';
+import { 
+  ArrowRight, ListTodo, Siren, ShieldCheck, Megaphone, Sprout, HardHat, 
+  ClipboardList, Route, BookText, FileText, HeartPulse, Files, Settings, 
+  CheckCircle, Smartphone, BarChart3, TrendingUp, Map, Phone, Instagram 
+} from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Carousel,
@@ -10,19 +17,20 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel"
-import Image from 'next/image';
+} from "@/components/ui/carousel";
 import { useToast } from '@/hooks/use-toast';
 
 export default function HomePage() {
   const { toast } = useToast();
+ const handleStartTrial = () => {
+    window.location.href = 'https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00';
+  };
   const handleComingSoon = () => {
     toast({
       title: 'Aguarde',
       description: 'Esta funcionalidade estará disponível em breve.',
     });
   };
-  const loginOrDashboardLink = '/login';
 
   const features = [
     {
@@ -150,17 +158,17 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 px-4 lg:px-6 h-24 flex items-center justify-between border-b bg-card/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 px-4 lg:px-6 h-20 md:h-24 flex items-center justify-between border-b bg-card/95 backdrop-blur-sm">
         <div className="flex-1 flex justify-start">
           <Link className="flex items-center justify-center gap-2" href="/">
              <Image
-              src="https://i.ibb.co/Z17vbKys/Logo-da-SGS-APP-Arenito.jpg"
-              alt="SGS APP Logo"
-              width={56}
-              height={56}
-              className="object-contain"
+              src="https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo%20Final.png?alt=media&token=0a7e892a-be30-4d41-818f-c224f142af68"
+              alt="ALMA Guardia Logo"
+              width={60}
+              height={60}
+              className="object-contain md:w-20 md:h-20"
             />
-            <span className="font-bold text-xl text-primary">SGS APP</span>
+            <span className="font-bold text-lg md:text-xl text-primary">ALMA Guardia</span>
           </Link>
         </div>
         
@@ -178,7 +186,7 @@ export default function HomePage() {
 
         <div className="flex-1 flex justify-end">
           <Button variant="link" asChild className="text-lg text-primary hover:no-underline">
-            <Link href={loginOrDashboardLink}>Entrar</Link>
+            <Link href="/login">Entrar</Link>
           </Button>
         </div>
       </header>
@@ -187,11 +195,11 @@ export default function HomePage() {
         <section className="w-full py-20 md:py-28 lg:py-32">
           <div className="container grid items-stretch gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
             <div className="flex flex-col justify-center space-y-6 text-center items-center">
-              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl text-primary">
+              <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl text-primary">
                 Sistema de Gestão de Segurança Completa e Inteligente.
               </h1>
               <p className="max-w-[600px] text-muted-foreground md:text-xl text-center">
-                O SGS APP é a plataforma definitiva para digitalizar seus processos de segurança, garantir conformidade e tomar decisões baseadas em dados.
+                O ALMA Guardia é a plataforma definitiva para digitalizar seus processos de segurança, garantir conformidade e tomar decisões baseadas em dados.
               </p>
             </div>
             <div className="flex items-center justify-center">
@@ -216,7 +224,7 @@ export default function HomePage() {
         <section id="funcionalidades" className="w-full py-20 md:py-24 bg-card/20">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-              <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Funcionalidades do SGS APP</div>
+              <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Funcionalidades do ALMA Guardia</div>
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Uma Ferramenta para Cada Necessidade</h2>
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                 Explore os módulos que transformam a gestão de segurança da sua operação, tornando-a mais digital, inteligente e em conformidade.
@@ -256,8 +264,8 @@ export default function HomePage() {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4" />
-              <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4" />
+              <CarouselPrevious className="hidden md:flex absolute -left-12 top-1/2 -translate-y-1/2" />
+              <CarouselNext className="hidden md:flex absolute -right-12 top-1/2 -translate-y-1/2" />
             </Carousel>
           </div>
         </section>
@@ -265,11 +273,11 @@ export default function HomePage() {
         <section className="w-full py-20 md:py-24">
           <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
             <Image
-              src="https://i.ibb.co/Pz9J29Pq/Image-202602210939.jpg"
+              src="https://i.ibb.co/zTL6Rc4K/Valor-dos-Planos.png"
               alt="Conheça Nossos Planos"
               width={600}
               height={600}
-              className="mx-auto aspect-square overflow-hidden rounded-xl object-cover sm:w-full"
+              className="mx-auto h-auto w-full max-w-[600px] overflow-hidden rounded-xl object-contain shadow-md"
               data-ai-hint="plans pricing"
             />
             <div className="space-y-6">
@@ -280,16 +288,18 @@ export default function HomePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
                 <Card className="flex flex-col items-center justify-center p-6 text-center bg-card/50">
                   <CardTitle className="text-2xl mb-2">Plano Mensal</CardTitle>
-                  <CardDescription className="text-4xl font-bold text-primary">R$950,00</CardDescription>
+                  <CardDescription className="text-4xl font-bold text-primary">R$528,00</CardDescription>
                 </Card>
                 <Card className="flex flex-col items-center justify-center p-6 text-center bg-card/50">
                   <CardTitle className="text-2xl mb-2">Plano Anual</CardTitle>
-                  <CardDescription className="text-4xl font-bold text-primary">R$9.500,00</CardDescription>
+                  <CardDescription className="text-4xl font-bold text-primary">R$5.280,00</CardDescription>
                 </Card>
               </div>
-              <Button size="lg" className="w-full sm:w-auto mt-4" onClick={handleComingSoon}>
-                Faça um mês de teste gratuito
-              </Button>
+            <Button size="lg" className="w-full sm:w-auto mt-4" asChild>
+  <Link href="https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00">
+    Faça um mês de teste gratuito
+  </Link>
+</Button>
             </div>
           </div>
         </section>
@@ -298,9 +308,9 @@ export default function HomePage() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
                <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Nossos Benefícios</div>
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Por que escolher o SGS APP?</h2>
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Por que escolher o ALMA Guardia?</h2>
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                Mais do que um aplicativo, o SGS APP é o seu parceiro estratégico para uma cultura de segurança robusta e eficiente. Centralize informações, digitalize processos e tome decisões baseadas em dados para elevar a segurança da sua operação a um novo patamar de excelência.
+                Mais do que um aplicativo, o ALMA Guardia é o seu parceiro estratégico para uma cultura de segurança robusta e eficiente. Centralize informações, digitalize processos e tome decisões baseadas em dados para elevar a segurança da sua operação a um novo patamar de excelência.
               </p>
             </div>
             <div className="mx-auto grid max-w-5xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -320,7 +330,7 @@ export default function HomePage() {
         <section className="w-full py-20 md:py-24">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Veja o que nossos clientes têm a dizer sobre o SGS APP</h2>
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Veja o que nossos clientes têm a dizer sobre o ALMA Guardia</h2>
             </div>
             <div className="mx-auto grid max-w-5xl items-center gap-8 sm:grid-cols-2">
               <Card className="overflow-hidden shadow-2xl border-primary/20">
@@ -362,10 +372,12 @@ export default function HomePage() {
               </p>
             </div>
             <div className="mx-auto w-full max-w-sm space-y-2">
-               <Button size="lg" className="w-full" onClick={handleComingSoon}>
-                Faça um mês de teste gratuito
-              </Button>
-            </div>
+  <Button size="lg" className="w-full" asChild>
+    <Link href="https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00">
+      Faça um mês de teste gratuito
+    </Link>
+  </Button>
+</div>
           </div>
         </section>
       </main>
@@ -374,27 +386,30 @@ export default function HomePage() {
         <div className="container mx-auto py-12 px-4 md:px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             
-            <div className="lg:col-span-2 space-y-4">
-              <Link className="flex items-center gap-2" href="/">
+            <div className="lg:col-span-2 flex flex-col md:flex-row items-center md:items-start gap-8">
+              <Link href="/" className="shrink-0">
                 <Image
-                  src="https://i.ibb.co/Z17vbKys/Logo-da-SGS-APP-Arenito.jpg"
-                  alt="SGS APP Logo"
-                  width={40}
-                  height={40}
-                  className="object-contain rounded-md"
+                  src="https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo%20Final.png?alt=media&token=0a7e892a-be30-4d41-818f-c224f142af68"
+                  alt="ALMA Guardia Logo"
+                  width={150}
+                  height={150}
+                  className="object-contain rounded-xl shadow-lg md:w-48 md:h-48"
                 />
-                <span className="font-bold text-xl">SGS APP</span>
               </Link>
-              <p className="text-sm text-muted-foreground">ALMA softwares e soluções Ltda</p>
-              <p className="text-sm text-muted-foreground">CNPJ: 00.000.000/0001-00</p>
-              <p className="text-sm text-muted-foreground">Peri Pereira Costa. Setor Cercadinho - Distrito de Itaiacoca, Ponta Grossa - PR, 84110-000</p>
-              <div className="flex space-x-4 mt-4">
-                <Link href="/solicitar-informacoes" aria-label="WhatsApp">
-                  <Phone className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
-                </Link>
-                <a href="https://www.instagram.com/sgs.app" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                  <Instagram className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
-                </a>
+              <div className="space-y-2 text-center md:text-left">
+                <h4 className="font-bold text-2xl text-primary mb-2">ALMA Guardia</h4>
+                <p className="text-sm text-muted-foreground font-semibold">ALMA softwares e soluções Ltda</p>
+                <p className="text-sm text-muted-foreground">CNPJ: 66.275.508/0001-00</p>
+                <p className="text-sm text-muted-foreground">Ewaldo Macedo Kossatz Neto, 65 - Ponta Grossa - PR - 84071-606</p>
+                <p className="text-base font-bold text-primary pt-2">www.almasoftwares.com</p>
+                <div className="flex justify-center md:justify-start space-x-4 mt-4">
+                  <Link href="/solicitar-informacoes" aria-label="WhatsApp">
+                    <Phone className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
+                  </Link>
+                  <a href="https://www.instagram.com/?utm_source=pwa_homescreen&__pwa=1" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                    <Instagram className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -404,7 +419,7 @@ export default function HomePage() {
                 <h4 className="font-semibold mb-3">
                     <Link href="#funcionalidades" className="hover:underline">Funcionalidades</Link>
                 </h4>
-                <p className="text-sm text-muted-foreground">Explore os módulos e recursos que o SGS APP oferece para digitalizar sua gestão.</p>
+                <p className="text-sm text-muted-foreground">Explore os módulos e recursos que o ALMA Guard.ia oferece para digitalizar sua gestão.</p>
               </div>
               <div>
                 <h4 className="font-semibold mb-3">
@@ -421,7 +436,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="mt-12 border-t border-muted-foreground/20 pt-6 flex flex-col sm:flex-row items-center justify-between">
-             <p className="text-xs text-muted-foreground">&copy; 2024 SGS APP. Todos os direitos reservados.</p>
+             <p className="text-xs text-muted-foreground">&copy; 2024 ALMA Guardia. Todos os direitos reservados.</p>
              <nav className="flex gap-4 sm:gap-6 mt-4 sm:mt-0">
                 <button onClick={handleComingSoon} className="text-xs hover:underline underline-offset-4">
                     Termos de Serviço

@@ -262,6 +262,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
             <CardDescription>Visualize as atividades registradas no sistema e clique para ver os detalhes.</CardDescription>
             </CardHeader>
             <CardContent>
+            <div className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto">
             <Table>
                 <TableHeader>
                 <TableRow>
@@ -341,6 +342,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
                 )}
                 </TableBody>
             </Table>
+            </div>
             </CardContent>
         </Card>
 

@@ -295,7 +295,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       <Card>
         <CardHeader>
           <CardTitle>Relatório de Tratamentos de Risco</CardTitle>
@@ -379,8 +379,10 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0 md:p-6 md:pt-0">
-            <div className="max-h-[65vh] overflow-y-auto md:max-h-none">
-              <Table>
+            {/* Adicionado wrapper para scroll horizontal em telas pequenas */}
+            {/* A largura mínima evita que as fontes diminuam no celular */}
+            <div className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto w-full border-t md:border-none">
+              <Table className="min-w-[800px] md:min-w-full">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data</TableHead>

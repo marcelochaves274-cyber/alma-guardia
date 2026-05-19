@@ -391,7 +391,7 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
           <Separator />
           <div className="space-y-3">
               <Label>Análise da Situação</Label>
-              <RadioGroup name="analysis" required className="flex items-center space-x-4 pt-2" onValueChange={setAnalysis} value={analysis}>
+              <RadioGroup name="analysis" required className="flex flex-wrap items-center gap-4 pt-2" onValueChange={setAnalysis} value={analysis}>
                   <div className="flex items-center space-x-2">
                       <RadioGroupItem value="alta" id="alta" className="border-red-500 text-red-500 focus:ring-red-500" />
                       <Label htmlFor="alta" className="font-bold text-red-500">Alta</Label>

@@ -27,7 +27,7 @@ export function Chat() {
     {
       role: 'model',
       parts: [
-        'Olá! Sou o SGS Genius. Vamos construir seu aplicativo SGS juntos. Comece me dizendo o que você tem em mente.',
+        'Olá! Sou o ALMA Genius. Vamos construir seu aplicativo ALMA Guard.ia juntos. Comece me dizendo o que você tem em mente.',
       ],
     },
   ]);
@@ -83,7 +83,7 @@ export function Chat() {
   return (
     <Card className="flex h-full w-full flex-col shadow-lg">
       <CardHeader>
-        <CardTitle>Chat SGS com IA</CardTitle>
+        <CardTitle>Chat ALMA com IA</CardTitle>
         <CardDescription>Converse com a IA para definir os requisitos do seu aplicativo.</CardDescription>
       </CardHeader>
       <CardContent>

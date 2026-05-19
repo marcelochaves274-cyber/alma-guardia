@@ -239,7 +239,7 @@ export function ManageFaunaFloraGeo() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleAddType} className="flex items-end gap-4">
+        <form onSubmit={handleAddType} className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
           <div className="w-full space-y-2">
             <Label htmlFor="new-item-type">
               Novo Tipo
@@ -252,7 +252,7 @@ export function ManageFaunaFloraGeo() {
               disabled={isSaving}
             />
           </div>
-          <Button type="submit" disabled={isSaving || !newType.trim()}>
+          <Button type="submit" disabled={isSaving || !newType.trim()} className="w-full sm:w-auto">
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
             {isSaving ? 'Adicionando...' : 'Adicionar'}
           </Button>
@@ -267,10 +267,10 @@ export function ManageFaunaFloraGeo() {
               {itemTypes.map((type) => (
                 <li
                   key={type}
-                  className="flex items-center justify-between rounded-md border bg-card p-3"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between rounded-md border bg-card p-3 gap-3"
                 >
                   {editingType === type ? (
-                    <div className='flex-1 flex items-center gap-2'>
+                    <div className='flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2'>
                         <Input
                             value={editingValue}
                             onChange={(e) => setEditingValue(e.target.value)}
@@ -278,19 +278,21 @@ export function ManageFaunaFloraGeo() {
                             autoFocus
                             onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
                         />
-                         <Button variant="ghost" size="icon" onClick={handleSaveEdit} className='h-8 w-8 text-green-500 hover:text-green-600' aria-label="Salvar edição"><Check className="h-4 w-4" /></Button>
-                         <Button variant="ghost" size="icon" onClick={handleCancelEditing} className='h-8 w-8 text-muted-foreground hover:text-destructive' aria-label="Cancelar edição"><X className="h-4 w-4" /></Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="ghost" size="icon" onClick={handleSaveEdit} className='h-9 w-9 sm:h-8 sm:w-8 text-green-500 hover:text-green-600 border sm:border-0' aria-label="Salvar edição"><Check className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={handleCancelEditing} className='h-9 w-9 sm:h-8 sm:w-8 text-muted-foreground hover:text-destructive border sm:border-0' aria-label="Cancelar edição"><X className="h-4 w-4" /></Button>
+                        </div>
                     </div>
                   ) : (
                     <>
-                        <span className="text-sm font-medium">{type}</span>
-                        <div className="flex items-center">
+                        <span className="text-sm font-medium break-all">{type}</span>
+                        <div className="flex items-center justify-end gap-1">
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleStartEditing(type)}
                                 disabled={isSaving}
-                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                className="h-9 w-9 sm:h-8 sm:w-8 text-muted-foreground hover:text-primary border sm:border-0"
                                 aria-label={`Editar ${type}`}
                             >
                                 <Pencil className="h-4 w-4" />
@@ -302,7 +304,7 @@ export function ManageFaunaFloraGeo() {
                                         variant="ghost"
                                         size="icon"
                                         disabled={isSaving}
-                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                    className="h-9 w-9 sm:h-8 sm:w-8 text-muted-foreground hover:text-destructive border sm:border-0"
                                         aria-label={`Remover ${type}`}
                                     >
                                         <Trash2 className="h-4 w-4" />

@@ -137,7 +137,7 @@ export function GeneralSettings() {
           
            <div className="space-y-4">
               <Label>Logo</Label>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 {isSettingsLoading ? <Skeleton className="h-16 w-16 rounded-md" /> : logoUrl ? (
                   <div className="relative">
                     <Image src={logoUrl} alt="Logo preview" width={64} height={64} className="rounded-md border object-contain" />

@@ -1,4 +1,4 @@
-ROTEIRO DE VÍDEO: APRESENTAÇÃO SGS APP
+ROTEIRO DE VÍDEO: APRESENTAÇÃO ALMA Guard.ia
 Apresentador: Marcelo Chaves
 Tempo estimado: 6 a 7 minutos
 
@@ -6,15 +6,15 @@ Tempo estimado: 6 a 7 minutos
 "Olá, eu sou Marcelo Chaves. Minha trajetória na área de segurança foi construída no campo e na teoria: sou Socorrista Resgatista, Brigadista, possuo certificação internacional de Resgate em Áreas Remotas pela WFA, NR 35 para técnicas verticais, entre outros. Mas, acima de tudo, sou Auditor Interno de Sistemas de Gestão de Segurança. Atualmente, atuo também como Supervisor de Atividades de Turismo."
 [Ação: Certificados aparecem um a um na tela]
 
-"Ao longo de anos operando e auditando, percebi uma lacuna crítica: muitas empresas de turismo de aventura e parques possuem excelentes profissionais, mas pecam na gestão documental e na rastreabilidade. Segurança não pode ser baseada na sorte ou apenas na memória; ela precisa de método. É por isso que desenvolvemos o SGS APP."
+"Ao longo de anos operando e auditando, percebi uma lacuna crítica: muitas empresas de turismo de aventura e parques possuem excelentes profissionais, mas pecam na gestão documental e na rastreabilidade. Segurança não pode ser baseada na sorte ou apenas na memória; ela precisa de método. É por isso que desenvolvemos o ALMA Guard.ia."
 
 2. O PROBLEMA E A NORMA NBR 21101 (0:50 - 1:30)
 "Se você opera no turismo de aventura, sabe que a norma NBR ISO 21101 é a nossa bíblia. Ela exige que a gente identifique perigos, trate riscos e mantenha tudo documentado. Mas, na correria da operação, preencher papel, controlar validade de equipamento e lembrar de vistorias se torna um pesadelo logístico. 
 
-O SGS APP nasceu para tirar essa carga das suas costas e digitalizar todo o seu sistema de segurança, garantindo conformidade total com a norma, de forma simples e na palma da mão."
+O ALMA Guard.ia nasceu para tirar essa carga das suas costas e digitalizar todo o seu sistema de segurança, garantindo conformidade total com a norma, de forma simples e na palma da mão."
 
 3. O CÉREBRO DO SISTEMA: LEMBRETES (1:30 - 2:10)
-"Quando você abre o SGS APP como administrador, a primeira coisa que vê é o painel de Lembretes. Ele é o cérebro da sua operação. Aqui, o sistema avisa automaticamente o que está pendente:
+"Quando você abre o ALMA Guard.ia como administrador, a primeira coisa que vê é o painel de Lembretes. Ele é o cérebro da sua operação. Aqui, o sistema avisa automaticamente o que está pendente:
 • Tratamentos de risco que passaram do prazo;
 • Equipamentos que precisam de vistoria hoje ou que estão atrasados;
 • E novos avisos enviados pela sua equipe de campo. 
@@ -56,6 +56,6 @@ Tudo isso alimenta nossa área de Relatórios Geográficos e o módulo de Gráfi
 [Ação: Vídeo demonstração: Configurações e Gráficos]
 
 9. CONCLUSÃO (7:00 - 7:30)
-"Ter um SGS não é apenas uma obrigação legal; é o compromisso de que seu cliente vai se divertir e voltar para casa em segurança. O SGS APP foi feito por quem entende de resgate e auditoria, para quem entende de aventura. 
+"Ter um SGS não é apenas uma obrigação legal; é o compromisso de que seu cliente vai se divertir e voltar para casa em segurança. O ALMA Guard.ia foi feito por quem entende de resgate e auditoria, para quem entende de aventura. 
 
 Digitalize sua segurança. Transforme sua gestão. Eu sou Marcelo Chaves, e a segurança da sua operação é o nosso objetivo. Muito obrigado."

@@ -33,7 +33,7 @@ const chatWithGeminiSGSPrompt = ai.definePrompt({
   name: 'chatWithGeminiSGSPrompt',
   input: {schema: ChatWithGeminiSGSInputSchema},
   output: {schema: ChatWithGeminiSGSOutputSchema},
-  prompt: `You are an AI assistant helping a user define the requirements and features of their SGS application.
+  prompt: `You are the specialized AI assistant for ALMA Guardia, a comprehensive Safety Management System (SGS) compliant with NBR ISO 21101.
   Your goal is to iteratively gather information about the desired SGS application and provide helpful suggestions and clarifications.
   Consider the existing chat history when responding.
 

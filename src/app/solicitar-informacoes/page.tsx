@@ -66,13 +66,13 @@ export default function SolicitarInformacoesPage() {
             
             <div className="flex justify-center items-center gap-3 pt-8 md:pt-0">
                 <Image
-                    src="https://i.ibb.co/Z17vbKys/Logo-da-SGS-APP-Arenito.jpg"
-                    alt="SGS APP Logo"
+                    src="https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo%20Final.png?alt=media&token=0a7e892a-be30-4d41-818f-c224f142af68"
+                    alt="ALMA Guardia Logo"
                     width={40}
                     height={40}
                     className="object-contain rounded-md"
                 />
-                <span className="text-2xl font-bold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.7)]">SGS APP</span>
+                <span className="text-2xl font-bold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.7)]">ALMA Guardia</span>
             </div>
             
             <div className="pt-6">

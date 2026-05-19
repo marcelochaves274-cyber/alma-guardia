@@ -1,19 +1,10 @@
-export const SgsAppLogo = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M12 2l10 6.5v7L12 22 2 15.5v-7L12 2z" />
-      <path d="M12 22v-6.5" />
-      <path d="M22 8.5l-10 6.5-10-6.5" />
-      <path d="M2 15.5l10-6.5 10 6.5" />
-      <path d="M12 2v6.5" />
-    </svg>
-  );
-  
+import React from 'react';
+
+export const SgsAppLogo = (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
+  // eslint-disable-next-line @next/next/no-img-element
+  <img
+    src="https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo%20Final.png?alt=media&token=0a7e892a-be30-4d41-818f-c224f142af68"
+    alt="SGS Logo"
+    {...props}
+  />
+);

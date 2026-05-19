@@ -22,7 +22,7 @@ export function TutorialPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Tutorial do Sistema SGS APP</CardTitle>
+        <CardTitle>Tutorial do Sistema ALMA Guardia</CardTitle>
         <CardDescription>
           Um guia completo para utilizar todas as funcionalidades do sistema. Expanda as seções abaixo para aprender mais.
         </CardDescription>

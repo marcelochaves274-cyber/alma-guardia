@@ -3,10 +3,10 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Providers } from '@/components/providers';
 
-const iconUrl = "https://i.ibb.co/Z17vbKys/Logo-da-SGS-APP-Arenito.jpg";
+const iconUrl = "https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-solo-192x192-ico.ico?alt=media&token=8d56a40a-cd7d-4d85-87b2-46d6f322be45";
 
 export const metadata: Metadata = {
-  title: 'SGS APP',
+  title: 'ALMA',
   description: 'Seu Sistema de Gestão de Segurança inteligente.',
   manifest: '/manifest.json',
   icons: {

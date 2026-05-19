@@ -188,7 +188,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
           )}
           {state === 'expanded' && (
             <div className="flex flex-col">
-              <h2 className="text-lg font-semibold leading-tight">SGS</h2>
+              <h2 className="text-lg font-semibold leading-tight">ALMA Guard.ia</h2>
               <span className="text-sm text-muted-foreground leading-tight">{getProfileName()}</span>
             </div>
           )}

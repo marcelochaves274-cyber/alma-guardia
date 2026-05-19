@@ -44,6 +44,8 @@ export function ProfileSelector() {
   const [isChecking, setIsChecking] = useState(false);
   
   const [easterEggClicks, setEasterEggClicks] = useState(0);
+  const [showEasterEggPass, setShowEasterEggPass] = useState(false);
+  const [easterEggPass, setEasterEggPass] = useState('');
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleProfileSelect = (profile: SelectedProfile) => {
@@ -61,13 +63,27 @@ export function ProfileSelector() {
     setEasterEggClicks(newClickCount);
 
     if (newClickCount === 3) {
-      // Set profile and redirect to manage profiles page
-      setProfileAndRedirect('admin', 'manage-profile');
+      setShowEasterEggPass(true);
       setEasterEggClicks(0); // Reset counter
     } else {
       clickTimeoutRef.current = setTimeout(() => {
         setEasterEggClicks(0);
       }, 1000); // Reset after 1 second
+    }
+  };
+
+  const handleEasterEggPassSubmit = () => {
+    if (easterEggPass === '230897') {
+      setProfileAndRedirect('admin', 'manage-profile');
+      setShowEasterEggPass(false);
+      setEasterEggPass('');
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Passe Inválido',
+        description: 'O passe inserido para o acesso especial está incorreto.',
+      });
+      setEasterEggPass('');
     }
   };
   
@@ -220,6 +236,40 @@ export function ProfileSelector() {
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction onClick={handlePassSubmit} disabled={isChecking || pass.length !== 6}>
                          {isChecking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Entrar
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={showEasterEggPass} onOpenChange={setShowEasterEggPass}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Acesso Especial</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Por favor, insira o passe mestre para continuar.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-2 py-2">
+                    <Label htmlFor="easter-egg-pass">Passe</Label>
+                    <Input
+                        id="easter-egg-pass"
+                        type="password"
+                        value={easterEggPass}
+                        onChange={(e) => setEasterEggPass(e.target.value)}
+                        placeholder="••••••"
+                        autoFocus
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleEasterEggPassSubmit();
+                            }
+                        }}
+                    />
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setEasterEggPass('')}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleEasterEggPassSubmit} disabled={easterEggPass.length === 0}>
                         Entrar
                     </AlertDialogAction>
                 </AlertDialogFooter>

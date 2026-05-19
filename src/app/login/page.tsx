@@ -1,29 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
-  type Auth,
-} from 'firebase/auth';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, initializeFirebase } from '@/firebase';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SgsAppLogo } from '@/components/icons';
+import { Loader2, Eye, EyeOff, ArrowLeft, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,118 +23,80 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import Link from 'next/link';
 
 export default function LoginPage() {
-  const { auth: initializedAuth } = initializeFirebase();
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
-  const { toast } = useToast();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isAuthInProgress, setIsAuthInProgress] = useState(false);
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
-  
-  useEffect(() => {
-    // If a real user is already logged in, redirect them away from the login page.
-    if (!isUserLoading && user && !user.isAnonymous) {
-      router.replace('/dashboard');
-    }
-  }, [isUserLoading, user, router]);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [showAuthErrorModal, setShowAuthErrorModal] = useState(false);
+  const [authErrorMessage, setAuthErrorMessage] = useState('');
+  const [authErrorTitle, setAuthErrorTitle] = useState('Erro de Autenticação');
 
+  const auth = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
 
-  // If we're still loading the user state, or if a real user exists (and we're about to redirect),
-  // show a loader to prevent the login form from flashing.
-  if (isUserLoading || (user && !user.isAnonymous)) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const getFriendlyErrorMessage = (errorCode: string) => {
-    switch (errorCode) {
-      case 'auth/email-already-in-use':
-        return 'Este e-mail já está em uso. Por favor, tente fazer login ou redefinir sua senha.';
-      case 'auth/wrong-password':
-      case 'auth/invalid-credential':
-        return 'Credenciais inválidas. Verifique seu e-mail e senha.';
-      case 'auth/user-not-found':
-        return 'Nenhum usuário encontrado com este e-mail. Por favor, crie uma conta.';
-      case 'auth/weak-password':
-        return 'A senha é muito fraca. Ela deve ter pelo menos 6 caracteres.';
-      case 'auth/invalid-api-key':
-        return 'A chave de API do Firebase é inválida. A configuração do projeto pode não estar correta. Tente atualizar a página.';
-      default:
-        return 'Ocorreu um erro inesperado. Verifique sua conexão e tente novamente. Código: ' + errorCode;
-    }
-  };
-
-  const handleEmailAuth = async (authAction: 'login' | 'register') => {
-    if (!initializedAuth) {
-       toast({
-        variant: 'destructive',
-        title: 'Erro de Configuração',
-        description: 'A autenticação do Firebase não foi inicializada corretamente. Tente atualizar a página.',
-      });
-      return;
-    }
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsAuthInProgress(true);
     try {
-      if (authAction === 'login') {
-        await signInWithEmailAndPassword(initializedAuth, email, password);
-      } else {
-        await createUserWithEmailAndPassword(initializedAuth, email, password);
-      }
-      // On success, redirect to the main app dashboard.
+      await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
-
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro de Autenticação',
-        description: getFriendlyErrorMessage(error.code),
-      });
-      setIsAuthInProgress(false);
-    }
-  };
-  
-  const handlePasswordReset = async () => {
-    if (!initializedAuth || !resetEmail) return;
-    setIsAuthInProgress(true);
-    try {
-      await sendPasswordResetEmail(initializedAuth, resetEmail);
-      toast({
-        title: 'E-mail Enviado',
-        description: `Um link para redefinição de senha foi enviado para ${resetEmail}.`,
-      });
-    } catch (error: any) {
-       toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: getFriendlyErrorMessage(error.code),
-      });
+      console.error(error);
+      let title = "Erro de Autenticação";
+      let message = "Ocorreu um erro ao tentar acessar o sistema. Verifique suas credenciais.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        title = "Ops! Não encontramos seu acesso";
+        message = "Verifique suas credenciais, email e senha. Se você é novo por aqui, o ALMA Guardia é a solução completa para gestão de segurança e conformidade técnica.";
+      } else if (error.code === 'auth/too-many-requests') {
+        message = "Muitas tentativas sem sucesso. Sua conta foi temporariamente bloqueada. Tente novamente mais tarde.";
+      }
+      setAuthErrorTitle(title);
+      setAuthErrorMessage(message);
+      setShowAuthErrorModal(true);
     } finally {
       setIsAuthInProgress(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!resetEmail) return;
+    setIsResettingPassword(true);
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      toast({
+        title: "E-mail Enviado",
+        description: `Um link para redefinição de senha foi enviado para ${resetEmail}.`,
+      });
+      setShowResetPasswordDialog(false);
+      setResetEmail('');
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível enviar o e-mail de recuperação. Verifique o endereço digitado.",
+      });
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background lg:grid lg:grid-cols-2">
       <div className="hidden lg:flex flex-col items-center justify-center bg-background/80 p-12 text-center backdrop-blur-sm">
-        <div className='max-w-md'>
-          <h2 className='text-3xl font-bold text-foreground mb-4'>Segurança e Eficiência Operacional</h2>
-          <p className='text-foreground/80'>
-            A implementação de um Sistema de Gestão de Segurança (SGS), conforme orienta a NBR 21101, é essencial para garantir um ambiente de trabalho seguro, reduzir riscos de acidentes, atender às exigências legais e melhorar a eficiência operacional, promovendo uma cultura de segurança que beneficia tanto os colaboradores quanto a sustentabilidade da empresa.
+        <div className="max-w-md">
+          <h2 className="text-3xl font-bold text-primary mb-4 text-left">ALMA Guardia: Excelência na Gestão de Segurança</h2>
+          <p className="text-muted-foreground">
+            O ALMA Guardia é a plataforma definitiva para digitalizar seus processos de segurança, garantir conformidade e tomar decisões baseadas em dados.
           </p>
           <Button asChild variant="outline" className="mt-8">
-            <Link href="/">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar ao Site
-            </Link>
+            <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao Site</Link>
           </Button>
         </div>
       </div>
@@ -156,101 +106,87 @@ export default function LoginPage() {
             <div className="mb-4 flex justify-center">
               <SgsAppLogo className="h-12 w-12 text-primary" />
             </div>
-            <CardTitle className="text-2xl">Bem-vindo ao SGS APP</CardTitle>
-            <CardDescription>
-              Entre ou crie uma conta para continuar
-            </CardDescription>
+            <CardTitle className="text-2xl">ALMA Guardia</CardTitle>
+            <CardDescription>Entre com suas credenciais para continuar</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isAuthInProgress}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isAuthInProgress}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  disabled={isAuthInProgress}
-                  aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </Button>
+          <form onSubmit={handleLogin}>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isAuthInProgress} required />
               </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-              <div className="flex w-full gap-2">
-                  <Button
-                  onClick={() => handleEmailAuth('login')}
-                  disabled={isAuthInProgress || !email || !password}
-                  className="w-full"
-                  >
-                  {isAuthInProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Entrar
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <div className="relative">
+                  <Input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} disabled={isAuthInProgress} required />
+                  <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent" onClick={() => setShowPassword((prev) => !prev)} disabled={isAuthInProgress} aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}>
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </Button>
-                  <Button
-                  variant="secondary"
-                  onClick={() => handleEmailAuth('register')}
-                  disabled={isAuthInProgress || !email || !password}
-                  className="w-full"
-                  >
-                  {isAuthInProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Criar Conta
-                  </Button>
+                </div>
               </div>
-              <AlertDialog>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4">
+              <Button type="submit" className="w-full" disabled={isAuthInProgress || !email || !password}>
+                {isAuthInProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Entrar
+              </Button>
+              <AlertDialog open={showResetPasswordDialog} onOpenChange={setShowResetPasswordDialog}>
                 <AlertDialogTrigger asChild>
-                  <Button variant="link" className="p-0 h-auto text-sm text-muted-foreground">Esqueceu sua senha?</Button>
+                  <Button type="button" variant="link" className="p-0 h-auto text-sm text-muted-foreground">
+                    Esqueceu sua senha?
+                  </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className="w-full max-w-md">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Redefinir Senha</AlertDialogTitle>
                     <AlertDialogDescription>
                       Digite seu e-mail abaixo para receber um link de redefinição de senha.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  <div className="space-y-2">
-                      <Label htmlFor="reset-email">Email</Label>
-                      <Input
-                        id="reset-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={resetEmail}
-                        onChange={(e) => setResetEmail(e.target.value)}
-                      />
+                  <div className="space-y-2 mt-4">
+                    <Label htmlFor="reset-email">E-mail</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      disabled={isResettingPassword}
+                      required
+                    />
                   </div>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handlePasswordReset} disabled={!resetEmail || isAuthInProgress}>
-                      {isAuthInProgress ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Enviar Link
-                    </AlertDialogAction>
+                    <AlertDialogCancel disabled={isResettingPassword}>Cancelar</AlertDialogCancel>
+                    <Button onClick={handlePasswordReset} disabled={isResettingPassword || !resetEmail}>
+                      {isResettingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Mail className="mr-2 h-4 w-4" /> Enviar Link
+                    </Button>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-          </CardFooter>
+            </CardFooter>
+          </form>
         </Card>
       </div>
+      <AlertDialog open={showAuthErrorModal} onOpenChange={setShowAuthErrorModal}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader className="text-center">
+            <AlertDialogTitle className="text-2xl font-bold text-primary">{authErrorTitle}</AlertDialogTitle>
+            <AlertDialogDescription className="text-base pt-2 text-foreground">
+              {authErrorMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col mt-4">
+            <Button className="w-full" onClick={() => window.location.href = 'https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00'}>
+              Teste Grátis 30 Dias
+            </Button>
+            <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary/5" onClick={() => window.location.href = 'https://buy.stripe.com/00w00j9Yh6ajcTJa2raZi01'}>
+              Teste 2,00
+            </Button>
+            <AlertDialogCancel className="w-full mt-0">Voltar</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,6 +1,9 @@
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+
+  trailingSlash: false,
+  skipTrailingSlashRedirect: true,
   /* config options here */
   async headers() {
     return [
