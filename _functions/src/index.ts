@@ -4,9 +4,8 @@ import Stripe from "stripe";
 
 admin.initializeApp();
 
-// Aqui você vai colar a sua Chave Secreta do Stripe (Secret Key) mais tarde
-
 const stripeKey = process.env.STRIPE_SECRET_KEY || "";
+const stripe = new Stripe(stripeKey, {
   apiVersion: "2023-10-16" as any,
 });
 
