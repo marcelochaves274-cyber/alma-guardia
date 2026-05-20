@@ -1,1 +1,6 @@
+_functions/
 functions/
+node_modules/
+.git/
+.firebase/
+.next/
