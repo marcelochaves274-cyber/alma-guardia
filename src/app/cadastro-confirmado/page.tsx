@@ -15,7 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 function CadastroConfirmadoConteudo() {
   const searchParams = useSearchParams();
   const router = useRouter();
-
   const { toast } = useToast();
 
   const [email, setEmail] = useState('');
@@ -25,23 +24,30 @@ function CadastroConfirmadoConteudo() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
 
+  // Função auxiliar para verificar se o parâmetro capturado é um e-mail válido
+  const isValidEmail = (emailStr: string | null) => {
+    if (!emailStr) return false;
+    if (emailStr.includes('{') || emailStr.includes('cs_live')) return false; // Ignora tags ou IDs de sessão do Stripe
+    return emailStr.includes('@');
+  };
+
   useEffect(() => {
     const emailParam = searchParams.get('email');
     
-    //if (!emailParam) {
-    //  router.push('/login');
-    //  return;
-    //}
-
-    if (emailParam === '{CHECKOUT_SESSION_CUSTOMER_EMAIL}') {
+    // Se for um e-mail válido vindo da URL, já preenche o campo automaticamente
+    if (isValidEmail(emailParam)) {
+      setEmail(emailParam || '');
+    } else {
       setEmail('');
-      setIsVerifying(false);
-      return;
     }
 
-    setEmail(emailParam || '');
-
     const verifyInitialAccess = async () => {
+      // Se não houver e-mail válido na URL, permitimos que o usuário digite manualmente na tela
+      if (!isValidEmail(emailParam)) {
+        setIsVerifying(false);
+        return;
+      }
+
       const isDev = process.env.NODE_ENV === 'development';
       try {
         const q = query(
@@ -72,7 +78,8 @@ function CadastroConfirmadoConteudo() {
             return;
           }
 
-          if (userData.status !== 'aguardando_cadastro' && !isDev) {
+          // Ajustado para aceitar tanto 'pago' (retorno do webhook) quanto 'aguardando_cadastro'
+          if (userData.status !== 'aguardando_cadastro' && userData.status !== 'pago' && !isDev) {
             toast({
               variant: "destructive",
               title: "Acesso Negado",
@@ -82,8 +89,6 @@ function CadastroConfirmadoConteudo() {
             return;
           }
         }
-
-        // Acesso permitido
       } catch (error) {
         console.error("Erro na verificação inicial:", error);
         if (!isDev) router.push('/login');
@@ -101,11 +106,10 @@ function CadastroConfirmadoConteudo() {
     setIsProcessing(true);
     const isDev = process.env.NODE_ENV === 'development';
     try {
-      // Auditoria de Segurança Final: Garantir que o e-mail está autorizado antes da criação
+      // Busca pelo e-mail digitado ou recebido para validar se ele comprou
       const q = query(
         collection(db, 'sgs_genius'),
-        where('email', '==', email),
-        where('status', '==', 'aguardando_cadastro')
+        where('email', '==', email.trim().toLowerCase())
       );
       const querySnapshot = await getDocs(q);
 
@@ -119,20 +123,34 @@ function CadastroConfirmadoConteudo() {
         return;
       }
 
+      if (!querySnapshot.empty) {
+        const userData = querySnapshot.docs[0].data();
+        
+        // Garante que o status no banco permite o cadastro (aceita 'pago' ou 'aguardando_cadastro')
+        if (userData.status !== 'aguardando_cadastro' && userData.status !== 'pago' && userData.status !== 'active' && !isDev) {
+          toast({
+            variant: "destructive",
+            title: "Acesso Negado",
+            description: "O pagamento deste e-mail não possui um status válido para cadastro.",
+          });
+          setIsProcessing(false);
+          return;
+        }
+      }
+
       // 1. Criar o usuário no Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
 
-      // 2. Criar o documento do usuário no Firestore (Coleção sgs_genius)
-      // Definimos o status como 'active' imediatamente após o sucesso do pagamento/senha
+      // 2. Atualizar/Criar o documento do usuário no Firestore com o UID definitivo
       await setDoc(doc(db, 'sgs_genius', user.uid), {
-      uid: user.uid,
-      email: email,
-      status: 'active',
-      role: 'user',
-      createdAt: serverTimestamp(),
-      setupCompleted: true
-    }, { merge: true });
+        uid: user.uid,
+        email: email.trim().toLowerCase(),
+        status: 'active',
+        role: 'user',
+        createdAt: serverTimestamp(),
+        setupCompleted: true
+      }, { merge: true });
 
       toast({
         title: "Conta Ativada!",
@@ -150,6 +168,7 @@ function CadastroConfirmadoConteudo() {
           title: "E-mail já cadastrado",
           description: "Este e-mail já possui uma conta ativa. Tente fazer login.",
         });
+        setIsProcessing(false);
         return;
       }
       toast({
@@ -161,6 +180,9 @@ function CadastroConfirmadoConteudo() {
       setIsProcessing(false);
     }
   };
+
+  // Determina se o campo de input deve ficar desabilitado (apenas se for um e-mail de verdade na URL)
+  const shouldDisableEmailInput = isValidEmail(searchParams.get('email'));
 
   if (isVerifying) {
     return (
@@ -196,9 +218,9 @@ function CadastroConfirmadoConteudo() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={!!searchParams.get('email') && searchParams.get('email') !== '{CHECKOUT_SESSION_CUSTOMER_EMAIL}'}
-                placeholder={(!email || email.includes('{')) ? 'Digite seu e-mail de compra' : ''}
-                className={!!searchParams.get('email') && searchParams.get('email') !== '{CHECKOUT_SESSION_CUSTOMER_EMAIL}' ? "bg-muted/50 cursor-not-allowed" : ""}
+                disabled={shouldDisableEmailInput}
+                placeholder="Digite seu e-mail de compra"
+                className={shouldDisableEmailInput ? "bg-muted/50 cursor-not-allowed" : ""}
               />
             </div>
 
@@ -249,6 +271,7 @@ function CadastroConfirmadoConteudo() {
     </div>
   );
 }
+
 export default function CadastroConfirmadoPage() {
   return (
     <Suspense fallback={<div className="flex h-screen items-center justify-center">Carregando...</div>}>
