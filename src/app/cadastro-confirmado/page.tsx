@@ -21,20 +21,20 @@ function CadastroConfirmadoConteudo() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // ESTADO CORRIGIDO: Segundo olhinho
   const [isProcessing, setIsProcessing] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
 
   // Função auxiliar para verificar se o parâmetro capturado é um e-mail válido
   const isValidEmail = (emailStr: string | null) => {
     if (!emailStr) return false;
-    if (emailStr.includes('{') || emailStr.includes('cs_live')) return false; // Ignora tags ou IDs de sessão do Stripe
+    if (emailStr.includes('{') || emailStr.includes('cs_live')) return false; 
     return emailStr.includes('@');
   };
 
   useEffect(() => {
     const emailParam = searchParams.get('email');
     
-    // Se for um e-mail válido vindo da URL, já preenche o campo automaticamente
     if (isValidEmail(emailParam)) {
       setEmail(emailParam || '');
     } else {
@@ -42,7 +42,6 @@ function CadastroConfirmadoConteudo() {
     }
 
     const verifyInitialAccess = async () => {
-      // Se não houver e-mail válido na URL, permitimos que o usuário digite manualmente na tela
       if (!isValidEmail(emailParam)) {
         setIsVerifying(false);
         return;
@@ -78,7 +77,6 @@ function CadastroConfirmadoConteudo() {
             return;
           }
 
-          // Ajustado para aceitar tanto 'pago' (retorno do webhook) quanto 'aguardando_cadastro'
           if (userData.status !== 'aguardando_cadastro' && userData.status !== 'pago' && !isDev) {
             toast({
               variant: "destructive",
@@ -103,10 +101,20 @@ function CadastroConfirmadoConteudo() {
   const handleFinalizeRegistration = async () => {
     if (!auth || !db || !email) return;
 
+    if (password !== confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Senhas divergentes",
+        description: "A senha e a confirmação de senha não são iguais.",
+      });
+      return;
+    }
+
     setIsProcessing(true);
     const isDev = process.env.NODE_ENV === 'development';
+    
     try {
-      // Busca pelo e-mail digitado ou recebido para validar se ele comprou
+      // Busca pelo e-mail para garantir que a compra existe no Firestore antes de criar a conta
       const q = query(
         collection(db, 'sgs_genius'),
         where('email', '==', email.trim().toLowerCase())
@@ -117,7 +125,7 @@ function CadastroConfirmadoConteudo() {
         toast({
           variant: "destructive",
           title: "Acesso Negado",
-          description: "Não foi possível validar seu pagamento para este e-mail. Verifique os dados ou entre em contato com o suporte.",
+          description: "Não foi possível validar seu pagamento para este e-mail.",
         });
         setIsProcessing(false);
         return;
@@ -125,8 +133,6 @@ function CadastroConfirmadoConteudo() {
 
       if (!querySnapshot.empty) {
         const userData = querySnapshot.docs[0].data();
-        
-        // Garante que o status no banco permite o cadastro (aceita 'pago' ou 'aguardando_cadastro')
         if (userData.status !== 'aguardando_cadastro' && userData.status !== 'pago' && userData.status !== 'active' && !isDev) {
           toast({
             variant: "destructive",
@@ -138,17 +144,17 @@ function CadastroConfirmadoConteudo() {
         }
       }
 
-      // 1. Criar o usuário no Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      // 1. Criar o usuário no Firebase Authentication PRIMEIRO
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
       const user = userCredential.user;
 
-      // 2. Atualizar/Criar o documento do usuário no Firestore com o UID definitivo
-      await setDoc(doc(db, 'sgs_genius', user.uid), {
+      // 2. CORREÇÃO DE OURO: Atualiza o documento cujo ID é o E-MAIL do cliente (criado pelo Stripe)
+      // Gravamos o UID lá dentro e atualizamos o status para active.
+      await setDoc(doc(db, 'sgs_genius', email.trim().toLowerCase()), {
         uid: user.uid,
-        email: email.trim().toLowerCase(),
         status: 'active',
         role: 'user',
-        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
         setupCompleted: true
       }, { merge: true });
 
@@ -157,7 +163,6 @@ function CadastroConfirmadoConteudo() {
         description: "Seja bem-vindo ao ALMA Guardia. Redirecionando...",
       });
 
-      // 3. Direcionar para o Dashboard
       router.replace('/dashboard');
       
     } catch (error: any) {
@@ -181,7 +186,6 @@ function CadastroConfirmadoConteudo() {
     }
   };
 
-  // Determina se o campo de input deve ficar desabilitado (apenas se for um e-mail de verdade na URL)
   const shouldDisableEmailInput = isValidEmail(searchParams.get('email'));
 
   if (isVerifying) {
@@ -224,6 +228,7 @@ function CadastroConfirmadoConteudo() {
               />
             </div>
 
+            {/* Campo: Definir Senha */}
             <div className="space-y-2">
               <Label htmlFor="password">Definir Senha</Label>
               <div className="relative">
@@ -246,14 +251,27 @@ function CadastroConfirmadoConteudo() {
               </div>
             </div>
             
+            {/* Campo: Confirmar Senha com Olhinho Adicionado e Corrigido */}
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-              <Input 
-                id="confirmPassword" 
-                type="password" 
-                value={confirmPassword} 
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
+              <div className="relative">
+                <Input 
+                  id="confirmPassword" 
+                  type={showConfirmPassword ? 'text' : 'password'} 
+                  value={confirmPassword} 
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repita a senha definida"
+                />
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </Button>
+              </div>
             </div>
           </CardContent>
           <CardFooter>
