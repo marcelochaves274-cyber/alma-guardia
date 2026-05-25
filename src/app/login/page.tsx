@@ -49,21 +49,19 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error(error);
       
-     if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+     if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
       setAuthErrorTitle("Acesso Não Autorizado");
-      setAuthErrorMessage(
-        "Não encontramos uma assinatura ativa para este e-mail. Se você já tem o cadastro, verifique seus dados. Caso queira iniciar ou reativar seu acesso ao ALMA Guardia, clique no botão de ativação abaixo."
-      );
-      setIsAuthInProgress(false);
-      setShowAuthErrorModal(true);
+      setAuthErrorMessage("E-mail ou senha incorretos. Verifique seus dados ou crie uma conta caso seja seu primeiro acesso.");
+      // Removemos o setShowAuthErrorModal(true) aqui se você quiser apenas um erro comum
+      // Ou, se quiser manter o modal, mantenha a linha abaixo:
+      setShowAuthErrorModal(true); 
       return;
     }
 
     if (error.code === 'auth/too-many-requests') {
       setAuthErrorTitle("Acesso Bloqueado");
-      setAuthErrorMessage(
-        "Muitas tentativas sem sucesso. Sua conta foi temporariamente bloqueada por segurança. Tente novamente mais tarde."
-      );
+      setAuthErrorMessage("O e-mail ou senha não estão corretos. Por favor, verifique ou crie uma conta.");
+  
       setShowAuthErrorModal(true);
       return;
     }
