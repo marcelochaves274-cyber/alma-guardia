@@ -48,18 +48,30 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
-      let title = "Erro de Autenticação";
-      let message = "Ocorreu um erro ao tentar acessar o sistema. Verifique suas credenciais.";
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        title = "Ops! Não encontramos seu acesso";
-        message = "Verifique suas credenciais, email e senha. Se você é novo por aqui, o ALMA Guardia é a solução completa para gestão de segurança e conformidade técnica.";
-      } else if (error.code === 'auth/too-many-requests') {
-        message = "Muitas tentativas sem sucesso. Sua conta foi temporariamente bloqueada. Tente novamente mais tarde.";
-      }
-      setAuthErrorTitle(title);
-      setAuthErrorMessage(message);
+      
+     if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+      setAuthErrorTitle("Acesso Não Autorizado");
+      setAuthErrorMessage(
+        "Não encontramos uma assinatura ativa para este e-mail. Se você já tem o cadastro, verifique seus dados. Caso queira iniciar ou reativar seu acesso ao ALMA Guardia, clique no botão de ativação abaixo."
+      );
+      setIsAuthInProgress(false);
       setShowAuthErrorModal(true);
-    } finally {
+      return;
+    }
+
+    if (error.code === 'auth/too-many-requests') {
+      setAuthErrorTitle("Acesso Bloqueado");
+      setAuthErrorMessage(
+        "Muitas tentativas sem sucesso. Sua conta foi temporariamente bloqueada por segurança. Tente novamente mais tarde."
+      );
+      setShowAuthErrorModal(true);
+      return;
+    }
+
+    // Qualquer outro erro genérico desconhecido
+    setAuthErrorTitle("Erro de Autenticação");
+    setAuthErrorMessage("Ocorreu um erro ao tentar acessar o sistema. Verifique suas credenciais.");
+    setShowAuthErrorModal(true);
       setIsAuthInProgress(false);
     }
   };
@@ -130,6 +142,12 @@ export default function LoginPage() {
                 {isAuthInProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Entrar
               </Button>
+              <div className="text-center w-full border-t pt-2 mt-1 border-border/40">
+                <p className="text-xs text-muted-foreground mb-1">Novo por aqui?</p>
+                <Link href="/cadastro" className="text-sm font-medium text-primary hover:underline">
+                  Criar uma conta no ALMA Guardia
+                </Link>
+              </div>
               <AlertDialog open={showResetPasswordDialog} onOpenChange={setShowResetPasswordDialog}>
                 <AlertDialogTrigger asChild>
                   <Button type="button" variant="link" className="p-0 h-auto text-sm text-muted-foreground">
@@ -177,13 +195,13 @@ export default function LoginPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col mt-4">
-            <Button className="w-full" onClick={() => window.location.href = 'https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00'}>
-              Teste Grátis 30 Dias
+            <Button 
+              className="w-full" 
+              onClick={() => window.location.href = 'https://buy.stripe.com/7sY5Kdb2ldCL8Dt4I7aZi00'}
+            >
+              Ativar Minha Conta (Teste Grátis 30 Dias)
             </Button>
-            <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary/5" onClick={() => window.location.href = 'https://buy.stripe.com/00w00j9Yh6ajcTJa2raZi01'}>
-              Teste 2,00
-            </Button>
-            <AlertDialogCancel className="w-full mt-0">Voltar</AlertDialogCancel>
+            <AlertDialogCancel className="w-full mt-0">Voltar para o login</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
