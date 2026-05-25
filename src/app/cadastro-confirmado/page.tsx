@@ -21,45 +21,37 @@ function CadastroConfirmadoConteudo() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // ESTADO CORRIGIDO: Segundo olhinho
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // Mantém o segundo olhinho funcionando
   const [isProcessing, setIsProcessing] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
 
-  // Função auxiliar para verificar se o parâmetro capturado é um e-mail válido
-  const isValidEmail = (emailStr: string | null) => {
-    if (!emailStr) return false;
-    if (emailStr.includes('{') || emailStr.includes('cs_live')) return false; 
-    return emailStr.includes('@');
-  };
-
   useEffect(() => {
-    const emailParam = searchParams.get('email');
-    
-    if (isValidEmail(emailParam)) {
-      setEmail(emailParam || '');
-    } else {
-      setEmail('');
-    }
+    // 1. Captura o session_id enviado pelo Stripe na URL
+    const sessionIdParam = searchParams.get('session_id');
 
-    const verifyInitialAccess = async () => {
-      if (!isValidEmail(emailParam)) {
+    const verifySessionAndFetchEmail = async () => {
+      // Se não houver session_id na URL, permite digitação manual (ambiente de teste/dev)
+      if (!sessionIdParam || sessionIdParam.includes('{')) {
         setIsVerifying(false);
         return;
       }
 
       const isDev = process.env.NODE_ENV === 'development';
+      
       try {
+        // 2. Busca no Firestore pelo documento correspondente ao checkoutSessionId
         const q = query(
           collection(db, 'sgs_genius'),
-          where('email', '==', emailParam)
+          where('checkoutSessionId', '==', sessionIdParam)
         );
         const querySnapshot = await getDocs(q);
 
+        // Se não achar o ID da compra no banco e não for ambiente de desenvolvimento, barra o acesso
         if (querySnapshot.empty && !isDev) {
           toast({
             variant: "destructive",
             title: "Acesso Negado",
-            description: "Pagamento não verificado para este e-mail.",
+            description: "Sessão de pagamento não encontrada. Use o link enviado por e-mail.",
           });
           router.push('/login');
           return;
@@ -68,6 +60,7 @@ function CadastroConfirmadoConteudo() {
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
 
+          // Se a conta já estiver ativa, manda direto para o login
           if (userData.status === 'active') {
             toast({
               title: "Conta já existe",
@@ -77,25 +70,31 @@ function CadastroConfirmadoConteudo() {
             return;
           }
 
+          // Valida se o status vindo do webhook permite o cadastro
           if (userData.status !== 'aguardando_cadastro' && userData.status !== 'pago' && !isDev) {
             toast({
               variant: "destructive",
               title: "Acesso Negado",
-              description: "Status de pedido inválido para realizar o cadastro.",
+              description: "O status do seu pagamento não permite realizar o cadastro.",
             });
             router.push('/login');
             return;
           }
+
+          // 3. A SEGURANÇA DA OPÇÃO B: Pega o e-mail real do documento encontrado e preenche a caixinha
+          if (userData.email) {
+            setEmail(userData.email.trim().toLowerCase());
+          }
         }
       } catch (error) {
-        console.error("Erro na verificação inicial:", error);
+        console.error("Erro ao verificar sessão do Stripe:", error);
         if (!isDev) router.push('/login');
       } finally {
         setIsVerifying(false);
       }
     };
 
-    verifyInitialAccess();
+    verifySessionAndFetchEmail();
   }, [searchParams, router]);
 
   const handleFinalizeRegistration = async () => {
@@ -111,45 +110,14 @@ function CadastroConfirmadoConteudo() {
     }
 
     setIsProcessing(true);
-    const isDev = process.env.NODE_ENV === 'development';
     
     try {
-      // Busca pelo e-mail para garantir que a compra existe no Firestore antes de criar a conta
-      const q = query(
-        collection(db, 'sgs_genius'),
-        where('email', '==', email.trim().toLowerCase())
-      );
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty && !isDev) {
-        toast({
-          variant: "destructive",
-          title: "Acesso Negado",
-          description: "Não foi possível validar seu pagamento para este e-mail.",
-        });
-        setIsProcessing(false);
-        return;
-      }
-
-      if (!querySnapshot.empty) {
-        const userData = querySnapshot.docs[0].data();
-        if (userData.status !== 'aguardando_cadastro' && userData.status !== 'pago' && userData.status !== 'active' && !isDev) {
-          toast({
-            variant: "destructive",
-            title: "Acesso Negado",
-            description: "O pagamento deste e-mail não possui um status válido para cadastro.",
-          });
-          setIsProcessing(false);
-          return;
-        }
-      }
-
-      // 1. Criar o usuário no Firebase Authentication PRIMEIRO
+      // 1. Criar o usuário no Firebase Authentication primeiro
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
       const user = userCredential.user;
 
-      // 2. CORREÇÃO DE OURO: Atualiza o documento cujo ID é o E-MAIL do cliente (criado pelo Stripe)
-      // Gravamos o UID lá dentro e atualizamos o status para active.
+      // 2. Atualiza o documento cujo ID é o E-MAIL do cliente
+      // Gravamos o UID gerado pelo Firebase Auth e mudamos o status para active
       await setDoc(doc(db, 'sgs_genius', email.trim().toLowerCase()), {
         uid: user.uid,
         status: 'active',
@@ -186,7 +154,8 @@ function CadastroConfirmadoConteudo() {
     }
   };
 
-  const shouldDisableEmailInput = isValidEmail(searchParams.get('email'));
+  // Trava o campo se encontrou um session_id válido na URL
+  const shouldDisableEmailInput = !!searchParams.get('session_id') && !searchParams.get('session_id')?.includes('{');
 
   if (isVerifying) {
     return (
@@ -251,7 +220,7 @@ function CadastroConfirmadoConteudo() {
               </div>
             </div>
             
-            {/* Campo: Confirmar Senha com Olhinho Adicionado e Corrigido */}
+            {/* Campo: Confirmar Senha com Olhinho */}
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar Senha</Label>
               <div className="relative">
