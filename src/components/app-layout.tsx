@@ -139,14 +139,14 @@ function MainAppLayout() {
           // Trava de segurança: Se o status não for 'active', encerra sessão e redireciona
           const auth = getAuth();
           await signOut(auth);
-          window.location.href = `https://buy.stripe.com/test_3cIdR90xubvh3Is6WGAo00?client_reference_id=${user.uid}`;
+          window.location.href = `https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00?client_reference_id=${user.uid}`;
         }
       } catch (error) {
         console.error("Erro crítico na trava de segurança do Dashboard:", error);
         // Bloqueio preventivo em caso de erro de permissão (ex: permission-denied) ou rede
         const auth = getAuth();
         await signOut(auth);
-        window.location.href = `https://buy.stripe.com/test_3cIdR90xubvh3Is6WGAo01?client_reference_id=${user.uid}`;
+        window.location.href = `https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00?client_reference_id=${user.uid}`;
       } finally {
         setIsVerifyingStatus(false);
       }
