@@ -296,8 +296,8 @@ export default function HomePage() {
                 </Card>
               </div>
             <Button size="lg" className="w-full sm:w-auto mt-4" asChild>
-  <Link href="https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00">
-    Faça um mês de teste gratuito
+  <Link href="/cadastro">
+    Crie uma conta e faça um mês de teste gratuito
   </Link>
 </Button>
             </div>
@@ -373,8 +373,8 @@ export default function HomePage() {
             </div>
             <div className="mx-auto w-full max-w-sm space-y-2">
   <Button size="lg" className="w-full" asChild>
-    <Link href="https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00">
-      Faça um mês de teste gratuito
+    <Link href="/cadastro">
+      Crie uma conta e faça um mês de teste gratuito
     </Link>
   </Button>
 </div>

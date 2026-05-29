@@ -68,7 +68,8 @@ export default function LoginPage() {
 
     // Qualquer outro erro genérico desconhecido
     setAuthErrorTitle("Erro de Autenticação");
-    setAuthErrorMessage("Ocorreu um erro ao tentar acessar o sistema. Verifique suas credenciais.");
+    setAuthErrorMessage("Ocorreu um erro ao processar seu login. Tente novamente ou entre em contato com o suporte.")
+
     setShowAuthErrorModal(true);
       setIsAuthInProgress(false);
     }
@@ -193,12 +194,6 @@ export default function LoginPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col mt-4">
-            <Button 
-              className="w-full" 
-              onClick={() => window.location.href = 'https://buy.stripe.com/7sY5Kdb2ldCL8Dt4I7aZi00'}
-            >
-              Ativar Minha Conta (Teste Grátis 30 Dias)
-            </Button>
             <AlertDialogCancel className="w-full mt-0">Voltar para o login</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
