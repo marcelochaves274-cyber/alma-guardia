@@ -297,7 +297,7 @@ export default function HomePage() {
               </div>
             <Button size="lg" className="w-full sm:w-auto mt-4" asChild>
   <Link href="/cadastro">
-    Crie uma conta e faça um mês de teste gratuito
+    Crie uma conta e faça um mês de teste gratuito Agora
   </Link>
 </Button>
             </div>
