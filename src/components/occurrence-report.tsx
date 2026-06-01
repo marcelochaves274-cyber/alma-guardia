@@ -71,8 +71,10 @@ interface Occurrence {
 }
 
 interface OccurrenceReportProps {
-  onEdit: (occurrence: Occurrence) => void;
+  onEdit: (occurrence: Occurrence, scrollPosition: number) => void;
+  initialScrollPosition?: number;
 }
+
 
 const analysisMapping: Record<string, { label: string, className: string }> = {
     alta: { label: 'Alta', className: 'bg-red-500 text-white hover:bg-red-600' },
@@ -88,10 +90,11 @@ const ageGroupOptions = [
     { value: 'idoso', label: 'Idoso (60+)' },
 ];
 
-export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
+export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+
   
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [selectedOccurrence, setSelectedOccurrence] = useState<Occurrence | null>(null);

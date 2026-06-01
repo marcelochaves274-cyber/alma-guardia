@@ -60,7 +60,7 @@ interface RiskAssessment {
 }
 
 interface RiskAssessmentReportProps {
-  onEdit: (assessment: RiskAssessment) => void;
+  onEdit: (assessment: RiskAssessment, scrollPosition: number) => void;
   initialScrollPosition?: number; // Add this prop
 }
 
