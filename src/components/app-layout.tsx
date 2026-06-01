@@ -44,6 +44,7 @@ import { useProfile } from '@/context/profile-context';
 import { TutorialPage } from './tutorial-page';
 import { ViewRame } from './view-rame';
 import { GraphicsReport } from './graphics-report';
+import { ManageDataTransfer } from './manage-data-transfer';
 
 
 import {
@@ -260,6 +261,8 @@ function MainAppLayout() {
         return <ManageFaunaFloraGeo />;
       case 'manage-equipment-and-brands':
         return <ManageEquipmentAndBrands />;
+      case 'manage-data-transfer':
+        return <ManageDataTransfer />;
       case 'register-treatment':
         return <RegisterTreatment treatmentToEdit={treatmentToEdit} setPage={handlePageChange} prefillData={prefillData} />;
       case 'treatment-report':

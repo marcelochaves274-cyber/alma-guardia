@@ -1,23 +1,21 @@
-
 'use client';
 
-import { useState, type FormEvent, useEffect, useCallback, useRef } from 'react';
+import { useState, type FormEvent, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Loader2, Pencil, Check, X, Upload, TriangleAlert } from 'lucide-react';
+import { Plus, Trash2, Loader2, Pencil, Check, X } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, setDoc, writeBatch, collection, serverTimestamp, Timestamp, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
 import {
   AlertDialog,
@@ -30,8 +28,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useProfile } from '@/context/profile-context';
-import Papa from 'papaparse';
 
 type ManagedItem = {
   items: string[];
@@ -48,10 +44,6 @@ export function ManageEquipmentAndBrands() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
-  const { profile } = useProfile();
-  const isAdmin = profile === 'admin';
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isImporting, setIsImporting] = useState(false);
   
   const [state, setState] = useState<{ [key in ItemType]: ManagedItem }>({
     equipmentTypes: { items: [], newItem: '', editingItem: null, editingValue: '', isLoading: true, isSaving: false },
@@ -184,108 +176,6 @@ export function ManageEquipmentAndBrands() {
     }
   }
 
-  const parseDateString = (dateString: string): Date | null => {
-    if (!dateString || typeof dateString !== 'string') return null;
-  
-    // Matches DD/MM/YYYY or YYYY-MM-DD
-    const parts = dateString.match(/(\d+)/g);
-    if (!parts || parts.length < 3) return null;
-    
-    let year, month, day;
-  
-    if (dateString.includes('/')) {
-      [day, month, year] = parts.map(Number);
-    } else if (dateString.includes('-')) {
-      [year, month, day] = parts.map(Number);
-    } else {
-        return null;
-    }
-  
-    if (year < 1000 || year > 3000 || month < 1 || month > 12 || day < 1 || day > 31) {
-      return null;
-    }
-
-    return new Date(year, month - 1, day);
-  };
-  
-  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !firestore || !user) {
-      return;
-    }
-
-    setIsImporting(true);
-    Papa.parse(file, {
-      header: false,
-      skipEmptyLines: true,
-      encoding: "ISO-8859-1",
-      complete: async (results) => {
-        const data = results.data as string[][];
-        if (data.length === 0) {
-          toast({ variant: 'destructive', title: 'Arquivo vazio', description: 'O arquivo CSV não contém dados.' });
-          setIsImporting(false);
-          return;
-        }
-
-        try {
-          const batch = writeBatch(firestore);
-          const equipmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'equipments');
-
-          data.forEach(row => {
-            const newDocRef = doc(equipmentsCollectionRef);
-            const [
-              equipmentType, brand, model, lotCaUiaa, manufacturingDateStr,
-              storageLocation, storageDetails, statusStr, lastInspectionDateStr, nextInspectionDateStr
-            ] = row;
-            
-            const manufacturingDate = parseDateString(manufacturingDateStr);
-            const lastInspectionDate = parseDateString(lastInspectionDateStr);
-            const nextInspectionDate = parseDateString(nextInspectionDateStr);
-
-            const getSanitizedStatus = (s: string) => {
-              const lowerS = (s || '').toLowerCase().trim();
-              if (lowerS.startsWith('operacion')) return 'operacional';
-              if (['operacional', 'em manutencao', 'descartado'].includes(lowerS)) {
-                return lowerS as 'operacional' | 'em manutencao' | 'descartado';
-              }
-              return 'operacional'; // Default
-            };
-
-            const equipmentData = {
-              userId: user.uid,
-              equipmentType: equipmentType || '',
-              brand: brand || '',
-              model: model || '',
-              lotCaUiaa: lotCaUiaa || '',
-              manufacturingDate: manufacturingDate ? Timestamp.fromDate(manufacturingDate) : null,
-              storageLocation: storageLocation || '',
-              storageDetails: storageDetails || '',
-              status: getSanitizedStatus(statusStr),
-              lastInspectionDate: lastInspectionDate ? Timestamp.fromDate(lastInspectionDate) : null,
-              nextInspectionDate: nextInspectionDate ? Timestamp.fromDate(nextInspectionDate) : null,
-              createdAt: serverTimestamp(),
-            };
-            batch.set(newDocRef, equipmentData);
-          });
-          
-          await batch.commit();
-          toast({ title: 'Importação Concluída!', description: `${data.length} equipamentos foram importados com sucesso.` });
-        } catch (error: unknown) {
-          toast({ variant: 'destructive', title: 'Erro na Importação', description: 'Não foi possível importar os dados. Verifique o formato do arquivo e os dados.' });
-        } finally {
-          setIsImporting(false);
-          if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-          }
-        }
-      },
-      error: (error: unknown) => {
-        toast({ variant: 'destructive', title: 'Erro de Leitura', description: 'Não foi possível ler o arquivo CSV.' });
-        setIsImporting(false);
-      }
-    });
-  };
-
   const renderSection = (itemType: ItemType, title: string, placeholder: string) => {
     const current = state[itemType];
 
@@ -387,51 +277,6 @@ export function ManageEquipmentAndBrands() {
           {renderSection('equipmentBrands', 'Marcas de Equipamento', 'Ex: Petzl')}
         </CardContent>
       </Card>
-      
-      {isAdmin && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Importar Equipamentos em Lote</CardTitle>
-            <CardDescription>
-              Faça o upload de um arquivo CSV para registrar múltiplos equipamentos.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='p-4 border-dashed border-2 border-muted-foreground/50 rounded-lg bg-muted/20 space-y-4'>
-                <div>
-                    <p className="text-sm font-semibold text-foreground mb-2">Instruções de Importação:</p>
-                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                        <li>O arquivo deve estar no formato CSV (valores separados por vírgula).</li>
-                        <li>Não inclua uma linha de cabeçalho no arquivo.</li>
-                        <li>A ordem das colunas deve ser exatamente: <br /> <code className="text-xs bg-card p-1 rounded-sm">equipmentType, brand, model, lotCaUiaa, manufacturingDate, storageLocation, storageDetails, status, lastInspectionDate, nextInspectionDate</code></li>
-                        <li>Datas devem estar no formato <code className='text-xs bg-card p-1 rounded-sm'>DD/MM/AAAA</code> ou <code className='text-xs bg-card p-1 rounded-sm'>AAAA-MM-DD</code>.</li>
-                        <li>O status deve ser <code className='text-xs bg-card p-1 rounded-sm'>operacional</code>, <code className='text-xs bg-card p-1 rounded-sm'>em manutencao</code>, ou <code className='text-xs bg-card p-1 rounded-sm'>descartado</code>.</li>
-                         <li>Para arquivos salvos no Excel, pode ser necessário usar a codificação <code className='text-xs bg-card p-1 rounded-sm'>ISO-8859-1</code> para caracteres especiais (ç, ã, etc.).</li>
-                    </ul>
-                </div>
-                 <div className="!mt-6">
-                    <p className="text-sm font-semibold text-foreground mb-2">Correção de Dados:</p>
-                    <p className="text-sm text-muted-foreground">
-                        Se a importação anterior resultou em dados com caracteres errados, primeiro limpe os dados antigos (manualmente, se necessário) antes de importar o arquivo CSV corrigido.
-                    </p>
-                </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-wrap gap-4">
-            <Button onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
-              {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-              {isImporting ? 'Importando...' : 'Carregar Arquivo CSV'}
-            </Button>
-            <Input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={handleFileImport}
-              accept=".csv"
-            />
-          </CardFooter>
-        </Card>
-      )}
     </div>
   );
 }

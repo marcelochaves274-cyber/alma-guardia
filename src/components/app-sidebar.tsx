@@ -138,6 +138,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'manage-tcrs': 'settings',
       'manage-fauna-flora-geo': 'settings',
       'manage-equipment-and-brands': 'settings',
+      'manage-data-transfer': 'settings',
       'tutorial': 'informacoes',
     };
 
@@ -712,6 +713,14 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                         onClick={() => handlePageChange('manage-equipment-and-brands')}
                     >
                         Gerenciar Equip./Marca
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        isActive={activePage === 'manage-data-transfer'}
+                        onClick={() => handlePageChange('manage-data-transfer')}
+                    >
+                        Gerenciar Importações
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                 </SidebarMenuSub>
