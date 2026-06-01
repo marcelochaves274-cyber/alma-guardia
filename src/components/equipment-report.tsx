@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -76,10 +76,12 @@ interface Equipment {
 }
 
 interface EquipmentReportProps {
-  onEdit: (equipment: Equipment) => void;
+  onEdit: (equipment: Equipment, scrollPosition: number) => void;
   preFilter?: {
     status: 'overdue';
   };
+  // New prop to restore scroll position when returning from edit
+  initialScrollPosition?: number;
 }
 
 const statusMapping: Record<string, { label: string, className: string }> = {
@@ -114,7 +116,7 @@ const getInspectionStatus = (nextInspectionDate: Date | null | undefined, client
 };
 
 
-export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
+export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: EquipmentReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -123,6 +125,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Filter states
@@ -149,10 +152,35 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     setClientToday(startOfDay(new Date()));
   }, []);
   
+  // Efeito para garantir que o scroll comece no topo (último lançamento) ao carregar
   useEffect(() => {
-    setFilterInspection(preFilter?.status === 'overdue' ? ['overdue'] : []);
-  }, [preFilter]);
-  
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = 0;
+        }
+        const element = document.getElementById('report-top');
+        if (element) {
+          element.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+
+  // Efeito para garantir que o scroll volte ao topo ao fechar o modal ou carregar os dados
+  useEffect(() => {
+    if (!selectedEquipment && !isLoading) {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+      const element = document.getElementById('report-top');
+      if (element) {
+        element.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
+    }
+  }, [selectedEquipment, isLoading]);
+
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
     return doc(firestore, 'sgs_genius', user.uid, 'settings', collectionName);
@@ -404,25 +432,30 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
     document.body.removeChild(link);
   };
 
+  // When opening view dialog, just set the selected equipment
+  const handleOpenViewDialog = (equipment: Equipment) => {
+    setSelectedEquipment(equipment);
+  };
+
+  const showBulkActions = filterInspection.includes('due_soon') || filterInspection.includes('overdue');
 
   const renderSkeletons = () => (
     Array.from({ length: 5 }).map((_, i) => (
       <TableRow key={i}>
-        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+        {showBulkActions && <TableCell><Skeleton className="h-4 w-4" /></TableCell>}
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+        <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
       </TableRow>
     ))
   );
 
-  const showBulkActions = filterInspection.includes('due_soon') || filterInspection.includes('overdue');
-
   return (
     <Dialog onOpenChange={(isOpen) => !isOpen && setSelectedEquipment(null)}>
-      <div className="space-y-6">
+      <div id="report-top" className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Relatório Equipamentos</CardTitle>
@@ -570,7 +603,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
             </div>
           </CardHeader>
           <CardContent className="p-0 md:p-6 md:pt-0">
-            <div className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto">
+            <div ref={scrollContainerRef} className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto">
                 <Table>
                 <TableHeader>
                     <TableRow>
@@ -595,7 +628,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading || !clientToday ? (
+                    {isLoading || clientToday === null ? (
                     renderSkeletons()
                     ) : filteredEquipments.length > 0 ? (
                     filteredEquipments.map((eq) => {
@@ -635,13 +668,13 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
                             </TableCell>
                             <TableCell className="text-right">
                             <DialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar equipamento" onClick={() => setSelectedEquipment(eq)}>
-                                    <Eye className="h-4 w-4" />
-                                </Button>
+                               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar equipamento" onClick={() => handleOpenViewDialog(eq)}>
+                               <Eye className="h-4 w-4" />
+                              </Button>
                             </DialogTrigger>
                             {profile === 'admin' && (
                                 <>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar equipamento" onClick={() => onEdit(eq)}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar equipamento" onClick={() => onEdit(eq, scrollContainerRef.current?.scrollTop || 0)}>
                                     <Pencil className="h-4 w-4" />
                                 </Button>
                                 <AlertDialog>
@@ -684,7 +717,7 @@ export function EquipmentReport({ onEdit, preFilter }: EquipmentReportProps) {
           </CardContent>
         </Card>
       </div>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl" onCloseAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Detalhes do Equipamento</DialogTitle>
              <DialogDescription>

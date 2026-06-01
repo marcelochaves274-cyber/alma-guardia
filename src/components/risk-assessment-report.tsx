@@ -61,6 +61,7 @@ interface RiskAssessment {
 
 interface RiskAssessmentReportProps {
   onEdit: (assessment: RiskAssessment) => void;
+  initialScrollPosition?: number; // Add this prop
 }
 
 const getRiskLevelProperties = (score: number) => {
@@ -70,7 +71,7 @@ const getRiskLevelProperties = (score: number) => {
     return { label: 'N/A', className: 'bg-muted text-muted-foreground' };
 };
 
-export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
+export function RiskAssessmentReport({ onEdit, initialScrollPosition }: RiskAssessmentReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -80,6 +81,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null); // Add useRef for the main content div
 
   const [filterLocation, setFilterLocation] = useState<string[]>([]);
   
@@ -153,6 +155,17 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
     return () => unsubscribe();
   }, [user, firestore, toast]);
 
+  // Effect to restore scroll position to top when component mounts or initialScrollPosition changes
+  useEffect(() => {
+    if (scrollContainerRef.current && !isLoading) {
+      const timer = setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = 0; // Always go to top
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
   const filteredAndGroupedAssessments = useMemo(() => {
     if (!isClient || filterLocation.length === 0) return {};
 
@@ -213,7 +226,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   };
 
   const handleEdit = (assessment: RiskAssessment) => {
-    onEdit(assessment);
+    onEdit(assessment, 0); // Always pass 0 for scroll position
   };
   
   const renderSkeletons = () => {
@@ -235,7 +248,7 @@ export function RiskAssessmentReport({ onEdit }: RiskAssessmentReportProps) {
   };
 
   return (
-    <Dialog onOpenChange={(isOpen) => !isOpen && setSelectedAssessment(null)}>
+    <Dialog onOpenChange={(isOpen) => { if (!isOpen) setSelectedAssessment(null); }}>
         <div className="space-y-6">
         <Card>
             <CardHeader>

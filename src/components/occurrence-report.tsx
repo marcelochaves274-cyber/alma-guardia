@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -96,6 +96,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [selectedOccurrence, setSelectedOccurrence] = useState<Occurrence | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
 
@@ -185,6 +186,35 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
     return () => unsubscribe();
   }, [user, firestore, toast]);
 
+  // Efeito para garantir que o scroll comece no topo (último lançamento) ao carregar
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = 0; 
+        }
+        const element = document.getElementById('report-top');
+        if (element) {
+          element.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+
+  // Efeito para garantir que o scroll volte ao topo ao fechar o modal
+  useEffect(() => {
+    if (!selectedOccurrence && !isLoading) {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+      const element = document.getElementById('report-top');
+      if (element) {
+        element.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
+    }
+  }, [selectedOccurrence, isLoading]);
+
   const filteredOccurrences = useMemo(() => {
     return occurrences.filter(occ => {
       const occDate = occ.occurrenceDate;
@@ -238,8 +268,13 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
     }
   };
 
+  // Quando abrir o modal de visualização, apenas define a ocorrência selecionada
+  const handleOpenViewDialog = (occurrence: Occurrence) => {
+    setSelectedOccurrence(occurrence);
+  };
+
   const handleEdit = (occurrence: Occurrence) => {
-    onEdit(occurrence);
+    onEdit(occurrence, 0); // Sempre volta para o topo ao retornar da edição
   };
   
   const renderSkeletons = () => (
@@ -257,7 +292,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
   );
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
+    <div id="report-top" className="space-y-6 w-full max-w-full overflow-x-hidden">
       <Card>
         <CardHeader>
           <CardTitle>Relatório de Ocorrências</CardTitle>
@@ -352,7 +387,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
           <CardContent className="p-0 md:p-6 md:pt-0">
             {/* Adicionado wrapper para scroll horizontal em telas pequenas */}
             {/* A largura mínima evita que as fontes diminuam no celular */}
-            <div className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto w-full border-t md:border-none">
+            <div ref={scrollContainerRef} className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto w-full border-t md:border-none">
               <Table className="min-w-[800px] md:min-w-full">
                 <TableHeader>
                   <TableRow>
@@ -385,7 +420,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
                         </TableCell>
                         <TableCell className="text-right">
                           <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar ocorrência" onClick={() => setSelectedOccurrence(occ)}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar ocorrência" onClick={() => handleOpenViewDialog(occ)}>
                                 <Eye className="h-4 w-4" />
                             </Button>
                           </DialogTrigger>
@@ -438,7 +473,7 @@ export function OccurrenceReport({ onEdit }: OccurrenceReportProps) {
           </CardContent>
         </Card>
         
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" onCloseAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Detalhes da Ocorrência</DialogTitle>
             <DialogDescription>

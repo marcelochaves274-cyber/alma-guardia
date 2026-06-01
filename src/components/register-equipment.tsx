@@ -44,17 +44,29 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
   const isEditing = !!equipmentToEdit;
 
   // Form states
-  const [equipmentType, setEquipmentType] = useState('');
-  const [brand, setBrand] = useState('');
-  const [model, setModel] = useState('');
-  const [lotCaUiaa, setLotCaUiaa] = useState('');
-  const [manufacturingDate, setManufacturingDate] = useState<Date | undefined>();
-  const [storageLocation, setStorageLocation] = useState('');
-  const [storageDetails, setStorageDetails] = useState('');
-  const [status, setStatus] = useState('operacional');
-  const [lastInspectionDate, setLastInspectionDate] = useState<Date | undefined>();
-  const [nextInspectionDate, setNextInspectionDate] = useState<Date | undefined>();
-  const [discardReason, setDiscardReason] = useState('');
+  const [equipmentType, setEquipmentType] = useState(equipmentToEdit?.equipmentType || '');
+  const [brand, setBrand] = useState(equipmentToEdit?.brand || '');
+  const [model, setModel] = useState(equipmentToEdit?.model || '');
+  const [lotCaUiaa, setLotCaUiaa] = useState(equipmentToEdit?.lotCaUiaa || '');
+  const [manufacturingDate, setManufacturingDate] = useState<Date | undefined>(
+    equipmentToEdit?.manufacturingDate instanceof Timestamp 
+      ? equipmentToEdit.manufacturingDate.toDate() 
+      : undefined
+  );
+  const [storageLocation, setStorageLocation] = useState(equipmentToEdit?.storageLocation || '');
+  const [storageDetails, setStorageDetails] = useState(equipmentToEdit?.storageDetails || '');
+  const [status, setStatus] = useState(equipmentToEdit?.status || 'operacional');
+  const [lastInspectionDate, setLastInspectionDate] = useState<Date | undefined>(
+    equipmentToEdit?.lastInspectionDate instanceof Timestamp 
+      ? equipmentToEdit.lastInspectionDate.toDate() 
+      : undefined
+  );
+  const [nextInspectionDate, setNextInspectionDate] = useState<Date | undefined>(
+    equipmentToEdit?.nextInspectionDate instanceof Timestamp 
+      ? equipmentToEdit.nextInspectionDate.toDate() 
+      : undefined
+  );
+  const [discardReason, setDiscardReason] = useState(equipmentToEdit?.discardReason || '');
 
   // UI/Data loading states
   const [isMfgCalendarOpen, setIsMfgCalendarOpen] = useState(false);
@@ -90,6 +102,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
   }, []);
 
   useEffect(() => {
+    // Mantemos o efeito para garantir a limpeza ou atualização caso o prop mude sem remontar
     if (isEditing && equipmentToEdit) {
       setEquipmentType(equipmentToEdit.equipmentType || '');
       setBrand(equipmentToEdit.brand || '');

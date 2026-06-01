@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -62,7 +62,8 @@ interface FaunaFloraGeoRecord {
 }
 
 interface FaunaFloraGeoReportProps {
-  onEdit: (record: FaunaFloraGeoRecord) => void;
+  onEdit: (record: FaunaFloraGeoRecord, scrollPosition: number) => void;
+  initialScrollPosition?: number; // Add this prop
 }
 
 const analysisMapping: Record<string, { label: string, className: string }> = {
@@ -71,7 +72,7 @@ const analysisMapping: Record<string, { label: string, className: string }> = {
     baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
-export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
+export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFloraGeoReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -81,6 +82,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null); // Add useRef
 
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
@@ -165,6 +167,35 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
     return () => unsubscribe();
   }, [user, firestore, toast]);
 
+  // Efeito para garantir que o scroll comece no topo (último lançamento) ao carregar
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = 0; 
+        }
+        const element = document.getElementById('report-top');
+        if (element) {
+          element.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+
+  // Efeito para garantir que o scroll volte ao topo ao fechar o modal (olhinho)
+  useEffect(() => {
+    if (!selectedRecord && !isLoading) {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+      const element = document.getElementById('report-top');
+      if (element) {
+        element.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
+    }
+  }, [selectedRecord, isLoading]);
+
   const filteredRecords = useMemo(() => {
     return records.filter(rec => {
       const recDate = rec.date;
@@ -214,7 +245,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
   };
 
   const handleEdit = (record: FaunaFloraGeoRecord) => {
-    onEdit(record);
+    onEdit(record, 0); // Always pass 0 for scroll position
   };
   
   const renderSkeletons = () => (
@@ -230,7 +261,8 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
   );
 
   return (
-    <div className="space-y-6">
+    <Dialog onOpenChange={(isOpen) => { if (!isOpen) setSelectedRecord(null); }}>
+      <div id="report-top" className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Relatório de Fauna, Flora &amp; Geo</CardTitle>
@@ -294,7 +326,6 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
           </div>
         </CardContent>
       </Card>
-      <Dialog>
         <Card>
           <CardHeader>
             <CardTitle>Resultados</CardTitle>
@@ -303,7 +334,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0 md:p-6 md:pt-0">
-            <div className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto">
+            <div ref={scrollContainerRef} className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -384,7 +415,7 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
             </div>
           </CardContent>
         </Card>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" onCloseAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Detalhes do Registro</DialogTitle>
              <DialogDescription>
@@ -435,8 +466,8 @@ export function FaunaFloraGeoReport({ onEdit }: FaunaFloraGeoReportProps) {
             </>
           )}
         </DialogContent>
-      </Dialog>
-    </div>
+      </div>
+    </Dialog>
   );
 }
 

@@ -57,12 +57,15 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
   const isEditing = !!recordToEdit;
 
   // Form states
-  const [date, setDate] = useState<Date | undefined>(prefillData?.date ? (prefillData.date instanceof Timestamp ? prefillData.date.toDate() : prefillData.date) : new Date());
-  const [location, setLocation] = useState('');
-  const [speciesType, setSpeciesType] = useState('');
-  const [analysis, setAnalysis] = useState('');
-  const [description, setDescription] = useState('');
-  const [marker, setMarker] = useState<Marker>(null);
+  const [date, setDate] = useState<Date | undefined>(
+    recordToEdit?.date ? (recordToEdit.date instanceof Timestamp ? recordToEdit.date.toDate() : recordToEdit.date) :
+    (prefillData?.date ? (prefillData.date instanceof Timestamp ? prefillData.date.toDate() : prefillData.date) : new Date())
+  );
+  const [location, setLocation] = useState(recordToEdit?.location || prefillData?.location || '');
+  const [speciesType, setSpeciesType] = useState(recordToEdit?.speciesType || '');
+  const [analysis, setAnalysis] = useState(recordToEdit?.analysis || '');
+  const [description, setDescription] = useState(recordToEdit?.description || prefillData?.description || '');
+  const [marker, setMarker] = useState<Marker>(recordToEdit?.mapMarker || prefillData?.mapMarker || null);
 
   // UI/Data loading states
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);

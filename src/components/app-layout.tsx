@@ -100,6 +100,11 @@ function MainAppLayout() {
   const [equipmentToEdit, setEquipmentToEdit] = useState<any | null>(null);
   const [activityToEdit, setActivityToEdit] = useState<any | null>(null);
   const [noticeToEdit, setNoticeToEdit] = useState<any | null>(null);
+  const [treatmentReportScrollPosition, setTreatmentReportScrollPosition] = useState(0);
+  const [faunaFloraGeoReportScrollPosition, setFaunaFloraGeoReportScrollPosition] = useState(0);
+  const [riskAssessmentReportScrollPosition, setRiskAssessmentReportScrollPosition] = useState(0);
+  const [occurrenceReportScrollPosition, setOccurrenceReportScrollPosition] = useState(0);
+  const [equipmentReportScrollPosition, setEquipmentReportScrollPosition] = useState(0);
   const { appName, logoUrl } = useAppSettings();
 
   useEffect(() => {
@@ -196,27 +201,32 @@ function MainAppLayout() {
     setActivePage(page);
   };
 
-  const handleEditOccurrence = (occurrence: any) => {
+  const handleEditOccurrence = (occurrence: any, scrollPosition: number = 0) => {
+    setOccurrenceReportScrollPosition(scrollPosition);
     setOccurrenceToEdit(occurrence);
     setActivePage('register-occurrence');
   }
 
-  const handleEditTreatment = (treatment: any) => {
+  const handleEditTreatment = (treatment: any, scrollPosition: number = 0) => {
+    setTreatmentReportScrollPosition(scrollPosition);
     setTreatmentToEdit(treatment);
     setActivePage('register-treatment');
   }
   
-  const handleEditFaunaFloraGeo = (record: any) => {
+  const handleEditFaunaFloraGeo = (record: any, scrollPosition: number = 0) => {
+    setFaunaFloraGeoReportScrollPosition(scrollPosition);
     setFaunaFloraGeoToEdit(record);
     setActivePage('register-fauna-flora-geo');
   }
 
-  const handleEditAssessment = (assessment: any) => {
+  const handleEditAssessment = (assessment: any, scrollPosition: number = 0) => {
+    setRiskAssessmentReportScrollPosition(scrollPosition);
     setAssessmentToEdit(assessment);
     setActivePage('register-risk-assessment');
   }
 
-  const handleEditEquipment = (equipment: any) => {
+  const handleEditEquipment = (equipment: any, scrollPosition: number = 0) => {
+    setEquipmentReportScrollPosition(scrollPosition);
     setEquipmentToEdit(equipment);
     setActivePage('register-equipment');
   }
@@ -244,7 +254,7 @@ function MainAppLayout() {
       case 'register-occurrence':
         return <RegisterOccurrence occurrenceToEdit={occurrenceToEdit} setPage={handlePageChange} prefillData={prefillData} />;
       case 'occurrence-report':
-        return <OccurrenceReport onEdit={handleEditOccurrence} />;
+        return <OccurrenceReport onEdit={handleEditOccurrence} initialScrollPosition={occurrenceReportScrollPosition} />;
       case 'map-report':
         return <MapReport />;
       case 'manage-occurrences':
@@ -266,23 +276,23 @@ function MainAppLayout() {
       case 'register-treatment':
         return <RegisterTreatment treatmentToEdit={treatmentToEdit} setPage={handlePageChange} prefillData={prefillData} />;
       case 'treatment-report':
-        return <TreatmentReport onEdit={handleEditTreatment} preFilter={reportFilters?.treatmentReport} />;
+        return <TreatmentReport onEdit={handleEditTreatment} preFilter={reportFilters?.treatmentReport} initialScrollPosition={treatmentReportScrollPosition} />;
       case 'treatment-map-report':
         return <TreatmentMapReport />;
       case 'register-fauna-flora-geo':
         return <RegisterFaunaFloraGeo recordToEdit={faunaFloraGeoToEdit} setPage={handlePageChange} prefillData={prefillData} />;
       case 'fauna-flora-geo-report':
-        return <FaunaFloraGeoReport onEdit={handleEditFaunaFloraGeo} />;
+        return <FaunaFloraGeoReport onEdit={handleEditFaunaFloraGeo} initialScrollPosition={faunaFloraGeoReportScrollPosition} />;
       case 'fauna-flora-geo-map-report':
         return <FaunaFloraGeoMapReport />;
       case 'register-risk-assessment':
         return <RegisterRiskAssessment assessmentToEdit={assessmentToEdit} setPage={handlePageChange} />;
       case 'risk-assessment-report':
-        return <RiskAssessmentReport onEdit={handleEditAssessment} />;
+        return <RiskAssessmentReport onEdit={handleEditAssessment} initialScrollPosition={riskAssessmentReportScrollPosition} />;
       case 'register-equipment':
         return <RegisterEquipment equipmentToEdit={equipmentToEdit} setPage={handlePageChange} />;
       case 'equipment-report':
-        return <EquipmentReport onEdit={handleEditEquipment} preFilter={reportFilters?.equipmentReport}/>;
+        return <EquipmentReport onEdit={handleEditEquipment} preFilter={reportFilters?.equipmentReport} initialScrollPosition={equipmentReportScrollPosition} />;
       case 'register-activity':
         return <RegisterActivity activityToEdit={activityToEdit} setPage={handlePageChange} />;
       case 'activity-report':

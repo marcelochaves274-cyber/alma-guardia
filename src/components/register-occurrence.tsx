@@ -58,19 +58,22 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
   const isEditing = !!occurrenceToEdit;
 
   // Form states
-  const [occurrenceDate, setOccurrenceDate] = useState<Date | undefined>(prefillData?.date ? (prefillData.date instanceof Timestamp ? prefillData.date.toDate() : prefillData.date) : new Date());
-  const [occurrenceLocation, setOccurrenceLocation] = useState('');
-  const [occurrenceType, setOccurrenceType] = useState('');
-  const [ageGroup, setAgeGroup] = useState('');
-  const [analysis, setAnalysis] = useState('');
-  const [description, setDescription] = useState('');
-  const [involvedPersonName, setInvolvedPersonName] = useState('');
-  const [birthDate, setBirthDate] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [phone, setPhone] = useState('');
-  const [marker, setMarker] = useState<Marker>(null);
+  const [occurrenceDate, setOccurrenceDate] = useState<Date | undefined>(
+    occurrenceToEdit?.occurrenceDate ? (occurrenceToEdit.occurrenceDate instanceof Timestamp ? occurrenceToEdit.occurrenceDate.toDate() : occurrenceToEdit.occurrenceDate) :
+    (prefillData?.date ? (prefillData.date instanceof Timestamp ? prefillData.date.toDate() : prefillData.date) : new Date())
+  );
+  const [occurrenceLocation, setOccurrenceLocation] = useState(occurrenceToEdit?.occurrenceLocation || prefillData?.location || '');
+  const [occurrenceType, setOccurrenceType] = useState(occurrenceToEdit?.occurrenceType || '');
+  const [ageGroup, setAgeGroup] = useState(occurrenceToEdit?.ageGroup || '');
+  const [analysis, setAnalysis] = useState(occurrenceToEdit?.analysis || '');
+  const [description, setDescription] = useState(occurrenceToEdit?.description || prefillData?.description || '');
+  const [involvedPersonName, setInvolvedPersonName] = useState(occurrenceToEdit?.involvedPersonName || prefillData?.collaboratorName || '');
+  const [birthDate, setBirthDate] = useState(occurrenceToEdit?.birthDate || '');
+  const [cpf, setCpf] = useState(occurrenceToEdit?.cpf || '');
+  const [city, setCity] = useState(occurrenceToEdit?.city || '');
+  const [state, setState] = useState(occurrenceToEdit?.state || '');
+  const [phone, setPhone] = useState(occurrenceToEdit?.phone || '');
+  const [marker, setMarker] = useState<Marker>(occurrenceToEdit?.mapMarker || prefillData?.mapMarker || null);
 
   // UI/Data loading states
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);

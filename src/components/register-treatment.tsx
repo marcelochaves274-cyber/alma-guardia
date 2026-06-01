@@ -82,17 +82,24 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
   const isEditing = !!treatmentToEdit;
 
   // Form states
-  const [treatmentDate, setTreatmentDate] = useState<Date | undefined>(prefillData?.date ? (prefillData.date instanceof Timestamp ? prefillData.date.toDate() : prefillData.date) : new Date());
-  const [treatmentLocation, setTreatmentLocation] = useState('');
-  const [treatmentType, setTreatmentType] = useState('');
-  const [description, setDescription] = useState('');
-  const [proposedTreatment, setProposedTreatment] = useState('');
-  const [actionTaken, setActionTaken] = useState('');
-  const [marker, setMarker] = useState<Marker>(null);
-  const [probability, setProbability] = useState('');
-  const [consequence, setConsequence] = useState('');
-  const [situation, setSituation] = useState(isEditing ? '' : 'pendente');
-  const [completionDate, setCompletionDate] = useState<Date | undefined>();
+  const [treatmentDate, setTreatmentDate] = useState<Date | undefined>(
+    treatmentToEdit?.treatmentDate ? (treatmentToEdit.treatmentDate instanceof Timestamp ? treatmentToEdit.treatmentDate.toDate() : treatmentToEdit.treatmentDate) :
+    (prefillData?.date ? (prefillData.date instanceof Timestamp ? prefillData.date.toDate() : prefillData.date) : new Date())
+  );
+  const [treatmentLocation, setTreatmentLocation] = useState(treatmentToEdit?.treatmentLocation || prefillData?.location || '');
+  const [treatmentType, setTreatmentType] = useState(treatmentToEdit?.treatmentType || '');
+  const [description, setDescription] = useState(treatmentToEdit?.description || prefillData?.description || '');
+  const [proposedTreatment, setProposedTreatment] = useState(treatmentToEdit?.proposedTreatment || '');
+  const [actionTaken, setActionTaken] = useState(treatmentToEdit?.actionTaken || '');
+  const [marker, setMarker] = useState<Marker>(treatmentToEdit?.mapMarker || prefillData?.mapMarker || null);
+  const [probability, setProbability] = useState(treatmentToEdit?.probability || '');
+  const [consequence, setConsequence] = useState(treatmentToEdit?.consequence || '');
+  const [situation, setSituation] = useState(treatmentToEdit?.situation || 'pendente');
+  const [completionDate, setCompletionDate] = useState<Date | undefined>(
+    treatmentToEdit?.completionDate instanceof Timestamp 
+      ? treatmentToEdit.completionDate.toDate() 
+      : undefined
+  );
 
 
   // UI/Data loading states

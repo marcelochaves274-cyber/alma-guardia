@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -68,10 +68,11 @@ interface Treatment {
 }
 
 interface TreatmentReportProps {
-  onEdit: (treatment: Treatment) => void;
+  onEdit: (treatment: Treatment, scrollPosition: number) => void;
   preFilter?: {
     situations: string[];
   };
+  initialScrollPosition?: number; // Add this prop
 }
 
 const getRiskLevelProperties = (score: number) => {
@@ -104,7 +105,7 @@ const getSituationProperties = (situation: string) => {
     }
 }
 
-export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
+export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: TreatmentReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -113,6 +114,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
   const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null); // Add useRef
   const [isClient, setIsClient] = useState(false);
   const [clientToday, setClientToday] = useState<Date | null>(null);
 
@@ -139,6 +141,35 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
       setFilterSituation(preFilter.situations);
     }
   }, [preFilter]);
+
+  // Efeito para garantir que o scroll comece no topo ao carregar os dados
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = 0;
+        }
+        const element = document.getElementById('report-top');
+        if (element) {
+          element.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+
+  // Efeito para garantir que o scroll volte ao topo ao fechar o modal (olhinho)
+  useEffect(() => {
+    if (!selectedTreatment && !isLoading) {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+      const element = document.getElementById('report-top');
+      if (element) {
+        element.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
+    }
+  }, [selectedTreatment, isLoading]);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -278,7 +309,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
   };
 
   const handleEdit = (treatment: Treatment) => {
-    onEdit(treatment);
+    onEdit(treatment, 0); // Always pass 0 for scroll position
   };
   
   const renderSkeletons = () => (
@@ -295,7 +326,8 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
   );
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
+    <Dialog onOpenChange={(isOpen) => { if (!isOpen) setSelectedTreatment(null); }}>
+      <div id="report-top" className="space-y-6 w-full max-w-full overflow-x-hidden">
       <Card>
         <CardHeader>
           <CardTitle>Relatório de Tratamentos de Risco</CardTitle>
@@ -370,7 +402,6 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
         </CardContent>
       </Card>
 
-      <Dialog>
         <Card>
           <CardHeader>
             <CardTitle>Resultados</CardTitle>
@@ -506,7 +537,7 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
             </div>
           </CardContent>
         </Card>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" onCloseAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Detalhes do Tratamento de Risco</DialogTitle>
             <DialogDescription>
@@ -587,8 +618,8 @@ export function TreatmentReport({ onEdit, preFilter }: TreatmentReportProps) {
             </>
           )}
         </DialogContent>
-      </Dialog>
-    </div>
+      </div>
+    </Dialog>
   );
 }
 
