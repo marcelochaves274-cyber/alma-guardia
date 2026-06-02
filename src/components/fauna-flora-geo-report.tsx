@@ -336,7 +336,7 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
           <CardContent className="p-0 md:p-6 md:pt-0">
             <div ref={scrollContainerRef} className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto">
               <Table>
-                <TableHeader>
+                <TableHeader className="sticky top-0 bg-card z-10 shadow-sm">
                   <TableRow>
                     <TableHead>Data</TableHead>
                     <TableHead>Espécie/Tipo</TableHead>
@@ -350,7 +350,7 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                     renderSkeletons()
                   ) : filteredRecords.length > 0 ? (
                     filteredRecords.map((rec) => (
-                      <TableRow key={rec.id}>
+                      <TableRow key={rec.id} className={cn(rec.analysis === 'alta' && 'bg-destructive/10 hover:bg-destructive/20')}>
                         <TableCell>{rec.date ? format(rec.date, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
                         <TableCell>{rec.speciesType}</TableCell>
                         <TableCell>{rec.location}</TableCell>

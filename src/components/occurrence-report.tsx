@@ -102,7 +102,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
-
+  
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
@@ -283,7 +283,6 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
   const renderSkeletons = () => (
     Array.from({ length: 5 }).map((_, i) => (
       <TableRow key={i}>
-        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
@@ -392,13 +391,12 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
             {/* A largura mínima evita que as fontes diminuam no celular */}
             <div ref={scrollContainerRef} className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto w-full border-t md:border-none">
               <Table className="min-w-[800px] md:min-w-full">
-                <TableHeader>
+                <TableHeader className="sticky top-0 bg-card z-10 shadow-sm">
                   <TableRow>
                     <TableHead>Data</TableHead>
-                    <TableHead>Tipo</TableHead>
                     <TableHead>Local</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Envolvido</TableHead>
-                    <TableHead>Faixa Etária</TableHead>
                     <TableHead>Análise</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -408,12 +406,11 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
                     renderSkeletons()
                   ) : filteredOccurrences.length > 0 ? (
                     filteredOccurrences.map((occ) => (
-                      <TableRow key={occ.id}>
+                      <TableRow key={occ.id} className={cn(occ.analysis === 'alta' && 'bg-destructive/10 hover:bg-destructive/20')}>
                         <TableCell>{occ.occurrenceDate ? format(occ.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
-                        <TableCell>{occ.occurrenceType}</TableCell>
                         <TableCell>{occ.occurrenceLocation}</TableCell>
+                        <TableCell>{occ.occurrenceType}</TableCell>
                         <TableCell>{occ.involvedPersonName}</TableCell>
-                        <TableCell>{ageGroupOptions.find(o => o.value === occ.ageGroup)?.label || occ.ageGroup}</TableCell>
                         <TableCell>
                           {occ.analysis && analysisMapping[occ.analysis] ? (
                               <Badge className={cn(analysisMapping[occ.analysis].className)}>
@@ -465,7 +462,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-24 text-center">
+                      <TableCell colSpan={6} className="h-24 text-center">
                         {occurrences.length === 0 ? "Nenhuma ocorrência registrada ainda." : "Nenhuma ocorrência encontrada com os filtros selecionados."}
                       </TableCell>
                     </TableRow>

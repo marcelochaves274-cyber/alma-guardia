@@ -64,12 +64,13 @@ export function ManageDataTransfer() {
     setIsImporting(type);
     Papa.parse(file, {
       header: false,
-      skipEmptyLines: true,
+      skipEmptyLines: 'greedy',
       encoding: "ISO-8859-1",
+      transform: (value) => value?.trim() || '',
       complete: async (results) => {
-        // Filtra as linhas para ignorar aquelas que estão completamente vazias ou apenas com espaços
-        const data = (results.data as string[][]).filter(row => 
-          row.some(cell => cell && cell.trim() !== '')
+        const rawData = results.data as string[][];
+        let data = rawData.filter(row => 
+          Array.isArray(row) && row.some(cell => cell && cell.toString().trim() !== '')
         );
 
         if (data.length === 0) {
@@ -79,65 +80,114 @@ export function ManageDataTransfer() {
         }
 
         try {
-          const batch = writeBatch(firestore);
           let collectionName = '';
-          
           switch(type) {
             case 'equipments': collectionName = 'equipments'; break;
             case 'occurrences': collectionName = 'chat_messages'; break;
             case 'treatments': collectionName = 'risk_treatments'; break;
             case 'faunaFloraGeo': collectionName = 'fauna_flora_geo'; break;
           }
-
           const collectionRef = collection(firestore, 'sgs_genius', user.uid, collectionName);
 
-          data.forEach(row => {
-            const newDocRef = doc(collectionRef);
-            let importData: any = { userId: user.uid, createdAt: serverTimestamp() };
+          // Firestore batch limit is 500 operations. We need to chunk the data.
+          const chunkSize = 500;
+          for (let i = 0; i < data.length; i += chunkSize) {
+            const chunk = data.slice(i, i + chunkSize);
+            const batch = writeBatch(firestore);
 
-            if (type === 'equipments') {
-              const [eqType, brand, model, lot, mfgDate, loc, details, status, lastInsp, nextInsp] = row;
-              importData = {
-                ...importData,
-                equipmentType: eqType || '', brand: brand || '', model: model || '', lotCaUiaa: lot || '',
-                manufacturingDate: parseDateString(mfgDate) ? Timestamp.fromDate(parseDateString(mfgDate)!) : null,
-                storageLocation: loc || '', storageDetails: details || '',
-                status: (status || 'operacional').toLowerCase().includes('descart') ? 'descartado' : (status || 'operacional').toLowerCase().includes('manut') ? 'em manutencao' : 'operacional',
-                lastInspectionDate: parseDateString(lastInsp) ? Timestamp.fromDate(parseDateString(lastInsp)!) : null,
-                nextInspectionDate: parseDateString(nextInsp) ? Timestamp.fromDate(parseDateString(nextInsp)!) : null,
-              };
-            } else if (type === 'occurrences') {
-              const [date, loc, occType, age, desc, name, bDate, cpf, city, state, phone, analysis] = row;
-              importData = {
-                ...importData,
-                occurrenceDate: parseDateString(date) ? Timestamp.fromDate(parseDateString(date)!) : serverTimestamp(),
-                occurrenceLocation: loc || '', occurrenceType: occType || '', ageGroup: age || '',
-                description: desc || '', involvedPersonName: name || '', birthDate: bDate || '',
-                cpf: cpf || '', city: city || '', state: state || '', phone: phone || '', analysis: analysis || 'baixa'
-              };
-            } else if (type === 'treatments') {
-              const [date, tType, loc, level, sit, desc, resp, action, dDate] = row;
-              importData = {
-                ...importData,
-                treatmentDate: parseDateString(date) ? Timestamp.fromDate(parseDateString(date)!) : serverTimestamp(),
-                treatmentType: tType || '', treatmentLocation: loc || '', riskLevel: Number(level) || 0,
-                situation: (sit || 'pendente').toLowerCase().includes('finaliz') ? 'finalizado' : 'pendente',
-                description: desc || '', responsible: resp || '', actionTaken: action || '',
-                dueDate: parseDateString(dDate) ? Timestamp.fromDate(parseDateString(dDate)!) : null
-              };
-            } else if (type === 'faunaFloraGeo') {
-              const [date, loc, specType, desc, analysis] = row;
-              importData = {
-                ...importData,
-                date: parseDateString(date) ? Timestamp.fromDate(parseDateString(date)!) : serverTimestamp(),
-                location: loc || '', speciesType: specType || '', description: desc || '', analysis: analysis || 'baixa'
-              };
-            }
+            chunk.forEach(row => {
+              let importData: any = null;
 
-            batch.set(newDocRef, importData);
-          });
-          
-          await batch.commit();
+              if (!row || row.length < 2) return;
+
+              if (type === 'equipments') {
+                const [eqType, brand, model, lot, mfgDate, loc, details, status, lastInsp, nextInsp] = row;
+                if (!eqType || row.length < 5) return;
+                if (eqType?.toLowerCase().includes('tip') || brand?.toLowerCase().includes('mar')) return;
+
+                if (eqType || brand) {
+                  importData = {
+                    userId: user.uid, createdAt: serverTimestamp(),
+                    equipmentType: eqType, brand, model: model || '', lotCaUiaa: lot || '',
+                    manufacturingDate: parseDateString(mfgDate) ? Timestamp.fromDate(parseDateString(mfgDate)!) : null,
+                    storageLocation: loc || '', storageDetails: details || '',
+                    status: (status || 'operacional').toLowerCase().includes('descart') ? 'descartado' : (status || 'operacional').toLowerCase().includes('manut') ? 'em manutencao' : 'operacional',
+                    lastInspectionDate: parseDateString(lastInsp) ? Timestamp.fromDate(parseDateString(lastInsp)!) : null,
+                    nextInspectionDate: parseDateString(nextInsp) ? Timestamp.fromDate(parseDateString(nextInsp)!) : null,
+                  };
+                }
+              } else if (type === 'occurrences') {
+                // Segue rigorosamente a ordem do formulário Registrar:
+                // Data, Local, Tipo, Faixa Etária, Descrição, Nome, Nasc, CPF, Cidade, Estado, Fone, Análise
+                const cols = row.map(c => c?.toString().trim() || '');
+                if (cols.length < 5) return;
+
+                const [date, loc, occType, age, desc, name, bDate, cpf, city, state, phone, anal] = cols;
+                
+                const validDate = parseDateString(date);
+                // SÓ importa se a data for válida e houver um local. 
+                // Isso evita que continuações de texto virem novos registros.
+                if (!validDate || !loc) return;
+                if (date.toLowerCase().includes('dat') || loc.toLowerCase().includes('loc')) return;
+
+                importData = {
+                    userId: user.uid, 
+                    createdAt: serverTimestamp(),
+                    occurrenceDate: Timestamp.fromDate(validDate),
+                    occurrenceLocation: loc, 
+                    occurrenceType: occType || '', 
+                    ageGroup: age || '',
+                    description: desc, 
+                    involvedPersonName: name || '', 
+                    birthDate: bDate || '',
+                    cpf: cpf || '', city: city || '', state: state || '', phone: phone || '', 
+                    analysis: (anal || 'baixa').toLowerCase()
+                };
+              } else if (type === 'treatments') {
+                // Segue rigorosamente a ordem do formulário Registrar:
+                // Data, Local, Tipo, Descrição, Prob, Cons, Trat. Proposto, Ação, Situação, Prazo
+                const [date, loc, tType, desc, prob, cons, proposed, action, sit, cDate] = row.map(c => c?.toString().trim());
+                
+                if (!date || row.length < 5) return;
+                if (date?.toLowerCase().includes('dat') || loc?.toLowerCase().includes('loc')) return;
+
+                if (loc && desc) {
+                  // Extrai apenas o número da probabilidade/consequência (ex: de "1 - Baixa" pega "1")
+                  const probVal = parseInt(prob?.replace(/\D/g, '') || '1') || 1;
+                  const consVal = parseInt(cons?.replace(/\D/g, '') || '1') || 1;
+                  importData = {
+                    userId: user.uid, createdAt: serverTimestamp(),
+                    treatmentDate: parseDateString(date) ? Timestamp.fromDate(parseDateString(date)!) : serverTimestamp(),
+                    treatmentLocation: loc, treatmentType: tType, description: desc, 
+                    probability: String(probVal), consequence: String(consVal),
+                    riskLevel: probVal * consVal,
+                    proposedTreatment: proposed || '', actionTaken: action || '',
+                    situation: (sit || 'pendente').toLowerCase().includes('finaliz') ? 'finalizado' : 'pendente',
+                    completionDate: parseDateString(cDate) ? Timestamp.fromDate(parseDateString(cDate)!) : null
+                  };
+                }
+              } else if (type === 'faunaFloraGeo') {
+                const [date, loc, specType, desc, anal] = row;
+                if (date?.toLowerCase().includes('dat')) return;
+
+                if (loc && specType) {
+                  importData = {
+                    userId: user.uid, createdAt: serverTimestamp(),
+                    date: parseDateString(date) ? Timestamp.fromDate(parseDateString(date)!) : serverTimestamp(),
+                    location: loc, speciesType: specType, description: desc || '', analysis: anal || 'baixa'
+                  };
+                }
+              }
+
+              if (importData) {
+                const newDocRef = doc(collectionRef);
+                batch.set(newDocRef, importData);
+              }
+            });
+
+            await batch.commit();
+          }
+
           toast({ title: 'Importação Concluída!', description: `${data.length} registros importados com sucesso.` });
           setLastImported({ type, count: data.length });
         } catch (error) {
@@ -236,13 +286,13 @@ export function ManageDataTransfer() {
             {renderImportSection(
               'occurrences', 
               'Ocorrências (Acidentes/Incidentes)', 
-              'data, local, tipo, faixa_etaria, descricao, nome_envolvido, nasc, cpf, cidade, estado, fone, analise'
+              'Data, Local, Tipo, Faixa Etária, Descrição, Nome, Nasc, CPF, Cidade, Estado, Fone, Análise'
             )}
 
             {renderImportSection(
               'treatments', 
               'Tratamentos de Risco', 
-              'data, tipo, local, nivel_risco, situacao, descricao, responsavel, acao, prazo'
+              'Data, Local, Tipo, Descrição, Probabilidade (1-5), Consequência (1-5), Tratamento Proposto, Ação, Situação, Prazo'
             )}
 
             {renderImportSection(

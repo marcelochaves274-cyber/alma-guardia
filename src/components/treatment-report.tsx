@@ -311,7 +311,7 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
   const handleEdit = (treatment: Treatment) => {
     onEdit(treatment, 0); // Always pass 0 for scroll position
   };
-  
+
   const renderSkeletons = () => (
     Array.from({ length: 5 }).map((_, i) => (
       <TableRow key={i}>
@@ -328,79 +328,79 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
   return (
     <Dialog onOpenChange={(isOpen) => { if (!isOpen) setSelectedTreatment(null); }}>
       <div id="report-top" className="space-y-6 w-full max-w-full overflow-x-hidden">
-      <Card>
-        <CardHeader>
-          <CardTitle>Relatório de Tratamentos de Risco</CardTitle>
-          <CardDescription>
-            Filtre e visualize os tratamentos registrados no sistema.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Filtrar por Mês</Label>
-            <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+        <Card>
+          <CardHeader>
+            <CardTitle>Relatório de Tratamentos de Risco</CardTitle>
+            <CardDescription>
+              Filtre e visualize os tratamentos registrados no sistema.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
+              <Label>Filtrar por Mês</Label>
+              <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+              <div className="space-y-2">
                 <Label>Filtrar Ano</Label>
                 <SheetFilter
-                    title='Filtrar Anos'
-                    options={availableYears.map(y => ({ value: y, label: y }))}
-                    selected={filterYear}
-                    onChange={setFilterYear}
-                    disabled={isLoading || availableYears.length === 0}
-                    buttonText='Filtrar por Ano'
+                  title='Filtrar Anos'
+                  options={availableYears.map(y => ({ value: y, label: y }))}
+                  selected={filterYear}
+                  onChange={setFilterYear}
+                  disabled={isLoading || availableYears.length === 0}
+                  buttonText='Filtrar por Ano'
                 />
-            </div>
-            <div className="space-y-2">
+              </div>
+              <div className="space-y-2">
                 <Label>Filtrar por Tipo de Risco</Label>
                 <SheetFilter
-                    title='Filtrar Tipos de Risco'
-                    options={treatmentTypes.map(t => ({ value: t, label: t }))}
-                    selected={filterType}
-                    onChange={setFilterType}
-                    disabled={!treatmentTypes || treatmentTypes.length === 0}
-                    buttonText='Filtrar por Tipo'
+                  title='Filtrar Tipos de Risco'
+                  options={treatmentTypes.map(t => ({ value: t, label: t }))}
+                  selected={filterType}
+                  onChange={setFilterType}
+                  disabled={!treatmentTypes || treatmentTypes.length === 0}
+                  buttonText='Filtrar por Tipo'
                 />
-            </div>
-             <div className="space-y-2">
+              </div>
+              <div className="space-y-2">
                 <Label>Nível de Risco (PxC)</Label>
                 <SheetFilter
-                    title='Filtrar Níveis de Risco'
-                    options={riskLevelOptions}
-                    selected={filterRiskLevel}
-                    onChange={setFilterRiskLevel}
-                    buttonText='Filtrar por Nível'
+                  title='Filtrar Níveis de Risco'
+                  options={riskLevelOptions}
+                  selected={filterRiskLevel}
+                  onChange={setFilterRiskLevel}
+                  buttonText='Filtrar por Nível'
                 />
-            </div>
-            <div className="space-y-2">
+              </div>
+              <div className="space-y-2">
                 <Label>Filtrar por Local</Label>
                 <SheetFilter
-                    title='Filtrar Locais'
-                    options={locations.map(l => ({ value: l, label: l }))}
-                    selected={filterLocation}
-                    onChange={setFilterLocation}
-                    disabled={!locations || locations.length === 0}
-                    buttonText='Filtrar por Local'
+                  title='Filtrar Locais'
+                  options={locations.map(l => ({ value: l, label: l }))}
+                  selected={filterLocation}
+                  onChange={setFilterLocation}
+                  disabled={!locations || locations.length === 0}
+                  buttonText='Filtrar por Local'
                 />
-            </div>
-            <div className="space-y-2">
+              </div>
+              <div className="space-y-2">
                 <Label>Filtrar por Situação</Label>
-                 <SheetFilter
-                    title='Filtrar Situações'
-                    options={situationOptions}
-                    selected={filterSituation}
-                    onChange={setFilterSituation}
-                    buttonText='Filtrar por Situação'
+                <SheetFilter
+                  title='Filtrar Situações'
+                  options={situationOptions}
+                  selected={filterSituation}
+                  onChange={setFilterSituation}
+                  buttonText='Filtrar por Situação'
                 />
+              </div>
+
+              <Button onClick={clearFilters} variant="outline" className="w-full">
+                Limpar Filtros
+              </Button>
             </div>
-            
-            <Button onClick={clearFilters} variant="outline" className="w-full">
-              Limpar Filtros
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -410,11 +410,9 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0 md:p-6 md:pt-0">
-            {/* Adicionado wrapper para scroll horizontal em telas pequenas */}
-            {/* A largura mínima evita que as fontes diminuam no celular */}
-            <div className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto w-full border-t md:border-none">
+            <div ref={scrollContainerRef} className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto w-full border-t md:border-none">
               <Table className="min-w-[800px] md:min-w-full">
-                <TableHeader>
+                <TableHeader className="sticky top-0 bg-card z-10 shadow-sm">
                   <TableRow>
                     <TableHead>Data</TableHead>
                     <TableHead>Tipo de Risco</TableHead>
@@ -430,7 +428,6 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
                   ) : filteredTreatments.length > 0 ? (
                     filteredTreatments.map((occ) => {
                       const riskProps = getRiskLevelProperties(occ.riskLevel);
-                      
                       let situationContent;
                       const completionDate = occ.completionDate?.toDate();
 
@@ -438,88 +435,50 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
                         if (clientToday && completionDate) {
                           const daysUntil = differenceInDays(startOfDay(completionDate), clientToday);
                           if (daysUntil < 0) {
-                            situationContent = (
-                              <Badge className="bg-red-600 text-white">Atrasado</Badge>
-                            );
+                            situationContent = <Badge className="bg-red-600 text-white">Atrasado</Badge>;
                           } else {
                             situationContent = (
                               <div className="flex flex-col items-start gap-1">
-                                <Badge className={cn(getSituationProperties('pendente').className)}>
-                                  Pendente
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {daysUntil === 0 ? 'Vence hoje' : `Vence em ${daysUntil} dia(s)`}
-                                </span>
+                                <Badge className={cn(getSituationProperties('pendente').className)}>Pendente</Badge>
+                                <span className="text-xs text-muted-foreground">{daysUntil === 0 ? 'Vence hoje' : `Vence em ${daysUntil} dia(s)`}</span>
                               </div>
                             );
                           }
                         } else {
-                          // Pendente sem data de conclusão
-                          situationContent = (
-                            <Badge className={cn(getSituationProperties('pendente').className)}>
-                                Pendente
-                            </Badge>
-                          );
+                          situationContent = <Badge className={cn(getSituationProperties('pendente').className)}>Pendente</Badge>;
                         }
-                      } else { // situation is 'finalizado'
-                        situationContent = (
-                          <Badge className={cn(getSituationProperties('finalizado').className)}>
-                            {getSituationProperties('finalizado').label}
-                          </Badge>
-                        );
+                      } else {
+                        situationContent = <Badge className={cn(getSituationProperties('finalizado').className)}>{getSituationProperties('finalizado').label}</Badge>;
                       }
 
                       return (
-                        <TableRow key={occ.id}>
+                        <TableRow key={occ.id} className={cn(riskProps.label === 'Alta' && 'bg-destructive/5 hover:bg-destructive/10')}>
                           <TableCell>{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
                           <TableCell>{occ.treatmentType}</TableCell>
                           <TableCell>{occ.treatmentLocation}</TableCell>
-                          <TableCell>
-                              <Badge className={cn(riskProps.className)}>
-                                  {riskProps.label}
-                              </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {situationContent}
-                          </TableCell>
+                          <TableCell><Badge className={cn(riskProps.className)}>{riskProps.label}</Badge></TableCell>
+                          <TableCell>{situationContent}</TableCell>
                           <TableCell className="text-right">
                             <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Visualizar tratamento" onClick={() => setSelectedTreatment(occ)}>
-                                  <Eye className="h-4 w-4" />
-                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => setSelectedTreatment(occ)}><Eye className="h-4 w-4" /></Button>
                             </DialogTrigger>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar tratamento" onClick={() => handleEdit(occ)}>
-                                <Pencil className="h-4 w-4" />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleEdit(occ)}><Pencil className="h-4 w-4" /></Button>
                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                      aria-label="Excluir tratamento"
-                                      disabled={isDeleting === occ.id}
-                                    >
-                                      {isDeleting === occ.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro de tratamento do dia <span className="font-semibold">{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy') : ''}</span>.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction 
-                                            onClick={() => handleDelete(occ.id)}
-                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                        >
-                                            Sim, excluir
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" disabled={isDeleting === occ.id}>
+                                  {isDeleting === occ.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                  <AlertDialogDescription>Esta ação não pode ser desfeita. Isso excluirá permanentemente o tratamento do dia <strong>{occ.treatmentDate ? format(occ.treatmentDate, 'dd/MM/yyyy') : ''}</strong>.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(occ.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Sim, excluir</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
                             </AlertDialog>
                           </TableCell>
                         </TableRow>
@@ -527,9 +486,7 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center">
-                        {treatments.length === 0 ? "Nenhum tratamento registrado ainda." : "Nenhum tratamento encontrado com os filtros selecionados."}
-                      </TableCell>
+                      <TableCell colSpan={6} className="h-24 text-center">{treatments.length === 0 ? "Nenhum tratamento registrado ainda." : "Nenhum tratamento encontrado com os filtros selecionados."}</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -537,88 +494,40 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
             </div>
           </CardContent>
         </Card>
-        <DialogContent className="max-w-2xl" onCloseAutoFocus={(e) => e.preventDefault()}>
-          <DialogHeader>
-            <DialogTitle>Detalhes do Tratamento de Risco</DialogTitle>
-            <DialogDescription>
-              Visualização detalhada do registro de tratamento de risco.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedTreatment && (
-            <>
-              <ScrollArea className="max-h-[70vh] pr-6">
-                <div className="space-y-4 py-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="font-semibold text-muted-foreground">Data da Identificação</Label>
-                        <p>{format(selectedTreatment.treatmentDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
-                      </div>
-                      <div>
-                        <Label className="font-semibold text-muted-foreground">Local</Label>
-                        <p>{selectedTreatment.treatmentLocation}</p>
-                      </div>
-                      <div>
-                        <Label className="font-semibold text-muted-foreground">Tipo de Risco</Label>
-                        <p>{selectedTreatment.treatmentType}</p>
-                      </div>
-                      <div>
-                        <Label className="font-semibold text-muted-foreground">Situação</Label>
-                        <div>
-                          <Badge className={cn(getSituationProperties(selectedTreatment.situation).className)}>
-                            {getSituationProperties(selectedTreatment.situation).label}
-                          </Badge>
-                        </div>
-                      </div>
-                      {selectedTreatment.situation === 'pendente' && selectedTreatment.completionDate && (
-                        <div>
-                          <Label className="font-semibold text-muted-foreground">Prazo para Conclusão</Label>
-                          <p>{format(selectedTreatment.completionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR })}</p>
-                        </div>
-                      )}
-                  </div>
-                  <div>
-                      <Label className="font-semibold text-muted-foreground">Descrição do Risco</Label>
-                      <p className="whitespace-pre-wrap">{selectedTreatment.description || 'Não informado'}</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 mt-4">
-                      <div>
-                          <Label className="font-semibold text-muted-foreground">Probabilidade</Label>
-                          <p>{selectedTreatment.probability}</p>
-                      </div>
-                      <div>
-                          <Label className="font-semibold text-muted-foreground">Consequência</Label>
-                          <p>{selectedTreatment.consequence}</p>
-                      </div>
-                      <div>
-                          <Label className="font-semibold text-muted-foreground">Nível de Risco</Label>
-                          <div>
-                            <Badge className={cn(getRiskLevelProperties(selectedTreatment.riskLevel).className)}>
-                                {getRiskLevelProperties(selectedTreatment.riskLevel).label}
-                            </Badge>
-                          </div>
-                      </div>
-                  </div>
-                  <div>
-                      <Label className="font-semibold text-muted-foreground">Tratamento Proposto</Label>
-                      <p className="whitespace-pre-wrap">{selectedTreatment.proposedTreatment || 'Não informado'}</p>
-                  </div>
-                  <div>
-                      <Label className="font-semibold text-muted-foreground">Ação Realizada</Label>
-                      <p className="whitespace-pre-wrap">{selectedTreatment.actionTaken || 'Não informado'}</p>
-                  </div>
-                </div>
-              </ScrollArea>
-              <div className="flex justify-end pt-2">
-                  <DialogClose asChild>
-                      <Button type="button" variant="secondary">
-                          Fechar
-                      </Button>
-                  </DialogClose>
-              </div>
-            </>
-          )}
-        </DialogContent>
       </div>
+
+      <DialogContent className="max-w-2xl" onCloseAutoFocus={(e) => e.preventDefault()}>
+        <DialogHeader>
+          <DialogTitle>Detalhes do Tratamento de Risco</DialogTitle>
+          <DialogDescription>Visualização detalhada do registro de tratamento de risco.</DialogDescription>
+        </DialogHeader>
+        {selectedTreatment && (
+          <>
+            <ScrollArea className="max-h-[70vh] pr-6">
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><Label className="font-semibold text-muted-foreground">Data da Identificação</Label><p>{format(selectedTreatment.treatmentDate, 'dd/MM/yyyy', { locale: ptBR })}</p></div>
+                  <div><Label className="font-semibold text-muted-foreground">Local</Label><p>{selectedTreatment.treatmentLocation}</p></div>
+                  <div><Label className="font-semibold text-muted-foreground">Tipo de Risco</Label><p>{selectedTreatment.treatmentType}</p></div>
+                  <div><Label className="font-semibold text-muted-foreground">Situação</Label><div><Badge className={cn(getSituationProperties(selectedTreatment.situation).className)}>{getSituationProperties(selectedTreatment.situation).label}</Badge></div></div>
+                  {selectedTreatment.situation === 'pendente' && selectedTreatment.completionDate && (
+                    <div><Label className="font-semibold text-muted-foreground">Prazo para Conclusão</Label><p>{format(selectedTreatment.completionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR })}</p></div>
+                  )}
+                </div>
+                <div><Label className="font-semibold text-muted-foreground">Descrição do Risco</Label><p className="whitespace-pre-wrap">{selectedTreatment.description || 'Não informado'}</p></div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 mt-4">
+                  <div><Label className="font-semibold text-muted-foreground">Probabilidade</Label><p>{selectedTreatment.probability}</p></div>
+                  <div><Label className="font-semibold text-muted-foreground">Consequência</Label><p>{selectedTreatment.consequence}</p></div>
+                  <div><Label className="font-semibold text-muted-foreground">Nível de Risco</Label><div><Badge className={cn(getRiskLevelProperties(selectedTreatment.riskLevel).className)}>{getRiskLevelProperties(selectedTreatment.riskLevel).label}</Badge></div></div>
+                </div>
+                <div><Label className="font-semibold text-muted-foreground">Tratamento Proposto</Label><p className="whitespace-pre-wrap">{selectedTreatment.proposedTreatment || 'Não informado'}</p></div>
+                <div><Label className="font-semibold text-muted-foreground">Ação Realizada</Label><p className="whitespace-pre-wrap">{selectedTreatment.actionTaken || 'Não informado'}</p></div>
+              </div>
+            </ScrollArea>
+            <div className="flex justify-end pt-2"><DialogClose asChild><Button type="button" variant="secondary">Fechar</Button></DialogClose></div>
+          </>
+        )}
+      </DialogContent>
     </Dialog>
   );
 }
