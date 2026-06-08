@@ -49,11 +49,13 @@ export function MySubscriptionPage() {
       let url = '';
 
       if (MIGRATION_MODE === 'api') {
+        console.log("Conteúdo de subscriptionData:", subscriptionData);
+console.log("Valor final do customerId:", subscriptionData?.stripeCustomerId || subscriptionData?.stripe_customer_id || subscriptionData?.stripeId);
         const response = await fetch('/api/create-portal-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            customerId: subscriptionData?.stripeCustomerId || subscriptionData?.stripe_customer_id 
+          customerId: subscriptionData?.stripeCustomerId || subscriptionData?.stripe_customer_id || subscriptionData?.stripeId
           }),
         });
 
