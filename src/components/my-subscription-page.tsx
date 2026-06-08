@@ -41,14 +41,35 @@ export function MySubscriptionPage() {
 
   const handleManageSubscription = async () => {
     setIsRedirecting(true);
+    
+    // Estratégia de Rollback: Mude para 'functions' se precisar reverter
+    const MIGRATION_MODE: 'api' | 'functions' = 'api';
+
     try {
-      const functions = getFunctions(undefined, 'us-central1'); // Ajuste a região se necessário
-      const callPortal = httpsCallable(functions, 'createPortalSession');
-      const result = await callPortal();
-      const data = result.data as { url: string };
+      let url = '';
+
+      if (MIGRATION_MODE === 'api') {
+        const response = await fetch('/api/create-portal-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            customerId: subscriptionData?.stripeCustomerId || subscriptionData?.stripe_customer_id 
+          }),
+        });
+
+        if (!response.ok) throw new Error('Falha na resposta da API');
+        const data = await response.json();
+        url = data.url;
+      } else {
+        const functions = getFunctions(undefined, 'us-central1');
+        const callPortal = httpsCallable(functions, 'createPortalSession');
+        const result = await callPortal();
+        const data = result.data as { url: string };
+        url = data.url;
+      }
       
-      if (data?.url) {
-        window.location.href = data.url;
+      if (url) {
+        window.location.href = url;
       } else {
         throw new Error('URL de redirecionamento não recebida.');
       }
