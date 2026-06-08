@@ -45,15 +45,25 @@ export function ManageDataTransfer() {
 
   const parseDateString = (dateString: string): Date | null => {
     if (!dateString || typeof dateString !== 'string') return null;
-    const parts = dateString.match(/(\d+)/g);
+    // Busca grupos de números (Dia, Mês, Ano)
+    const parts = dateString.match(/\d+/g);
     if (!parts || parts.length < 3) return null;
+    
     let year, month, day;
     if (dateString.includes('/')) {
+      // Padrão DD/MM/AAAA
       [day, month, year] = parts.map(Number);
     } else if (dateString.includes('-')) {
+      // Padrão AAAA-MM-DD
       [year, month, day] = parts.map(Number);
-    } else return null;
-    if (year < 1000 || year > 3000 || month < 1 || month > 12 || day < 1 || day > 31) return null;
+    } else {
+      // Tentativa genérica
+      [day, month, year] = parts.map(Number);
+    }
+
+    if (year < 100) year += 2000; // Converte 25 para 2025
+    if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) return null;
+    
     return new Date(year, month - 1, day);
   };
 
@@ -65,7 +75,9 @@ export function ManageDataTransfer() {
     Papa.parse(file, {
       header: false,
       skipEmptyLines: 'greedy',
-      encoding: "ISO-8859-1",
+      delimiter: "", // Detecta automaticamente se é vírgula ou ponto e vírgula
+      quoteChar: '"',
+      encoding: "ISO-8859-1", // Padrão do Excel no Brasil
       transform: (value) => value?.trim() || '',
       complete: async (results) => {
         const rawData = results.data as string[][];
@@ -81,6 +93,8 @@ export function ManageDataTransfer() {
 
         try {
           let collectionName = '';
+          let totalImportedCount = 0;
+
           switch(type) {
             case 'equipments': collectionName = 'equipments'; break;
             case 'occurrences': collectionName = 'chat_messages'; break;
@@ -102,7 +116,7 @@ export function ManageDataTransfer() {
 
               if (type === 'equipments') {
                 const [eqType, brand, model, lot, mfgDate, loc, details, status, lastInsp, nextInsp] = row;
-                if (!eqType || row.length < 5) return;
+                if (!eqType || row.length < 2) return;
                 if (eqType?.toLowerCase().includes('tip') || brand?.toLowerCase().includes('mar')) return;
 
                 if (eqType || brand) {
@@ -120,15 +134,27 @@ export function ManageDataTransfer() {
                 // Segue rigorosamente a ordem do formulário Registrar:
                 // Data, Local, Tipo, Faixa Etária, Descrição, Nome, Nasc, CPF, Cidade, Estado, Fone, Análise
                 const cols = row.map(c => c?.toString().trim() || '');
-                if (cols.length < 5) return;
+                if (cols.length < 4) return;
 
-                const [date, loc, occType, age, desc, name, bDate, cpf, city, state, phone, anal] = cols;
-                
-                const validDate = parseDateString(date);
-                // SÓ importa se a data for válida e houver um local. 
-                // Isso evita que continuações de texto virem novos registros.
-                if (!validDate || !loc) return;
-                if (date.toLowerCase().includes('dat') || loc.toLowerCase().includes('loc')) return;
+                const validDate = parseDateString(cols[0]);
+                if (!validDate || cols[0].toLowerCase().includes('dat')) return;
+                if (cols[1]?.toLowerCase().includes('loc')) return;
+
+                let loc = cols[1];
+                let occType = cols[2];
+                let age = cols[3];
+                let description = "";
+                let name = "", bDate = "", cpf = "", city = "", state = "", phone = "", anal = "";
+
+                // Reconstrução em caso de separadores extras (shift)
+                if (cols.length > 12) {
+                  const extra = cols.length - 12;
+                  description = cols.slice(4, 5 + extra).join('; ');
+                  [name, bDate, cpf, city, state, phone, anal] = cols.slice(5 + extra);
+                } else {
+                  description = cols[4] || '';
+                  [name, bDate, cpf, city, state, phone, anal] = cols.slice(5);
+                }
 
                 importData = {
                     userId: user.uid, 
@@ -137,43 +163,81 @@ export function ManageDataTransfer() {
                     occurrenceLocation: loc, 
                     occurrenceType: occType || '', 
                     ageGroup: age || '',
-                    description: desc, 
+                    description: description, 
                     involvedPersonName: name || '', 
                     birthDate: bDate || '',
                     cpf: cpf || '', city: city || '', state: state || '', phone: phone || '', 
                     analysis: (anal || 'baixa').toLowerCase()
                 };
               } else if (type === 'treatments') {
-                // Segue rigorosamente a ordem do formulário Registrar:
-                // Data, Local, Tipo, Descrição, Prob, Cons, Trat. Proposto, Ação, Situação, Prazo
-                const [date, loc, tType, desc, prob, cons, proposed, action, sit, cDate] = row.map(c => c?.toString().trim());
+                // ORDEM RIGOROSA: Data, Local, Tipo, Descrição, Prob(1-5), Cons(1-5), Trat.Prop, Ação, Situação, Prazo
+                const cols = row.map(c => c?.toString()?.trim() || ''); // Ensure all cells are trimmed
                 
-                if (!date || row.length < 5) return;
-                if (date?.toLowerCase().includes('dat') || loc?.toLowerCase().includes('loc')) return;
+                const validDate = parseDateString(cols[0]);
+                if (!validDate || cols[0].toLowerCase().includes('dat')) return; // Skip header or invalid date
+                // Skip if location is header or empty
+                if (cols[1]?.toLowerCase().includes('loc') || !cols[1]) return; 
 
-                if (loc && desc) {
-                  // Extrai apenas o número da probabilidade/consequência (ex: de "1 - Baixa" pega "1")
-                  const probVal = parseInt(prob?.replace(/\D/g, '') || '1') || 1;
-                  const consVal = parseInt(cons?.replace(/\D/g, '') || '1') || 1;
-                  importData = {
-                    userId: user.uid, createdAt: serverTimestamp(),
-                    treatmentDate: parseDateString(date) ? Timestamp.fromDate(parseDateString(date)!) : serverTimestamp(),
-                    treatmentLocation: loc, treatmentType: tType, description: desc, 
-                    probability: String(probVal), consequence: String(consVal),
-                    riskLevel: probVal * consVal,
-                    proposedTreatment: proposed || '', actionTaken: action || '',
-                    situation: (sit || 'pendente').toLowerCase().includes('finaliz') ? 'finalizado' : 'pendente',
-                    completionDate: parseDateString(cDate) ? Timestamp.fromDate(parseDateString(cDate)!) : null
-                  };
+                const MIN_EXPECTED_COLS = 11; // Data, Local, Tipo, Descrição, Prob, Cons, Tratamento, Ação, Situação, Prazo, Análise
+                if (cols.length < MIN_EXPECTED_COLS) {
+                  console.warn(`Pulando linha devido a colunas insuficientes para tratamentos (esperado ${MIN_EXPECTED_COLS}, encontrado ${cols.length}): ${row.join(',')}`);
+                  return;
                 }
-              } else if (type === 'faunaFloraGeo') {
-                const [date, loc, specType, desc, anal] = row;
-                if (date?.toLowerCase().includes('dat')) return;
 
-                if (loc && specType) {
+                let treatmentLocation = cols[1];
+                let treatmentType = cols[2]; // Tipo is at cols[2]
+                let description = ""; // Inicializa descrição
+                let prob = "", cons = "", proposed = "", action = "", situation = "", cDateStr = "", anal = "";
+                
+                const DESCRIPTION_INDEX = 3; // Descrição is at cols[3]
+                const PROB_INDEX = 4; // Prob is at cols[4]
+
+                // Reconstrução em caso de separadores extras (shift)
+                if (cols.length > MIN_EXPECTED_COLS) {
+                  const extraColsInDescription = cols.length - MIN_EXPECTED_COLS;
+                  description = cols.slice(DESCRIPTION_INDEX, DESCRIPTION_INDEX + 1 + extraColsInDescription).join('; ');
+                  // Atribui os campos restantes a partir da posição deslocada
+                  const shiftedProbIndex = PROB_INDEX + extraColsInDescription;
+                  prob = cols[shiftedProbIndex] || '';
+                  cons = cols[shiftedProbIndex + 1] || '';
+                  proposed = cols[shiftedProbIndex + 2] || '';
+                  action = cols[shiftedProbIndex + 3] || '';
+                  situation = cols[shiftedProbIndex + 4] || '';
+                  cDateStr = cols[shiftedProbIndex + 5] || '';
+                  anal = cols[shiftedProbIndex + 6] || '';
+                } else {
+                  description = cols[DESCRIPTION_INDEX] || '';
+                  cons = cols[5] || '';
+                  proposed = cols[6] || '';
+                  action = cols[7] || '';
+                  situation = cols[8] || '';
+                  cDateStr = cols[9] || '';
+                  anal = cols[10] || ''; // Captura a coluna Análise
+                }
+
+                // Garante que Probabilidade e Consequência sejam números de 1 a 5
+                const probVal = Math.min(5, Math.max(1, parseInt(prob?.replace(/\D/g, '') || '1') || 1));
+                const consVal = Math.min(5, Math.max(1, parseInt(cons?.replace(/\D/g, '') || '1') || 1));
+
+                importData = { // Ensure analysis is also saved
+                  userId: user.uid, createdAt: serverTimestamp(), treatmentDate: Timestamp.fromDate(validDate),
+                  treatmentLocation: treatmentLocation || 'Não informado', treatmentType: treatmentType || 'Outros',
+                  description: description, probability: String(probVal), consequence: String(consVal),
+                  riskLevel: Math.min(25, Math.max(1, probVal * consVal)), proposedTreatment: proposed || '',
+                  actionTaken: action || '', situation: (situation || 'pendente').toLowerCase().includes('finaliz') ? 'finalizado' : 'pendente',
+                  completionDate: parseDateString(cDateStr) ? Timestamp.fromDate(parseDateString(cDateStr)!) : null,
+                  analysis: anal || '' // Ensure analysis is also saved
+                };
+              } else if (type === 'faunaFloraGeo') {
+                const cols = row.map(c => c?.toString().trim() || '');
+                const [date, loc, specType, desc, anal] = cols;
+                const validDate = parseDateString(date);
+                if (!validDate || !loc || date?.toLowerCase().includes('dat')) return;
+
+                if (loc && specType && validDate) {
                   importData = {
                     userId: user.uid, createdAt: serverTimestamp(),
-                    date: parseDateString(date) ? Timestamp.fromDate(parseDateString(date)!) : serverTimestamp(),
+                    date: Timestamp.fromDate(validDate),
                     location: loc, speciesType: specType, description: desc || '', analysis: anal || 'baixa'
                   };
                 }
@@ -182,14 +246,15 @@ export function ManageDataTransfer() {
               if (importData) {
                 const newDocRef = doc(collectionRef);
                 batch.set(newDocRef, importData);
+                totalImportedCount++;
               }
             });
 
             await batch.commit();
           }
 
-          toast({ title: 'Importação Concluída!', description: `${data.length} registros importados com sucesso.` });
-          setLastImported({ type, count: data.length });
+          toast({ title: 'Importação Concluída!', description: `${totalImportedCount} registros foram processados e salvos com sucesso.` });
+          setLastImported({ type, count: totalImportedCount });
         } catch (error) {
           toast({ variant: 'destructive', title: 'Erro na Importação', description: 'Erro ao salvar dados no banco.' });
         } finally {
@@ -269,7 +334,9 @@ export function ManageDataTransfer() {
           <div className="bg-muted/50 p-4 rounded-lg border-l-4 border-primary">
             <p className="text-sm font-medium">Instruções Gerais:</p>
             <ul className="list-disc list-inside text-xs text-muted-foreground mt-2 space-y-1">
-              <li>Arquivos devem estar no formato CSV (ponto e vírgula ou vírgula).</li>
+              <li>Arquivos devem estar no formato CSV (separador ponto e vírgula <code className="bg-background px-1">;</code> ou vírgula).</li>
+              <li>O sistema agora tenta corrigir automaticamente textos que contêm pontos e vírgulas.</li>
+              <li><strong>Atenção:</strong> Evite "Enters" dentro das células do Excel, pois eles quebram o arquivo.</li>
               <li>Não inclua linha de cabeçalho.</li>
               <li>Datas: <code className="bg-background px-1">DD/MM/AAAA</code> ou <code className="bg-background px-1">AAAA-MM-DD</code>.</li>
               <li>Codificação recomendada: <code className="bg-background px-1">ISO-8859-1</code> (Excel) ou <code className="bg-background px-1">UTF-8</code>.</li>
@@ -292,7 +359,7 @@ export function ManageDataTransfer() {
             {renderImportSection(
               'treatments', 
               'Tratamentos de Risco', 
-              'Data, Local, Tipo, Descrição, Probabilidade (1-5), Consequência (1-5), Tratamento Proposto, Ação, Situação, Prazo'
+              'Data, Local, Tipo, Descrição, Probabilidade (1-5), Consequência (1-5), Tratamento Proposto, Ação, Situação, Prazo, Análise'
             )}
 
             {renderImportSection(

@@ -715,14 +715,16 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                         Gerenciar Equip./Marca
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                        isActive={activePage === 'manage-data-transfer'}
-                        onClick={() => handlePageChange('manage-data-transfer')}
-                    >
-                        Gerenciar Importações
-                    </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
+                    {/* Ocultado temporariamente a pedido do cliente */}
+                    {/*
+                     <SidebarMenuSubItem>
+                     <SidebarMenuSubButton
+                         isActive={activePage === 'manage-data-transfer'}
+                         onClick={() => handlePageChange('manage-data-transfer')}
+                     >
+                         Gerenciar Importações
+                     </SidebarMenuSubButton>
+                     </SidebarMenuSubItem> */}
                 </SidebarMenuSub>
                 )}
             </SidebarMenuItem>
