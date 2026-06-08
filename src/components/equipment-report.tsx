@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/popover';
 import { useFirestore, useUser } from '@/firebase';
 import { useProfile } from '@/context/profile-context';
-import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { format, differenceInDays, startOfDay, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
@@ -58,6 +58,7 @@ import { SheetFilter } from './sheet-filter';
 import { ScrollArea } from './ui/scroll-area';
 import { Calendar } from './ui/calendar';
 import { Input } from './ui/input';
+import { Checkbox } from './ui/checkbox';
 
 interface Equipment {
   id: string;
@@ -124,6 +125,10 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkInspectionDate, setBulkInspectionDate] = useState<Date | undefined>(undefined);
+  const [isUpdatingBulk, setIsUpdatingBulk] = useState(false);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
@@ -224,6 +229,74 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
     
     return () => unsubscribe();
   }, [user, firestore, toast]);
+
+  const handleUpdateInspectionDate = async (equipmentId: string, newDate: Date) => {
+    if (!firestore || !user) return;
+    
+    try {
+      const docRef = doc(firestore, 'sgs_genius', user.uid, 'equipments', equipmentId);
+      await updateDoc(docRef, {
+        nextInspectionDate: Timestamp.fromDate(newDate)
+      });
+      toast({
+        title: 'Sucesso!',
+        description: 'Nova data de vistoria programada.',
+      });
+    } catch (error) {
+      console.error("Error updating date:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar',
+        description: 'Não foi possível salvar a nova data.',
+      });
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredEquipments.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredEquipments.map(eq => eq.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBulkUpdate = async () => {
+    if (!firestore || !user || !bulkInspectionDate || selectedIds.size === 0) return;
+    
+    setIsUpdatingBulk(true);
+    try {
+      const updates = Array.from(selectedIds).map(id => {
+        const docRef = doc(firestore, 'sgs_genius', user.uid, 'equipments', id);
+        return updateDoc(docRef, {
+          nextInspectionDate: Timestamp.fromDate(bulkInspectionDate)
+        });
+      });
+      
+      await Promise.all(updates);
+      
+      toast({
+        title: 'Sucesso!',
+        description: `${selectedIds.size} equipamentos atualizados.`,
+      });
+      setSelectedIds(new Set());
+      setBulkInspectionDate(undefined);
+    } catch (error) {
+      console.error("Error bulk updating:", error);
+      toast({ variant: 'destructive', title: 'Erro ao atualizar', description: 'Falha na atualização em massa.' });
+    } finally {
+      setIsUpdatingBulk(false);
+    }
+  };
 
   const handleDelete = async (equipmentId: string) => {
     if (!firestore || !user) {
@@ -482,6 +555,29 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                 </CardDescription>
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2">
+                {profile === 'admin' && selectedIds.size > 0 && (
+                    <div className="flex items-center gap-2 mr-4 bg-muted/50 p-1 rounded-md border border-primary/20 animate-in fade-in zoom-in-95">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" size="sm" className="h-8 gap-2 text-xs">
+                                    <CalendarIcon className="h-3.5 w-3.5" />
+                                    {bulkInspectionDate ? format(bulkInspectionDate, 'dd/MM/yy') : 'Nova data p/ todos'}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="end">
+                                <Calendar
+                                    mode="single"
+                                    selected={bulkInspectionDate}
+                                    onSelect={setBulkInspectionDate}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        <Button size="sm" className="h-8 text-xs" disabled={!bulkInspectionDate || isUpdatingBulk} onClick={handleBulkUpdate}>
+                            {isUpdatingBulk ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Atualizar Selecionados'}
+                        </Button>
+                    </div>
+                )}
                 <Button onClick={handleExportToWord} disabled={filteredEquipments.length === 0}>
                     <FileDown className="mr-2 h-4 w-4" />
                     Exportar
@@ -494,6 +590,12 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                 <Table>
                 <TableHeader className="sticky top-0 bg-card z-10 shadow-sm">
                     <TableRow>
+                    <TableHead className="w-[40px]">
+                        <Checkbox 
+                            checked={filteredEquipments.length > 0 && selectedIds.size === filteredEquipments.length}
+                            onCheckedChange={toggleSelectAll}
+                        />
+                    </TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Marca</TableHead>
                     <TableHead>Local</TableHead>
@@ -517,15 +619,42 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                             key={eq.id}
                             className={cn(eq.status === 'descartado' && 'bg-destructive/10 hover:bg-destructive/20')}
                         >
+                            <TableCell>
+                                <Checkbox 
+                                    checked={selectedIds.has(eq.id)}
+                                    onCheckedChange={() => toggleSelect(eq.id)}
+                                />
+                            </TableCell>
                             <TableCell>{eq.equipmentType}</TableCell>
                             <TableCell>{eq.brand}</TableCell>
                             <TableCell>{eq.storageLocation}</TableCell>
                             <TableCell><Badge className={cn(statusProps.className)}>{statusProps.label}</Badge></TableCell>
                             <TableCell>
-                            <Badge className={cn('flex items-center gap-1.5', inspectionStatusProps.className)}>
-                                {inspectionStatusProps.label === 'Vistoria Atrasada' && <TriangleAlert className="h-3.5 w-3.5" />}
-                                {inspectionStatusProps.label}
-                            </Badge>
+                            {profile === 'admin' ? (
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <button className="focus:outline-none">
+                                            <Badge className={cn('flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity', inspectionStatusProps.className)}>
+                                                {inspectionStatusProps.label === 'Vistoria Atrasada' && <TriangleAlert className="h-3.5 w-3.5" />}
+                                                {inspectionStatusProps.label}
+                                            </Badge>
+                                        </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={eq.nextInspectionDate?.toDate()}
+                                            onSelect={(date) => date && handleUpdateInspectionDate(eq.id, date)}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            ) : (
+                                <Badge className={cn('flex items-center gap-1.5', inspectionStatusProps.className)}>
+                                    {inspectionStatusProps.label === 'Vistoria Atrasada' && <TriangleAlert className="h-3.5 w-3.5" />}
+                                    {inspectionStatusProps.label}
+                                </Badge>
+                            )}
                             </TableCell>
                             <TableCell className="text-right">
                             <DialogTrigger asChild>
