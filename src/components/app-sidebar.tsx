@@ -13,7 +13,7 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSkeleton,
 } from '@/components/ui/sidebar';
-import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info, Map, X, Binoculars, BarChart3 } from 'lucide-react';
+import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info, Map, X, Binoculars, BarChart3, LayoutDashboard, CreditCard } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { SgsAppLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
@@ -112,6 +112,9 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   const handlePageChange = (page: string) => {
     setActivePage(page);
     const subMenuParents: Record<string, string> = {
+      'help': 'portal-usuario',
+      'tutorial': 'portal-usuario',
+      'my-subscription': 'portal-usuario',
       'register-occurrence': 'acidentes',
       'occurrence-report': 'acidentes',
       'map-report': 'acidentes',
@@ -139,7 +142,6 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'manage-fauna-flora-geo': 'settings',
       'manage-equipment-and-brands': 'settings',
       'manage-data-transfer': 'settings',
-      'tutorial': 'informacoes',
     };
 
     const parentMenu = subMenuParents[page];
@@ -203,6 +205,55 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('portal-usuario')}
+              tooltip={{
+                children: 'Portal do Usuário',
+              }}
+            >
+              <LayoutDashboard />
+              <span className="font-bold">Portal do Usuário</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'portal-usuario' ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenu === 'portal-usuario' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'help'}
+                    onClick={() => handlePageChange('help')}
+                  >
+                    <HelpCircle className="h-4 w-4 mr-2" />
+                    Ajuda
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                {isAdmin && (
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton 
+                      isActive={activePage === 'tutorial'}
+                      onClick={() => handlePageChange('tutorial')}
+                    >
+                      <Info className="h-4 w-4 mr-2" />
+                      Tutorial
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                )}
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    isActive={activePage === 'my-subscription'}
+                    onClick={() => handlePageChange('my-subscription')}
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Minha Assinatura
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
           {isAdmin && (
             <SidebarMenuItem>
                 <SidebarMenuButton
@@ -229,48 +280,6 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                 <BarChart3 />
                 <span className="font-bold">Gráficos</span>
                 </SidebarMenuButton>
-            </SidebarMenuItem>
-          )}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              isActive={activePage === 'help'}
-              onClick={() => handlePageChange('help')}
-              tooltip={{
-                children: 'Ajuda',
-              }}
-            >
-              <HelpCircle />
-              <span className="font-bold">Ajuda</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          {isAdmin && (
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => toggleSubMenu('informacoes')}
-                tooltip={{
-                  children: 'Informações',
-                }}
-              >
-                <Info />
-                <span className="font-bold">Informações</span>
-                <ChevronDown
-                  className={`ml-auto h-4 w-4 transition-transform ${
-                    openSubMenu === 'informacoes' ? 'rotate-180' : ''
-                  }`}
-                />
-              </SidebarMenuButton>
-              {openSubMenu === 'informacoes' && state === 'expanded' && (
-                <SidebarMenuSub>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton 
-                      isActive={activePage === 'tutorial'}
-                      onClick={() => handlePageChange('tutorial')}
-                    >
-                      Tutorial
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                </SidebarMenuSub>
-              )}
             </SidebarMenuItem>
           )}
           {!isObserver && (

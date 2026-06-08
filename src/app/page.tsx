@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function HomePage() {
   const { toast } = useToast();
  const handleStartTrial = () => {
-    window.location.href = 'https://buy.stripe.com/00w00j9Yh6ajcTJa2raZi01';
+    window.location.href = 'https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00';
   };
   const handleComingSoon = () => {
     toast({

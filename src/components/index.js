@@ -2,7 +2,6 @@
 const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 // Initialize Firebase Admin SDK
 initializeApp();
@@ -129,4 +128,52 @@ exports.stripeWebhook = onRequest({ secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHO
   }
 
   res.json({ received: true });
+});
+
+exports.createPortalSession = onCall({
+  secrets: ["STRIPE_SECRET_KEY"],
+  cors: ["https://alma-guardia--brave-drive-472322-m2.us-central1.hosted.app"]
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Apenas usuários autenticados podem acessar o portal.');
+  }
+
+  // Inicialização segura dentro da execução
+  const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+  const uid = request.auth.uid;
+  const db = getFirestore();
+  
+  try {
+    const userDoc = await db.collection("users").doc(uid).get();
+    
+    if (!userDoc.exists) {
+      throw new HttpsError('not-found', 'Documento do usuário não encontrado no banco de dados.');
+    }
+
+    const data = userDoc.data();
+    const customerId = data?.stripeCustomerId || data?.stripe_customer_id;
+
+    if (!customerId) {
+      throw new HttpsError('failed-precondition', 'O seu usuário ainda não possui um ID de cliente no Stripe. Realize uma assinatura primeiro.');
+    }
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: 'https://almasoftwares.com/dashboard', // Certifique-se que esta URL está correta
+    });
+
+    return { url: session.url };
+  } catch (error) {
+    console.error("Erro ao criar sessão do portal:", error);
+    
+    // Se já for um HttpsError (lançado por nós), apenas repassa
+    if (error instanceof HttpsError) throw error;
+
+    // Erros específicos do Stripe
+    if (error.type === 'StripeAuthenticationError') {
+      throw new HttpsError('internal', 'Erro de autenticação com o provedor de pagamentos. Verifique a Secret Key.');
+    }
+
+    throw new HttpsError('internal', error.message || 'Erro ao processar portal de faturamento.');
+  }
 });
