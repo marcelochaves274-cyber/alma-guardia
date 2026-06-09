@@ -130,7 +130,7 @@ export function MySubscriptionPage() {
               <div>
                 <p className="text-xs text-muted-foreground">Próxima Renovação</p>
                 <p className="font-semibold">
-                  {nextBillingDate ? format(nextBillingDate, "dd 'de' MMMM, yyyy", { locale: ptBR }) : '---'}
+                  {nextBillingDate ? format(nextBillingDate, "dd 'de' MMMM, yyyy", { locale: ptBR }) : 'Consultar no Portal'}
                 </p>
               </div>
             </div>

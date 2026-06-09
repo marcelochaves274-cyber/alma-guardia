@@ -23,7 +23,8 @@ export async function POST(req: Request) {
 
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${new URL(req.url).origin}/dashboard`,
+      // Substitua a linha do return_url por esta:
+return_url: `https://almasoftwares.com.br/dashboard`,
     });
 
     return NextResponse.json({ url: session.url });
