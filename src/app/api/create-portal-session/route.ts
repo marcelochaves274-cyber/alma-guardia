@@ -1,20 +1,26 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-// Certifique-se de que a variável de ambiente STRIPE_SECRET_KEY está no seu .env.local
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2023-10-16' as any, // Mantendo compatibilidade com seu setup atual
+  apiVersion: '2023-10-16' as any,
 });
 
 export async function POST(req: Request) {
   try {
-    const { customerId } = await req.json();
+    const { email } = await req.json();
 
-    if (!customerId) {
-      return NextResponse.json({ error: 'Customer ID não encontrado' }, { status: 400 });
+    if (!email) {
+      return NextResponse.json({ error: 'E-mail não fornecido' }, { status: 400 });
     }
 
-    // O return_url deve apontar para a rota de dashboard ou assinatura
+    const customers = await stripe.customers.list({ email: email, limit: 1 });
+    
+    if (customers.data.length === 0) {
+      return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 });
+    }
+
+    const customerId = customers.data[0].id;
+
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${new URL(req.url).origin}/dashboard`,
@@ -22,8 +28,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Erro interno';
-    console.error('Erro ao criar sessão do portal:', errorMessage);
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    console.error('Erro:', error);
+    return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }
 }
