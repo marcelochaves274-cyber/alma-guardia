@@ -49,15 +49,13 @@ export function MySubscriptionPage() {
       let url = '';
 
       if (MIGRATION_MODE === 'api') {
-        console.log("Conteúdo de subscriptionData:", subscriptionData);
-console.log("Valor final do customerId:", subscriptionData?.stripeCustomerId || subscriptionData?.stripe_customer_id || subscriptionData?.stripeId);
-        const response = await fetch('/api/create-portal-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-          customerId: subscriptionData?.stripeCustomerId || subscriptionData?.stripe_customer_id || subscriptionData?.stripeId
-          }),
-        });
+     const emailParaEnviar = subscriptionData?.email || user?.email;
+      
+      const response = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailParaEnviar }),
+      });
 
         if (!response.ok) throw new Error('Falha na resposta da API');
         const data = await response.json();
