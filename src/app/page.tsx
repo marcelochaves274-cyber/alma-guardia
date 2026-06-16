@@ -438,12 +438,12 @@ export default function HomePage() {
           <div className="mt-12 border-t border-muted-foreground/20 pt-6 flex flex-col sm:flex-row items-center justify-between">
              <p className="text-xs text-muted-foreground">&copy; 2024 ALMA Guardia. Todos os direitos reservados.</p>
              <nav className="flex gap-4 sm:gap-6 mt-4 sm:mt-0">
-                <button onClick={handleComingSoon} className="text-xs hover:underline underline-offset-4">
-                    Termos de Serviço
-                </button>
-                <button onClick={handleComingSoon} className="text-xs hover:underline underline-offset-4">
-                    Política de Privacidade
-                </button>
+                <Link href="/termo-servico" className="text-xs hover:underline underline-offset-4">
+  Termos de Serviço
+</Link>
+                <Link href="/politica-privacidade" className="text-xs hover:underline underline-offset-4">
+  Política de Privacidade
+</Link>
              </nav>
           </div>
         </div>
