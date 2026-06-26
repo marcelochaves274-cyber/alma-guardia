@@ -19,6 +19,8 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { useToast } from '@/hooks/use-toast';
+import WhatsAppButton from '@/components/WhatsAppButton';
+import { ConsultancySection } from '@/components/ConsultancySection';
 
 export default function HomePage() {
   const { toast } = useToast();
@@ -201,6 +203,11 @@ export default function HomePage() {
               <p className="max-w-[600px] text-muted-foreground md:text-xl text-center">
                 O ALMA Guardia é a plataforma definitiva para digitalizar seus processos de segurança, garantir conformidade e tomar decisões baseadas em dados.
               </p>
+              <div className="pt-4">
+                <Button size="lg" asChild>
+                  <Link href="/cadastro">Crie uma conta e faça um mês de teste gratuito</Link>
+                </Button>
+              </div>
             </div>
             <div className="flex items-center justify-center">
               <Card className="overflow-hidden shadow-2xl border-primary/20 w-full h-full flex flex-col">
@@ -327,6 +334,8 @@ export default function HomePage() {
           </div>
         </section>
 
+        <ConsultancySection />
+
         <section className="w-full py-20 md:py-24">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
@@ -448,6 +457,9 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+  <WhatsAppButton />
+
     </div>
   );
 }

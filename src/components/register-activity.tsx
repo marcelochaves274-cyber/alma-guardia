@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -202,33 +203,14 @@ export function RegisterActivity({ activityToEdit, setPage }: RegisterActivityPr
         <CardContent className="space-y-6">
             <div className="space-y-2">
                 <Label htmlFor="activity-name">Atividade</Label>
-                <Select
-                    name="activityName"
-                    required
-                    onValueChange={(value) => {
-                      const selectedPop = allPops.find(p => p.name === value);
-                      if(selectedPop) {
-                        setActivityName(selectedPop.name);
-                        setPop(selectedPop.name);
-                      }
-                    }}
-                    value={activityName}
-                    disabled={isLoadingPops || allPops.length === 0}
-                >
-                    <SelectTrigger id="activity-name">
-                    <SelectValue placeholder={
-                        isLoadingPops ? "Carregando..." : 
-                        allPops.length === 0 ? "Nenhuma atividade cadastrada" : "Selecione a atividade"
-                    } />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {popOptions.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <Input
+                  id="activity-name"
+                  name="activityName"
+                  required
+                  value={activityName}
+                  onChange={(e) => setActivityName(e.target.value)}
+                  placeholder="Digite o nome da atividade"
+                />
             </div>
             
             <div className="space-y-2">
