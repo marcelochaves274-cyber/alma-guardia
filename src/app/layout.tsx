@@ -3,16 +3,17 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Providers } from '@/components/providers';
 
-const iconUrl = "https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-solo-192x192-ico.ico?alt=media&token=8d56a40a-cd7d-4d85-87b2-46d6f322be45";
+const faviconUrl = "https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-Final-ico.ico?alt=media&token=7b88f673-93d1-4e01-a1c7-bf0da7beaa86";
+const pwaIconUrl = "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d";
 
 export const metadata: Metadata = {
   title: 'ALMA',
   description: 'Seu Sistema de Gestão de Segurança inteligente.',
   manifest: '/manifest.json',
   icons: {
-    icon: iconUrl,
-    shortcut: iconUrl,
-    apple: iconUrl,
+    icon: faviconUrl, // Ícone para a aba do navegador
+    shortcut: pwaIconUrl, // Ícone para atalhos (Android)
+    apple: pwaIconUrl, // Ícone para tela inicial (iOS/Apple)
   },
 };
 

@@ -25,7 +25,7 @@
 - **Firebase Hosting:** Corrigido o `firebase.json` para apontar para a pasta `out`.
 - **Identidade Visual:** Logotipo atualizado para usar URL definitiva com token do Firebase Storage no cabeçalho e rodapé.
 - **Novos Ativos de Logo:** Recebidos novos links do Firebase Storage para a Logo Final.
-  - **PNG (Uso em páginas):** `https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo%20Final.png?alt=media&token=0a7e892a-be30-4d41-818f-c224f142af68`
+  - **PNG (Uso em páginas):** `https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d`
   - **ICO (Favicon/App Icon):** `https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-Final-ico.ico?alt=media&token=7b88f673-93d1-4e01-a1c7-bf0da7beaa86`
 - **Domínio:** Registrado e configurado o domínio `almasoftwares.com`. Firebase em processo de geração de certificado SSL.
 

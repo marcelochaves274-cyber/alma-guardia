@@ -8,10 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { SgsAppLogo } from '@/components/icons';
 import { Loader2, Eye, EyeOff, ArrowLeft, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -114,8 +114,14 @@ export default function LoginPage() {
       <div className="flex items-center justify-center p-4">
         <Card className="w-full max-w-sm border-none bg-card/80 shadow-2xl backdrop-blur-sm">
           <CardHeader className="text-center">
-            <div className="mb-4 flex justify-center">
-              <SgsAppLogo className="h-12 w-12 text-primary" />
+            <div className="mb-6 flex justify-center items-center">
+              <Image
+                src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d"
+                alt="ALMA Guardia Logo"
+                width={150}
+                height={150}
+                className="object-contain"
+              />
             </div>
             <CardTitle className="text-2xl">ALMA Guardia</CardTitle>
             <CardDescription>Entre com suas credenciais para continuar</CardDescription>

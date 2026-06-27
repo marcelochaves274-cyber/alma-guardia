@@ -12,7 +12,7 @@ export default function BoasVindasPage() {
       {/* Barra superior (Header) igual aos Termos */}
       <header className="bg-primary text-primary-foreground py-4 flex justify-center items-center gap-3 shadow-md">
         <img 
-          src="https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo%20Final.png?alt=media&token=0a7e892a-be30-4d41-818f-c224f142af68" 
+          src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d" 
           alt="ALMA Logo" 
           className="h-10 w-auto" 
         />

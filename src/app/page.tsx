@@ -164,7 +164,7 @@ export default function HomePage() {
         <div className="flex-1 flex justify-start">
           <Link className="flex items-center justify-center gap-2" href="/">
              <Image
-              src="https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo%20Final.png?alt=media&token=0a7e892a-be30-4d41-818f-c224f142af68"
+              src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d"
               alt="ALMA Guardia Logo"
               width={60}
               height={60}
@@ -341,29 +341,34 @@ export default function HomePage() {
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Veja o que nossos clientes têm a dizer sobre o ALMA Guardia</h2>
             </div>
-            <div className="mx-auto grid max-w-5xl items-center gap-8 sm:grid-cols-2">
-              <Card className="overflow-hidden shadow-2xl border-primary/20">
-                <CardContent className="p-0 aspect-video">
-                    <iframe
-                      className="w-full h-full"
-                      src="https://www.youtube.com/embed/7xVsIRKq1dE?controls=1&rel=0&showinfo=0"
-                      title="YouTube video player 1"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen>
-                    </iframe>
+            <div className="mx-auto grid max-w-5xl gap-8 sm:grid-cols-2">
+              <Card className="shadow-lg border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-center text-xl font-bold text-primary">Parque de Natureza Buraco do Padre</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 pt-0 flex flex-col">
+                  <blockquote className="flex-1 space-y-4">
+                    <p className="text-muted-foreground italic">
+                      "Olá! Sou Marcos Vinicius, gerente administrativo no Parque de Natureza Buraco do Padre, e gostaria de compartilhar minha experiência positiva com o ALMA Guardia. Antes, perdíamos muito tempo com papéis e processos descentralizados. Com o ALMA, centralizamos tudo: ocorrências, riscos e a gestão de ativos. Essa mudança trouxe uma clareza que não tínhamos anteriormente. Além disso, a funcionalidade de lembretes do app é um diferencial: ela garante que nenhum prazo ou tarefa importante de segurança passe despercebido, mantendo nossa rotina sempre em dia. Não se trata apenas de tecnologia, mas de garantir a continuidade da operação e a conformidade com as normas. Se você atua na área de segurança, sabe o desafio que é colocar a casa em ordem. O ALMA veio para somar com nossas operações e resolveu essa dor para nossa equipe."
+                    </p>
+                    <p className="text-muted-foreground italic font-semibold">
+                      "Recomendo muito o uso da ferramenta!"
+                    </p>
+                  </blockquote>
+                  <footer className="mt-4 text-sm font-semibold text-right text-foreground">Marcos Vinicius Oliveira – <span className="font-normal text-muted-foreground">Gerente Administrativo</span></footer>
                 </CardContent>
               </Card>
-              <Card className="overflow-hidden shadow-2xl border-primary/20">
-                <CardContent className="p-0 aspect-video">
-                    <iframe
-                      className="w-full h-full"
-                      src="https://www.youtube.com/embed/7xVsIRKq1dE?controls=1&rel=0&showinfo=0"
-                      title="YouTube video player 2"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen>
-                    </iframe>
+              <Card className="shadow-lg border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-center text-xl font-bold text-primary">Parque Estadual Vila Velha</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 pt-0 flex flex-col">
+                  <blockquote className="flex-1 space-y-4">
+                  <p className="text-muted-foreground italic">
+                    "Olá! Eu sou o Arandy Ferreira, sou coordenador no Parque Vila Velha. Com o aplicativo ALMA Guardia, consigo concentrar, em uma mesma plataforma, todas as informações relativas à segurança do meu empreendimento de forma inteligente e intuitiva. Os procedimentos operacionais e os termos de conhecimento de risco ficam disponíveis para todos os colaboradores que têm acesso ao sistema. Assim, a padronização da operação é facilitada. Todas as ocorrências, anomalias e atendimentos são registrados na plataforma e, de forma simples e dinâmica, é possível elaborar relatórios e o mapeamento dessas ocorrências. Com isso, torna-se mais simples e fácil tomar medidas mitigatórias. Além disso, o sistema também conta com uma área dedicada ao monitoramento de equipamentos e ao acompanhamento de atividades operacionais. Em suma, é um aplicativo que nos poupa tempo e nos auxilia muito na organização e na segurança."
+                  </p>
+                  </blockquote>
+                  <footer className="mt-4 text-sm font-semibold text-right text-foreground">Arandy Ferreira da Costa Junior – <span className="font-normal text-muted-foreground">Coordenador de Operações</span></footer>
                 </CardContent>
               </Card>
             </div>
@@ -398,7 +403,7 @@ export default function HomePage() {
             <div className="lg:col-span-2 flex flex-col md:flex-row items-center md:items-start gap-8">
               <Link href="/" className="shrink-0">
                 <Image
-                  src="https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo%20Final.png?alt=media&token=0a7e892a-be30-4d41-818f-c224f142af68"
+                  src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d"
                   alt="ALMA Guardia Logo"
                   width={150}
                   height={150}
