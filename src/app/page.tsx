@@ -39,49 +39,49 @@ export default function HomePage() {
       title: "Lembretes",
       description: "Painel central para visualizar pendências como tratamentos atrasados, vistorias de equipamentos e avisos de campo.",
       icon: <ListTodo className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/skwdZN3/Lembretes.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Lembretes.png?alt=media&token=a1c849f9-0e92-4346-aca9-6cb4800d5681",
       imageHint: "dashboard reminders"
     },
     {
       title: "Acidentes/Incidentes",
       description: "Registre, relate e visualize ocorrências em um mapa interativo para identificar áreas de risco e tomar ações preventivas.",
       icon: <Siren className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/v43yJ246/Acidentes-incidentes.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Acidentes%20e%20Incidentes.png?alt=media&token=d91bb443-91bb-473b-a128-71cfb60ba050",
       imageHint: "accident report"
     },
     {
       title: "Tratamento de Risco",
       description: "Documente riscos, defina tratamentos, monitore a situação (pendente, finalizado) e visualize os pontos em um mapa.",
       icon: <ShieldCheck className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/fVqffWRh/Tratamento-de-Risco.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Tratamento%20de%20risco.png?alt=media&token=2c57f678-4b84-4049-b562-cf33b32b162a",
       imageHint: "risk management"
     },
     {
       title: "Central de Avisos",
       description: "Canal direto para a equipe de campo reportar observações, agilizando a comunicação e a resposta da gestão.",
       icon: <Megaphone className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/vvkdhCNd/Central-de-Avisos.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Central%20de%20avisos.png?alt=media&token=fb82d6a1-93c7-4e85-b32c-8a3c790381ea",
       imageHint: "communication alert"
     },
     {
       title: "Fauna Flora Geo",
       description: "Registre e monitore avistamentos e características ambientais com localização no mapa, para gestão e estudos.",
       icon: <Sprout className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/VcfCq6X0/Fauna-Flora-Geo.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Fauna%20Flora%20Geo.png?alt=media&token=4af4c6f6-a2a9-4a84-a066-bee3003f2c9e",
       imageHint: "environmental monitoring"
     },
     {
       title: "Equipamentos",
       description: "Gerencie o inventário completo de equipamentos, controle vistorias, datas de validade e status de cada item.",
       icon: <HardHat className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/84YJpLXN/Equipamentos.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Equipamentos.png?alt=media&token=e5674158-3e42-4633-93b1-7f8b29c86e42",
       imageHint: "safety equipment"
     },
     {
       title: "Avaliação de Riscos",
       description: "Realize avaliações formais detalhando causa, perigo, dano e controles para cada etapa de uma atividade.",
       icon: <ClipboardList className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/TDQ7ypvh/Avalia-o-de-risco.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Avalia%C3%A7%C3%A3o%20de%20Risco.png?alt=media&token=cd185acd-8049-4eb1-8e1c-f8dc3b98ffed",
       imageHint: "risk assessment"
     },
     {
