@@ -1,23 +1,22 @@
 {
-  "name": "ALMA Guardia",
-  "short_name": "ALMA Guardia",
-  "description": "Sistema de Gestão de Segurança inteligente para turismo de aventura.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#41522D",
-  "theme_color": "#6A8552",
-  "icons": [
-    {
-      "src": "https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-solo-192x192-ico.ico?alt=media&token=8d56a40a-cd7d-4d85-87b2-46d6f322be45",
-      "sizes": "192x192",
-      "type": "image/x-icon",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-solo-192x192-ico.ico?alt=media&token=8d56a40a-cd7d-4d85-87b2-46d6f322be45",
-      "sizes": "512x512",
-      "type": "image/x-icon",
-      "purpose": "any maskable"
-    }
-  ]
+    "name": "ALMA Guardia",
+    "short_name": "ALMA",
+    "description": "Seu Sistema de Gestão de Segurança inteligente.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#F0F8FF",
+    "theme_color": "#87CEEB",
+    "icons": [
+        {
+            "src": "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
 }
