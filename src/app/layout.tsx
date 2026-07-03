@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Providers } from '@/components/providers';
 
 const faviconUrl = "https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-Final-ico.ico?alt=media&token=7b88f673-93d1-4e01-a1c7-bf0da7beaa86";
-const pwaIconUrl = "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d";
+const pwaIconUrl = "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Verde.png?alt=media&token=8e64aaf1-e539-4838-b252-da902a910c36";
 
 export const metadata: Metadata = {
   title: 'ALMA',

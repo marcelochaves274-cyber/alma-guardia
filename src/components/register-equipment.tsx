@@ -67,6 +67,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
       : undefined
   );
   const [discardReason, setDiscardReason] = useState(equipmentToEdit?.discardReason || '');
+  const [observations, setObservations] = useState(equipmentToEdit?.observations || '');
 
   // UI/Data loading states
   const [isMfgCalendarOpen, setIsMfgCalendarOpen] = useState(false);
@@ -99,6 +100,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
     setLastInspectionDate(undefined);
     setNextInspectionDate(undefined);
     setDiscardReason('');
+    setObservations('');
   }, []);
 
   useEffect(() => {
@@ -115,6 +117,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
       setLastInspectionDate(equipmentToEdit.lastInspectionDate instanceof Timestamp ? equipmentToEdit.lastInspectionDate.toDate() : undefined);
       setNextInspectionDate(equipmentToEdit.nextInspectionDate instanceof Timestamp ? equipmentToEdit.nextInspectionDate.toDate() : undefined);
       setDiscardReason(equipmentToEdit.discardReason || '');
+      setObservations(equipmentToEdit.observations || '');
     } else {
       resetForm();
     }
@@ -171,6 +174,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
       lastInspectionDate: status === 'descartado' ? null : (lastInspectionDate ? Timestamp.fromDate(lastInspectionDate) : null),
       nextInspectionDate: status === 'descartado' ? null : (nextInspectionDate ? Timestamp.fromDate(nextInspectionDate) : null),
       discardReason: status === 'descartado' ? discardReason : null,
+      observations,
     };
 
     try {
@@ -329,6 +333,16 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
                     />
                 </div>
             )}
+            <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="observations">Observações</Label>
+                <Textarea
+                    id="observations"
+                    value={observations}
+                    onChange={(e) => setObservations(e.target.value)}
+                    placeholder="Adicione qualquer observação relevante sobre o equipamento..."
+                    className="min-h-[100px]"
+                />
+            </div>
           </div>
           <div className="flex justify-end gap-4 pt-4">
             {isEditing && (
