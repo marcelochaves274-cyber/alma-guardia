@@ -1,22 +1,35 @@
 {
     "name": "ALMA Guardia",
-    "short_name": "ALMA",
-    "description": "Seu Sistema de Gestão de Segurança inteligente.",
+    "short_name": "Guardia",
+    "description": "Sistema de Gestão de Segurança Completa e Inteligente.",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#F0F8FF",
-    "theme_color": "#87CEEB",
+    "background_color": "#ffffff",
+    "theme_color": "#18181b",
     "icons": [
         {
-            "src": "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d",
+            "src": "/icon-192x192.png",
             "sizes": "192x192",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
         },
         {
-            "src": "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d",
+            "src": "/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icon-512x512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
         }
     ]
 }

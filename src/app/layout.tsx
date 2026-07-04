@@ -1,20 +1,28 @@
-import type {Metadata} from 'next';
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
+import { AppSettingsProvider } from '@/context/app-settings-context';
+import { ProfileProvider } from '@/context/profile-context';
+import { HelpProvider } from '@/context/help-context';
 import { Toaster } from '@/components/ui/toaster';
-import { Providers } from '@/components/providers';
+import { ThemeProvider } from '@/components/theme-provider';
 
-const faviconUrl = "https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-Final-ico.ico?alt=media&token=7b88f673-93d1-4e01-a1c7-bf0da7beaa86";
-const pwaIconUrl = "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Verde.png?alt=media&token=8e64aaf1-e539-4838-b252-da902a910c36";
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'ALMA',
-  description: 'Seu Sistema de Gestão de Segurança inteligente.',
+  title: 'ALMA Guardia',
+  description: 'Sistema de Gestão de Segurança Completa e Inteligente.',
   manifest: '/manifest.json',
-  icons: {
-    icon: faviconUrl, // Ícone para a aba do navegador
-    shortcut: pwaIconUrl, // Ícone para atalhos (Android)
-    apple: pwaIconUrl, // Ícone para tela inicial (iOS/Apple)
+  icons: { // Aponta para o ícone principal no Firebase Storage
+    icon: 'https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-Final-ico.ico?alt=media&token=7b88f673-93d1-4e01-a1c7-bf0da7beaa86',
+    shortcut: 'https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-Final-ico.ico?alt=media&token=7b88f673-93d1-4e01-a1c7-bf0da7beaa86',
+    apple: 'https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-Final-ico.ico?alt=media&token=7b88f673-93d1-4e01-a1c7-bf0da7beaa86',
+    other: [{ rel: 'icon', url: 'https://firebasestorage.googleapis.com/v0/b/studio-6033207211-536c4.firebasestorage.app/o/Logo-Final-ico.ico?alt=media&token=7b88f673-93d1-4e01-a1c7-bf0da7beaa86' }]
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#18181b', // Cor da barra de status em dispositivos móveis
 };
 
 export default function RootLayout({
@@ -24,19 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      
-      </head>
-      <body className="font-body antialiased">
-        <Providers>
-          {children}
-        </Providers>
-        <Toaster />
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }

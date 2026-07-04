@@ -160,7 +160,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 px-4 lg:px-6 h-20 md:h-24 flex items-center justify-between border-b bg-card/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 px-4 lg:px-6 h-16 md:h-24 flex items-center justify-between border-b bg-card/95 backdrop-blur-sm">
         <div className="flex-1 flex justify-start">
           <Link className="flex items-center justify-center gap-2" href="/">
              <Image
@@ -168,7 +168,7 @@ export default function HomePage() {
               alt="ALMA Guardia Logo"
               width={60}
               height={60}
-              className="object-contain md:w-20 md:h-20"
+              className="object-contain h-10 w-10 md:h-20 md:w-20"
             />
             <span className="font-bold text-lg md:text-xl text-primary">ALMA Guardia</span>
           </Link>
@@ -197,7 +197,7 @@ export default function HomePage() {
         <section className="w-full py-20 md:py-28 lg:py-32">
           <div className="container grid items-stretch gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
             <div className="flex flex-col justify-center space-y-6 text-center items-center">
-              <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl text-primary">
+              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl text-primary">
                 Sistema de Gestão de Segurança Completa e Inteligente.
               </h1>
               <p className="max-w-[600px] text-muted-foreground md:text-xl text-center">
@@ -292,7 +292,7 @@ export default function HomePage() {
               <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                 Escolha o plano que melhor se adapta à sua operação e comece a transformar sua gestão de segurança hoje mesmo. Todos os planos incluem acesso a todas as funcionalidades e suporte dedicado.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                 <Card className="flex flex-col items-center justify-center p-6 text-center bg-card/50">
                   <CardTitle className="text-2xl mb-2">Plano Mensal</CardTitle>
                   <CardDescription className="text-4xl font-bold text-primary">R$528,00</CardDescription>
@@ -399,8 +399,7 @@ export default function HomePage() {
       <footer className="bg-card/90 text-card-foreground border-t">
         <div className="container mx-auto py-12 px-4 md:px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            
-            <div className="lg:col-span-2 flex flex-col md:flex-row items-center md:items-start gap-8">
+            <div className="lg:col-span-2 flex flex-col items-center text-center md:flex-row md:items-start md:text-left gap-8">
               <Link href="/" className="shrink-0">
                 <Image
                   src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d"
@@ -410,13 +409,13 @@ export default function HomePage() {
                   className="object-contain rounded-xl shadow-lg md:w-48 md:h-48"
                 />
               </Link>
-              <div className="space-y-2 text-center md:text-left">
+              <div className="space-y-2">
                 <h4 className="font-bold text-2xl text-primary mb-2">ALMA Guardia</h4>
                 <p className="text-sm text-muted-foreground font-semibold">ALMA softwares e soluções Ltda</p>
                 <p className="text-sm text-muted-foreground">CNPJ: 66.275.508/0001-00</p>
                 <p className="text-sm text-muted-foreground">Ewaldo Macedo Kossatz Neto, 65 - Ponta Grossa - PR - 84071-606</p>
                 <p className="text-base font-bold text-primary pt-2">www.almasoftwares.com</p>
-                <div className="flex justify-center md:justify-start space-x-4 mt-4">
+                <div className="flex justify-center md:justify-start space-x-4 pt-2">
                   <Link href="/solicitar-informacoes" aria-label="WhatsApp">
                     <Phone className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
                   </Link>
