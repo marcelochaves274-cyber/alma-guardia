@@ -5,6 +5,7 @@ import { AppSettingsProvider } from '@/context/app-settings-context';
 import { ProfileProvider } from '@/context/profile-context';
 import { HelpProvider } from '@/context/help-context';
 import { Toaster } from '@/components/ui/toaster';
+import { FirebaseProvider } from '@/firebase';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -32,14 +33,16 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={inter.className}>
-        <AppSettingsProvider>
-          <ProfileProvider>
-            <HelpProvider>
-              {children}
-              <Toaster />
-            </HelpProvider>
-          </ProfileProvider>
-        </AppSettingsProvider>
+        <FirebaseProvider>
+          <AppSettingsProvider>
+            <ProfileProvider>
+              <HelpProvider>
+                {children}
+                <Toaster />
+              </HelpProvider>
+            </ProfileProvider>
+          </AppSettingsProvider>
+        </FirebaseProvider>
       </body>
     </html>
   );
