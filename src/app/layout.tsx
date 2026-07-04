@@ -5,7 +5,6 @@ import { AppSettingsProvider } from '@/context/app-settings-context';
 import { ProfileProvider } from '@/context/profile-context';
 import { HelpProvider } from '@/context/help-context';
 import { Toaster } from '@/components/ui/toaster';
-import { ThemeProvider } from '@/components/theme-provider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -32,7 +31,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <AppSettingsProvider>
+          <ProfileProvider>
+            <HelpProvider>
+              {children}
+              <Toaster />
+            </HelpProvider>
+          </ProfileProvider>
+        </AppSettingsProvider>
+      </body>
     </html>
   );
 }
