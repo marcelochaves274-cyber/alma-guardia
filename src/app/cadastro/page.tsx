@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
 
 // 1. COMPONENTE DO FORMULÁRIO (Quem usa o useSearchParams)
@@ -26,6 +27,7 @@ function CadastroForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   // Estados dos "olhinhos" (mostrar/esconder senha)
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -62,7 +64,7 @@ function CadastroForm() {
 
       // 2. Inicializa os SDKs e cria o documento no Firestore usando o nome correto 'firestore'
       const { firestore } = initializeFirebase();
-      await setDoc(doc(firestore, 'sgs_genius', user.uid), {
+      await setDoc(doc(firestore, 'sgs_genius', user.email!.toLowerCase()), {
         email: user.email,
         statusPagamento: 'aguardando_pagamento',
         createdAt: new Date().toISOString(),
@@ -97,13 +99,13 @@ function CadastroForm() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-background lg:grid lg:grid-cols-2">
       {/* Lado Esquerdo - Banner Técnico */}
-      <div className="hidden lg:flex flex-col items-center justify-center bg-background/80 p-12 text-center backdrop-blur-sm">
+      <div className="hidden lg:flex flex-col items-center justify-start pt-32 bg-background/80 p-12 text-center backdrop-blur-sm">
         <div className="max-w-md">
-          <h2 className="text-3xl font-bold text-primary mb-4 text-left">ALMA Guardia: Segurança e Conformidade</h2>
-          <p className="text-muted-foreground">
-            Crie sua conta em poucos segundos para configurar suas credenciais de segurança e ativar seu ambiente de gestão técnica.
+          <h2 className="text-4xl font-bold text-primary mb-6 text-center">ALMA Guardia: Segurança e Conformidade</h2>
+          <p className="text-muted-foreground text-lg">
+            Crie sua conta em poucos segundos para configurar suas credenciais. Ao prosseguir, você será redirecionado ao ambiente seguro da Stripe para concluir seu cadastro e ativar seu período de teste.
           </p>
-          <Button asChild variant="outline" className="mt-8">
+          <Button asChild variant="outline" className="mt-12">
             <Link href="/login"><ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao Login</Link>
           </Button>
         </div>
@@ -189,10 +191,26 @@ function CadastroForm() {
                   </Button>
                 </div>
               </div>
+
+              {/* Campo Aceite dos Termos */}
+              <div className="flex items-start space-x-3 pt-2">
+                <Checkbox 
+                  id="terms" 
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                  disabled={isRegistering}
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Eu li e aceito os <Link href="/termo-servico" target="_blank" className="font-bold text-primary hover:underline">Termos de Serviço</Link> e a <Link href="/politica-privacidade" target="_blank" className="font-bold text-primary hover:underline">Política de Privacidade</Link>.
+                  </label>
+                </div>
+              </div>
+
             </CardContent>
 
             <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full" disabled={isRegistering || !email || !password || !confirmPassword}>
+              <Button type="submit" className="w-full" disabled={isRegistering || !email || !password || !confirmPassword || !acceptedTerms}>
                 {isRegistering && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Concluir Cadastro
               </Button>

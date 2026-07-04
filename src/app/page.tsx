@@ -88,49 +88,49 @@ export default function HomePage() {
       title: "Atividades",
       description: "Associe POPs, TCRs e Avaliações de Risco a cada atividade registrada, garantindo conformidade e controle.",
       icon: <Route className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/xtBf2FzB/Atividades.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Atividades.jpeg?alt=media&token=9eebfad6-954e-4be1-8a8e-533a4c4c33fa",
       imageHint: "activity planning"
     },
     {
       title: "POP",
       description: "Acesse e gerencie seus Procedimentos Operacionais Padrão de forma centralizada e digital.",
       icon: <BookText className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/DS0B0ST/POP.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/POP.jpg?alt=media&token=6664a600-519d-4dc8-851d-84b8ad09df48",
       imageHint: "standard procedures"
     },
     {
       title: "TCR",
       description: "Consulte e gerencie os Termos de Conhecimento de Risco para garantir que todos estejam cientes dos perigos.",
       icon: <FileText className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/F4m0JNy0/TCR.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/TCR.jpg?alt=media&token=95399933-350a-44d7-9c6e-994aff49a8cc",
       imageHint: "risk agreement"
     },
     {
       title: "RAME",
       description: "Visualize o Recurso de Atendimento Médico de Emergência, com edição online para administradores.",
       icon: <HeartPulse className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/bR2q7wXj/RAME.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/RAME.png?alt=media&token=920be683-0bed-4e3b-926a-d5198fa9b0a4",
       imageHint: "emergency plan"
     },
     {
       title: "Documentos SGS",
       description: "Centralize todos os documentos essenciais do seu Sistema de Gestão de Segurança em um único lugar.",
       icon: <Files className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/QFTqC3CR/Doc-SGS.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Documentos%20SGS.jpg?alt=media&token=3d035d9e-422c-420c-9c42-0cebfdd580a6",
       imageHint: "document management"
     },
     {
       title: "Mapa Interativo",
       description: "Visualize todos os seus registros em um mapa dinâmico. Aplique filtros por tipo, data, local e situação para analisar padrões e tomar decisões estratégicas.",
       icon: <Map className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/zhdH2Jgb/Mapa.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Mapa.jpg?alt=media&token=d2971c2f-1aca-4e12-a0a8-b701728714e2",
       imageHint: "interactive map"
     },
     {
       title: "Configurações",
       description: "Personalize o sistema, gerencie perfis de acesso e configure as opções dos formulários para adaptar o app à sua realidade.",
       icon: <Settings className="h-10 w-10 text-primary" />,
-      image: "https://i.ibb.co/5gRKH5nx/Configura-es.jpg",
+      image: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Configura%C3%A7%C3%B5es.jpg?alt=media&token=d95f9a25-e74c-4028-9aa9-2ec0f1fca7de",
       imageHint: "system settings"
     }
   ];
@@ -280,7 +280,7 @@ export default function HomePage() {
         <section className="w-full py-20 md:py-24">
           <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
             <Image
-              src="https://i.ibb.co/zTL6Rc4K/Valor-dos-Planos.png"
+              src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Planos.jpg?alt=media&token=4b84fd83-819c-40e0-94c8-762fe7e257af"
               alt="Conheça Nossos Planos"
               width={600}
               height={600}

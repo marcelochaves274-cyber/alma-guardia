@@ -768,12 +768,7 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                                 <p className="whitespace-pre-wrap">{selectedEquipment.observations}</p>
                             </div>
                           )}
-                          {selectedEquipment.observations && (
-                            <div className="md:col-span-2">
-                                <Label className="font-semibold text-muted-foreground">Observações</Label>
-                                <p className="whitespace-pre-wrap">{selectedEquipment.observations}</p>
-                            </div>
-                          )}
+                          
                           {selectedEquipment.status !== 'descartado' && (
                             <>
                                 <div>
