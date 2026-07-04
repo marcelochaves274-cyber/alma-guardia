@@ -5,7 +5,8 @@ import { AppSettingsProvider } from '@/context/app-settings-context';
 import { ProfileProvider } from '@/context/profile-context';
 import { HelpProvider } from '@/context/help-context';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseProvider } from '@/firebase';
+import { FirebaseProvider, initializeFirebase } from '@/firebase';
+import { getAuth } from 'firebase/auth';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -29,11 +30,14 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>) {  
+  const { app, firestore } = initializeFirebase();
+  const auth = getAuth(app);
+
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={inter.className}>
-        <FirebaseProvider>
+        <FirebaseProvider firebaseApp={app} firestore={firestore} auth={auth}>
           <AppSettingsProvider>
             <ProfileProvider>
               <HelpProvider>
