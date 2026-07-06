@@ -34,14 +34,14 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={inter.className}>
         <FirebaseClientProvider>
-          <AppSettingsProvider>
-            <ProfileProvider>
+          <ProfileProvider>
+            <AppSettingsProvider>
               <HelpProvider>
                 {children}
                 <Toaster />
               </HelpProvider>
-            </ProfileProvider>
-          </AppSettingsProvider>
+            </AppSettingsProvider>
+          </ProfileProvider>
         </FirebaseClientProvider>
       </body>
     </html>
