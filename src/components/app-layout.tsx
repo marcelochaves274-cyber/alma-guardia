@@ -360,8 +360,11 @@ function MainAppLayout() {
           </header>
           <ScrollArea className="flex-1">
             <main className="p-4 md:p-6 lg:p-8">
-              <div className="w-full space-y-6">
-                {renderContent()}
+              {/* Container ajustado para permitir rolagem horizontal quando o conteúdo exceder a largura da tela */}
+              <div className="w-full max-w-full mx-auto overflow-x-auto">
+                <div className="w-full space-y-6">
+                  {renderContent()}
+                </div>
               </div>
             </main>
           </ScrollArea>

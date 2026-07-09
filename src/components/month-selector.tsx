@@ -39,7 +39,7 @@ export function MonthSelector({ selectedMonths, onMonthChange }: MonthSelectorPr
           variant={selectedMonths.includes(month.value) ? 'default' : 'outline'}
           size="sm"
           onClick={() => handleMonthClick(month.value)}
-          className="flex-grow sm:flex-grow-0"
+          className="w-full sm:w-auto"
         >
           {month.label}
         </Button>

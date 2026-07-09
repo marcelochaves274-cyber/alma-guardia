@@ -48,7 +48,6 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import { SheetFilter } from './sheet-filter';
@@ -88,6 +87,21 @@ const ageGroupOptions = [
     { value: 'adulto1', label: 'Adulto (18-39)' },
     { value: 'adulto2', label: 'Adulto (40-59)' },
     { value: 'idoso', label: 'Idoso (60+)' },
+];
+
+const monthOptions = [
+  { value: '0', label: 'Janeiro' },
+  { value: '1', label: 'Fevereiro' },
+  { value: '2', label: 'Março' },
+  { value: '3', label: 'Abril' },
+  { value: '4', label: 'Maio' },
+  { value: '5', label: 'Junho' },
+  { value: '6', label: 'Julho' },
+  { value: '7', label: 'Agosto' },
+  { value: '8', label: 'Setembro' },
+  { value: '9', label: 'Outubro' },
+  { value: '10', label: 'Novembro' },
+  { value: '11', label: 'Dezembro' },
 ];
 
 export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceReportProps) {
@@ -304,8 +318,14 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Filtrar por Mês</Label>
-            <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
+            <Label>Filtrar por Mês(es)</Label>
+            <SheetFilter
+              title="Filtrar por Mês"
+              options={monthOptions}
+              selected={filterMonths}
+              onChange={setFilterMonths}
+              buttonText="Filtrar por Mês"
+            />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
             <div className='space-y-2'>
@@ -390,7 +410,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
             {/* Adicionado wrapper para scroll horizontal em telas pequenas */}
             {/* A largura mínima evita que as fontes diminuam no celular */}
             <div ref={scrollContainerRef} className="max-h-[65vh] overflow-y-auto md:max-h-none overflow-x-auto w-full border-t md:border-none">
-              <Table className="min-w-[800px] md:min-w-full">
+              <Table>
                 <TableHeader className="sticky top-0 bg-card z-10 shadow-sm">
                   <TableRow>
                     <TableHead>Data</TableHead>

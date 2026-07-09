@@ -160,15 +160,15 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 px-4 lg:px-6 h-16 md:h-24 flex items-center justify-between border-b bg-card/95 backdrop-blur-sm">
-        <div className="flex-1 flex justify-start">
+      <header className="sticky top-0 z-50 px-4 lg:px-6 h-20 flex items-center justify-between border-b bg-card/95 backdrop-blur-sm">
+        <div className="flex justify-start">
           <Link className="flex items-center justify-center gap-2" href="/">
              <Image
               src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d"
               alt="ALMA Guardia Logo"
               width={60}
               height={60}
-              className="object-contain h-10 w-10 md:h-20 md:w-20"
+              className="object-contain h-12 w-12 md:h-16 md:w-16"
             />
             <span className="font-bold text-lg md:text-xl text-primary">ALMA Guardia</span>
           </Link>
@@ -186,50 +186,46 @@ export default function HomePage() {
           </Button>
         </nav>
 
-        <div className="flex-1 flex justify-end">
-          <Button variant="link" asChild className="text-lg text-primary hover:no-underline">
+        <div className="flex justify-end">
+          <Button variant="link" asChild className="text-base md:text-lg text-primary hover:no-underline">
             <Link href="/login">Entrar</Link>
           </Button>
         </div>
       </header>
 
-      <main className="flex-1">
-        <section className="w-full py-20 md:py-28 lg:py-32">
-          <div className="container grid items-stretch gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
-            <div className="flex flex-col justify-center space-y-6 text-center items-center">
-              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl text-primary">
+      <main className="flex-1 w-full overflow-hidden">
+        <section className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container grid items-stretch gap-6 px-4 sm:px-6 lg:grid-cols-2 lg:gap-12">
+            <div className="flex flex-col items-center justify-center w-full px-4 overflow-hidden lg:items-start">
+              <h1 className="text-center text-2xl font-bold leading-tight break-words w-full lg:text-left lg:text-4xl">
                 Sistema de Gestão de Segurança Completa e Inteligente.
               </h1>
-              <p className="max-w-[600px] text-muted-foreground md:text-xl text-center">
+              <p className="text-center text-sm mt-4 w-full break-words lg:text-left lg:text-lg">
                 O ALMA Guardia é a plataforma definitiva para digitalizar seus processos de segurança, garantir conformidade e tomar decisões baseadas em dados.
               </p>
               <div className="pt-4">
-                <Button size="lg" asChild>
+                <Button size="lg" className="w-full sm:w-auto" asChild>
                   <Link href="/cadastro">Crie uma conta e faça um mês de teste gratuito</Link>
                 </Button>
               </div>
             </div>
-            <div className="flex items-center justify-center">
-              <Card className="overflow-hidden shadow-2xl border-primary/20 w-full h-full flex flex-col">
-                <CardContent className="p-0 flex-1">
-                  <div className="w-full h-full">
-                    <iframe
-                      className="w-full h-full"
-                      src="https://www.youtube.com/embed/V_A06Yjio4g"
-                      title="YouTube video player"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen>
-                    </iframe>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="flex items-center justify-center w-full">
+              <div className="w-full aspect-video overflow-hidden rounded-xl shadow-2xl border border-primary/20">
+                <iframe
+                  className="w-full h-full"
+                  src="https://www.youtube.com/embed/V_A06Yjio4g"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen>
+                </iframe>
+              </div>
             </div>
           </div>
         </section>
         
-        <section id="funcionalidades" className="w-full py-20 md:py-24 bg-card/20">
-          <div className="container px-4 md:px-6">
+        <section id="funcionalidades" className="w-full py-20 md:py-24 bg-card/20 px-4 sm:px-6">
+          <div className="container">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Funcionalidades do ALMA Guardia</div>
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Uma Ferramenta para Cada Necessidade</h2>
@@ -255,7 +251,7 @@ export default function HomePage() {
                             alt={feature.title}
                             width={600}
                             height={400}
-                            className="w-full h-48 object-cover"
+                            className="w-full h-48 object-cover max-w-full"
                             data-ai-hint={feature.imageHint}
                           />
                         </CardContent>
@@ -271,33 +267,35 @@ export default function HomePage() {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="hidden md:flex absolute -left-12 top-1/2 -translate-y-1/2" />
-              <CarouselNext className="hidden md:flex absolute -right-12 top-1/2 -translate-y-1/2" />
+              <CarouselPrevious className="hidden md:flex absolute -left-4 lg:-left-12 top-1/2 -translate-y-1/2" />
+              <CarouselNext className="hidden md:flex absolute -right-4 lg:-right-12 top-1/2 -translate-y-1/2" />
             </Carousel>
           </div>
         </section>
 
-        <section className="w-full py-20 md:py-24">
-          <div className="container grid items-center gap-6 px-4 md:px-6 lg:grid-cols-2 lg:gap-12">
-            <Image
-              src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Planos.jpg?alt=media&token=4b84fd83-819c-40e0-94c8-762fe7e257af"
-              alt="Conheça Nossos Planos"
-              width={600}
-              height={600}
-              className="mx-auto h-auto w-full max-w-[600px] overflow-hidden rounded-xl object-contain shadow-md"
-              data-ai-hint="plans pricing"
-            />
-            <div className="space-y-6">
+        <section className="w-full py-20 md:py-24 px-4 sm:px-6">
+          <div className="container flex flex-col items-center w-full gap-6 lg:gap-12">
+            <div className="w-full px-6 flex justify-center overflow-hidden">
+              <Image
+                src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/Planos.jpg?alt=media&token=4b84fd83-819c-40e0-94c8-762fe7e257af"
+                alt="Conheça Nossos Planos"
+                width={600}
+                height={600}
+                className="w-full max-w-[300px] h-auto object-contain mx-auto"
+                data-ai-hint="plans pricing"
+              />
+            </div>
+            <div className="space-y-6 text-center">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Conheça Nossos Planos</h2>
-              <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+              <p className="text-center text-base md:text-xl font-bold px-8 mt-4 w-full break-words">
                 Escolha o plano que melhor se adapta à sua operação e comece a transformar sua gestão de segurança hoje mesmo. Todos os planos incluem acesso a todas as funcionalidades e suporte dedicado.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                <Card className="flex flex-col items-center justify-center p-6 text-center bg-card/50">
+              <div className="flex flex-col md:grid md:grid-cols-2 gap-4 pt-4">
+                <Card className="w-full flex flex-col items-center justify-center p-6 text-center bg-card/50">
                   <CardTitle className="text-2xl mb-2">Plano Mensal</CardTitle>
                   <CardDescription className="text-4xl font-bold text-primary">R$528,00</CardDescription>
                 </Card>
-                <Card className="flex flex-col items-center justify-center p-6 text-center bg-card/50">
+                <Card className="w-full flex flex-col items-center justify-center p-6 text-center bg-card/50">
                   <CardTitle className="text-2xl mb-2">Plano Anual</CardTitle>
                   <CardDescription className="text-4xl font-bold text-primary">R$5.280,00</CardDescription>
                 </Card>
@@ -311,8 +309,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="beneficios" className="w-full py-20 md:py-24 bg-card/20">
-          <div className="container px-4 md:px-6">
+        <section id="beneficios" className="w-full py-20 md:py-24 bg-card/20 px-4 sm:px-6">
+          <div className="container">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
                <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Nossos Benefícios</div>
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Por que escolher o ALMA Guardia?</h2>
@@ -336,8 +334,8 @@ export default function HomePage() {
 
         <ConsultancySection />
 
-        <section className="w-full py-20 md:py-24">
-          <div className="container px-4 md:px-6">
+        <section className="w-full py-20 md:py-24 px-4 sm:px-6">
+          <div className="container">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Veja o que nossos clientes têm a dizer sobre o ALMA Guardia</h2>
             </div>
@@ -375,10 +373,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="w-full py-20 md:py-24 bg-card/20 border-t">
-          <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6">
+        <section className="w-full py-20 md:py-24 bg-card/20 border-t px-4 sm:px-6">
+          <div className="container grid items-center justify-center gap-4 text-center">
             <div className="space-y-3">
-              <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight">
+              <h2 className="text-2xl font-bold tracking-tighter md:text-3xl/tight">
                 Transforme sua Gestão de Segurança Hoje.
               </h2>
               <p className="mx-auto max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
@@ -386,7 +384,7 @@ export default function HomePage() {
               </p>
             </div>
             <div className="mx-auto w-full max-w-sm space-y-2">
-  <Button size="lg" className="w-full" asChild>
+  <Button size="lg" className="w-full sm:w-auto" asChild>
     <Link href="/cadastro">
       Crie uma conta e faça um mês de teste gratuito
     </Link>

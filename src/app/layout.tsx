@@ -37,7 +37,9 @@ export default function RootLayout({
           <ProfileProvider>
             <AppSettingsProvider>
               <HelpProvider>
-                {children}
+                <div className="flex flex-col lg:flex-row w-full min-h-screen">
+                  {children}
+                </div>
                 <Toaster />
               </HelpProvider>
             </AppSettingsProvider>
