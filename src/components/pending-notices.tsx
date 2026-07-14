@@ -27,6 +27,7 @@ import {
   DialogTrigger,
   DialogClose
 } from "@/components/ui/dialog";
+import { type LocationData } from './map-selector';
 import Image from 'next/image';
 
 interface Notice {
@@ -37,6 +38,7 @@ interface Notice {
   description: string;
   location: string;
   mapMarker?: { x: number; y: number };
+  mapLocation?: LocationData;
   status: 'pendente' | 'finalizado';
   imageUrl?: string;
 }
@@ -101,29 +103,19 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
     }
   };
 
-  const handleAction = (notice: Notice, action: 'occurrence' | 'treatment' | 'fauna') => {
-    processNoticeAction(notice, () => {
-      const prefill = {
-        date: notice.noticeDate,
-        description: notice.description,
-        location: notice.location,
-        mapMarker: notice.mapMarker,
-        collaboratorName: notice.collaboratorName,
-      };
-
-      switch (action) {
-        case 'occurrence':
-          setPage('register-occurrence', { prefill });
-          break;
-        case 'treatment':
-          setPage('register-treatment', { prefill });
-          break;
-        case 'fauna':
-          setPage('register-fauna-flora-geo', { prefill });
-          break;
-      }
-    });
+  const handleCreateFromNotice = (notice: Notice, targetPage: 'register-occurrence' | 'register-treatment' | 'register-fauna-flora-geo') => {
+    const prefill = {
+      noticeId: notice.id, // Pass the notice ID to the form
+      date: notice.noticeDate,
+      description: notice.description,
+      location: notice.location,
+      mapMarker: notice.mapMarker,
+      mapLocation: notice.mapLocation,
+      collaboratorName: notice.collaboratorName,
+    };
+    setPage(targetPage, { prefill });
   };
+
 
   const handleMarkAsResolved = async (notice: Notice) => {
     processNoticeAction(notice, () => {
@@ -184,15 +176,15 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
                        <Button variant="outline"><ImageIcon className="mr-2" />Ver Imagem</Button>
                     </DialogTrigger>
                   )}
-                  <Button onClick={() => handleAction(notice, 'occurrence')} disabled={isUpdating === notice.id}>
+                  <Button onClick={() => handleCreateFromNotice(notice, 'register-occurrence')} disabled={isUpdating === notice.id}>
                     {isUpdating === notice.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="mr-2" />}
                     Criar Ocorrência
                   </Button>
-                  <Button onClick={() => handleAction(notice, 'treatment')} disabled={isUpdating === notice.id}>
+                  <Button onClick={() => handleCreateFromNotice(notice, 'register-treatment')} disabled={isUpdating === notice.id}>
                     {isUpdating === notice.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2" />}
                     Criar Trat. de Risco
                   </Button>
-                  <Button onClick={() => handleAction(notice, 'fauna')} disabled={isUpdating === notice.id}>
+                  <Button onClick={() => handleCreateFromNotice(notice, 'register-fauna-flora-geo')} disabled={isUpdating === notice.id}>
                      {isUpdating === notice.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sprout className="mr-2" />}
                     Criar Fau/Flo/Geo
                   </Button>

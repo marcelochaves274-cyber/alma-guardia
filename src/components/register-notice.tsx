@@ -36,9 +36,9 @@ import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp 
 import { useToast } from '@/hooks/use-toast';
 import NextImage from 'next/image';
 import { Separator } from './ui/separator';
-import { HelpTooltip } from './ui/help-tooltip';
-
-type Marker = { x: number; y: number } | null;
+import { HelpTooltip } from './ui/help-tooltip'; 
+import { MapSelector, type LocationData } from './map-selector';
+import { ErrorModal } from './ErrorModal';
 
 interface RegisterNoticeProps {
   noticeToEdit: any | null;
@@ -98,8 +98,8 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
   const [noticeTime, setNoticeTime] = useState('12:00');
   const [weather, setWeather] = useState('');
   const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
-  const [marker, setMarker] = useState<Marker>(null);
+  const [locationName, setLocationName] = useState('');
+  const [mapLocation, setMapLocation] = useState<LocationData | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
 
@@ -110,8 +110,9 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
   const [mapUrl, setMapUrl] = useState<string | null>(null);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isErrorOpen, setIsErrorOpen] = useState(false);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | undefined>(undefined);
 
-  const mapContainerRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   
   const firestore = useFirestore();
@@ -129,8 +130,14 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
       setCollaboratorName(noticeToEdit.collaboratorName || '');
       setWeather(noticeToEdit.weather || '');
       setDescription(noticeToEdit.description || '');
-      setLocation(noticeToEdit.location || '');
-      setMarker(noticeToEdit.mapMarker || null);
+      setLocationName(noticeToEdit.location || '');
+      if (noticeToEdit.mapLocation) {
+        setMapLocation(noticeToEdit.mapLocation);
+      } else if (noticeToEdit.mapMarker) { // Backwards compatibility
+        setMapLocation({ mapType: 'ludico', ludico: noticeToEdit.mapMarker });
+      } else {
+        setMapLocation(null);
+      }
       setImagePreview(noticeToEdit.imageUrl || null);
     }
   }, [isEditing, noticeToEdit]);
@@ -178,6 +185,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setMapUrl(docSnap.data().mapUrl || null);
+          setMapCenter(docSnap.data().defaultCenter || undefined);
         }
       } catch (error) {
         console.error("Error fetching map:", error);
@@ -187,14 +195,6 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
     };
     fetchMap();
   }, [getSettingsDocRef]);
-
-  const handleMapClick = (e: MouseEvent<HTMLDivElement>) => {
-    if (!mapContainerRef.current) return;
-    const rect = mapContainerRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setMarker({ x, y });
-  };
 
   const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -231,8 +231,8 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
     setNoticeTime('12:00');
     setWeather('');
     setDescription('');
-    setLocation('');
-    setMarker(null);
+    setLocationName('');
+    setMapLocation(null);
     setImagePreview(null);
     if(imageInputRef.current) imageInputRef.current.value = "";
   }
@@ -243,9 +243,10 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
         toast({ variant: 'destructive', title: 'Erro', description: 'Você não está autenticado.' });
         return;
     }
-    if (!noticeDate) {
-        toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a data do aviso.' });
-        return;
+    if (!collaboratorName || !description || !noticeDate || !locationName || (!mapLocation?.ludico && !mapLocation?.geo)) {
+      setIsErrorOpen(true);
+      setIsSubmitting(false);
+      return;
     }
 
     setIsSubmitting(true);
@@ -260,8 +261,8 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
           noticeDate: Timestamp.fromDate(combinedDate),
           weather,
           description,
-          location,
-          mapMarker: marker,
+          location: locationName,
+          mapLocation: mapLocation,
           imageUrl: imagePreview, // Save the resized Base64 data URL
       };
 
@@ -278,7 +279,7 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
       }
     } catch (error: any) {
         console.error("Error saving notice:", error);
-        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar o aviso. Verifique os dados e sua conexão.' });
+        setIsErrorOpen(true);
     } finally {
         setIsSubmitting(false);
     }
@@ -348,8 +349,8 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
           </div>
 
           <div className="space-y-2">
-              <Label htmlFor="location">Local</Label>
-              <Select name="location" required disabled={isLoadingLocations || locations.length === 0} onValueChange={setLocation} value={location}>
+              <Label htmlFor="locationName">Local</Label>
+              <Select name="locationName" required disabled={isLoadingLocations || locations.length === 0} onValueChange={setLocationName} value={locationName}>
                 <SelectTrigger id="location">
                   <SelectValue placeholder={ isLoadingLocations ? "Carregando..." : locations.length === 0 ? "Nenhum local cadastrado" : "Selecione o local" } />
                 </SelectTrigger>
@@ -405,47 +406,36 @@ export function RegisterNotice({ noticeToEdit, setPage }: RegisterNoticeProps) {
           <Separator />
 
            <div className="space-y-4">
-              <div className="flex justify-between items-start">
-                  <div>
-                      <h3 className="text-lg font-semibold text-foreground">Localização no Mapa</h3>
-                      <p className="text-sm text-muted-foreground">
-                          Clique no mapa para marcar o ponto exato do aviso.
-                      </p>
-                  </div>
-                  {marker && (
-                    <Button variant="ghost" size="sm" onClick={() => setMarker(null)}>
-                        <X className="mr-2 h-4 w-4" />
-                        Limpar Marcação
-                    </Button>
-                  )}
-              </div>
-              <div
-                ref={mapContainerRef}
-                onClick={handleMapClick}
-                className="relative w-full aspect-video border-2 border-dashed rounded-md cursor-pointer bg-muted/20 flex items-center justify-center overflow-hidden"
-              >
-                {isLoadingMap ? ( <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                ) : mapUrl ? (
-                  <>
-                    <NextImage src={mapUrl} alt="Mapa de avisos" fill className="object-cover" />
-                    {marker && (
-                      <div className="absolute pointer-events-none" style={{ left: `${marker.x}%`, top: `${marker.y}%`, transform: 'translate(-50%, -100%)' }} aria-label="Marcador de aviso" >
-                         <MapPin className="h-5 w-5 fill-blue-500 stroke-white stroke-2 drop-shadow-lg" />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-muted-foreground text-center p-4"> Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload. </p>
-                )}
-              </div>
+              <h3 className="text-lg font-semibold text-foreground">Localização no Mapa (Obrigatório)</h3>
+              {isEditing && !noticeToEdit?.mapLocation && !noticeToEdit?.mapMarker && (
+                <p className="text-sm text-amber-600 bg-amber-100 p-2 rounded-md border border-amber-200">
+                  Este registro antigo ainda não possui marcação no mapa. Edite o local abaixo para salvá-lo.
+                </p>
+              )}
+              {isLoadingMap ? (
+                <div className="flex items-center justify-center w-full h-[500px] bg-muted border rounded-md">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <MapSelector 
+                  ludicMapUrl={mapUrl} 
+                  onLocationChange={setMapLocation} 
+                  initialLocation={mapLocation} 
+                  defaultCenter={mapCenter} 
+                />
+              )}
            </div>
         </CardContent>
-        <CardFooter className="flex justify-end gap-2">
-            {isEditing && ( <Button variant="outline" type="button" onClick={() => setPage('pending-notices')}> Cancelar </Button> )}
-            <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditing ? 'Salvar Alterações' : 'Registrar Aviso'}
+        <CardFooter className="flex flex-col gap-2">
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEditing ? 'Salvar Alterações' : 'Registrar Aviso'}
+          </Button>
+          {isEditing && (
+            <Button variant="outline" type="button" className="w-full" onClick={() => setPage('pending-notices')}>
+              Cancelar Edição
             </Button>
+          )}
         </CardFooter>
       </form>
     </Card>

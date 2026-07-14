@@ -10,11 +10,23 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, X } from 'lucide-react';
 import NextImage from 'next/image';
 import { Skeleton } from './ui/skeleton';
 import { useFirestore, useUser } from '@/firebase';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export function ManageMap() {
@@ -24,8 +36,14 @@ export function ManageMap() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [mapUrl, setMapUrl] = useState<string | null>(null);
+  const [latitude, setLatitude] = useState<string>('');
+  const [longitude, setLongitude] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [tempMarker, setTempMarker] = useState<{ lat: number; lng: number } | null>(null);
+
+  const GOOGLE_MAPS_API_KEY = "AIzaSyAHSWMrKodwOLXO7VGTq35r6vFgOJ-AH9I";
 
   const getSettingsDocRef = useCallback(() => {
     if (!firestore || !user) return null;
@@ -47,6 +65,11 @@ export function ManageMap() {
         if (docSnap.exists()) {
           const data = docSnap.data();
           setMapUrl(data.mapUrl || null);
+          if (data.defaultCenter) {
+            setLatitude(data.defaultCenter.lat.toString());
+            setLongitude(data.defaultCenter.lng.toString());
+            setTempMarker(data.defaultCenter);
+          }
         }
       })
       .catch((error: any) => {
@@ -85,7 +108,24 @@ export function ManageMap() {
     setIsSaving(true);
 
     try {
-      await setDoc(settingsDocRef, { mapUrl: mapUrl }, { merge: true });
+      let defaultCenter = null;
+      if (latitude && longitude) {
+        const lat = parseFloat(latitude.replace(',', '.'));
+        const lng = parseFloat(longitude.replace(',', '.'));
+        if (!isNaN(lat) && !isNaN(lng)) {
+          defaultCenter = { lat, lng };
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Coordenadas Inválidas', description: 'Por favor, insira valores numéricos para latitude e longitude.',
+          });
+          setIsSaving(false);
+          return;
+        }
+      }
+
+
+      await setDoc(settingsDocRef, { mapUrl: mapUrl, defaultCenter: defaultCenter }, { merge: true });
       toast({ title: 'Sucesso!', description: 'O mapa foi salvo.' });
     } catch (error: any) {
       console.error('Error saving map:', error);
@@ -115,6 +155,22 @@ export function ManageMap() {
     }
   }
 
+  const handleMapClickInModal = (e: any) => {
+    if (e.detail.latLng) {
+      setTempMarker({
+        lat: e.detail.latLng.lat,
+        lng: e.detail.latLng.lng,
+      });
+    }
+  };
+
+  const handleConfirmSelection = () => {
+    if (tempMarker) {
+      setLatitude(tempMarker.lat.toString());
+      setLongitude(tempMarker.lng.toString());
+    }
+    setIsMapModalOpen(false);
+  };
 
   if (isLoading) {
     return (
@@ -138,7 +194,7 @@ export function ManageMap() {
           Faça o upload da imagem que será usada como base para marcações de ocorrências e riscos.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-8">
         <div className="space-y-4 rounded-lg border p-4">
           <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
             {mapUrl ? (
@@ -190,12 +246,83 @@ export function ManageMap() {
               </p>
             </div>
           </div>
-           <div className="flex justify-end">
-              <Button onClick={handleSaveMap} disabled={isSaving}>
-                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {isSaving ? 'Salvando...' : 'Salvar Mapa'}
-              </Button>
-           </div>
+        </div>
+
+        <div className="space-y-4 rounded-lg border p-4">
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h4 className="font-medium">Centro Padrão do Mapa Georreferenciado</h4>
+                <Dialog open={isMapModalOpen} onOpenChange={setIsMapModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" type="button">Selecionar no Mapa</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
+                    <DialogHeader className="p-6 pb-0">
+                      <DialogTitle>Selecione o Ponto Central</DialogTitle>
+                      <DialogDescription>
+                        Clique no mapa para definir a localização inicial padrão do mapa georreferenciado.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 px-6 pb-6">
+                      {GOOGLE_MAPS_API_KEY ? (
+                        <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+                          <div className="w-full h-full rounded-md overflow-hidden border">
+                            <Map
+                              defaultCenter={tempMarker || { lat: -25.0945, lng: -50.1633 }}
+                              defaultZoom={13}
+                              gestureHandling={'greedy'}
+                              disableDefaultUI={true}
+                              mapId="b3b3c3e8f9b9a9e"
+                              mapTypeId={'satellite'}
+                              onClick={handleMapClickInModal}
+                            >
+                              {tempMarker && (
+                                <AdvancedMarker position={tempMarker}>
+                                  <Pin scale={0.8} />
+                                </AdvancedMarker>
+                              )}
+                            </Map>
+                          </div>
+                        </APIProvider>
+                      ) : (
+                        <div className="flex items-center justify-center w-full h-full bg-muted border rounded-md">
+                          <p className="text-center text-destructive">
+                            A chave de API do Google Maps não foi configurada.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <DialogFooter className="p-6 pt-0 border-t">
+                      <Button variant="outline" onClick={() => setIsMapModalOpen(false)}>Cancelar</Button>
+                      <Button onClick={handleConfirmSelection} disabled={!tempMarker}>Confirmar Seleção</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div className="space-y-1">
+                  <Label htmlFor="latitude-display">Latitude</Label>
+                  <p id="latitude-display" className="text-sm font-mono p-2 border rounded-md bg-muted h-10 flex items-center">
+                    {latitude || 'Não definida'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="longitude-display">Longitude</Label>
+                  <p id="longitude-display" className="text-sm font-mono p-2 border rounded-md bg-muted h-10 flex items-center">
+                    {longitude || 'Não definida'}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Insira as coordenadas para o centro inicial do mapa georreferenciado.
+              </p>
+            </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={handleSaveMap} disabled={isSaving}>
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isSaving ? 'Salvando...' : 'Salvar Configurações'}
+          </Button>
         </div>
       </CardContent>
     </Card>

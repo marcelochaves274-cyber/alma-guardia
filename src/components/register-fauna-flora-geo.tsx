@@ -7,6 +7,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
+  CardFooter,
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -36,21 +37,14 @@ import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp 
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
-import { HelpTooltip } from './ui/help-tooltip';
-
-type Marker = { x: number; y: number } | null;
+import { HelpTooltip } from './ui/help-tooltip'; 
+import { MapSelector, type LocationData } from './map-selector';
+import { ErrorModal } from './ErrorModal';
 
 interface RegisterFaunaFloraGeoProps {
   recordToEdit: any | null;
   setPage: (page: string) => void;
   prefillData?: any | null;
-}
-
-interface ImageRenderMetrics {
-  offsetX: number;
-  offsetY: number;
-  renderedWidth: number;
-  renderedHeight: number;
 }
 
 export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: RegisterFaunaFloraGeoProps) {
@@ -61,11 +55,11 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
     recordToEdit?.date ? (recordToEdit.date instanceof Timestamp ? recordToEdit.date.toDate() : recordToEdit.date) :
     (prefillData?.date ? (prefillData.date instanceof Timestamp ? prefillData.date.toDate() : prefillData.date) : new Date())
   );
-  const [location, setLocation] = useState(recordToEdit?.location || prefillData?.location || '');
+  const [locationName, setLocationName] = useState(recordToEdit?.location || prefillData?.location || '');
   const [speciesType, setSpeciesType] = useState(recordToEdit?.speciesType || '');
   const [analysis, setAnalysis] = useState(recordToEdit?.analysis || '');
   const [description, setDescription] = useState(recordToEdit?.description || prefillData?.description || '');
-  const [marker, setMarker] = useState<Marker>(recordToEdit?.mapMarker || prefillData?.mapMarker || null);
+  const [mapLocation, setMapLocation] = useState<LocationData | null>(null);
 
   // UI/Data loading states
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -74,12 +68,11 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [mapUrl, setMapUrl] = useState<string | null>(null);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | undefined>(undefined);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageRenderMetrics, setImageRenderMetrics] = useState<ImageRenderMetrics | null>(null);
+  const [isErrorOpen, setIsErrorOpen] = useState(false);
 
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -87,8 +80,15 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
   useEffect(() => {
     if (prefillData) {
       setDescription(prefillData.description || '');
-      setLocation(prefillData.location || '');
-      setMarker(prefillData.mapMarker || null);
+      setLocationName(prefillData.location || '');
+      if (prefillData.mapLocation) {
+        setMapLocation(prefillData.mapLocation);
+      } else if (prefillData.mapMarker) { // Backwards compatibility
+        setMapLocation({
+          mapType: 'ludico',
+          ludico: prefillData.mapMarker,
+        });
+      }
     }
   }, [prefillData]);
 
@@ -97,11 +97,20 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
     if (isEditing && recordToEdit) {
       const recordDate = recordToEdit.date;
       setDate(recordDate instanceof Timestamp ? recordDate.toDate() : recordDate);
-      setLocation(recordToEdit.location || '');
+      setLocationName(recordToEdit.locationName || recordToEdit.location || ''); // Compatibility
       setSpeciesType(recordToEdit.speciesType || '');
       setAnalysis(recordToEdit.analysis || '');
       setDescription(recordToEdit.description || '');
-      setMarker(recordToEdit.mapMarker || null);
+      if (recordToEdit.mapLocation) {
+        setMapLocation(recordToEdit.mapLocation);
+      } else if (recordToEdit.mapMarker) { // Backwards compatibility
+        setMapLocation({
+          mapType: 'ludico',
+          ludico: recordToEdit.mapMarker,
+        });
+      } else {
+        setMapLocation(null);
+      }
     }
   }, [isEditing, recordToEdit]);
 
@@ -149,6 +158,7 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setMapUrl(docSnap.data().mapUrl || null);
+          setMapCenter(docSnap.data().defaultCenter || undefined);
         }
       } catch (error) {
         console.error("Error fetching map:", error);
@@ -159,71 +169,13 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
     fetchMap();
   }, [getSettingsDocRef]);
 
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (!mapContainerRef.current) return;
-    const { naturalWidth, naturalHeight } = e.currentTarget;
-    const container = mapContainerRef.current;
-    
-    // Use clientWidth/clientHeight to get dimensions inside the border
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
-    
-    const imageAspectRatio = naturalWidth / naturalHeight;
-    const containerAspectRatio = containerWidth / containerHeight;
-    
-    let renderedWidth: number;
-    let renderedHeight: number;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    if (imageAspectRatio > containerAspectRatio) {
-      renderedWidth = containerWidth;
-      renderedHeight = renderedWidth / imageAspectRatio;
-      offsetY = (containerHeight - renderedHeight) / 2;
-    } else {
-      renderedHeight = containerHeight;
-      renderedWidth = renderedHeight * imageAspectRatio;
-      offsetX = (containerWidth - renderedWidth) / 2;
-    }
-
-    setImageRenderMetrics({ offsetX, offsetY, renderedWidth, renderedHeight });
-  };
-
-  const handleMapClick = (e: MouseEvent<HTMLDivElement>) => {
-    if (!imageRenderMetrics) return;
-    
-    const { offsetX, offsetY, renderedWidth, renderedHeight } = imageRenderMetrics;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const style = window.getComputedStyle(e.currentTarget);
-    const borderLeft = parseFloat(style.borderLeftWidth) || 0;
-    const borderTop = parseFloat(style.borderTopWidth) || 0;
-
-    const clickX = e.clientX - rect.left - borderLeft;
-    const clickY = e.clientY - rect.top - borderTop;
-
-    if (
-        clickX >= offsetX &&
-        clickX <= offsetX + renderedWidth &&
-        clickY >= offsetY &&
-        clickY <= offsetY + renderedHeight
-    ) {
-        const x_rel = clickX - offsetX;
-        const y_rel = clickY - offsetY;
-
-        const x_perc = (x_rel / renderedWidth) * 100;
-        const y_perc = (y_rel / renderedHeight) * 100;
-
-        setMarker({ x: x_perc, y: y_perc });
-    }
-  };
-  
   const resetForm = () => {
     setDate(undefined);
-    setLocation('');
+    setLocationName(''); // Corrigido
     setSpeciesType('');
     setAnalysis('');
     setDescription('');
-    setMarker(null);
+    setMapLocation(null); // Corrigido
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -232,24 +184,21 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
         toast({ variant: 'destructive', title: 'Erro', description: 'Você não está autenticado.' });
         return;
     }
-    if (!date) {
-        toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a data do registro.' });
-        return;
-    }
-    if (!analysis) {
-        toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a análise da situação.' });
-        return;
-    }
+    if (!description || !date || !locationName || !speciesType || !analysis || (!mapLocation?.ludico && !mapLocation?.geo)) {
+      setIsErrorOpen(true);
+      setIsSubmitting(false);
+      return;
+    }    
 
     setIsSubmitting(true);
     
     const recordData = {
         date: Timestamp.fromDate(date),
-        location,
+        locationName: locationName,
         speciesType,
         description,
         analysis,
-        mapMarker: marker,
+        location: mapLocation,
         userId: user.uid,
     };
 
@@ -268,13 +217,18 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
             ...recordData,
             createdAt: serverTimestamp()
         });
+        // If created from a notice, update the notice status
+        if (prefillData?.noticeId) {
+          const noticeRef = doc(firestore, 'sgs_genius', user.uid, 'notices', prefillData.noticeId);
+          await updateDoc(noticeRef, { status: 'finalizado' });
+        }
         toast({ title: 'Sucesso!', description: 'Registro salvo com sucesso.' });
         resetForm();
       }
 
     } catch (error) {
         console.error("Error saving record:", error);
-        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar o registro.'});
+        setIsErrorOpen(true);
     } finally {
         setIsSubmitting(false);
     }
@@ -326,8 +280,8 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="location">Local</Label>
-              <Select name="location" required disabled={isLoadingLocations || locations.length === 0} onValueChange={setLocation} value={location}>
+              <Label htmlFor="locationName">Local</Label>
+              <Select name="locationName" required disabled={isLoadingLocations || locations.length === 0} onValueChange={setLocationName} value={locationName}>
                 <SelectTrigger id="location">
                   <SelectValue placeholder={
                     isLoadingLocations ? "Carregando..." : 
@@ -412,70 +366,48 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
           
           <Separator />
            <div className="space-y-4">
-              <div className="flex justify-between items-start">
-                  <div>
-                      <h3 className="text-lg font-semibold text-foreground">Localização no Mapa</h3>
-                      <p className="text-sm text-muted-foreground">
-                          Clique no mapa para marcar o ponto exato do registro.
-                      </p>
-                  </div>
-                  {marker && (
-                    <Button variant="ghost" size="sm" onClick={() => setMarker(null)}>
-                        <X className="mr-2 h-4 w-4" />
-                        Limpar Marcação
-                    </Button>
-                  )}
-              </div>
-              <div
-                ref={mapContainerRef}
-                onClick={handleMapClick}
-                className="relative w-full aspect-video border-2 border-dashed rounded-md cursor-pointer bg-muted/20 flex items-center justify-center overflow-hidden"
-              >
-                {isLoadingMap ? (
+              <h3 className="text-lg font-semibold text-foreground">Localização no Mapa (Obrigatório)</h3>
+              {isEditing && !recordToEdit?.mapLocation && !recordToEdit?.mapMarker && (
+                <p className="text-sm text-amber-600 bg-amber-100 p-2 rounded-md border border-amber-200">
+                  Este registro antigo ainda não possui marcação no mapa. Edite o local abaixo para salvá-lo.
+                </p>
+              )}
+              {isLoadingMap ? (
+                <div className="flex items-center justify-center w-full h-[500px] bg-muted border rounded-md">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                ) : mapUrl ? (
-                  <>
-                    <Image
-                      src={mapUrl}
-                      alt="Mapa de registros"
-                      fill
-                      className="object-contain"
-                      onLoad={handleImageLoad}
-                    />
-                    {marker && (
-                      <div
-                        className="absolute pointer-events-none"
-                        style={{
-                          left: `${marker.x}%`,
-                          top: `${marker.y}%`,
-                          transform: 'translate(-50%, -100%)',
-                        }}
-                        aria-label="Marcador de registro"
-                      >
-                         <MapPin className="h-5 w-5 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-muted-foreground text-center p-4">
-                    Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
-                  </p>
-                )}
-              </div>
+                </div>
+              ) : (
+                <MapSelector 
+                  ludicMapUrl={mapUrl} 
+                  onLocationChange={setMapLocation} 
+                  initialLocation={mapLocation} 
+                  defaultCenter={mapCenter} 
+                />
+              )}
            </div>
         </CardContent>
-        <div className="flex justify-end gap-4 p-6 pt-0">
+        <CardFooter className="flex flex-col gap-2">
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEditing ? 'Salvar Alterações' : 'Salvar Registro'}
+          </Button>
             {isEditing && (
-                <Button variant="outline" type="button" onClick={() => setPage('fauna-flora-geo-report')}>
-                Cancelar
+                <Button 
+                  variant="outline" 
+                  type="button" 
+                  className="w-full" 
+                  onClick={() => setPage('fauna-flora-geo-report')}
+                >
+                  Cancelar Edição
                 </Button>
             )}
-            <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditing ? 'Salvar Alterações' : 'Salvar Registro'}
-            </Button>
-        </div>
+        </CardFooter>
       </form>
+      <ErrorModal 
+        isOpen={isErrorOpen} 
+        onClose={() => setIsErrorOpen(false)} 
+        message="Preencha todos os campos, inclusive os mapas." 
+      />
     </Card>
   );
 }

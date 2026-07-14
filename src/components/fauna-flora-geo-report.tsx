@@ -50,15 +50,18 @@ import { cn } from '@/lib/utils';
 import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
+import { MapSelector, type LocationData } from './map-selector';
 import { SheetFilter } from './sheet-filter';
 
 interface FaunaFloraGeoRecord {
   id: string;
   date: Date;
   speciesType: string;
-  location: string;
+  locationName: string;
   analysis: 'alta' | 'media' | 'baixa';
   description: string;
+  mapLocation?: LocationData;
+  mapMarker?: { x: number; y: number };
 }
 
 interface FaunaFloraGeoReportProps {
@@ -95,6 +98,9 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [speciesTypes, setSpeciesTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
+  const [mapUrl, setMapUrl] = useState<string | null>(null);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | undefined>(undefined);
+  const [isLoadingMap, setIsLoadingMap] = useState(true);
 
   useEffect(() => {
     setIsClient(true);
@@ -123,6 +129,28 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
     fetchSelectOptions('faunaFloraGeoTypes', setSpeciesTypes, 'types');
     fetchSelectOptions('locations', setLocations, 'locations');
   }, [getSettingsDocRef]);
+
+  useEffect(() => {
+    const fetchMap = async () => {
+      const docRef = getSettingsDocRef('mapDetails');
+      if (!docRef) {
+        setIsLoadingMap(false);
+        return;
+      }
+      try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setMapUrl(docSnap.data().mapUrl || null);
+          setMapCenter(docSnap.data().defaultCenter || undefined);
+        }
+      } catch (error) {
+        console.error("Error fetching map:", error);
+      } finally {
+        setIsLoadingMap(false);
+      }
+    };
+    fetchMap();
+  }, [getSettingsDocRef]);
   
   // Fetch all records with real-time updates
   useEffect(() => {
@@ -137,17 +165,28 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
         const recordDate = data.date instanceof Timestamp 
           ? data.date.toDate() 
           : new Date(0); 
+        
+        let locationData = data.location;
+        // Backwards compatibility for old mapMarker format
+        if (data.mapMarker && !data.location) {
+          locationData = {
+            mapType: 'ludico',
+            ludico: data.mapMarker,
+          }
+        }
 
         return {
           id: doc.id,
           ...data,
+          locationName: data.locationName || data.location, // Compatibility for old field
           date: recordDate,
-        } as FaunaFloraGeoRecord;
+          mapLocation: locationData,
+        } as unknown as FaunaFloraGeoRecord;
       });
       
       const years = new Set(
         recordsData
-          .map(rec => rec.date?.getFullYear())
+          .map(rec => rec.date?.getFullYear()) // Corrected from rec.date to rec.date
           .filter((year): year is number => !!year)
           .map(String)
       );
@@ -204,7 +243,7 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
       const yearMatch = filterYear.length === 0 || filterYear.includes(recDate.getFullYear().toString());
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(recDate.getMonth().toString());
       const typeMatch = filterType.length === 0 || filterType.includes(rec.speciesType);
-      const locationMatch = filterLocation.length === 0 || filterLocation.includes(rec.location);
+      const locationMatch = filterLocation.length === 0 || filterLocation.includes(rec.locationName);
       const analysisMatch = filterAnalysis.length === 0 || filterAnalysis.includes(rec.analysis);
 
       return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch;
@@ -352,8 +391,8 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                     filteredRecords.map((rec) => (
                       <TableRow key={rec.id} className={cn(rec.analysis === 'alta' && 'bg-destructive/10 hover:bg-destructive/20')}>
                         <TableCell>{rec.date ? format(rec.date, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
-                        <TableCell>{rec.speciesType}</TableCell>
-                        <TableCell>{rec.location}</TableCell>
+                        <TableCell>{rec.speciesType || 'N/A'}</TableCell>
+                        <TableCell>{rec.locationName || 'N/A'}</TableCell>
                         <TableCell>
                           {rec.analysis && analysisMapping[rec.analysis] ? (
                               <Badge className={cn(analysisMapping[rec.analysis].className)}>
@@ -367,7 +406,7 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                                 <Eye className="h-4 w-4" />
                             </Button>
                           </DialogTrigger>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar registro" onClick={() => handleEdit(rec)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Editar registro" onClick={() => onEdit(rec, 0)}>
                               <Pencil className="h-4 w-4" />
                           </Button>
                           <AlertDialog>
@@ -433,7 +472,7 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                       </div>
                       <div>
                         <Label className="font-semibold text-muted-foreground">Local</Label>
-                        <p>{selectedRecord.location}</p>
+                        <p>{selectedRecord.locationName}</p>
                       </div>
                       <div>
                         <Label className="font-semibold text-muted-foreground">Espécie / Tipo</Label>
@@ -454,6 +493,20 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                       <Label className="font-semibold text-muted-foreground">Descrição</Label>
                       <p className="whitespace-pre-wrap">{selectedRecord.description}</p>
                   </div>
+                  {(selectedRecord.mapLocation || selectedRecord.mapMarker) && (
+                      <div className="md:col-span-2">
+                          <Label className="font-semibold text-muted-foreground">Localização no Mapa</Label>
+                          <div className="mt-2 h-[400px] w-full rounded-md border relative">
+                              <MapSelector
+                                  key={selectedRecord.id}
+                                  ludicMapUrl={mapUrl}
+                                  initialLocation={selectedRecord.mapLocation || { mapType: 'ludico', ludico: selectedRecord.mapMarker }}
+                                  defaultCenter={mapCenter}
+                                  onLocationChange={() => {}}
+                              />
+                          </div>
+                      </div>
+                  )}
                 </div>
               </ScrollArea>
               <div className="flex justify-end pt-2">
@@ -463,7 +516,7 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                       </Button>
                   </DialogClose>
               </div>
-            </>
+            </>            
           )}
         </DialogContent>
       </div>

@@ -198,7 +198,7 @@ export default function HomePage() {
           <div className="container grid items-stretch gap-6 px-4 sm:px-6 lg:grid-cols-2 lg:gap-12">
             <div className="flex flex-col items-center justify-center w-full px-4 overflow-hidden lg:items-start">
               <h1 className="text-center text-2xl font-bold leading-tight break-words w-full lg:text-left lg:text-4xl">
-                Sistema de Gestão de Segurança Completa e Inteligente.
+                Sistema de Gestão de Segurança.
               </h1>
               <p className="text-center text-sm mt-4 w-full break-words lg:text-left lg:text-lg">
                 O ALMA Guardia é a plataforma definitiva para digitalizar seus processos de segurança, garantir conformidade e tomar decisões baseadas em dados.

@@ -195,7 +195,7 @@ function MainAppLayout() {
     setActivityToEdit(null);
     setNoticeToEdit(null);
     
-    if (page !== 'register-occurrence' && page !== 'register-treatment' && page !== 'register-fauna-flora-geo') {
+    if (!page.startsWith('register-')) {
       setPrefillData(null);
     }
     

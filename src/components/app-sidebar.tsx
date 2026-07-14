@@ -282,6 +282,44 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
           )}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => toggleSubMenu('avisos')}
+              tooltip={{
+                children: 'Central de Avisos',
+              }}
+            >
+              <Megaphone />
+              <span className="font-bold">Central de Avisos</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'avisos' ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {openSubMenu === 'avisos' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton 
+                    isActive={activePage === 'register-notice'}
+                    onClick={() => handlePageChange('register-notice')}
+                  >
+                    Registrar Aviso
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                 {isAdmin && (
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                            isActive={activePage === 'pending-notices'}
+                            onClick={() => handlePageChange('pending-notices')}
+                        >
+                            Avisos Pendentes
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                 )}
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
           {!isObserver && (
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -382,44 +420,6 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
               )}
             </SidebarMenuItem>
           )}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => toggleSubMenu('avisos')}
-              tooltip={{
-                children: 'Central de Avisos',
-              }}
-            >
-              <Megaphone />
-              <span className="font-bold">Central de Avisos</span>
-              <ChevronDown
-                className={`ml-auto h-4 w-4 transition-transform ${
-                  openSubMenu === 'avisos' ? 'rotate-180' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-            {openSubMenu === 'avisos' && state === 'expanded' && (
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
-                    isActive={activePage === 'register-notice'}
-                    onClick={() => handlePageChange('register-notice')}
-                  >
-                    Registrar Aviso
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                 {isAdmin && (
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                            isActive={activePage === 'pending-notices'}
-                            onClick={() => handlePageChange('pending-notices')}
-                        >
-                            Avisos Pendentes
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                 )}
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
           {!isObserver && (
             <SidebarMenuItem>
               <SidebarMenuButton

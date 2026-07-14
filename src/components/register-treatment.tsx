@@ -1,13 +1,14 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef, type MouseEvent } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,30 +28,23 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Calendar as CalendarIcon, Loader2, MapPin, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import Image from 'next/image';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { HelpTooltip } from './ui/help-tooltip';
+import { MapSelector, type LocationData } from './map-selector';
+import { ErrorModal } from './ErrorModal';
 
-type Marker = { x: number; y: number } | null;
 
 interface RegisterTreatmentProps {
   treatmentToEdit: any | null;
   setPage: (page: string) => void;
   prefillData?: any | null;
-}
-
-interface ImageRenderMetrics {
-  offsetX: number;
-  offsetY: number;
-  renderedWidth: number;
-  renderedHeight: number;
 }
 
 const probabilityOptions = [
@@ -91,7 +85,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
   const [description, setDescription] = useState(treatmentToEdit?.description || prefillData?.description || '');
   const [proposedTreatment, setProposedTreatment] = useState(treatmentToEdit?.proposedTreatment || '');
   const [actionTaken, setActionTaken] = useState(treatmentToEdit?.actionTaken || '');
-  const [marker, setMarker] = useState<Marker>(treatmentToEdit?.mapMarker || prefillData?.mapMarker || null);
+  const [location, setLocation] = useState<LocationData | null>(null);
   const [probability, setProbability] = useState(treatmentToEdit?.probability || '');
   const [consequence, setConsequence] = useState(treatmentToEdit?.consequence || '');
   const [situation, setSituation] = useState(treatmentToEdit?.situation || 'pendente');
@@ -110,11 +104,10 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [mapUrl, setMapUrl] = useState<string | null>(null);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | undefined>(undefined);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageRenderMetrics, setImageRenderMetrics] = useState<ImageRenderMetrics | null>(null);
-
-  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [isErrorOpen, setIsErrorOpen] = useState(false);
   
   const firestore = useFirestore();
   const { user } = useUser();
@@ -124,7 +117,15 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
     if (prefillData) {
       setDescription(prefillData.description || '');
       setTreatmentLocation(prefillData.location || '');
-      setMarker(prefillData.mapMarker || null);
+      // Set map location from prefill
+      if (prefillData.mapLocation) {
+        setLocation(prefillData.mapLocation);
+      } else if (prefillData.mapMarker) { // Backward compatibility
+        setLocation({
+          mapType: 'ludico',
+          ludico: prefillData.mapMarker,
+        });
+      }
     }
   }, [prefillData]);
 
@@ -142,7 +143,18 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
       setActionTaken(treatmentToEdit.actionTaken || '');
       setProbability(treatmentToEdit.probability || '');
       setConsequence(treatmentToEdit.consequence || '');
-      setMarker(treatmentToEdit.mapMarker || null);
+      
+      // Handle both new `location` and old `mapMarker` fields
+      if (treatmentToEdit.location) {
+        setLocation(treatmentToEdit.location);
+      } else if (treatmentToEdit.mapMarker) {
+        setLocation({
+          mapType: 'ludico',
+          ludico: treatmentToEdit.mapMarker,
+        });
+      } else {
+        setLocation(null);
+      }
       setSituation(treatmentToEdit.situation || 'finalizado');
     }
   }, [isEditing, treatmentToEdit]);
@@ -192,6 +204,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setMapUrl(docSnap.data().mapUrl || null);
+          setMapCenter(docSnap.data().defaultCenter || undefined);
         }
       } catch (error) {
         console.error("Error fetching map:", error);
@@ -201,64 +214,6 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
     };
     fetchMap();
   }, [getSettingsDocRef]);
-
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (!mapContainerRef.current) return;
-    const { naturalWidth, naturalHeight } = e.currentTarget;
-    const container = mapContainerRef.current;
-    
-    // Use clientWidth/clientHeight to get dimensions inside the border
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
-    
-    const imageAspectRatio = naturalWidth / naturalHeight;
-    const containerAspectRatio = containerWidth / containerHeight;
-    
-    let renderedWidth: number;
-    let renderedHeight: number;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    if (imageAspectRatio > containerAspectRatio) {
-      renderedWidth = containerWidth;
-      renderedHeight = renderedWidth / imageAspectRatio;
-      offsetY = (containerHeight - renderedHeight) / 2;
-    } else {
-      renderedHeight = containerHeight;
-      renderedWidth = renderedHeight * imageAspectRatio;
-      offsetX = (containerWidth - renderedWidth) / 2;
-    }
-
-    setImageRenderMetrics({ offsetX, offsetY, renderedWidth, renderedHeight });
-  };
-  
-  const handleMapClick = (e: MouseEvent<HTMLDivElement>) => {
-    if (!imageRenderMetrics) return;
-    
-    const { offsetX, offsetY, renderedWidth, renderedHeight } = imageRenderMetrics;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const style = window.getComputedStyle(e.currentTarget);
-    const borderLeft = parseFloat(style.borderLeftWidth) || 0;
-    const borderTop = parseFloat(style.borderTopWidth) || 0;
-
-    const clickX = e.clientX - rect.left - borderLeft;
-    const clickY = e.clientY - rect.top - borderTop;
-
-    if (
-        clickX >= offsetX &&
-        clickX <= offsetX + renderedWidth &&
-        clickY >= offsetY &&
-        clickY <= offsetY + renderedHeight
-    ) {
-        const x_rel = clickX - offsetX;
-        const y_rel = clickY - offsetY;
-
-        const x_perc = (x_rel / renderedWidth) * 100;
-        const y_perc = (y_rel / renderedHeight) * 100;
-
-        setMarker({ x: x_perc, y: y_perc });
-    }
-  };
   
   const resetForm = () => {
     setTreatmentDate(undefined);
@@ -268,8 +223,8 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
     setProposedTreatment('');
     setActionTaken('');
     setProbability('');
-    setConsequence('');
-    setMarker(null);
+    setConsequence('');    
+    setLocation(null);
     setSituation('finalizado');
     setCompletionDate(undefined);
   }
@@ -280,9 +235,12 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
         toast({ variant: 'destructive', title: 'Erro', description: 'Você não está autenticado.' });
         return;
     }
-    if (!treatmentDate) {
-        toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a data da identificação.' });
-        return;
+    
+    // Validação manual unificada, incluindo o mapa
+    if (!description || !treatmentDate || !treatmentLocation || !treatmentType || !probability || !consequence || (!location?.ludico && !location?.geo)) {
+      setIsErrorOpen(true);
+      setIsSubmitting(false);
+      return;
     }
 
     setIsSubmitting(true);
@@ -299,7 +257,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
         probability,
         consequence,
         riskLevel: riskLevelData.score,
-        mapMarker: marker,
+        location: location,
         userId: user.uid,
         situation,
         completionDate: completionDate && situation === 'pendente' ? Timestamp.fromDate(completionDate) : null,
@@ -320,20 +278,25 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
             ...treatmentData,
             createdAt: serverTimestamp()
         });
+        // If created from a notice, update the notice status
+        if (prefillData?.noticeId) {
+          const noticeRef = doc(firestore, 'sgs_genius', user.uid, 'notices', prefillData.noticeId);
+          await updateDoc(noticeRef, { status: 'finalizado' });
+        }
         toast({ title: 'Sucesso!', description: 'Tratamento de risco registrado com sucesso.' });
         resetForm();
       }
 
     } catch (error) {
-        console.error("Error saving treatment:", error);
-        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar o tratamento de risco.'});
+        console.error("ERRO DETALHADO:", error);
+        setIsErrorOpen(true);
     } finally {
         setIsSubmitting(false);
     }
   };
 
   const riskLevel = getRiskLevel(Number(probability), Number(consequence));
-
+  
   return (
     <Card className="w-full">
       <form onSubmit={handleSubmit}>
@@ -380,7 +343,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
             </div>
             <div className="space-y-2">
               <Label htmlFor="treatment-location">Local do Risco</Label>
-              <Select name="treatmentLocation" required disabled={isLoadingLocations || locations.length === 0} onValueChange={setTreatmentLocation} value={treatmentLocation}>
+              <Select name="treatmentLocation" disabled={isLoadingLocations || locations.length === 0} onValueChange={setTreatmentLocation} value={treatmentLocation}>
                 <SelectTrigger id="treatment-location">
                   <SelectValue placeholder={
                     isLoadingLocations ? "Carregando..." : 
@@ -404,7 +367,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
             </div>
              <div className="space-y-2 md:col-span-2">
               <Label htmlFor="treatment-type">Tipo de Risco</Label>
-              <Select name="treatmentType" required disabled={isLoadingTypes || treatmentTypes.length === 0} onValueChange={setTreatmentType} value={treatmentType}>
+              <Select name="treatmentType" disabled={isLoadingTypes || treatmentTypes.length === 0} onValueChange={setTreatmentType} value={treatmentType}>
                 <SelectTrigger id="treatment-type">
                   <SelectValue placeholder={
                     isLoadingTypes ? "Carregando..." : 
@@ -438,7 +401,6 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
               name="description"
               placeholder="Descreva o risco identificado."
               className="min-h-[100px]"
-              required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -451,7 +413,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                 <div className="space-y-2">
                     <Label htmlFor="probability">Probabilidade</Label>
-                    <Select name="probability" required onValueChange={setProbability} value={probability}>
+                    <Select name="probability" onValueChange={setProbability} value={probability}>
                         <SelectTrigger id="probability">
                             <SelectValue placeholder="Selecione a probabilidade" />
                         </SelectTrigger>
@@ -464,7 +426,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="consequence">Consequência</Label>
-                    <Select name="consequence" required onValueChange={setConsequence} value={consequence}>
+                    <Select name="consequence" onValueChange={setConsequence} value={consequence}>
                         <SelectTrigger id="consequence">
                             <SelectValue placeholder="Selecione a consequência" />
                         </SelectTrigger>
@@ -517,59 +479,23 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
           
           <Separator />
            <div className="space-y-4">
-              <div className="flex justify-between items-start">
-                  <div>
-                      <h3 className="text-lg font-semibold text-foreground">Localização no Mapa</h3>
-                      <p className="text-sm text-muted-foreground">
-                          Clique no mapa para marcar o ponto exato da identificação do risco.
-                      </p>
-                  </div>
-                  {marker && (
-                    <Button variant="ghost" size="sm" onClick={() => setMarker(null)}>
-                        <X className="mr-2 h-4 w-4" />
-                        Limpar Marcação
-                    </Button>
-                  )}
-              </div>
-               <p className="text-sm text-destructive">
-                Importante: Se a imagem do mapa for alterada futuramente, as marcações de riscos já salvas não serão atualizadas para a nova imagem.
-              </p>
-              <div
-                ref={mapContainerRef}
-                onClick={handleMapClick}
-                className="relative w-full aspect-video border-2 border-dashed rounded-md cursor-pointer bg-muted/20 flex items-center justify-center overflow-hidden"
-              >
-                {isLoadingMap ? (
+              <h3 className="text-lg font-semibold text-foreground">Localização no Mapa</h3>
+              {isEditing && !treatmentToEdit?.location && !treatmentToEdit?.mapMarker && (
+                <p className="text-sm text-amber-600 bg-amber-100 p-2 rounded-md border border-amber-200">
+                  Este registro antigo ainda não possui marcação no mapa. Edite o local abaixo para salvá-lo.
+                </p>
+              )}
+              {isLoadingMap ? (
+                <div className="flex items-center justify-center w-full h-[500px] bg-muted border rounded-md">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                ) : mapUrl ? (
-                  <>
-                    <Image
-                      src={mapUrl}
-                      alt="Mapa de tratamentos"
-                      fill
-                      className="object-contain"
-                      onLoad={handleImageLoad}
-                    />
-                    {marker && (
-                      <div
-                        className="absolute pointer-events-none"
-                        style={{
-                          left: `${marker.x}%`,
-                          top: `${marker.y}%`,
-                          transform: 'translate(-50%, -100%)',
-                        }}
-                        aria-label="Marcador de tratamento"
-                      >
-                         <MapPin className="h-5 w-5 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-muted-foreground text-center p-4">
-                    Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
-                  </p>
-                )}
-              </div>
+                </div>
+              ) : (
+                <MapSelector 
+                  ludicMapUrl={mapUrl} 
+                  onLocationChange={setLocation} 
+                  initialLocation={location} 
+                  defaultCenter={mapCenter} />
+              )}
            </div>
            
            <Separator/>
@@ -623,21 +549,25 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
                   </div>
                 )}
             </div>
-
-            <div className="flex justify-end gap-4 pt-4">
-                {isEditing && (
-                    <Button variant="outline" type="button" onClick={() => setPage('treatment-report')}>
-                    Cancelar
-                    </Button>
-                )}
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isEditing ? 'Salvar Alterações' : 'Salvar Tratamento'}
-                </Button>
-            </div>
-
         </CardContent>
+        <CardFooter className="flex flex-col gap-2">
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEditing ? 'Salvar Alterações' : 'Salvar Tratamento'}
+          </Button>
+           {isEditing && (
+            <Button variant="outline" className="w-full" onClick={() => setPage('treatment-report')}>
+              Cancelar Edição
+            </Button>
+          )}
+        </CardFooter>
+
       </form>
+      <ErrorModal 
+        isOpen={isErrorOpen} 
+        onClose={() => setIsErrorOpen(false)} 
+        message="Preencha todos os campos, inclusive os mapas." 
+      />
     </Card>
   );
 }

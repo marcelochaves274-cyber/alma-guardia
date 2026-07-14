@@ -37,21 +37,14 @@ import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp 
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
-import { HelpTooltip } from './ui/help-tooltip';
-
-type Marker = { x: number; y: number } | null;
+import { HelpTooltip } from './ui/help-tooltip'; 
+import { MapSelector, type LocationData } from './map-selector'; // 1. Importar o MapSelector e seu tipo
+import { ErrorModal } from './ErrorModal';
 
 interface RegisterOccurrenceProps {
   occurrenceToEdit: any | null;
   setPage: (page: string) => void;
   prefillData?: any | null;
-}
-
-interface ImageRenderMetrics {
-  offsetX: number;
-  offsetY: number;
-  renderedWidth: number;
-  renderedHeight: number;
 }
 
 export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: RegisterOccurrenceProps) {
@@ -73,7 +66,8 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
   const [city, setCity] = useState(occurrenceToEdit?.city || '');
   const [state, setState] = useState(occurrenceToEdit?.state || '');
   const [phone, setPhone] = useState(occurrenceToEdit?.phone || '');
-  const [marker, setMarker] = useState<Marker>(occurrenceToEdit?.mapMarker || prefillData?.mapMarker || null);
+  // 2. Substituir o estado 'marker' pelo novo estado 'location'
+  const [location, setLocation] = useState<LocationData | null>(occurrenceToEdit?.location || prefillData?.location || null);
 
   // UI/Data loading states
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -82,11 +76,10 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [mapUrl, setMapUrl] = useState<string | null>(null);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | undefined>(undefined);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageRenderMetrics, setImageRenderMetrics] = useState<ImageRenderMetrics | null>(null);
-
-  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [isErrorOpen, setIsErrorOpen] = useState(false);
   
   const firestore = useFirestore();
   const { user } = useUser();
@@ -97,7 +90,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
       setDescription(prefillData.description || '');
       setInvolvedPersonName(prefillData.collaboratorName || '');
       setOccurrenceLocation(prefillData.location || '');
-      setMarker(prefillData.mapMarker || null);
+      setLocation(prefillData.mapLocation || null); // Corrigido para usar mapLocation
     }
   }, [prefillData]);
 
@@ -117,7 +110,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
       setCity(occurrenceToEdit.city || '');
       setState(occurrenceToEdit.state || '');
       setPhone(occurrenceToEdit.phone || '');
-      setMarker(occurrenceToEdit.mapMarker || null);
+      setLocation(occurrenceToEdit.location || null); // Atualizado para o novo estado
     }
   }, [isEditing, occurrenceToEdit]);
 
@@ -165,6 +158,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setMapUrl(docSnap.data().mapUrl || null);
+          setMapCenter(docSnap.data().defaultCenter || undefined);
         }
       } catch (error) {
         console.error("Error fetching map:", error);
@@ -174,64 +168,6 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
     };
     fetchMap();
   }, [getSettingsDocRef]);
-
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (!mapContainerRef.current) return;
-    const { naturalWidth, naturalHeight } = e.currentTarget;
-    const container = mapContainerRef.current;
-    
-    // Use clientWidth/clientHeight to get dimensions inside the border
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
-    
-    const imageAspectRatio = naturalWidth / naturalHeight;
-    const containerAspectRatio = containerWidth / containerHeight;
-    
-    let renderedWidth: number;
-    let renderedHeight: number;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    if (imageAspectRatio > containerAspectRatio) {
-      renderedWidth = containerWidth;
-      renderedHeight = renderedWidth / imageAspectRatio;
-      offsetY = (containerHeight - renderedHeight) / 2;
-    } else {
-      renderedHeight = containerHeight;
-      renderedWidth = renderedHeight * imageAspectRatio;
-      offsetX = (containerWidth - renderedWidth) / 2;
-    }
-
-    setImageRenderMetrics({ offsetX, offsetY, renderedWidth, renderedHeight });
-  };
-
-  const handleMapClick = (e: MouseEvent<HTMLDivElement>) => {
-    if (!imageRenderMetrics) return;
-    
-    const { offsetX, offsetY, renderedWidth, renderedHeight } = imageRenderMetrics;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const style = window.getComputedStyle(e.currentTarget);
-    const borderLeft = parseFloat(style.borderLeftWidth) || 0;
-    const borderTop = parseFloat(style.borderTopWidth) || 0;
-
-    const clickX = e.clientX - rect.left - borderLeft;
-    const clickY = e.clientY - rect.top - borderTop;
-
-    if (
-        clickX >= offsetX &&
-        clickX <= offsetX + renderedWidth &&
-        clickY >= offsetY &&
-        clickY <= offsetY + renderedHeight
-    ) {
-        const x_rel = clickX - offsetX;
-        const y_rel = clickY - offsetY;
-
-        const x_perc = (x_rel / renderedWidth) * 100;
-        const y_perc = (y_rel / renderedHeight) * 100;
-
-        setMarker({ x: x_perc, y: y_perc });
-    }
-  };
   
   const handleBirthDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
@@ -257,26 +193,27 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
     setCity('');
     setState('');
     setPhone('');
-    setMarker(null);
+    setLocation(null);
   }
+  
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!firestore || !user) {
         toast({ variant: 'destructive', title: 'Erro', description: 'Você não está autenticado.' });
         return;
     }
-    if (!occurrenceDate) {
-        toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a data da ocorrência.' });
-        return;
-    }
-    if (!analysis) {
-        toast({ variant: 'destructive', title: 'Campo obrigatório', description: 'Por favor, selecione a análise da ocorrência.' });
-        return;
-    }
 
-    setIsSubmitting(true);
+    // Forçar Verificação Prévia: Adiciona a validação do mapa
+    if (!description || !occurrenceDate || !analysis || !occurrenceLocation || !occurrenceType || !ageGroup || !involvedPersonName || (!location?.ludico && !location?.geo)) {
+      setIsErrorOpen(true);
+      setIsSubmitting(false);
+      return;
+    }
     
+    setIsSubmitting(true);
+
     const occurrenceData = {
         occurrenceDate: Timestamp.fromDate(occurrenceDate),
         occurrenceLocation,
@@ -290,9 +227,12 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
         state,
         phone,
         analysis,
-        mapMarker: marker,
+        location: location, // 5. Salvar o objeto 'location'
         userId: user.uid,
     };
+
+    // Log para depuração: verifica o objeto antes de enviar
+    console.log('Dados enviados:', occurrenceData);
 
     try {
       if (isEditing && occurrenceToEdit) {
@@ -309,13 +249,20 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
             ...occurrenceData,
             createdAt: serverTimestamp()
         });
+        // If created from a notice, update the notice status
+        if (prefillData?.noticeId) {
+          const noticeRef = doc(firestore, 'sgs_genius', user.uid, 'notices', prefillData.noticeId);
+          await updateDoc(noticeRef, { status: 'finalizado' });
+        }
         toast({ title: 'Sucesso!', description: 'Ocorrência registrada com sucesso.' });
         resetForm();
       }
 
     } catch (error) {
-        console.error("Error saving occurrence:", error);
-        toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Não foi possível salvar a ocorrência.'});
+        // Log detalhado do erro no console do navegador
+        console.error('ERRO DETALHADO:', error);
+        // Em vez de toast, abre o modal de erro centralizado
+        setIsErrorOpen(true);
     } finally {
         setIsSubmitting(false);
     }
@@ -507,59 +454,21 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
           
           <Separator />
            <div className="space-y-4">
-              <div className="flex justify-between items-start">
-                  <div>
-                      <h3 className="text-lg font-semibold text-foreground">Localização no Mapa</h3>
-                      <p className="text-sm text-muted-foreground">
-                          Clique no mapa para marcar o ponto exato da ocorrência.
-                      </p>
-                  </div>
-                  {marker && (
-                    <Button variant="ghost" size="sm" onClick={() => setMarker(null)}>
-                        <X className="mr-2 h-4 w-4" />
-                        Limpar Marcação
-                    </Button>
-                  )}
-              </div>
-               <p className="text-sm text-destructive">
-                Importante: Se a imagem do mapa for alterada futuramente, as marcações de ocorrências já salvas não serão atualizadas para a nova imagem.
-              </p>
-              <div
-                ref={mapContainerRef}
-                onClick={handleMapClick}
-                className="relative w-full aspect-video border-2 border-dashed rounded-md cursor-pointer bg-muted/20 flex items-center justify-center overflow-hidden"
-              >
-                {isLoadingMap ? (
+              {/* 3. Substituir o bloco do mapa antigo pelo novo componente */}
+              <h3 className="text-lg font-semibold text-foreground">Localização no Mapa (Obrigatório)</h3>
+              {isEditing && !occurrenceToEdit?.location && (
+                <p className="text-sm text-amber-600 bg-amber-100 p-2 rounded-md border border-amber-200">
+                  Este registro antigo ainda não possui marcação no mapa. Edite o local abaixo para salvá-lo.
+                </p>
+              )}
+              {isLoadingMap ? (
+                <div className="flex items-center justify-center w-full h-[500px] bg-muted border rounded-md">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                ) : mapUrl ? (
-                  <>
-                    <Image
-                      src={mapUrl}
-                      alt="Mapa de ocorrências"
-                      fill
-                      className="object-contain"
-                      onLoad={handleImageLoad}
-                    />
-                    {marker && (
-                      <div
-                        className="absolute pointer-events-none"
-                        style={{
-                          left: `${marker.x}%`,
-                          top: `${marker.y}%`,
-                          transform: 'translate(-50%, -100%)',
-                        }}
-                        aria-label="Marcador de ocorrência"
-                      >
-                         <MapPin className="h-5 w-5 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-muted-foreground text-center p-4">
-                    Nenhum mapa foi carregado. <br />Vá para "Configurações" &gt; "Gerenciar Mapa" para fazer o upload.
-                  </p>
-                )}
-              </div>
+                </div>
+              ) : (
+                // 4. Passar as props necessárias para o MapSelector
+                <MapSelector ludicMapUrl={mapUrl} onLocationChange={setLocation} initialLocation={location} defaultCenter={mapCenter} />
+              )}
            </div>
 
         </CardContent>
@@ -574,7 +483,13 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
             </Button>
           )}
         </CardFooter>
-      </form>
+
+      </form>      
+      <ErrorModal 
+        isOpen={isErrorOpen} 
+        onClose={() => setIsErrorOpen(false)} 
+        message="Preencha todos os campos, inclusive os mapas." 
+      />
     </Card>
   );
 }
