@@ -43,7 +43,8 @@ export function ManageMap() {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [tempMarker, setTempMarker] = useState<{ lat: number; lng: number } | null>(null);
 
-  const GOOGLE_MAPS_API_KEY = "AIzaSyAHSWMrKodwOLXO7VGTq35r6vFgOJ-AH9I";
+  // A chave de API deve ser carregada de variáveis de ambiente e não exposta no lado do cliente.
+  const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   const getSettingsDocRef = useCallback(() => {
     if (!firestore || !user) return null;

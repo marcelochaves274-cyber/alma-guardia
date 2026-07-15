@@ -66,7 +66,7 @@ export function TutorialPage() {
               <ul className="list-disc space-y-2 pl-5">
                 {isAdmin && <li><strong>Registrar Ocorrência:</strong> Formulário detalhado para registrar um novo acidente ou incidente, incluindo informações da pessoa envolvida, descrição do evento, análise de gravidade e marcação no mapa.</li>}
                 {isAdmin && <li><strong>Relatório de Ocorrência:</strong> Visualize, filtre e pesquise todos os acidentes e incidentes registrados. Você pode filtrar por data, tipo, local, nome e mais. A partir daqui, você pode editar ou excluir um registro.</li>}
-                <li><strong>Relatório de Mapa:</strong> Visualize todas as ocorrências plotadas em um mapa interativo. Isso ajuda a identificar áreas com maior concentração de eventos. Você pode filtrar os pontos exibidos por data, tipo e local.</li>
+                <li><strong>Relatório de Mapa:</strong> Visualize todas as ocorrências plotadas em um mapa interativo. Alterne entre o Mapa Lúdico (imagem personalizada) e o Mapa Georreferenciado (Google Maps) para diferentes perspectivas. Isso ajuda a identificar áreas com maior concentração de eventos.</li>
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -77,7 +77,7 @@ export function TutorialPage() {
                <ul className="list-disc space-y-2 pl-5">
                 {isAdmin && <li><strong>Registrar Tratamento:</strong> Documente um risco identificado, sua probabilidade e consequência, o tratamento proposto e a ação realizada. A situação (pendente, finalizado) e o prazo para conclusão também são gerenciados aqui.</li>}
                 {isAdmin && <li><strong>Relatório de Tratamento:</strong> Uma lista de todos os tratamentos de risco. Use os filtros para encontrar rapidamente o que precisa, especialmente os tratamentos pendentes ou reabertos.</li>}
-                <li><strong>Relatório de Mapa:</strong> Similar ao mapa de acidentes, este mapa mostra onde os riscos foram identificados, ajudando na análise de áreas de maior perigo.</li>
+                <li><strong>Relatório de Mapa:</strong> Similar ao mapa de acidentes, este mapa mostra onde os riscos foram identificados. Alterne entre as visualizações Lúdica e Georreferenciada para analisar áreas de maior perigo.</li>
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -98,7 +98,7 @@ export function TutorialPage() {
                <ul className="list-disc space-y-2 pl-5">
                 {isAdmin && <li><strong>Registrar F/F/G:</strong> Crie registros de avistamentos de fauna, flora ou formações geográficas de interesse. Essencial para o monitoramento ambiental.</li>}
                 {isAdmin && <li><strong>Relatório F/F/G:</strong> Liste e filtre todos os registros ambientais feitos.</li>}
-                <li><strong>Relatório de Mapa:</strong> Visualize a distribuição geográfica dos seus registros ambientais, identificando corredores ecológicos ou pontos de interesse.</li>
+                <li><strong>Relatório de Mapa:</strong> Visualize a distribuição geográfica dos seus registros ambientais. Alterne entre o Mapa Lúdico e o Georreferenciado para identificar corredores ecológicos ou pontos de interesse.</li>
               </ul>
             </AccordionContent>
           </AccordionItem>

@@ -545,6 +545,11 @@ export function FaunaFloraGeoMapReport() {
                             <p><strong className="font-medium">Data:</strong> {format(rec.date, 'dd/MM/yyyy', { locale: ptBR })}</p>
                             <p><strong className="font-medium">Tipo:</strong> {rec.speciesType || 'N/A'}</p>
                             <p><strong className="font-medium">Local:</strong> {rec.locationName || 'N/A'}</p>
+                            {rec.location?.geo && (
+                              <p className="text-xs text-muted-foreground">
+                                Lat: {rec.location.geo.lat.toFixed(6)}, Lng: {rec.location.geo.lng.toFixed(6)}
+                              </p>
+                            )}
                           </div>
                           <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
                               setActiveKey(null);
@@ -606,6 +611,11 @@ export function FaunaFloraGeoMapReport() {
                           <p><strong className="font-medium">Data:</strong> {format(rec.date, 'dd/MM/yyyy', { locale: ptBR })}</p>
                           <p><strong className="font-medium">Tipo:</strong> {rec.speciesType || 'N/A'}</p>
                           <p><strong className="font-medium">Local:</strong> {rec.locationName || 'N/A'}</p>
+                            {rec.location?.geo && (
+                              <p className="text-xs text-muted-foreground">
+                                Lat: {rec.location.geo.lat.toFixed(6)}, Lng: {rec.location.geo.lng.toFixed(6)}
+                              </p>
+                            )}
                         </div>
                         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
                           setActiveGeoPopoverKey(null);
@@ -871,6 +881,21 @@ export function FaunaFloraGeoMapReport() {
                       <Label className="font-semibold text-muted-foreground">Descrição</Label>
                       <p className="whitespace-pre-wrap">{detailedRecord.description}</p>
                   </div>
+                  {detailedRecord.location?.geo && (
+                    <div className="mt-4 p-3 bg-muted rounded-md text-sm">
+                      <p><span className="font-semibold">Latitude:</span> {detailedRecord.location.geo.lat.toFixed(6)}</p>
+                      <p><span className="font-semibold">Longitude:</span> {detailedRecord.location.geo.lng.toFixed(6)}</p>
+                    </div>
+                  )}
+                  {detailedRecord.location?.ludico && (
+                    <div className="mt-4 p-3 bg-muted rounded-md text-sm">
+                      <p className="font-semibold">Coordenadas no Mapa Lúdico</p>
+                      <p>
+                        <span className="font-semibold">X:</span> {detailedRecord.location.ludico.x.toFixed(2)}% | 
+                        <span className="font-semibold ml-2">Y:</span> {detailedRecord.location.ludico.y.toFixed(2)}%
+                      </p>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
               <div className="flex justify-end pt-2">

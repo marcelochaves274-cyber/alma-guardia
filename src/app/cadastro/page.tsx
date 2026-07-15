@@ -64,9 +64,11 @@ function CadastroForm() {
 
       // 2. Inicializa os SDKs e cria o documento no Firestore usando o nome correto 'firestore'
       const { firestore } = initializeFirebase();
-      await setDoc(doc(firestore, 'sgs_genius', user.email!.toLowerCase()), {
+      // Use o UID do usuário como ID do documento para garantir unicidade e segurança.
+      await setDoc(doc(firestore, 'sgs_genius', user.uid), {
         email: user.email,
-        statusPagamento: 'aguardando_pagamento',
+        uid: user.uid,
+        status: 'pending_payment', // Usando um status mais claro
         createdAt: new Date().toISOString(),
       });
 
