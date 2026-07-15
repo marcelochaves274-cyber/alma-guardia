@@ -699,7 +699,7 @@ export function TreatmentMapReport() {
     });
   };
 
-  const GOOGLE_MAPS_API_KEY = "AIzaSyAHSWMrKodwOLXO7VGTq35r6vFgOJ-AH9I";
+  const GOOGLE_MAPS_API_KEY = "AIzaSyAHSWMrKodwOLXO7VGTq35r6vFgOJ-AH9I"; // Mantido para consistência
 
   return (
     <div className="space-y-6">
