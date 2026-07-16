@@ -26,7 +26,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export function ManageMap() {
@@ -43,11 +43,90 @@ export function ManageMap() {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [tempMarker, setTempMarker] = useState<{ lat: number; lng: number } | null>(null);
 
-  // A chave de API deve ser carregada de variáveis de ambiente.
-  // Temporariamente usando uma constante para garantir o funcionamento enquanto a configuração do ambiente é validada.
   const GOOGLE_MAPS_API_KEY = "AIzaSyAHSWMrKodwOLXO7VGTq35r6vFgOJ-AH9I";
-  // Log para depuração no console do navegador (F12)
-  console.log('Chave carregada em manage-map:', GOOGLE_MAPS_API_KEY);
+  const ignoreMapClickRef = useRef(false);
+
+  // Componente de busca desacoplado usando o Geocoding Service
+  const PlaceSearchInput = ({ onPlaceSelect }: { onPlaceSelect: (location: google.maps.LatLng | null) => void }) => {
+    const geocoding = useMapsLibrary('geocoding');
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [query, setQuery] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
+    const { toast } = useToast();
+
+    const handleSearch = () => {
+      if (!geocoding || !query.trim()) return;
+
+      setIsSearching(true);
+      const geocoder = new geocoding.Geocoder();
+      geocoder.geocode({ address: query, componentRestrictions: { country: 'br' } }, (results, status) => {
+        setIsSearching(false);
+        if (status === 'OK' && results && results[0]) {
+          onPlaceSelect(results[0].geometry.location);
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Local não encontrado',
+            description: 'Não foi possível encontrar o endereço. Tente ser mais específico.',
+          });
+          onPlaceSelect(null);
+        }
+      });
+    };
+
+    // Se a biblioteca de geocoding não carregar, não renderiza o input de busca.
+    if (!geocoding) {
+      return null;
+    }
+
+    return (
+      <div className="relative w-full">
+        <Input
+          ref={inputRef}
+          placeholder="Digite um endereço ou local (Enter)"
+          className="w-full"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSearch();
+            }
+          }}
+          disabled={isSearching}
+        />
+        {isSearching && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
+      </div>
+    );
+  };
+
+  // Componente que agrupa o mapa e a busca para compartilhar o contexto do mapa
+  const MapContainer = () => {
+    const map = useMap();
+
+    const handlePlaceSelectedAndPan = (location: google.maps.LatLng | null) => {
+      if (location && map) {
+        const newPosition = {
+          lat: location.lat(),
+          lng: location.lng(),
+        };
+        setTempMarker(newPosition);
+        map.panTo(newPosition);
+        map.setZoom(14); // Zoom confortável, como solicitado
+      }
+    };
+
+    return (
+      <>
+        {/* Componente de busca posicionado sobre o mapa */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 w-full max-w-sm px-2">
+          <PlaceSearchInput onPlaceSelect={handlePlaceSelectedAndPan} />
+        </div>
+        {/* Marcador que reage à mudança de estado */}
+        {tempMarker && <AdvancedMarker position={tempMarker}><Pin scale={0.8} /></AdvancedMarker>}
+      </>
+    );
+  };
 
   const getSettingsDocRef = useCallback(() => {
     if (!firestore || !user) return null;
@@ -160,6 +239,10 @@ export function ManageMap() {
   }
 
   const handleMapClickInModal = (e: any) => {
+    if (ignoreMapClickRef.current) {
+      ignoreMapClickRef.current = false;
+      return;
+    }
     if (e.detail.latLng) {
       setTempMarker({
         lat: e.detail.latLng.lat,
@@ -260,47 +343,47 @@ export function ManageMap() {
                   <DialogTrigger asChild>
                     <Button variant="outline" type="button">Selecionar no Mapa</Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
-                    <DialogHeader className="p-6 pb-0">
-                      <DialogTitle>Selecione o Ponto Central</DialogTitle>
-                      <DialogDescription>
-                        Clique no mapa para definir a localização inicial padrão do mapa georreferenciado.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex-1 px-6 pb-6">
-                      {GOOGLE_MAPS_API_KEY ? (
-                        <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+                  {GOOGLE_MAPS_API_KEY ? (
+                    <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
+                      <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
+                        <DialogHeader className="p-6 pb-0">
+                          <DialogTitle>Selecione o Ponto Central</DialogTitle>
+                          <DialogDescription>
+                            Use a busca ou clique no mapa para definir a localização padrão. <br />
+                            <span className="text-xs text-muted-foreground">Dica: No modo Satélite, ative os marcadores de locais no ícone de camadas.</span>
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex-1 px-6 pb-6 relative">
                           <div className="w-full h-full rounded-md overflow-hidden border">
                             <Map
-                              defaultCenter={tempMarker || { lat: -25.0945, lng: -50.1633 }}
+                              // Usando defaultCenter e defaultZoom para que o mapa seja "não controlado"
+                              // e permita a interação do usuário livremente.
+                              defaultCenter={{ lat: -25.0945, lng: -50.1633 }}
                               defaultZoom={13}
                               gestureHandling={'greedy'}
-                              disableDefaultUI={true}
+                              disableDefaultUI={false}
+                              zoomControl={true}
                               mapId="b3b3c3e8f9b9a9e"
                               mapTypeId={'satellite'}
                               onClick={handleMapClickInModal}
                             >
-                              {tempMarker && (
-                                <AdvancedMarker position={tempMarker}>
-                                  <Pin scale={0.8} />
-                                </AdvancedMarker>
-                              )}
+                              <MapContainer />
                             </Map>
                           </div>
-                        </APIProvider>
-                      ) : (
-                        <div className="flex items-center justify-center w-full h-full bg-muted border rounded-md">
-                          <p className="text-center text-destructive">
-                            A chave de API do Google Maps não foi configurada.
-                          </p>
                         </div>
-                      )}
-                    </div>
-                    <DialogFooter className="p-6 pt-0 border-t">
-                      <Button variant="outline" onClick={() => setIsMapModalOpen(false)}>Cancelar</Button>
-                      <Button onClick={handleConfirmSelection} disabled={!tempMarker}>Confirmar Seleção</Button>
-                    </DialogFooter>
-                  </DialogContent>
+                        <DialogFooter className="p-6 pt-0 border-t">
+                          <Button variant="outline" onClick={() => setIsMapModalOpen(false)}>Cancelar</Button>
+                          <Button onClick={handleConfirmSelection} disabled={!tempMarker}>Confirmar Seleção</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </APIProvider>
+                  ) : (
+                    <DialogContent>
+                      <p className="text-center text-destructive p-4">
+                        A chave de API do Google Maps não foi configurada.
+                      </p>
+                    </DialogContent>
+                  )}
                 </Dialog>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
