@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef, MouseEvent } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -68,7 +67,7 @@ interface GeoCluster {
 
 const MapBoundsUpdater = ({ points }: { points: { lat: number; lng: number }[] }) => {
   const map = useMap();
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!map || points.length === 0) return;
     if (points.length === 1) {
       map.moveCamera({ center: points[0], zoom: 15 });
@@ -105,7 +104,7 @@ const analysisMapping: Record<string, { label: string, className: string }> = {
     baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
-export function FaunaFloraGeoMapReport() {
+export function FaunaFloraMapStandalone() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -127,6 +126,7 @@ export function FaunaFloraGeoMapReport() {
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
   const [filterType, setFilterType] = useState<string[]>([]);
   const [filterLocation, setFilterLocation] = useState<string[]>([]);
+  const [filterAnalysis, setFilterAnalysis] = useState<string[]>([]);
   const [mapView, setMapView] = useState<'ludico' | 'geo'>('ludico');
 
   // Dynamic options for selects
@@ -211,26 +211,24 @@ export function FaunaFloraGeoMapReport() {
       const recordsData = querySnapshot.docs.map(doc => {
         const data = doc.data();
         const recordDate = data.date instanceof Timestamp ? data.date.toDate() : new Date(0);
-        let location = data.location;
-
-        // Se não houver 'location' no padrão novo, tente adaptar o antigo
-        if (!location || !location.ludico) {
-          // Assume que se tiver coordenadas x e y (ou mapMarker), é um registro antigo 'ludico'
-          const x = data.ludico?.x || data.mapMarker?.x || data.x || 0;
-          const y = data.ludico?.y || data.mapMarker?.y || data.y || 0;
-
-          location = {
+        
+        let locationData = data.location;
+        // Lógica de fallback robusta, copiada do componente que funciona
+        if (data.mapMarker && !locationData) {
+          locationData = {
             mapType: 'ludico',
-            ludico: { x, y }
+            ludico: data.mapMarker,
           };
+        } else if (locationData?.geo instanceof GeoPoint) {
+          // Convert GeoPoint to a plain object if it exists
+          locationData.geo = { lat: locationData.geo.latitude, lng: locationData.geo.longitude };
         }
-
+        
         return {
           id: doc.id,
           ...data,
-          locationName: data.locationName || (typeof data.location === 'string' ? data.location : 'Local não definido'),
-          location: location,
           date: recordDate,
+          location: locationData,
         } as FaunaFloraGeoRecord;
       });
       
@@ -241,6 +239,7 @@ export function FaunaFloraGeoMapReport() {
           .map(String)
       );
       setAvailableYears(Array.from(years).sort((a, b) => Number(b) - Number(a)));
+      
       setRecords(recordsData);
       setIsLoading(false);
     }, (error: unknown) => {
@@ -258,10 +257,6 @@ export function FaunaFloraGeoMapReport() {
   const filteredRecords = useMemo(() => {
     if (!isClient) return [];
     return records.filter(rec => {
-      // Se o registro não tiver campos de filtro, consideramos como 'válido' para exibição
-      const isOldRecord = !rec.speciesType || !rec.locationName;
-      if (isOldRecord) return true; 
-
       const recDate = rec.date;
       if (!recDate) return false;
 
@@ -269,16 +264,17 @@ export function FaunaFloraGeoMapReport() {
       const monthMatch = filterMonths.length === 0 || filterMonths.includes(recDate.getMonth().toString());
       const typeMatch = filterType.length === 0 || filterType.includes(rec.speciesType);
       const locationMatch = filterLocation.length === 0 || filterLocation.includes(rec.locationName);
+      const analysisMatch = filterAnalysis.length === 0 || filterAnalysis.includes(rec.analysis);
 
       const hasMarker = mapView === 'ludico' ? !!rec.location?.ludico : !!rec.location?.geo;
 
-      return yearMatch && monthMatch && typeMatch && locationMatch && hasMarker;
+      return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && hasMarker;
     });
-  }, [records, filterYear, filterMonths, filterType, filterLocation, isClient, mapView]);
+  }, [records, filterYear, filterMonths, filterType, filterLocation, filterAnalysis, isClient, mapView]);
 
   const clusters = useMemo(() => {
+    if (mapView !== 'ludico') return [];
     const points = filteredRecords.filter(rec => rec.location?.ludico);
-
     const clusters: Cluster[] = [];
     const distanceThreshold = 5; 
 
@@ -308,11 +304,11 @@ export function FaunaFloraGeoMapReport() {
     });
 
     return clusters;
-  }, [filteredRecords]);
+  }, [filteredRecords, mapView]);
 
   const geoClusters = useMemo(() => {
     if (mapView !== 'geo') return [];
-    const points = filteredRecords.filter(occ => occ.location?.geo);
+    const points = filteredRecords.filter(rec => rec.location?.geo);
     const clusters: GeoCluster[] = [];
     const distanceThreshold = 0.0001;
 
@@ -325,8 +321,8 @@ export function FaunaFloraGeoMapReport() {
             );
             if (distance < distanceThreshold) {
                 cluster.records.push(point);
-                cluster.lat = cluster.records.reduce((sum, occ) => sum + (occ.location?.geo?.lat || 0), 0) / cluster.records.length;
-                cluster.lng = cluster.records.reduce((sum, occ) => sum + (occ.location?.geo?.lng || 0), 0) / cluster.records.length;
+                cluster.lat = cluster.records.reduce((sum, rec) => sum + (rec.location?.geo?.lat || 0), 0) / cluster.records.length;
+                cluster.lng = cluster.records.reduce((sum, rec) => sum + (rec.location?.geo?.lng || 0), 0) / cluster.records.length;
                 foundCluster = true;
                 break;
             }
@@ -345,7 +341,7 @@ export function FaunaFloraGeoMapReport() {
   const geoPointsForBounds = useMemo(() => {
     if (mapView !== 'geo') return [];
     return filteredRecords
-      .map(occ => occ.location?.geo)
+      .map(rec => rec.location?.geo)
       .filter((geo): geo is { lat: number; lng: number } => !!geo);
   }, [filteredRecords, mapView]);
   
@@ -354,6 +350,7 @@ export function FaunaFloraGeoMapReport() {
     setFilterMonths([]);
     setFilterType([]);
     setFilterLocation([]);
+    setFilterAnalysis([]);
   }
   
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -363,7 +360,6 @@ export function FaunaFloraGeoMapReport() {
   const calculateMetrics = useCallback((container: HTMLDivElement | null, naturalDims: {width: number, height: number} | null) => {
     if (!container || !naturalDims) return null;
 
-    // Use clientWidth/Height to exclude border dimensions from calculations
     const containerWidth = container.clientWidth;
     const containerHeight = container.clientHeight;
 
@@ -507,38 +503,44 @@ export function FaunaFloraGeoMapReport() {
 
     const activeKey = isModal ? modalActivePopoverKey : activePopoverKey;
     const setActiveKey = isModal ? setModalActivePopoverKey : setActivePopoverKey;
+    
+    const totalPoints = mapView === 'ludico' ? clusters.length : geoClusters.length;
+    if (totalPoints === 0) return null;
 
     return clusters.map((cluster, index) => {
       const clusterKey = `fauna-cluster-${index}`;
-      const clusterYear = cluster.records[0]?.date?.getFullYear();
+      const clusterYear = cluster.records[0]?.date.getFullYear();
       const pinColorClass = clusterYear ? getYearColor(clusterYear, availableYears) : 'fill-gray-500';
 
+      const posX = cluster.x > 1 ? cluster.x : cluster.x * 100;
+      const posY = cluster.y > 1 ? cluster.y : cluster.y * 100;
+      
       return (
         <div
-          key={clusterKey}
-          data-pin="true"
-          className="absolute"
-          style={{
-            left: `${cluster.x}%`,
-            top: `${cluster.y}%`,
+            key={clusterKey}
+            data-pin="true"
+            className="absolute"
+            style={{
+            left: `${posX}%`,
+            top: `${posY}%`,
             transform: 'translate(-50%, -100%)',
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
         >
-          <Popover open={activeKey === clusterKey} onOpenChange={(open) => setActiveKey(open ? clusterKey : null)}>
+        <Popover open={activeKey === clusterKey} onOpenChange={(open) => setActiveKey(open ? clusterKey : null)}>
             <PopoverTrigger asChild>
-              <div className="cursor-pointer relative">
-                <MapPin className={cn("h-6 w-6 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
-                {cluster.records.length > 1 && (
-                  <Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0 flex items-center text-[10px]">
-                    {cluster.records.length}
-                  </Badge>
-                )}
-              </div>
+                <div className="cursor-pointer">
+                    <MapPin className={cn("h-5 w-5 stroke-white stroke-2 drop-shadow-lg", pinColorClass)} />
+                    {cluster.records.length > 1 && (
+                        <Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 justify-center rounded-full p-0">
+                            {cluster.records.length}
+                        </Badge>
+                    )}
+                </div>
             </PopoverTrigger>
             <PopoverContent className="w-80 z-[60]" onOpenAutoFocus={(e) => e.preventDefault()}>
                 <div className="grid gap-4">
-                <div className="space-y-2">
+                  <div className="space-y-2">
                     <h4 className="font-medium leading-none">{cluster.records.length > 1 ? 'Registros Agrupados' : 'Detalhes do Registro'}</h4>
                     <p className="text-sm text-muted-foreground">
                         {cluster.records.length} registro(s) neste local.
@@ -550,23 +552,30 @@ export function FaunaFloraGeoMapReport() {
                         <div key={rec.id} className="text-sm p-2 border rounded-md flex justify-between items-center">
                           <div>
                             <p><strong className="font-medium">Data:</strong> {format(rec.date, 'dd/MM/yyyy', { locale: ptBR })}</p>
-                            <p><strong className="font-medium">Tipo:</strong> {rec.speciesType || 'N/A'}</p>
+                            <p><strong className="font-medium">Tipo:</strong> {rec.speciesType}</p>
                             <p><strong className="font-medium">Local:</strong> {rec.locationName || 'N/A'}</p>
+                            {rec.location?.geo && (
+                              <p className="text-xs text-muted-foreground">
+                                Lat: {rec.location.geo.lat.toFixed(6)}, Lng: {rec.location.geo.lng.toFixed(6)}
+                              </p>
+                            )}
                           </div>
                           <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
                               setActiveKey(null);
                               setDetailedRecord(rec);
                               setIsDetailModalOpen(true);
-                            }}><Eye className="h-4 w-4" /></Button>
+                            }}>
+                                <Eye className="h-4 w-4" />
+                            </Button>
                         </div>
                     ))}
                 </div>
                 </ScrollArea>
-                </div>
+                  </div>
             </PopoverContent>
-          </Popover>
+        </Popover>
         </div>
-      );
+      )
     });
   };
 
@@ -609,8 +618,13 @@ export function FaunaFloraGeoMapReport() {
                       <div key={rec.id} className="text-sm p-2 border rounded-md flex justify-between items-center">
                         <div>
                           <p><strong className="font-medium">Data:</strong> {format(rec.date, 'dd/MM/yyyy', { locale: ptBR })}</p>
-                          <p><strong className="font-medium">Tipo:</strong> {rec.speciesType || 'N/A'}</p>
+                          <p><strong className="font-medium">Tipo:</strong> {rec.speciesType}</p>
                           <p><strong className="font-medium">Local:</strong> {rec.locationName || 'N/A'}</p>
+                            {rec.location?.geo && (
+                              <p className="text-xs text-muted-foreground">
+                                Lat: {rec.location.geo.lat.toFixed(6)}, Lng: {rec.location.geo.lng.toFixed(6)}
+                              </p>
+                            )}
                         </div>
                         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
                           setActiveGeoPopoverKey(null);
@@ -645,7 +659,7 @@ export function FaunaFloraGeoMapReport() {
             <Label>Filtrar por Mês</Label>
             <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
                 <Label>Filtrar por Ano</Label>
                 <SheetFilter
@@ -677,6 +691,16 @@ export function FaunaFloraGeoMapReport() {
                     onChange={setFilterLocation}
                     disabled={!locations || locations.length === 0}
                     buttonText='Filtrar por Local'
+                />
+            </div>
+            <div className='space-y-2'>
+                <Label>Filtrar por Análise</Label>
+                <SheetFilter
+                    title='Filtrar Análises'
+                    options={Object.entries(analysisMapping).map(([key, {label}]) => ({ value: key, label: label }))}
+                    selected={filterAnalysis}
+                    onChange={setFilterAnalysis}
+                    buttonText='Filtrar por Análise'
                 />
             </div>
             
@@ -730,18 +754,7 @@ export function FaunaFloraGeoMapReport() {
                           onLoad={handleImageLoad}
                           onDragStart={(e) => e.preventDefault()}
                         />
-                        {mainMapRenderMetrics && (
-                          <div className="absolute" style={{
-                            width: `${mainMapRenderMetrics.renderedWidth}px`,
-                            height: `${mainMapRenderMetrics.renderedHeight}px`,
-                            top: `${mainMapRenderMetrics.offsetY}px`,
-                            left: `${mainMapRenderMetrics.offsetX}px`,
-                          }}>
-                            <div className="relative w-full h-full">
-                              {renderLudicPins(false)}
-                            </div>
-                          </div>
-                        )}
+                        {renderLudicPins(false)}
                     </>
                   ) : (
                     <p className="text-muted-foreground text-center p-4">
@@ -755,9 +768,7 @@ export function FaunaFloraGeoMapReport() {
                   {GOOGLE_MAPS_API_KEY ? (
                     <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['marker']}>
                       <MapBoundsUpdater points={geoPointsForBounds} />
-                      <GoogleMap defaultCenter={mapCenter || { lat: -25.0945, lng: -50.1633 }} defaultZoom={15} mapId={'b3b3c3e8f9b9a9e'} mapTypeId={'satellite'} gestureHandling="greedy">
-                        {renderGeoPins()}
-                      </GoogleMap>
+                      <GoogleMap defaultCenter={mapCenter || { lat: -25.0945, lng: -50.1633 }} defaultZoom={15} mapId={'b3b3c3e8f9b9a9e'} mapTypeId={'satellite'} gestureHandling="greedy">{renderGeoPins()}</GoogleMap>
                     </APIProvider>
                   ) : (
                     <p className="text-destructive text-center p-4">Chave de API do Google Maps não configurada.</p>
@@ -797,21 +808,7 @@ export function FaunaFloraGeoMapReport() {
                                 className="object-contain"
                                 onLoad={handleImageLoad}
                             />
-                            {modalImageRenderMetrics && (
-                            <div
-                                className="absolute"
-                                style={{
-                                    width: `${modalImageRenderMetrics.renderedWidth}px`,
-                                    height: `${modalImageRenderMetrics.renderedHeight}px`,
-                                    top: `${modalImageRenderMetrics.offsetY}px`,
-                                    left: `${modalImageRenderMetrics.offsetX}px`,
-                                }}
-                            >
-                                <div className="relative w-full h-full">
-                                    {renderLudicPins(true)}
-                                </div>
-                            </div>
-                            )}
+                            {renderLudicPins(true)}
                         </div>
                       </div>
                 ) : isLoadingMap ? (
@@ -876,6 +873,21 @@ export function FaunaFloraGeoMapReport() {
                       <Label className="font-semibold text-muted-foreground">Descrição</Label>
                       <p className="whitespace-pre-wrap">{detailedRecord.description}</p>
                   </div>
+                  {detailedRecord.location?.geo && (
+                    <div className="mt-4 p-3 bg-muted rounded-md text-sm">
+                      <p><span className="font-semibold">Latitude:</span> {detailedRecord.location.geo.lat.toFixed(6)}</p>
+                      <p><span className="font-semibold">Longitude:</span> {detailedRecord.location.geo.lng.toFixed(6)}</p>
+                    </div>
+                  )}
+                  {detailedRecord.location?.ludico && (
+                    <div className="mt-4 p-3 bg-muted rounded-md text-sm">
+                      <p className="font-semibold">Coordenadas no Mapa Lúdico</p>
+                      <p>
+                        <span className="font-semibold">X:</span> {(detailedRecord.location.ludico.x > 1 ? detailedRecord.location.ludico.x : detailedRecord.location.ludico.x * 100).toFixed(2)}% | 
+                        <span className="font-semibold ml-2">Y:</span> {(detailedRecord.location.ludico.y > 1 ? detailedRecord.location.ludico.y : detailedRecord.location.ludico.y * 100).toFixed(2)}%
+                      </p>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
               <div className="flex justify-end pt-2">
