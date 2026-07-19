@@ -39,6 +39,7 @@ import { Separator } from './ui/separator';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Calendar } from './ui/calendar';
 import { ErrorModal } from './ErrorModal';
+import { MonthSelector } from './month-selector';
 import NextImage from 'next/image';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
 
