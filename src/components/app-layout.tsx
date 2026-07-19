@@ -23,6 +23,7 @@ import { ManageFaunaFloraGeo } from '@/components/manage-fauna-flora-geo';
 import { RegisterFaunaFloraGeo } from '@/components/register-fauna-flora-geo';
 import { FaunaFloraGeoReport } from '@/components/fauna-flora-geo-report';
 import { FaunaFloraGeoMapReport } from '@/components/fauna-flora-geo-map-report';
+import { FaunaFloraGeoV2 } from './fauna-flora-geo-v2';
 import { RegisterRiskAssessment } from './register-risk-assessment';
 import { RiskAssessmentReport } from './risk-assessment-report';
 import { ManagePops } from './manage-pops';

@@ -51,6 +51,7 @@ import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import { MapSelector, type LocationData } from './map-selector';
+import NextImage from 'next/image';
 import { SheetFilter } from './sheet-filter';
 
 interface FaunaFloraGeoRecord {
@@ -496,14 +497,29 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                   {(selectedRecord.mapLocation || selectedRecord.mapMarker) && (
                       <div className="md:col-span-2">
                           <Label className="font-semibold text-muted-foreground">Localização no Mapa</Label>
-                          <div className="mt-2 h-[400px] w-full rounded-md border relative">
-                              <MapSelector
-                                  key={selectedRecord.id}
-                                  ludicMapUrl={mapUrl}
-                                  initialLocation={selectedRecord.mapLocation || { mapType: 'ludico', ludico: selectedRecord.mapMarker }}
-                                  defaultCenter={mapCenter}
-                                  onLocationChange={() => {}}
-                              />
+                          <div className="mt-2 h-[400px] w-full rounded-md border relative bg-muted overflow-hidden flex items-center justify-center">
+                              {mapUrl ? (
+                                <>
+                                  <NextImage
+                                    src={mapUrl}
+                                    alt="Mapa do registro"
+                                    layout="fill"
+                                    objectFit="contain"
+                                  />
+                                  {(selectedRecord.mapLocation?.ludico || selectedRecord.mapMarker) && (
+                                    <div
+                                      className="absolute pointer-events-none"
+                                      style={{
+                                        left: `${(selectedRecord.mapLocation?.ludico || selectedRecord.mapMarker)?.x}%`,
+                                        top: `${(selectedRecord.mapLocation?.ludico || selectedRecord.mapMarker)?.y}%`,
+                                        transform: 'translate(-50%, -100%)'
+                                      }}
+                                    >
+                                      <MapPin className="h-6 w-6 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
+                                    </div>
+                                  )}
+                                </>
+                              ) : (<p className="text-sm text-muted-foreground">Mapa não disponível</p>)}
                           </div>
                       </div>
                   )}

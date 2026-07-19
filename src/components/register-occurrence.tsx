@@ -110,7 +110,15 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
       setCity(occurrenceToEdit.city || '');
       setState(occurrenceToEdit.state || '');
       setPhone(occurrenceToEdit.phone || '');
-      setLocation(occurrenceToEdit.location || null); // Atualizado para o novo estado
+      // Handle both new `location` and old `mapMarker` fields for backwards compatibility
+      if (occurrenceToEdit.location) {
+        setLocation(occurrenceToEdit.location);
+      } else if (occurrenceToEdit.mapMarker) {
+        setLocation({
+          mapType: 'ludico',
+          ludico: occurrenceToEdit.mapMarker,
+        });
+      }
     }
   }, [isEditing, occurrenceToEdit]);
 
@@ -456,7 +464,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
            <div className="space-y-4">
               {/* 3. Substituir o bloco do mapa antigo pelo novo componente */}
               <h3 className="text-lg font-semibold text-foreground">Localização no Mapa (Obrigatório)</h3>
-              {isEditing && !occurrenceToEdit?.location && (
+              {isEditing && !occurrenceToEdit?.location && !occurrenceToEdit?.mapMarker && (
                 <p className="text-sm text-amber-600 bg-amber-100 p-2 rounded-md border border-amber-200">
                   Este registro antigo ainda não possui marcação no mapa. Edite o local abaixo para salvá-lo.
                 </p>

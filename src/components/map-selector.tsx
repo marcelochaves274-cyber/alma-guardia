@@ -65,9 +65,6 @@ function GoogleMapComponent({
   marker: { lat: number; lng: number } | null;
   center: { lat: number; lng: number };
 }) {
-  // Adicionado para depurar a posição do pino
-  console.log('Posição do Pino Geo:', marker);
-
   return (
     <div className="w-full h-[500px] border rounded-md overflow-hidden">
       <Map
@@ -94,9 +91,12 @@ function GoogleMapComponent({
 }
 
 export function MapSelector({ ludicMapUrl, onLocationChange, initialLocation, defaultCenter }: MapSelectorProps) {
-  const [mapType, setMapType] = useState<'ludico' | 'geo'>(initialLocation?.mapType || 'ludico');
-  const [ludicMarker, setLudicMarker] = useState<{ x: number; y: number } | null>(initialLocation?.ludico || null);
-  const [geoMarker, setGeoMarker] = useState<{ lat: number; lng: number } | null>(initialLocation?.geo || null);
+  // Adiciona resiliência contra dados antigos que podem ser strings.
+  const safeInitialLocation = typeof initialLocation === 'string' ? null : initialLocation;
+
+  const [mapType, setMapType] = useState<'ludico' | 'geo'>(safeInitialLocation?.mapType || 'ludico');
+  const [ludicMarker, setLudicMarker] = useState<{ x: number; y: number } | null>(safeInitialLocation?.ludico || null);
+  const [geoMarker, setGeoMarker] = useState<{ lat: number; lng: number } | null>(safeInitialLocation?.geo || null);
   const [imageRenderMetrics, setImageRenderMetrics] = useState<ImageRenderMetrics | null>(null);
   
   // Define o centro inicial do mapa.
@@ -104,20 +104,20 @@ export function MapSelector({ ludicMapUrl, onLocationChange, initialLocation, de
   // Prioridade 2: Centro padrão configurado pelo usuário.
   // Prioridade 3: Coordenada padrão (fallback).
   const center = useMemo(() => (
-    initialLocation?.mapType === 'geo' && initialLocation.geo
-      ? initialLocation.geo
+    safeInitialLocation?.mapType === 'geo' && safeInitialLocation.geo
+      ? safeInitialLocation.geo
       : defaultCenter || { lat: -25.0945, lng: -50.1633 }
-  ), [initialLocation, defaultCenter]);
+  ), [safeInitialLocation, defaultCenter]);
 
   // Efeito para sincronizar o estado interno quando a localização inicial muda.
   // Isso é crucial para o modo de edição, onde `initialLocation` pode ser carregado após a montagem inicial.
   useEffect(() => {
-    if (initialLocation) {
-      setMapType(initialLocation.mapType || 'ludico');
-      setLudicMarker(initialLocation.ludico || null);
-      setGeoMarker(initialLocation.geo || null);
+    if (safeInitialLocation) {
+      setMapType(safeInitialLocation.mapType || 'ludico');
+      setLudicMarker(safeInitialLocation.ludico || null);
+      setGeoMarker(safeInitialLocation.geo || null);
     }
-  }, [initialLocation]);
+  }, [safeInitialLocation]);
 
   const handleLudicMapClick = (e: MouseEvent<HTMLDivElement>) => {
     const container = e.currentTarget;
