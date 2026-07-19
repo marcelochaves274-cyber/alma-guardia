@@ -24,7 +24,7 @@ import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Pencil, Trash2, Loader2, Eye } from 'lucide-react';
+import { Pencil, Trash2, Loader2, Eye, MapPin } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -179,7 +179,7 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
         return {
           id: doc.id,
           ...data,
-          locationName: data.locationName || data.location, // Compatibility for old field
+          locationName: data.locationName || data.location, // Compatibilidade com campo antigo
           date: recordDate,
           mapLocation: locationData,
         } as unknown as FaunaFloraGeoRecord;
@@ -494,35 +494,6 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                       <Label className="font-semibold text-muted-foreground">Descrição</Label>
                       <p className="whitespace-pre-wrap">{selectedRecord.description}</p>
                   </div>
-                  {(selectedRecord.mapLocation || selectedRecord.mapMarker) && (
-                      <div className="md:col-span-2">
-                          <Label className="font-semibold text-muted-foreground">Localização no Mapa</Label>
-                          <div className="mt-2 h-[400px] w-full rounded-md border relative bg-muted overflow-hidden flex items-center justify-center">
-                              {mapUrl ? (
-                                <>
-                                  <NextImage
-                                    src={mapUrl}
-                                    alt="Mapa do registro"
-                                    layout="fill"
-                                    objectFit="contain"
-                                  />
-                                  {(selectedRecord.mapLocation?.ludico || selectedRecord.mapMarker) && (
-                                    <div
-                                      className="absolute pointer-events-none"
-                                      style={{
-                                        left: `${(selectedRecord.mapLocation?.ludico || selectedRecord.mapMarker)?.x}%`,
-                                        top: `${(selectedRecord.mapLocation?.ludico || selectedRecord.mapMarker)?.y}%`,
-                                        transform: 'translate(-50%, -100%)'
-                                      }}
-                                    >
-                                      <MapPin className="h-6 w-6 fill-red-500 stroke-white stroke-2 drop-shadow-lg" />
-                                    </div>
-                                  )}
-                                </>
-                              ) : (<p className="text-sm text-muted-foreground">Mapa não disponível</p>)}
-                          </div>
-                      </div>
-                  )}
                 </div>
               </ScrollArea>
               <div className="flex justify-end pt-2">

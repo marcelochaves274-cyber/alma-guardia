@@ -56,7 +56,7 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
     (prefillData?.date ? (prefillData.date instanceof Timestamp ? prefillData.date.toDate() : prefillData.date) : new Date())
   );
   const [locationName, setLocationName] = useState(recordToEdit?.location || prefillData?.location || '');
-  const [speciesType, setSpeciesType] = useState(recordToEdit?.speciesType || '');
+  const [speciesType, setSpeciesType] = useState(recordToEdit?.speciesType || prefillData?.speciesType || '');
   const [analysis, setAnalysis] = useState(recordToEdit?.analysis || '');
   const [description, setDescription] = useState(recordToEdit?.description || prefillData?.description || '');
   const [mapLocation, setMapLocation] = useState<LocationData | null>(
@@ -210,7 +210,7 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
     
     const recordData = {
         date: Timestamp.fromDate(date),
-        locationName: locationName,
+        locationName: locationName, // Garante que o nome do local seja salvo corretamente
         speciesType,
         description,
         analysis,
