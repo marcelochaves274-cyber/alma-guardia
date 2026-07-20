@@ -59,11 +59,24 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
   const [speciesType, setSpeciesType] = useState(recordToEdit?.speciesType || prefillData?.speciesType || '');
   const [analysis, setAnalysis] = useState(recordToEdit?.analysis || '');
   const [description, setDescription] = useState(recordToEdit?.description || prefillData?.description || '');
-  const [mapLocation, setMapLocation] = useState<LocationData | null>(
-    recordToEdit?.location || 
-    (recordToEdit?.mapMarker ? { mapType: 'ludico', ludico: recordToEdit.mapMarker } : null)
-  );
+  
+  // Função robusta para formatar a localização, lidando com formatos novos e antigos.
+  const formatLocationForMap = (record: any): LocationData | null => {
+    if (!record) return null;
+    // Prioridade 1: Formato novo (objeto 'location')
+    if (record.location && typeof record.location === 'object' && (record.location.geo || record.location.ludico)) {
+      return record.location;
+    }
+    // Prioridade 2: Formato antigo com 'mapMarker' (lúdico)
+    if (record.mapMarker) {
+      return { mapType: 'ludico', ludico: record.mapMarker };
+    }
+    return null;
+  };
 
+  const [mapLocation, setMapLocation] = useState<LocationData | null>(() => 
+    isEditing ? formatLocationForMap(recordToEdit) : (prefillData?.mapLocation || null)
+  );
   
   // UI/Data loading states
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -96,16 +109,6 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
     }
   }, [prefillData]);
 
-  // Adicionado para garantir que o estado mapLocation seja preenchido instantaneamente.
-  useEffect(() => {
-    if (isEditing && recordToEdit) {
-      const initialData = recordToEdit.location || 
-                          (recordToEdit.mapMarker ? { mapType: 'ludico', ludico: recordToEdit.mapMarker } : null);
-      setMapLocation(initialData);
-    }
-  }, [isEditing, recordToEdit]);
-
-
   // Populate form if we are editing
   useEffect(() => {
     if (isEditing && recordToEdit) {
@@ -115,18 +118,6 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
       setSpeciesType(recordToEdit.speciesType || '');
       setAnalysis(recordToEdit.analysis || '');
       setDescription(recordToEdit.description || '');
-
-      // Lógica de tradução para o mapa, espelhando a do relatório
-      let locationData = recordToEdit.location;
-      if (recordToEdit.mapMarker && !locationData) {
-        setMapLocation({
-          mapType: 'ludico',
-          ludico: recordToEdit.mapMarker,
-        });
-      } else {
-        // Se já existe `location` (formato novo), apenas o define no estado
-        setMapLocation(locationData || null);
-      }
     }
   }, [isEditing, recordToEdit]);
 
@@ -248,13 +239,6 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
     } finally {
         setIsSubmitting(false);
     }
-  };
-
-  // Lógica de extração para garantir que a localização seja sempre um objeto válido ou nulo.
-  const getInitialLocation = () => {
-    if (recordToEdit?.location && typeof recordToEdit.location === 'object') return recordToEdit.location;
-    if (recordToEdit?.mapMarker) return { mapType: 'ludico', ludico: recordToEdit.mapMarker };
-    return null;
   };
 
   return (
@@ -400,11 +384,11 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
                 </div>
               ) : (
                 <MapSelector
-                  key={recordToEdit?.id}
+                  key={recordToEdit?.id || 'new-fauna-geo'}
                   ludicMapUrl={mapUrl} 
                   onLocationChange={setMapLocation} 
-                  initialLocation={getInitialLocation()}
-                  defaultCenter={mapCenter} 
+                  initialLocation={mapLocation}
+                  defaultCenter={mapCenter}
                 />
               )}
            </div>

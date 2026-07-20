@@ -998,22 +998,7 @@ export function TreatmentMapReport() {
                   <div>
                       <Label className="font-semibold text-muted-foreground">Ação Realizada</Label>
                       <p className="whitespace-pre-wrap">{detailedTreatment.actionTaken || 'Não informado'}</p>
-                  </div>
-                  {detailedTreatment.location?.geo && (
-                    <div className="mt-4 p-3 bg-muted rounded-md text-sm col-span-1 md:col-span-3">
-                      <p><span className="font-semibold">Latitude:</span> {detailedTreatment.location.geo.lat.toFixed(6)}</p>
-                      <p><span className="font-semibold">Longitude:</span> {detailedTreatment.location.geo.lng.toFixed(6)}</p>
-                    </div>
-                  )}
-                  {detailedTreatment.location?.ludico && (
-                    <div className="mt-4 p-3 bg-muted rounded-md text-sm col-span-1 md:col-span-3">
-                      <p className="font-semibold">Coordenadas no Mapa Lúdico</p>
-                      <p>
-                        <span className="font-semibold">X:</span> {detailedTreatment.location.ludico.x.toFixed(2)}% | 
-                        <span className="font-semibold ml-2">Y:</span> {detailedTreatment.location.ludico.y.toFixed(2)}%
-                      </p>
-                    </div>
-                  )}
+                  </div>                  
                 </div>
               </ScrollArea>
               <div className="flex justify-end pt-2">

@@ -103,9 +103,9 @@ export function MapSelector({ ludicMapUrl, onLocationChange, initialLocation, de
   // Prioridade 1: Localização da ocorrência sendo editada.
   // Prioridade 2: Centro padrão configurado pelo usuário.
   // Prioridade 3: Coordenada padrão (fallback).
-  const center = useMemo(() => (
-    safeInitialLocation?.mapType === 'geo' && safeInitialLocation.geo
-      ? safeInitialLocation.geo
+  const center = useMemo(() => ( // Corrigido para usar geoMarker se disponível
+    geoMarker
+      ? geoMarker
       : defaultCenter || { lat: -25.0945, lng: -50.1633 }
   ), [safeInitialLocation, defaultCenter]);
 
@@ -116,6 +116,9 @@ export function MapSelector({ ludicMapUrl, onLocationChange, initialLocation, de
       setMapType(safeInitialLocation.mapType || 'ludico');
       setLudicMarker(safeInitialLocation.ludico || null);
       setGeoMarker(safeInitialLocation.geo || null);
+    } else {
+      setLudicMarker(null);
+      setGeoMarker(null);
     }
   }, [safeInitialLocation]);
 
@@ -124,7 +127,7 @@ export function MapSelector({ ludicMapUrl, onLocationChange, initialLocation, de
     const imageElement = container.querySelector('img');
     if (!imageElement) return;
 
-    // Pega as dimensões e posição da imagem renderizada na tela
+    // Pega as dimensões e posição da imagem renderizada na tela (object-contain)
     const imageRect = imageElement.getBoundingClientRect();
     // Pega as dimensões e posição do container
     const containerRect = container.getBoundingClientRect();
@@ -146,16 +149,18 @@ export function MapSelector({ ludicMapUrl, onLocationChange, initialLocation, de
 
     const newMarker = { x: xPercent, y: yPercent };
     setLudicMarker(newMarker);
-    onLocationChange({ mapType: 'ludico', ludico: newMarker, geo: geoMarker || undefined });
+    onLocationChange({ mapType: 'ludico', ludico: newMarker, geo: geoMarker ?? undefined });
   };
 
   const handleGeoMapClick = (e: any) => {
+    if (!e.detail.latLng) return;
     const newMarker = {
       lat: e.detail.latLng.lat,
       lng: e.detail.latLng.lng,
     };
+    console.log("Coordenadas capturadas:", newMarker.lat, newMarker.lng);
     setGeoMarker(newMarker);
-    onLocationChange({ mapType: 'geo', geo: newMarker, ludico: ludicMarker || undefined });
+    onLocationChange({ mapType: 'geo', geo: newMarker, ludico: ludicMarker ?? undefined });
   };
 
   const handleMapTypeChange = (newMapType: 'ludico' | 'geo') => {

@@ -907,22 +907,7 @@ export function MapReport() {
                       <div className="col-span-1 md:col-span-2">
                         <Label className="text-muted-foreground">Descrição</Label>
                         <p className="whitespace-pre-wrap">{detailedOccurrence.description}</p>
-                      </div>
-                      {detailedOccurrence.location?.geo && (
-                        <div className="mt-4 p-3 bg-muted rounded-md text-sm col-span-1 md:col-span-2">
-                          <p><span className="font-semibold">Latitude:</span> {detailedOccurrence.location.geo.lat.toFixed(6)}</p>
-                          <p><span className="font-semibold">Longitude:</span> {detailedOccurrence.location.geo.lng.toFixed(6)}</p>
-                        </div>
-                      )}
-                      {detailedOccurrence.location?.ludico && (
-                        <div className="mt-4 p-3 bg-muted rounded-md text-sm col-span-1 md:col-span-2">
-                          <p className="font-semibold">Coordenadas no Mapa Lúdico</p>
-                          <p>
-                            <span className="font-semibold">X:</span> {detailedOccurrence.location.ludico.x.toFixed(2)}% | 
-                            <span className="font-semibold ml-2">Y:</span> {detailedOccurrence.location.ludico.y.toFixed(2)}%
-                          </p>
-                        </div>
-                      )}
+                      </div>                      
                     </div>
                   </div>
 

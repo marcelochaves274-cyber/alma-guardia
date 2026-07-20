@@ -552,6 +552,11 @@ export function FaunaFloraGeoMapReport() {
                             <p><strong className="font-medium">Data:</strong> {format(rec.date, 'dd/MM/yyyy', { locale: ptBR })}</p>
                             <p><strong className="font-medium">Tipo:</strong> {rec.speciesType || 'N/A'}</p>
                             <p><strong className="font-medium">Local:</strong> {rec.locationName || 'N/A'}</p>
+                            {rec.location?.geo && (
+                              <p className="text-xs text-muted-foreground">
+                                Lat: {rec.location.geo.lat.toFixed(6)}, Lng: {rec.location.geo.lng.toFixed(6)}
+                              </p>
+                            )}
                           </div>
                           <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
                               setActiveKey(null);
@@ -611,6 +616,11 @@ export function FaunaFloraGeoMapReport() {
                           <p><strong className="font-medium">Data:</strong> {format(rec.date, 'dd/MM/yyyy', { locale: ptBR })}</p>
                           <p><strong className="font-medium">Tipo:</strong> {rec.speciesType || 'N/A'}</p>
                           <p><strong className="font-medium">Local:</strong> {rec.locationName || 'N/A'}</p>
+                          {rec.location?.geo && (
+                            <p className="text-xs text-muted-foreground">
+                              Lat: {rec.location.geo.lat.toFixed(6)}, Lng: {rec.location.geo.lng.toFixed(6)}
+                            </p>
+                          )}
                         </div>
                         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
                           setActiveGeoPopoverKey(null);

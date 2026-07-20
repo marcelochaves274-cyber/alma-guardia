@@ -494,6 +494,21 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                       <Label className="font-semibold text-muted-foreground">Descrição</Label>
                       <p className="whitespace-pre-wrap">{selectedRecord.description}</p>
                   </div>
+                  {selectedRecord.mapLocation?.geo && (
+                    <div className="mt-4 p-3 bg-muted rounded-md text-sm">
+                      <p><span className="font-semibold">Latitude:</span> {selectedRecord.mapLocation.geo.lat.toFixed(6)}</p>
+                      <p><span className="font-semibold">Longitude:</span> {selectedRecord.mapLocation.geo.lng.toFixed(6)}</p>
+                    </div>
+                  )}
+                  {selectedRecord.mapLocation?.ludico && (
+                    <div className="mt-4 p-3 bg-muted rounded-md text-sm">
+                      <p className="font-semibold">Coordenadas no Mapa Lúdico</p>
+                      <p>
+                        <span className="font-semibold">X:</span> {selectedRecord.mapLocation.ludico.x.toFixed(2)}% | 
+                        <span className="font-semibold ml-2">Y:</span> {selectedRecord.mapLocation.ludico.y.toFixed(2)}%
+                      </p>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
               <div className="flex justify-end pt-2">

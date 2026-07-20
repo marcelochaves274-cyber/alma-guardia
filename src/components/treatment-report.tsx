@@ -542,6 +542,21 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
                 </div>
                 <div><Label className="font-semibold text-muted-foreground">Tratamento Proposto</Label><p className="whitespace-pre-wrap">{selectedTreatment.proposedTreatment || 'Não informado'}</p></div>
                 <div><Label className="font-semibold text-muted-foreground">Ação Realizada</Label><p className="whitespace-pre-wrap">{selectedTreatment.actionTaken || 'Não informado'}</p></div>
+                {selectedTreatment.location?.geo && (
+                  <div className="mt-4 p-3 bg-muted rounded-md text-sm">
+                    <p><span className="font-semibold">Latitude:</span> {selectedTreatment.location.geo.lat.toFixed(6)}</p>
+                    <p><span className="font-semibold">Longitude:</span> {selectedTreatment.location.geo.lng.toFixed(6)}</p>
+                  </div>
+                )}
+                {selectedTreatment.location?.ludico && (
+                  <div className="mt-4 p-3 bg-muted rounded-md text-sm">
+                    <p className="font-semibold">Coordenadas no Mapa Lúdico</p>
+                    <p>
+                      <span className="font-semibold">X:</span> {selectedTreatment.location.ludico.x.toFixed(2)}% | 
+                      <span className="font-semibold ml-2">Y:</span> {selectedTreatment.location.ludico.y.toFixed(2)}%
+                    </p>
+                  </div>
+                )}
               </div>
             </ScrollArea>
             <div className="flex justify-end pt-2"><DialogClose asChild><Button type="button" variant="secondary">Fechar</Button></DialogClose></div>

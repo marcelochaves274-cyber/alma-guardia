@@ -534,6 +534,21 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
                         <Label className="text-muted-foreground">Descrição</Label>
                         <p className="whitespace-pre-wrap">{selectedOccurrence.description}</p>
                       </div>
+                      {selectedOccurrence.location?.geo && (
+                        <div className="mt-4 p-3 bg-muted rounded-md text-sm col-span-1 md:col-span-2">
+                          <p><span className="font-semibold">Latitude:</span> {selectedOccurrence.location.geo.lat.toFixed(6)}</p>
+                          <p><span className="font-semibold">Longitude:</span> {selectedOccurrence.location.geo.lng.toFixed(6)}</p>
+                        </div>
+                      )}
+                      {selectedOccurrence.location?.ludico && (
+                        <div className="mt-4 p-3 bg-muted rounded-md text-sm col-span-1 md:col-span-2">
+                          <p className="font-semibold">Coordenadas no Mapa Lúdico</p>
+                          <p>
+                            <span className="font-semibold">X:</span> {selectedOccurrence.location.ludico.x.toFixed(2)}% | 
+                            <span className="font-semibold ml-2">Y:</span> {selectedOccurrence.location.ludico.y.toFixed(2)}%
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
