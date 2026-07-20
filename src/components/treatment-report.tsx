@@ -64,6 +64,11 @@ interface Treatment {
   riskLevel: number;
   situation: 'pendente' | 'finalizado';
   completionDate?: Timestamp;
+  location?: {
+    mapType: 'ludico' | 'geo';
+    ludico?: { x: number; y: number };
+    geo?: { lat: number; lng: number };
+  };
 }
 
 interface TreatmentReportProps {
