@@ -67,6 +67,11 @@ interface Occurrence {
   city: string;
   state: string;
   phone: string;
+  location?: {
+    mapType: 'ludico' | 'geo';
+    ludico?: { x: number; y: number };
+    geo?: { lat: number; lng: number };
+  };
 }
 
 interface OccurrenceReportProps {
