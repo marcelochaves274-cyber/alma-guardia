@@ -34,7 +34,6 @@ import { Badge } from './ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from './ui/scroll-area';
-import { MonthSelector } from './month-selector';
 import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -104,6 +103,21 @@ const analysisMapping: Record<string, { label: string, className: string }> = {
     media: { label: 'Média', className: 'bg-orange-500 text-white hover:bg-orange-600' },
     baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
+
+const monthOptions = [
+  { value: '0', label: 'Janeiro' },
+  { value: '1', label: 'Fevereiro' },
+  { value: '2', label: 'Março' },
+  { value: '3', label: 'Abril' },
+  { value: '4', label: 'Maio' },
+  { value: '5', label: 'Junho' },
+  { value: '6', label: 'Julho' },
+  { value: '7', label: 'Agosto' },
+  { value: '8', label: 'Setembro' },
+  { value: '9', label: 'Outubro' },
+  { value: '10', label: 'Novembro' },
+  { value: '11', label: 'Dezembro' },
+];
 
 export function FaunaFloraGeoMapReport() {
   const firestore = useFirestore();
@@ -651,11 +665,7 @@ export function FaunaFloraGeoMapReport() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Filtrar por Mês</Label>
-            <MonthSelector selectedMonths={filterMonths} onMonthChange={setFilterMonths} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
                 <Label>Filtrar por Ano</Label>
                 <SheetFilter
@@ -687,6 +697,16 @@ export function FaunaFloraGeoMapReport() {
                     onChange={setFilterLocation}
                     disabled={!locations || locations.length === 0}
                     buttonText='Filtrar por Local'
+                />
+            </div>
+            <div className="space-y-2">
+                <Label>Filtrar por Mês(es)</Label>
+                <SheetFilter
+                    title='Filtrar por Mês'
+                    options={monthOptions}
+                    selected={filterMonths}
+                    onChange={setFilterMonths}
+                    buttonText='Filtrar por Mês'
                 />
             </div>
             
