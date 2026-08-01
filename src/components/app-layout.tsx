@@ -315,7 +315,7 @@ function MainAppLayout() {
       case 'view-pae':
         return <ViewPae />;
       case 'view-rpo':
-        return <ViewRpo prefillData={prefillData} />;
+        return <ViewRpo prefillData={prefillData} setPage={handlePageChange} />;
       case 'view-sgs-docs':
         return <ViewSgsDocs />;
       case 'my-subscription':
