@@ -34,7 +34,7 @@ import {
 import { useFirestore, useUser } from '@/firebase';
 import { useProfile } from '@/context/profile-context';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot, updateDoc } from 'firebase/firestore';
-import { format, differenceInDays, startOfDay, isBefore } from 'date-fns';
+import { format, differenceInDays, startOfDay, isBefore, addYears, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
@@ -52,7 +52,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { cn, formatValidity } from '@/lib/utils';
 import { Label } from './ui/label';
 import { SheetFilter } from './sheet-filter';
 import { ScrollArea } from './ui/scroll-area';
@@ -68,6 +68,12 @@ interface Equipment {
   lotCaUiaa: string;
   status: 'operacional' | 'em manutencao' | 'descartado';
   manufacturingDate?: Timestamp;
+  purchaseDate?: Timestamp;
+  firstUseDate?: Timestamp;
+  invoiceNumber?: string;
+  purchaseLocation?: string;
+  validityYears?: string;
+  validityMonths?: string;
   storageLocation: string;
   storageDetails: string;
   lastInspectionDate?: Timestamp;
@@ -79,10 +85,55 @@ interface Equipment {
 interface EquipmentReportProps {
   onEdit: (equipment: Equipment, scrollPosition: number) => void;
   preFilter?: {
-    status: 'overdue';
+    status: 'overdue' | 'due_soon' | 'expired';
   };
   // New prop to restore scroll position when returning from edit
   initialScrollPosition?: number;
+}
+
+function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
+  const expiryDate = useMemo(() => {
+    if (!equipment.manufacturingDate || (!equipment.validityYears && !equipment.validityMonths)) {
+      return null;
+    }
+    try {
+      let date = equipment.manufacturingDate.toDate();
+      if (equipment.validityYears) date = addYears(date, Number(equipment.validityYears));
+      if (equipment.validityMonths) date = addMonths(date, Number(equipment.validityMonths));
+      return date;
+    } catch (error) {
+      return null;
+    }
+  }, [equipment]);
+
+  return (
+    <>
+      <ScrollArea className="max-h-[70vh] pr-6">
+        <div className="space-y-4 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            <div><Label className="font-semibold text-muted-foreground">Tipo</Label><p>{equipment.equipmentType}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Marca</Label><p>{equipment.brand}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Modelo</Label><p>{equipment.model || 'Não informado'}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Lote/CA/UIAA</Label><p>{equipment.lotCaUiaa || 'Não informado'}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Data de Fabricação</Label><p>{equipment.manufacturingDate ? format(equipment.manufacturingDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Data da Compra</Label><p>{equipment.purchaseDate ? format(equipment.purchaseDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Data 1º Utilização</Label><p>{equipment.firstUseDate ? format(equipment.firstUseDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Nota Fiscal</Label><p>{equipment.invoiceNumber || 'Não informado'}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Local da Compra</Label><p>{equipment.purchaseLocation || 'Não informado'}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Tempo de Validade</Label><p>{formatValidity(equipment.validityYears || '', equipment.validityMonths || '') || 'Não informado'}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Data de Validade</Label><p>{expiryDate ? format(expiryDate, 'dd/MM/yyyy', { locale: ptBR }) : 'Não calculado'}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Local Armazenado</Label><p>{equipment.storageLocation || 'Não informado'}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Detalhes do Local</Label><p>{equipment.storageDetails || 'Não informado'}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Status</Label><div><Badge className={cn(statusMapping[equipment.status]?.className)}>{statusMapping[equipment.status]?.label || 'Desconhecido'}</Badge></div></div>
+            {equipment.status === 'descartado' && equipment.discardReason && (<div className="md:col-span-2"><Label className="font-semibold text-muted-foreground">Motivo do Descarte</Label><p>{equipment.discardReason}</p></div>)}
+            {equipment.observations && (<div className="md:col-span-2"><Label className="font-semibold text-muted-foreground">Observações</Label><p className="whitespace-pre-wrap">{equipment.observations}</p></div>)}
+            {equipment.status !== 'descartado' && (<><div><Label className="font-semibold text-muted-foreground">Última Inspeção</Label><p>{equipment.lastInspectionDate ? format(equipment.lastInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p></div><div><Label className="font-semibold text-muted-foreground">Próxima Inspeção</Label><p>{equipment.nextInspectionDate ? format(equipment.nextInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p></div></>)}
+          </div>
+        </div>
+      </ScrollArea>
+      <div className="flex justify-end pt-2"><DialogClose asChild><Button type="button" variant="secondary">Fechar</Button></DialogClose></div>
+    </>
+  );
 }
 
 const statusMapping: Record<string, { label: string, className: string }> = {
@@ -93,8 +144,9 @@ const statusMapping: Record<string, { label: string, className: string }> = {
 
 const inspectionStatusOptions = [
     { value: 'overdue', label: 'Vistoria Atrasada' },
-    { value: 'due_soon', label: 'À Vencer (próximos 30 dias)' },
-    { value: 'no_inspection', label: 'Sem Vistoria' },
+    { value: 'due_soon', label: 'À Vencer (próximos 10 dias)' },
+    { value: 'expired', label: 'Validade Expirada' },
+    { value: 'descartado', label: 'Descartado' },
 ];
 
 const getInspectionStatus = (nextInspectionDate: Date | null | undefined, clientToday: Date) => {
@@ -137,7 +189,7 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
   const [filterType, setFilterType] = useState<string[]>([]);
   const [filterBrand, setFilterBrand] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
-  const [filterInspection, setFilterInspection] = useState<string[]>(preFilter?.status === 'overdue' ? ['overdue'] : []);
+  const [filterInspection, setFilterInspection] = useState<string[]>([]);
   const [filterStorageLocation, setFilterStorageLocation] = useState<string[]>([]);
   const [filterLotCaUiaa, setFilterLotCaUiaa] = useState<string>('');
 
@@ -151,6 +203,12 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
     // This will only run on the client, after hydration
     setClientToday(startOfDay(new Date()));
   }, []);
+
+  useEffect(() => {
+    if (preFilter?.status) {
+      setFilterInspection([preFilter.status]);
+    }
+  }, [preFilter]);
   
   // Efeito para garantir que o scroll comece no topo (último lançamento) ao carregar
   useEffect(() => {
@@ -333,12 +391,21 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
           return eq.status !== 'descartado' && !!eq.nextInspectionDate && isBefore(eq.nextInspectionDate.toDate(), clientToday);
         }
         if (filter === 'due_soon') {
-            if (eq.status === 'descartado' || !eq.nextInspectionDate) return false;
-            const daysUntil = differenceInDays(startOfDay(eq.nextInspectionDate.toDate()), clientToday);
-            return daysUntil >= 0 && daysUntil <= 30;
+          if (eq.status === 'descartado' || !eq.nextInspectionDate) return false;
+          const daysUntil = differenceInDays(startOfDay(eq.nextInspectionDate.toDate()), clientToday);
+          return daysUntil >= 0 && daysUntil <= 10;
         }
-        if (filter === 'no_inspection') {
-          return eq.status === 'descartado';
+        if (filter === 'expired') {
+          if (eq.status === 'descartado' || !eq.manufacturingDate || (!eq.validityYears && !eq.validityMonths)) return false;
+          try {
+            let expiryDate = eq.manufacturingDate.toDate();
+            if (eq.validityYears) expiryDate = addYears(expiryDate, Number(eq.validityYears));
+            if (eq.validityMonths) expiryDate = addMonths(expiryDate, Number(eq.validityMonths));
+            return isBefore(startOfDay(expiryDate), clientToday);
+          } catch { return false; }
+        }
+        if (filter === 'descartado') {
+          return eq.status === 'descartado'; // This filter now correctly checks for 'descartado' status
         }
         return false;
       });
@@ -715,84 +782,7 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
               Visualização detalhada do equipamento.
             </DialogDescription>
           </DialogHeader>
-          {selectedEquipment && (
-            <>
-              <ScrollArea className="max-h-[70vh] pr-6">
-                  <div className="space-y-4 py-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                          <div>
-                              <Label className="font-semibold text-muted-foreground">Tipo</Label>
-                              <p>{selectedEquipment.equipmentType}</p>
-                          </div>
-                          <div>
-                              <Label className="font-semibold text-muted-foreground">Marca</Label>
-                              <p>{selectedEquipment.brand}</p>
-                          </div>
-                          <div>
-                              <Label className="font-semibold text-muted-foreground">Modelo</Label>
-                              <p>{selectedEquipment.model || 'Não informado'}</p>
-                          </div>
-                          <div>
-                              <Label className="font-semibold text-muted-foreground">Lote/CA/UIAA</Label>
-                              <p>{selectedEquipment.lotCaUiaa || 'Não informado'}</p>
-                          </div>
-                          <div>
-                              <Label className="font-semibold text-muted-foreground">Data de Fabricação</Label>
-                              <p>{selectedEquipment.manufacturingDate ? format(selectedEquipment.manufacturingDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p>
-                          </div>
-                           <div>
-                              <Label className="font-semibold text-muted-foreground">Local Armazenado</Label>
-                              <p>{selectedEquipment.storageLocation || 'Não informado'}</p>
-                          </div>
-                          <div>
-                              <Label className="font-semibold text-muted-foreground">Detalhes do Local</Label>
-                              <p>{selectedEquipment.storageDetails || 'Não informado'}</p>
-                          </div>
-                           <div>
-                              <Label className="font-semibold text-muted-foreground">Status</Label>
-                              <div>
-                                  <Badge className={cn(statusMapping[selectedEquipment.status]?.className)}>
-                                      {statusMapping[selectedEquipment.status]?.label || 'Desconhecido'}
-                                  </Badge>
-                              </div>
-                          </div>
-                          {selectedEquipment.status === 'descartado' && selectedEquipment.discardReason && (
-                            <div className="md:col-span-2">
-                                <Label className="font-semibold text-muted-foreground">Motivo do Descarte</Label>
-                                <p>{selectedEquipment.discardReason}</p>
-                            </div>
-                          )}
-                          {selectedEquipment.observations && (
-                            <div className="md:col-span-2">
-                                <Label className="font-semibold text-muted-foreground">Observações</Label>
-                                <p className="whitespace-pre-wrap">{selectedEquipment.observations}</p>
-                            </div>
-                          )}
-                          
-                          {selectedEquipment.status !== 'descartado' && (
-                            <>
-                                <div>
-                                    <Label className="font-semibold text-muted-foreground">Última Inspeção</Label>
-                                    <p>{selectedEquipment.lastInspectionDate ? format(selectedEquipment.lastInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p>
-                                </div>
-                                <div>
-                                    <Label className="font-semibold text-muted-foreground">Próxima Inspeção</Label>
-                                    <p>{selectedEquipment.nextInspectionDate ? format(selectedEquipment.nextInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p>
-                                </div>
-                            </>
-                          )}
-                      </div>
-                  </div>
-              </ScrollArea>
-              <div className="flex justify-end pt-2">
-                  <DialogClose asChild>
-                      <Button type="button" variant="secondary">
-                          Fechar
-                      </Button>
-                  </DialogClose>
-              </div>
-            </>
-          )}
+          {selectedEquipment && <EquipmentDetailContent equipment={selectedEquipment} />}
       </DialogContent>
     </Dialog>
   );

@@ -64,7 +64,7 @@ export function TutorialPage() {
             <AccordionTrigger>Acidentes/Incidentes</AccordionTrigger>
             <AccordionContent>
               <ul className="list-disc space-y-2 pl-5">
-                {isAdmin && <li><strong>Registrar Ocorrência:</strong> Formulário detalhado para registrar um novo acidente ou incidente, incluindo informações da pessoa envolvida, descrição do evento, análise de gravidade e marcação no mapa.</li>}
+                {isAdmin && <li><strong>Registrar Ocorrência:</strong> Formulário detalhado para registrar um novo acidente ou incidente. Inclui informações da pessoa envolvida (com máscaras automáticas para CPF e Telefone), descrição do evento, análise de gravidade e marcação no mapa.</li>}
                 {isAdmin && <li><strong>Relatório de Ocorrência:</strong> Visualize, filtre e pesquise todos os acidentes e incidentes registrados. Você pode filtrar por data, tipo, local, nome e mais. A partir daqui, você pode editar ou excluir um registro.</li>}
                 <li><strong>Relatório de Mapa:</strong> Visualize todas as ocorrências plotadas em um mapa interativo. Alterne entre o Mapa Lúdico (imagem personalizada) e o Mapa Georreferenciado (Google Maps) para diferentes perspectivas. Isso ajuda a identificar áreas com maior concentração de eventos.</li>
               </ul>
@@ -87,7 +87,12 @@ export function TutorialPage() {
             <AccordionContent>
                <ul className="list-disc space-y-2 pl-5">
                 <li><strong>Registrar Aviso:</strong> Qualquer colaborador (mesmo o perfil Observador) pode usar esta tela para reportar uma observação, condição insegura ou sugestão de melhoria. É um canal de comunicação direto do campo para a gestão.</li>
-                {isAdmin && <li><strong>Avisos Pendentes:</strong> Como administrador, esta é sua caixa de entrada para os avisos enviados. A partir daqui, você pode analisar cada aviso e decidir a melhor ação: marcar como resolvido, ou criar um registro formal (Ocorrência, Tratamento de Risco, etc.) já com os dados preenchidos.</li>}
+                {isAdmin && <li><strong>Avisos Pendentes:</strong> Como administrador, esta é sua caixa de entrada para os avisos enviados.
+                    <ul className="list-disc space-y-1 pl-5 mt-1">
+                        <li><strong>Avisos Comuns:</strong> Analise cada aviso e decida a melhor ação: marcar como resolvido, ou criar um registro formal (Ocorrência, Tratamento de Risco, etc.) já com os dados preenchidos.</li>
+                        <li><strong>Relatórios de Pronto Atendimento (RPO):</strong> RPOs pendentes aparecem aqui com a avaliação primária (XABCDE) e secundária (SAMPLE) completas, incluindo as descrições detalhadas de cada item, facilitando a análise antes de convertê-lo em uma ocorrência oficial.</li>
+                    </ul>
+                </li>}
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -136,9 +141,19 @@ export function TutorialPage() {
            )}
 
             <AccordionItem value="item-10">
-                <AccordionTrigger>POP / TCR / RAME / Documentos SGS</AccordionTrigger>
+                <AccordionTrigger>POP / TCR / Documentos SGS</AccordionTrigger>
                 <AccordionContent>
-                    Essas seções permitem visualizar o conteúdo dos documentos essenciais do seu Sistema de Gestão de Segurança. Administradores podem editar o conteúdo diretamente nessas telas, garantindo que as informações estejam sempre atualizadas.
+                    Essas seções permitem visualizar o conteúdo dos documentos essenciais do seu Sistema de Gestão de Segurança. Administradores podem editar o conteúdo diretamente nessas telas, garantindo que as informações estejam sempre atualizadas. O RAME possui uma seção própria.
+                </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-rame">
+                <AccordionTrigger>RAME (Recurso de Atendimento Médico de Emergência)</AccordionTrigger>
+                <AccordionContent>
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li><strong>PE e PAE:</strong> Visualize e edite o conteúdo do seu Plano de Emergência e Plano de Atendimento a Emergência.</li>
+                    <li><strong>RPA - Relatório de Pronto Atendimento:</strong> Formulário para registrar atendimentos de primeiros socorros. Os campos de CPF e Telefone possuem formatação automática. O fluxo de envio exige que o socorrista primeiro clique em <strong>"Copiar Relatório"</strong> (o que gera um texto limpo e detalhado para a área de transferência, incluindo as descrições do XABCDE) para então liberar o botão <strong>"Enviar para Central de Avisos"</strong>.</li>
+                  </ul>
                 </AccordionContent>
             </AccordionItem>
 

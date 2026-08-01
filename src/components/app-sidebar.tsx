@@ -1,26 +1,14 @@
 'use client';
 
-import {
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  useSidebar,
-  SidebarMenuSubItem,
-  SidebarMenuSkeleton,
-} from '@/components/ui/sidebar';
+import { SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, useSidebar, SidebarMenuSubItem, SidebarMenuSkeleton, } from '@/components/ui/sidebar';
 import { ListTodo, Settings, ChevronDown, LogOut, Siren, ShieldCheck, Sprout, ClipboardList, BookText, FileText, HeartPulse, Files, HardHat, Route, Megaphone, HelpCircle, KeyRound, User, Users, Info, Map, X, Binoculars, BarChart3, LayoutDashboard, CreditCard } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { SgsAppLogo } from '@/components/icons';
 import { useAppSettings } from '@/context/app-settings-context';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getAuth, signOut } from 'firebase/auth';
-import { useFirebaseApp, useUser } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useUser, useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useProfile } from '@/context/profile-context';
@@ -72,7 +60,8 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   const { state, setOpenMobile } = useSidebar();
   const { appName, logoUrl, isLoading: isSettingsLoading } = useAppSettings();
   const { user } = useUser();
-  const firebaseApp = useFirebaseApp();
+  const auth = useAuth(); // Obter a instância de autenticação do hook
+ 
   const router = useRouter();
   const { toast } = useToast();
   const { profile, clearProfile, isProfileLoading } = useProfile();
@@ -88,13 +77,11 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   };
   
   const handleSignOut = async () => {
-    if (!firebaseApp) return;
-    const auth = getAuth(firebaseApp);
+    if (!auth) return; // Garante que a instância de auth exista
     try {
       await signOut(auth);
       clearProfile();
-      // Redirect to the public landing page after sign out.
-      router.push('/');
+      router.push('/login'); // Redireciona para a página de login
       toast({
         title: 'Logout realizado',
         description: 'Você foi desconectado com sucesso.',
@@ -143,6 +130,9 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
       'manage-equipment-and-brands': 'settings',
       'manage-data-transfer': 'settings',
     };
+    subMenuParents['view-pe'] = 'rame'; // Adicionado para abrir o submenu RAME
+    subMenuParents['view-pae'] = 'rame';
+    subMenuParents['view-rpo'] = 'rame';
 
     const parentMenu = subMenuParents[page];
     if (parentMenu) {
@@ -612,15 +602,38 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              isActive={activePage === 'view-rame'}
-              onClick={() => handlePageChange('view-rame')}
+              onClick={() => toggleSubMenu('rame')}
               tooltip={{
                 children: 'RAME',
               }}
             >
               <HeartPulse />
               <span className="font-bold">RAME</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 transition-transform ${
+                  openSubMenu === 'rame' ? 'rotate-180' : ''
+                }`}
+              />
             </SidebarMenuButton>
+            {openSubMenu === 'rame' && state === 'expanded' && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton isActive={activePage === 'view-pe'} onClick={() => handlePageChange('view-pe')} className="font-semibold w-full justify-start pl-2 whitespace-normal h-auto py-2 text-left">
+                    PE - Plano de Emergência
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton isActive={activePage === 'view-pae'} onClick={() => handlePageChange('view-pae')} className="font-semibold w-full justify-start pl-2 whitespace-normal h-auto py-2 text-left">
+                    PAE - Plano de Atendimento de Emergência
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton isActive={activePage === 'view-rpo'} onClick={() => handlePageChange('view-rpo')} className="font-semibold w-full justify-start pl-2 whitespace-normal h-auto py-2 text-left">
+                    RPA - Relatório de Pronto Atendimento
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton

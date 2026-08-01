@@ -29,6 +29,9 @@ import { ManagePops } from './manage-pops';
 import { ManageTcrs } from './manage-tcrs';
 import { ViewPops } from './view-pops';
 import { ViewTcrs } from './view-tcrs';
+import { ViewPe } from './view-pe';
+import { ViewPae } from './view-pae';
+import { ViewRpo } from './view-rpo';
 import { ViewSgsDocs } from './view-sgs-docs';
 import { RegisterEquipment } from './register-equipment';
 import { ManageEquipmentAndBrands } from './manage-equipment-and-brands';
@@ -42,7 +45,6 @@ import { HelpPage } from './help-page';
 import { ProfileSelector } from './profile-selector';
 import { useProfile } from '@/context/profile-context';
 import { TutorialPage } from './tutorial-page';
-import { ViewRame } from './view-rame';
 import { GraphicsReport } from './graphics-report';
 import { ManageDataTransfer } from './manage-data-transfer';
 import { MySubscriptionPage } from './my-subscription-page';
@@ -71,7 +73,7 @@ type ReportFilters = {
     situations: string[];
   };
   equipmentReport?: {
-    status: 'overdue';
+    status: 'overdue' | 'due_soon' | 'expired';
   };
 }
 
@@ -308,8 +310,12 @@ function MainAppLayout() {
         return <ViewPops />;
       case 'view-tcrs':
         return <ViewTcrs />;
-      case 'view-rame':
-        return <ViewRame />;
+      case 'view-pe': // A tela de PE agora é renderizada aqui
+        return <ViewPe />;
+      case 'view-pae':
+        return <ViewPae />;
+      case 'view-rpo':
+        return <ViewRpo prefillData={prefillData} />;
       case 'view-sgs-docs':
         return <ViewSgsDocs />;
       case 'my-subscription':

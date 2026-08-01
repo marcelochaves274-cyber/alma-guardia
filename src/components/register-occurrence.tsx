@@ -87,9 +87,28 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
 
   useEffect(() => {
     if (prefillData) {
+      // Lógica unificada para preencher dados de Avisos ou RPOs
+      const dateToSet = prefillData.occurrenceDate || prefillData.date;
+      if (dateToSet) {
+        setOccurrenceDate(dateToSet instanceof Timestamp ? dateToSet.toDate() : new Date(dateToSet));
+      } else {
+        setOccurrenceDate(new Date());
+      }
+
       setDescription(prefillData.description || '');
-      setInvolvedPersonName(prefillData.collaboratorName || '');
-      setOccurrenceLocation(prefillData.location || '');
+      
+      // Prioriza o nome do envolvido (de um RPO) ou usa o nome do colaborador (de um Aviso)
+      setInvolvedPersonName(prefillData.involvedPersonName || prefillData.collaboratorName || '');
+      
+      // Prioriza o local da ocorrência (de um RPO) ou usa o local (de um Aviso)
+      setOccurrenceLocation(prefillData.location || prefillData.occurrenceLocation || '');
+      
+      // Preenche os campos adicionais se vierem de um RPO
+      setBirthDate(prefillData.birthDate || '');
+      setCpf(prefillData.cpf || '');
+      setPhone(prefillData.phone || '');
+      setCity(prefillData.city || '');
+      setState(prefillData.state || '');
       setLocation(prefillData.mapLocation || null); // Corrigido para usar mapLocation
     }
   }, [prefillData]);
@@ -188,6 +207,34 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
     setBirthDate(value.slice(0, 10)); // Limit to 10 chars (dd/mm/yyyy)
   };
   
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 11);
+    let value = raw;
+    if (raw.length > 9) {
+      value = `${raw.slice(0, 3)}.${raw.slice(3, 6)}.${raw.slice(6, 9)}-${raw.slice(9)}`;
+    } else if (raw.length > 6) {
+      value = `${raw.slice(0, 3)}.${raw.slice(3, 6)}.${raw.slice(6)}`;
+    } else if (raw.length > 3) {
+      value = `${raw.slice(0, 3)}.${raw.slice(3)}`;
+    }
+    setCpf(value);
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 11);
+    let value = raw;
+    if (raw.length > 10) {
+      value = `(${raw.slice(0, 2)}) ${raw.slice(2, 7)}-${raw.slice(7)}`;
+    } else if (raw.length > 6) {
+      value = `(${raw.slice(0, 2)}) ${raw.slice(2, 6)}-${raw.slice(6)}`;
+    } else if (raw.length > 2) {
+      value = `(${raw.slice(0, 2)}) ${raw.slice(2)}`;
+    } else if (raw.length > 0) {
+      value = `(${raw}`;
+    }
+    setPhone(value);
+  };
+
   const resetForm = () => {
     setOccurrenceDate(undefined);
     setOccurrenceLocation('');
@@ -425,7 +472,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
               </div>
               <div className="space-y-2">
                   <Label htmlFor="cpf">CPF</Label>
-                  <Input name="cpf" id="cpf" placeholder="000.000.000-00" value={cpf} onChange={(e) => setCpf(e.target.value)} />
+                  <Input name="cpf" id="cpf" placeholder="000.000.000-00" value={cpf} onChange={handleCpfChange} />
               </div>
               <div className="space-y-2">
                   <Label htmlFor="city">Cidade</Label>
@@ -437,7 +484,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
               </div>
               <div className="space-y-2">
                   <Label htmlFor="phone">Fone</Label>
-                  <Input name="phone" id="phone" placeholder="(00) 00000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                  <Input name="phone" id="phone" placeholder="(00) 00000-0000" value={phone} onChange={handlePhoneChange} />
               </div>
           </div>
 

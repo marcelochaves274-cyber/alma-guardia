@@ -38,6 +38,7 @@ import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
 import { SheetFilter } from './sheet-filter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Occurrence {
   id: string;
@@ -95,21 +96,22 @@ const analysisMapping: Record<string, { label: string, className: string }> = {
     baixa: { label: 'Baixa', className: 'bg-yellow-500 text-black hover:bg-yellow-600' }
 };
 
-const MapBoundsUpdater = ({ points }: { points: { lat: number; lng: number }[] }) => {
+const MapBoundsUpdater = ({ points, isMobile }: { points: { lat: number; lng: number }[], isMobile: boolean }) => {
   const map = useMap();
 
   useLayoutEffect(() => {
     if (!map || points.length === 0) return;
 
     if (points.length === 1) {
-      map.moveCamera({ center: points[0], zoom: 15 });
+      map.moveCamera({ center: points[0], zoom: 16 });
       return;
     }
 
     const bounds = new google.maps.LatLngBounds();
     points.forEach(point => bounds.extend(point));
-    map.fitBounds(bounds, 100); // 100 is padding in pixels
-  }, [map, points]);
+    const padding = isMobile ? 40 : 100; // Padding menor no mobile para um zoom mais próximo
+    map.fitBounds(bounds, padding);
+  }, [map, points, isMobile]);
 
   return null;
 };
@@ -166,6 +168,7 @@ export function MapReport() {
   const [occurrenceTypes, setOccurrenceTypes] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const isMobile = useIsMobile();
 
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | undefined>(undefined);
   const [naturalImageDimensions, setNaturalImageDimensions] = useState<{width: number, height: number} | null>(null);
@@ -179,7 +182,12 @@ export function MapReport() {
   const [modalImageRenderMetrics, setModalImageRenderMetrics] = useState<ImageRenderMetrics | null>(null);
   const modalMapContainerRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
-  const panStart = useRef<{ x: number; y: number, startX: number, startY: number } | null>(null);
+  const panState = useRef<{ x: number; y: number, startX: number, startY: number } | null>(null);
+  const touchState = useRef<{ // Renomeado para pinchState, focado apenas no gesto de pinça
+    pan?: { x: number; y: number; startX: number; startY: number };
+    pan?: { x: number; y: number; startX: number; startY: number };
+    pinch?: { distance: number; scale: number; center: { x: number; y: number } };
+  } | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -498,28 +506,28 @@ export function MapReport() {
 
     document.body.classList.add('dragging-map');
 
-    panStart.current = { x: e.clientX, y: e.clientY, startX: transform.x, startY: transform.y };
+    panState.current = { x: e.clientX, y: e.clientY, startX: transform.x, startY: transform.y };
     setIsPanning(true);
     
     const handlePanMove = (moveEvent: globalThis.MouseEvent) => {
       moveEvent.preventDefault();
-      const localPanStart = panStart.current;
+      const localPanStart = panState.current;
       if (!localPanStart) {
         return;
       }
       
       const dx = moveEvent.clientX - localPanStart.x;
       const dy = moveEvent.clientY - localPanStart.y;
-      
+
       setTransform(prev => {
           const newX = localPanStart.startX + dx;
           const newY = localPanStart.startY + dy;
-          return clampPosition({ ...prev, x: newX, y: newY });
+          return clampPosition({ scale: prev.scale, x: newX, y: newY });
       });
     };
 
     const handlePanEnd = () => {
-      panStart.current = null;
+      panState.current = null;
       setIsPanning(false);
       document.body.classList.remove('dragging-map');
       window.removeEventListener('mousemove', handlePanMove);
@@ -528,7 +536,88 @@ export function MapReport() {
 
     window.addEventListener('mousemove', handlePanMove);
     window.addEventListener('mouseup', handlePanEnd);
-  }, [transform.x, transform.y, modalImageRenderMetrics, clampPosition]);
+  }, [transform, modalImageRenderMetrics, clampPosition]);
+
+  const handleTouchInteraction = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (!modalImageRenderMetrics || !modalMapContainerRef.current) return;
+
+    e.preventDefault();
+
+    const currentTouches = e.touches;
+    const state: { pan?: any; pinch?: any } = {};
+
+    if (currentTouches.length === 1) {
+      const touch = currentTouches[0];
+      panState.current = { x: touch.clientX, y: touch.clientY, startX: transform.x, startY: transform.y };
+      setIsPanning(true);
+      delete state.pinch; // Garante que o estado de pinch seja limpo
+    } else if (currentTouches.length === 2) {
+      const t1 = currentTouches[0];
+      const t2 = currentTouches[1];
+      const distance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const center = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+      state.pinch = { distance, scale: transform.scale, center };
+      panState.current = null; // Limpa o estado de pan ao iniciar pinch
+      setIsPanning(false);
+    }
+    touchState.current = state;
+
+    const handleTouchMove = (moveEvent: TouchEvent) => {
+      if (!touchState.current && !panState.current) return;
+
+      moveEvent.preventDefault();
+
+      if (moveEvent.touches.length === 1 && panState.current) {
+        const touch = moveEvent.touches[0];
+        const dx = touch.clientX - panState.current.x;
+        const dy = touch.clientY - panState.current.y;
+        
+        setTransform(prev => {
+            if (!panState.current) return prev; // Proteção contra referência nula
+            const newX = panState.current.startX + dx;
+            const newY = panState.current.startY + dy;
+            return clampPosition({ ...prev, x: newX, y: newY });
+        });
+
+      } else if (moveEvent.touches.length === 2 && touchState.current?.pinch) {
+        const t1 = moveEvent.touches[0];
+        const t2 = moveEvent.touches[1];
+        const newDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        const scaleRatio = newDistance / touchState.current.pinch.distance;
+        let newScale = touchState.current.pinch.scale * scaleRatio;
+        newScale = Math.max(1, Math.min(newScale, 5));
+
+        const containerRect = modalMapContainerRef.current!.getBoundingClientRect();
+        const pinchCenterOnScreen = touchState.current.pinch.center;
+        
+        const pinchCenterInContainer = {
+            x: pinchCenterOnScreen.x - containerRect.left,
+            y: pinchCenterOnScreen.y - containerRect.top
+        };
+
+        setTransform(prev => {
+            const newX = pinchCenterInContainer.x - (pinchCenterInContainer.x - prev.x) * (newScale / prev.scale);
+            const newY = pinchCenterInContainer.y - (pinchCenterInContainer.y - prev.y) * (newScale / prev.scale);
+
+            return clampPosition({ scale: newScale, x: newX, y: newY });
+        });
+      }
+    };
+
+    const handleTouchEnd = () => {
+      touchState.current = null;
+      panState.current = null;
+      setIsPanning(false);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
+    };
+
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('touchcancel', handleTouchEnd);
+
+  }, [transform, modalImageRenderMetrics, clampPosition]);
   
   const renderLudicPins = (isModal: boolean) => {
     if (!isClient || isLoading) return null;
@@ -805,7 +894,7 @@ export function MapReport() {
                   <div className="relative mt-4 w-full aspect-video border-2 border-dashed rounded-md bg-muted/20 flex items-center justify-center overflow-hidden">
                     {GOOGLE_MAPS_API_KEY ? (
                       <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['marker']}>
-                        <MapBoundsUpdater points={geoPointsForBounds} />
+                        <MapBoundsUpdater points={geoPointsForBounds} isMobile={isMobile} />
                         <GoogleMap defaultCenter={mapCenter || { lat: -25.0945, lng: -50.1633 }} defaultZoom={15} mapId={'b3b3c3e8f9b9a9e'} mapTypeId={'satellite'} gestureHandling="greedy">
                           {renderGeoPins()}
                         </GoogleMap>
@@ -829,6 +918,7 @@ export function MapReport() {
             <div
                 ref={modalMapContainerRef}
                 className={cn("flex-1 relative overflow-hidden bg-muted/80 flex justify-center items-center w-full h-full", isPanning ? 'dragging-map' : 'cursor-grab')}
+                onTouchStart={handleTouchInteraction}
                 onMouseDown={handlePanStart}
             >
                 {mapUrl ? (
@@ -875,10 +965,12 @@ export function MapReport() {
                 <DialogClose asChild>
                     <Button variant="outline">Fechar modo ampliado</Button>
                 </DialogClose>
-                <div className="mt-2 flex flex-col gap-2">
-                    <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={!modalImageRenderMetrics || transform.scale >= 5}><ZoomIn/></Button>
-                    <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={!modalImageRenderMetrics || transform.scale <= 1}><ZoomOut/></Button>
-                </div>
+                {isMobile ? null : (
+                  <div className="mt-2 flex flex-col gap-2">
+                      <Button variant="outline" size="icon" onClick={() => handleZoom('in')} disabled={!modalImageRenderMetrics || transform.scale >= 5}><ZoomIn/></Button>
+                      <Button variant="outline" size="icon" onClick={() => handleZoom('out')} disabled={!modalImageRenderMetrics || transform.scale <= 1}><ZoomOut/></Button>
+                  </div>
+                )}
             </div>
         </DialogContent>
       </Dialog>
