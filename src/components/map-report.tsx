@@ -185,7 +185,6 @@ export function MapReport() {
   const panState = useRef<{ x: number; y: number, startX: number, startY: number } | null>(null);
   const touchState = useRef<{ // Renomeado para pinchState, focado apenas no gesto de pinça
     pan?: { x: number; y: number; startX: number; startY: number };
-    pan?: { x: number; y: number; startX: number; startY: number };
     pinch?: { distance: number; scale: number; center: { x: number; y: number } };
   } | null>(null);
 
