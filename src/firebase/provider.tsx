@@ -39,17 +39,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [isUserLoading, setIsUserLoading] = useState(true);
   const [userError, setUserError] = useState<AuthError | null>(null);
 
-  // Efeito para configurar a persistência da autenticação no lado do cliente.
-  useEffect(() => {
-    if (auth) {
-      setPersistence(auth, browserLocalPersistence)
-        .catch((error) => {
-          // Um erro pode ocorrer se o usuário tiver várias abas abertas, etc.
-          console.error("Erro ao configurar a persistência de login:", error);
-        });
-    }
-  }, [auth]);
-
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
     // If no Auth service instance, we can't determine user state.
@@ -57,6 +46,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       setIsUserLoading(false);
       return;
     }
+
+    // Configura a persistência da autenticação para local (localStorage).
+    // Isso garante que o usuário permaneça logado mesmo após fechar o navegador.
+    setPersistence(auth, browserLocalPersistence)
+      .catch((error) => {
+        console.error("Erro ao configurar a persistência de login:", error);
+      });
 
     const unsubscribe = onAuthStateChanged(
       auth,

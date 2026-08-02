@@ -2,11 +2,15 @@
 
 export const dynamic = 'force-dynamic';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/firebase/config';
 import { Button } from '@/components/ui/button';
 import { 
   ArrowRight, ListTodo, Siren, ShieldCheck, Megaphone, Sprout, HardHat, 
   ClipboardList, Route, BookText, FileText, HeartPulse, Files, Settings, 
-  CheckCircle, Smartphone, BarChart3, TrendingUp, Map, Phone, Instagram 
+  CheckCircle, Smartphone, BarChart3, TrendingUp, Map, Phone, Instagram, Loader2 
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -22,11 +26,45 @@ import { useToast } from '@/hooks/use-toast';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import { ConsultancySection } from '@/components/ConsultancySection';
 
+function AuthCheckLoader() {
+  return (
+    <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background">
+      <div className="relative flex items-center justify-center">
+        <Image
+          src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d"
+          alt="ALMA Guardia Logo"
+          width={64}
+          height={64}
+          className="h-16 w-16 animate-pulse"
+        />
+        <Loader2 className="absolute h-24 w-24 animate-spin text-primary/20" />
+      </div>
+      <p className="text-sm font-medium text-muted-foreground animate-pulse">
+        Carregando sua experiência...
+      </p>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const { toast } = useToast();
  const handleStartTrial = () => {
     window.location.href = 'https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00';
   };
+  const router = useRouter();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.replace('/dashboard');
+      } else {
+        setIsCheckingAuth(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
   const handleComingSoon = () => {
     toast({
       title: 'Aguarde',
@@ -157,6 +195,10 @@ export default function HomePage() {
       icon: <BarChart3 className="w-8 h-8 text-primary" />
     }
   ];
+
+  if (isCheckingAuth) {
+    return <AuthCheckLoader />;
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
