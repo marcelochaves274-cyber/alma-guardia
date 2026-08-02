@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
 
     // Verifica o status da assinatura no Firestore
     const userDoc = await getFirestore().collection('sgs_genius').doc(userUid).get();
-    if (userDoc.exists() && userDoc.data()?.status === 'active') {
+    if (userDoc.exists && userDoc.data()?.status === 'active') {
       return NextResponse.next(); // Assinatura ativa, permite o acesso
     }
   } catch (error) {
