@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,7 +16,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast'; 
-import { Loader2, Send, ShieldCheck, Sprout, Check, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Send, ShieldCheck, Sprout, Check, Image as ImageIcon, Bell } from 'lucide-react';
 import { Badge } from './ui/badge';
 import {
   Dialog,
@@ -26,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose, HeartPulse
+  DialogClose
 } from "@/components/ui/dialog";
 import { type LocationData } from './map-selector';
 import Image from 'next/image';
@@ -115,18 +114,13 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
   const regularNotices = allPendingNotices.filter(n => !n.isRpo);
   const rpoNotices = allPendingNotices.filter(n => n.isRpo);
 
-
   const processNoticeAction = async (notice: Notice, callback: () => void) => {
     if (!user || !firestore) return;
     setIsUpdating(notice.id);
     try {
-      // Mark notice as 'finalizado' and remove the imageUrl field
       const noticeRef = doc(firestore, 'sgs_genius', user.uid, 'notices', notice.id);
       await updateDoc(noticeRef, { status: 'finalizado', imageUrl: deleteField() });
-
-      // Execute the callback (e.g., navigate or show toast)
       callback();
-
     } catch (error) {
       console.error("Error processing notice action:", error);
       toast({
@@ -143,7 +137,6 @@ export function PendingNotices({ setPage }: PendingNoticesProps) {
     let prefill: any;
 
     if (notice.isRpo && notice.rpoData) {
-      // Mapeamento específico para RPO -> Ocorrência
       const rpoDetails = `
 --- RELATÓRIO DE PRONTO ATENDIMENTO (RPO) ---
 
@@ -173,8 +166,8 @@ ${notice.rpoData.observations || 'N/A'}
       prefill = {
         noticeId: notice.id,
         occurrenceDate: notice.rpoData.date ? new Date(notice.rpoData.date + 'T00:00:00') : notice.noticeDate,
-        occurrenceLocation: notice.rpoData.location, // Garante que o local do RPO seja usado
-        location: notice.rpoData.location, // Adicionado para consistência com o preenchimento de avisos normais
+        occurrenceLocation: notice.rpoData.location,
+        location: notice.rpoData.location,
         involvedPersonName: notice.rpoData.victimName,
         birthDate: notice.rpoData.birthDate,
         cpf: notice.rpoData.cpf,
@@ -184,7 +177,6 @@ ${notice.rpoData.observations || 'N/A'}
         description: rpoDetails,
       };
     } else {
-      // Mapeamento padrão para avisos normais
       prefill = {
         noticeId: notice.id,
         date: notice.noticeDate,
@@ -254,7 +246,7 @@ ${notice.rpoData.observations || 'N/A'}
                 </div>
                 <div className="flex flex-col gap-2 w-full md:w-48">
                   {notice.imageUrl && (
-                    <Dialog> {/* Adicionado Dialog para encapsular o trigger e o conteúdo da imagem */}
+                    <Dialog>
                       <DialogTrigger asChild>
                          <Button variant="outline"><ImageIcon className="mr-2" />Ver Imagem</Button>
                       </DialogTrigger>
@@ -275,7 +267,7 @@ ${notice.rpoData.observations || 'N/A'}
                           </div>
                           <DialogClose asChild>
                              <Button type="button" variant="outline" className="mt-4">
-                              Fechar
+                             Fechar
                              </Button>
                           </DialogClose>
                       </DialogContent>
@@ -309,7 +301,6 @@ ${notice.rpoData.observations || 'N/A'}
           </Card>
         )}
 
-        {/* Seção para RPOs */}
         <div className="mt-8">
           <Card>
             <CardHeader>
@@ -378,9 +369,7 @@ ${notice.rpoData?.observations || 'Nenhuma.'}`}
               <Card className="mt-6"><CardContent className="p-6 text-center text-muted-foreground">Nenhum RPO pendente no momento.</CardContent></Card>
           )}
         </div>
-      </div> {/* Fim da div de conteúdo principal */}
-    </> // Fim do React.Fragment
+      </div>
+    </>
   );
 }
-
-    
