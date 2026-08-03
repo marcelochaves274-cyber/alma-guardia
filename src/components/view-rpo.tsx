@@ -291,7 +291,7 @@ ${observations || 'Nenhuma.'}`.trim();
     setCidade('');
     setEstado('');
     setRescuerName('');
-    setX(''); setA(''); setB(''); setC(''); setD(''); setEx('');
+    setX(''); setA(''); setB(''); setC(''); setD(''); setExposure('');
     setS(''); setAllergies(''); setMeds(''); setPast(''); setLastIntake(''); setEvents('');
     setConduct('');
     setOutcome('');
