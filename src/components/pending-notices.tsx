@@ -63,6 +63,7 @@ interface RpoData {
   c: string;
   d: string;
   e: string;
+  exposure?: string;
   eDetails: string;
   s: string;
   allergies: string;
