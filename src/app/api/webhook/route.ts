@@ -1,20 +1,15 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
 // Inicializa o Firebase Admin SDK se ainda não foi inicializado.
-// As credenciais devem ser fornecidas via variáveis de ambiente para segurança.
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'), // Substitui '\n' por quebras de linha reais
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    }),
-  });
+// No ambiente do Firebase (App Hosting, Functions), ele usa as credenciais do ambiente automaticamente.
+if (!getApps().length) {
+  initializeApp();
 }
 
-const firestoreAdmin = admin.firestore();
+const firestoreAdmin = getFirestore();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-04-22' as any,
 });
