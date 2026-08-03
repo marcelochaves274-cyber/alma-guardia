@@ -12,7 +12,6 @@ import { Loader2, Eye, EyeOff, ArrowLeft, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import Image from 'next/image';
-import { requestNotificationPermission } from '@/firebase/messaging';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,9 +45,6 @@ export default function LoginPage() {
     setIsAuthInProgress(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      if (auth.currentUser) {
-        await requestNotificationPermission(auth.currentUser.uid);
-      }
       router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
