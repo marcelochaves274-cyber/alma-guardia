@@ -62,7 +62,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
  
   const router = useRouter();
   const { toast } = useToast();
-  const { profile, permissions, clearProfile, isProfileLoading } = useProfile();
+  const { profile, clearProfile, isProfileLoading } = useProfile();
   const isMobile = useIsMobile();
   
   const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
@@ -94,7 +94,7 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   const hasPermission = (menuId: string, subId?: string) => {
     if (isAdmin) return true;
 
-    const activePerms = dynamicPermissions || permissions;
+    const activePerms = dynamicPermissions;
     if (!activePerms) return false;
 
     const cleanMenuId = menuId.replace(/[-_\s]/g, '').toLowerCase();

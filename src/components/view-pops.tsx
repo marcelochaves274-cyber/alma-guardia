@@ -67,7 +67,7 @@ export function ViewPops() {
                 };
             });
             const allowedNames = access.filters?.popNames || [];
-            setAllDocs(profile && profile !== 'admin' ? fetchedDocs.filter(pop => allowedNames.includes(pop.name)) : fetchedDocs);
+            setAllDocs(profile && profile !== 'admin' ? fetchedDocs.filter((pop: PopDocument) => allowedNames.includes(pop.name)) : fetchedDocs);
           }
         }
       } catch (error) {

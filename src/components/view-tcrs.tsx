@@ -67,7 +67,7 @@ export function ViewTcrs() {
                   };
               });
             const allowedNames = access.filters?.tcrNames || [];
-            setAllDocs(profile && profile !== 'admin' ? fetchedDocs.filter(tcr => allowedNames.includes(tcr.name)) : fetchedDocs);
+            setAllDocs(profile && profile !== 'admin' ? fetchedDocs.filter((tcr: TcrDocument) => allowedNames.includes(tcr.name)) : fetchedDocs);
           }
         }
       } catch (error) {

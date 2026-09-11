@@ -127,8 +127,8 @@ export function ProfileSelector() {
         );
 
         if (foundProfile && foundProfile.pass === customProfilePass) {
-          // Profile and password match, set the profile with its permissions
-          setProfile(foundProfile.name, foundProfile.permissions);
+          // Profile and password match, set the profile (permissions are fetched dynamically elsewhere)
+          setProfile(foundProfile.name);
           setIsCustomProfileModalOpen(false);
           setCustomProfileName('');
           setCustomProfilePass('');

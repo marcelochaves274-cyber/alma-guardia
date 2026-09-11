@@ -47,6 +47,8 @@ export type MenuPermission = {
   subMenus?: Record<string, MenuPermission>;
 };
 
+export type Permissions = Record<string, MenuPermission>;
+
 export interface CustomProfile {
   name: string;
   pass: string;

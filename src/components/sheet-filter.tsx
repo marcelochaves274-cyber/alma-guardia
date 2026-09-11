@@ -36,7 +36,7 @@ interface SheetFilterProps {
 export function SheetFilter({ title, options, selected, onChange, buttonText = "Filtro", disabled, filterKey = 'locations', menuId, subMenuId }: SheetFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [tempSelected, setTempSelected] = useState<string[]>(selected);
-  const { profile, permissions } = useProfile();
+  const { profile } = useProfile();
   const { user } = useUser();
   const firestore = useFirestore();
   const [livePermissions, setLivePermissions] = useState<any>(null);
@@ -67,7 +67,7 @@ export function SheetFilter({ title, options, selected, onChange, buttonText = "
       return options;
     }
 
-    const activePerms = livePermissions || permissions;
+    const activePerms = livePermissions;
     if (!activePerms) return []; // Se não carregou permissões, por segurança não exibe nada
 
     // Cada gaveta aponta para um único menu/submenu. Nunca procurar a chave em outros menus.

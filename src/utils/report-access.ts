@@ -9,7 +9,7 @@ export type ReportAccess = {
   filters?: Record<string, string[]>;
 };
 
-type ResolvedReportAccess = Pick<ReportAccess, 'allowedLocations' | 'allowedTypes' | 'filters'>;
+type ResolvedReportAccess = Pick<ReportAccess, 'allowedLocations' | 'allowedTypes' | 'allowedActivityNames' | 'filters'>;
 
 export function useReportAccess(
   firestore: Firestore | null,
