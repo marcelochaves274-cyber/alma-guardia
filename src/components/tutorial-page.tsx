@@ -56,7 +56,19 @@ export function TutorialPage() {
           <AccordionItem value="item-2">
             <AccordionTrigger>Ajuda</AccordionTrigger>
             <AccordionContent>
-              Nesta seção, você pode ativar ou desativar o "Modo Ajuda". Quando ativado, ícones de interrogação (?) aparecerão ao lado de diversos campos nos formulários. Clicar nesses ícones exibirá uma dica útil sobre como preencher aquele campo específico.
+              Nesta seção, você pode ativar ou desativar o "Modo Ajuda". Quando ativado, ícones de interrogação (?) aparecerão ao lado de diversos campos nos formulários. Clicar nesses ícones exibirá uma dica útil sobre como preencher aquele campo específico. O Modo Ajuda pode ser desativado a qualquer momento para deixar os formulários mais limpos.
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="item-portal">
+            <AccordionTrigger>Portal do Usuário</AccordionTrigger>
+            <AccordionContent>
+              <ul className="list-disc space-y-2 pl-5">
+                <li><strong>Minha Assinatura:</strong> Consulte seu plano, informações de faturamento e acesse o portal de cobrança quando essa opção estiver disponível para sua conta.</li>
+                <li><strong>Mudar Perfil:</strong> Use esta opção no rodapé do menu para sair do perfil atual e selecionar outro perfil autorizado. As permissões e os locais disponíveis acompanham o perfil selecionado.</li>
+                <li><strong>Sair:</strong> Encerra a sessão da conta com segurança. Para voltar, faça login novamente e selecione um perfil.</li>
+                <li><strong>Notificações:</strong> Quando o navegador oferecer a opção, permita as notificações e use o botão de ativação no sistema. Você poderá receber alertas sobre avisos, tratamentos atrasados e equipamentos com vistoria ou validade vencida, conforme as permissões e os locais do seu perfil.</li>
+              </ul>
             </AccordionContent>
           </AccordionItem>
           
@@ -78,6 +90,7 @@ export function TutorialPage() {
                 {isAdmin && <li><strong>Registrar Tratamento:</strong> Documente um risco identificado, sua probabilidade e consequência, o tratamento proposto e a ação realizada. A situação (pendente, finalizado) e o prazo para conclusão também são gerenciados aqui.</li>}
                 {isAdmin && <li><strong>Relatório de Tratamento:</strong> Uma lista de todos os tratamentos de risco. Use os filtros para encontrar rapidamente o que precisa, especialmente os tratamentos pendentes ou reabertos.</li>}
                 <li><strong>Relatório de Mapa:</strong> Similar ao mapa de acidentes, este mapa mostra onde os riscos foram identificados. Alterne entre as visualizações Lúdica e Georreferenciada para analisar áreas de maior perigo.</li>
+                <li><strong>Mapa de Tratamentos:</strong> Consulte no mapa os tratamentos registrados e use a troca de visualização para analisar a distribuição dos riscos por área.</li>
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -143,7 +156,12 @@ export function TutorialPage() {
             <AccordionItem value="item-10">
                 <AccordionTrigger>POP / TCR / Documentos SGS</AccordionTrigger>
                 <AccordionContent>
-                    Essas seções permitem visualizar o conteúdo dos documentos essenciais do seu Sistema de Gestão de Segurança. Administradores podem editar o conteúdo diretamente nessas telas, garantindo que as informações estejam sempre atualizadas. O RAME possui uma seção própria.
+                    <ul className="list-disc space-y-2 pl-5">
+                      <li><strong>POP:</strong> Consulte os Procedimentos Operacionais Padrão usados nas atividades.</li>
+                      <li><strong>TCR:</strong> Consulte os Termos de Conhecimento de Risco relacionados às operações.</li>
+                      <li><strong>Documentos SGS:</strong> Consulte os documentos gerais do Sistema de Gestão de Segurança, como escopo, liderança e operação.</li>
+                      <li><strong>Edição:</strong> Administradores podem atualizar o conteúdo nas telas de gerenciamento correspondentes. Usuários com acesso de consulta apenas visualizam os documentos.</li>
+                    </ul>
                 </AccordionContent>
             </AccordionItem>
 
@@ -163,13 +181,29 @@ export function TutorialPage() {
                     <AccordionContent>
                       <ul className="list-disc space-y-2 pl-5">
                         <li><strong>Configurações Gerais:</strong> Personalize a aparência do sistema, alterando o nome da empresa (exibido no cabeçalho), a logo e o tema de cores.</li>
-                        <li><strong>Gerenciar Perfil:</strong> Defina os passes (senhas numéricas de 6 dígitos) para os perfis Administrador e Observador.</li>
-                        <li><strong>Gerenciar Ocorrências / Locais / Fa/Fl/Ge / Equip./Marca / POPs / TCRs:</strong> Nestas telas, você customiza as opções que aparecem nos menus de seleção dos formulários, tornando o sistema adaptado à sua realidade operacional.</li>
+                        <li><strong>Gerenciar Perfis:</strong> Crie, edite e remova perfis personalizados, defina seus passes numéricos de 6 dígitos e escolha quais menus, submenus e locais cada perfil pode acessar. O perfil Administrador mantém o acesso completo.</li>
+                        <li><strong>Gerenciar Ocorrências:</strong> Cadastre e organize os tipos de acidente ou incidente disponíveis nos formulários.</li>
+                        <li><strong>Gerenciar Locais:</strong> Cadastre os locais usados nos registros, filtros e relatórios.</li>
+                        <li><strong>Gerenciar Fa/Fl/Ge:</strong> Mantenha as opções de fauna, flora e geodiversidade usadas nos registros ambientais.</li>
+                        <li><strong>Gerenciar Equip./Marca:</strong> Cadastre tipos de equipamento e marcas para padronizar o inventário.</li>
+                        <li><strong>Gerenciar POPs e TCRs:</strong> Edite os documentos operacionais e termos de risco exibidos no sistema.</li>
                         <li><strong>Gerenciar Mapa:</strong> Faça o upload da imagem de fundo (planta baixa, mapa da área) que será usada em todas as telas de relatório de mapa.</li>
                       </ul>
                     </AccordionContent>
                 </AccordionItem>
             )}
+
+            <AccordionItem value="item-navigation">
+              <AccordionTrigger>Como usar os registros e relatórios</AccordionTrigger>
+              <AccordionContent>
+                <ul className="list-disc space-y-2 pl-5">
+                  <li><strong>Registros:</strong> Preencha os campos obrigatórios, revise as informações e salve. Campos com máscara, como CPF e telefone, são formatados automaticamente.</li>
+                  <li><strong>Relatórios:</strong> Use os filtros disponíveis para localizar registros por período, tipo, local ou situação. Quando disponível, utilize as ações de editar e excluir com atenção.</li>
+                  <li><strong>Mapas:</strong> Selecione a visualização adequada e confirme se o local ou as coordenadas foram preenchidos no registro. A visualização lúdica depende de uma imagem configurada em "Gerenciar Mapa"; a georreferenciada depende do serviço de mapas.</li>
+                  <li><strong>Acesso por perfil:</strong> A ausência de um menu ou filtro pode ser uma restrição definida pelo administrador, e não um erro do sistema. Solicite a revisão das permissões quando necessário.</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
 
         </Accordion>
       </CardContent>

@@ -38,7 +38,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useFirestore, useUser } from '@/firebase';
-import { collection, onSnapshot, Timestamp, doc, getDoc, query, where, limit, orderBy, deleteDoc } from 'firebase/firestore';
+import { useProfile } from '@/context/profile-context';
+import { useReportAccess } from '@/utils/report-access';
+import { collection, onSnapshot, Timestamp, doc, getDoc, query, where, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
@@ -99,6 +101,8 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { profile } = useProfile();
+  const { access, ready: accessReady } = useReportAccess(firestore, user?.uid, profile, 'atividades', 'activity-report');
   
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -113,10 +117,21 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
   const [riskAssessments, setRiskAssessments] = useState<RiskAssessment[]>([]);
 
   useEffect(() => {
-    if (!user || !firestore) return;
+    if (!user || !firestore || !accessReady || !access) return;
+    if (profile && profile !== 'admin' && !access.allowedActivityNames.length) {
+      setActivities([]);
+      setPopDocs([]);
+      setTcrDocs([]);
+      setRiskAssessments([]);
+      setIsLoading(false);
+      return;
+    }
 
     const activitiesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'activities');
-    const unsubscribeActivities = onSnapshot(activitiesCollectionRef, (querySnapshot) => {
+    const activitiesQuery = profile && profile !== 'admin'
+      ? query(activitiesCollectionRef, where('activityName', 'in', access.allowedActivityNames))
+      : activitiesCollectionRef;
+    const unsubscribeActivities = onSnapshot(activitiesQuery, (querySnapshot) => {
       const activitiesData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
@@ -138,7 +153,9 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
     getDoc(popDocRef).then(docSnap => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            setPopDocs(((data.documents || []) as PopDocument[]).sort((a, b) => a.name.localeCompare(b.name)));
+            const documents = (data.documents || []) as PopDocument[];
+            const allowedNames = access.filters?.popNames || [];
+            setPopDocs((profile && profile !== 'admin' ? documents.filter(item => allowedNames.includes(item.name)) : documents).sort((a, b) => a.name.localeCompare(b.name)));
         }
     }).catch(error => console.error("Error fetching POP docs: ", error));
 
@@ -146,12 +163,17 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
     getDoc(tcrDocRef).then(docSnap => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            setTcrDocs(((data.documents || []) as TcrDocument[]).sort((a, b) => a.name.localeCompare(b.name)));
+            const documents = (data.documents || []) as TcrDocument[];
+            const allowedNames = access.filters?.tcrNames || [];
+            setTcrDocs((profile && profile !== 'admin' ? documents.filter(item => allowedNames.includes(item.name)) : documents).sort((a, b) => a.name.localeCompare(b.name)));
         }
     }).catch(error => console.error("Error fetching TCR docs: ", error));
 
     const assessmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'risk_assessments');
-    const unsubscribeAssessments = onSnapshot(assessmentsCollectionRef, (querySnapshot) => {
+    const assessmentsQuery = profile && profile !== 'admin'
+      ? query(assessmentsCollectionRef, where('location', 'in', access.allowedLocations))
+      : assessmentsCollectionRef;
+    const unsubscribeAssessments = onSnapshot(assessmentsQuery, (querySnapshot) => {
         const assessmentData = querySnapshot.docs.map(doc => {
              const data = doc.data();
              const assessmentDate = data.assessmentDate instanceof Timestamp 
@@ -171,7 +193,7 @@ export function ActivityReport({ onEdit }: ActivityReportProps) {
       unsubscribeActivities();
       unsubscribeAssessments();
     }
-  }, [user, firestore, toast, isLoading]);
+  }, [user, firestore, toast, isLoading, profile, access, accessReady]);
   
   const handleOpenPopTcrModal = (activity: Activity, type: 'pop' | 'tcr') => {
     let doc;

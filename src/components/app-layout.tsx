@@ -48,7 +48,7 @@ import { TutorialPage } from './tutorial-page';
 import { GraphicsReport } from './graphics-report';
 import { ManageDataTransfer } from './manage-data-transfer';
 import { MySubscriptionPage } from './my-subscription-page';
-
+import { WelcomeView } from './welcome-view';
 
 import {
   Sidebar,
@@ -82,12 +82,12 @@ function MainAppLayout() {
   const { profile, isProfileLoading, getRedirectPage } = useProfile();
   const router = useRouter();
 
-  const getDefaultPageForProfile = (profile: string | null) => {
-    if (profile === 'supervisor' || profile === 'observer') {
-      return 'register-notice';
-    }
+ const getDefaultPageForProfile = (profile: string | null) => {
+  if (profile === 'admin') {
     return 'reminders';
-  };
+  }
+  return 'welcome';
+};
 
   const [activePage, setActivePage] = useState(getDefaultPageForProfile(profile));
   const [reportFilters, setReportFilters] = useState<ReportFilters | null>(null);
@@ -244,8 +244,15 @@ function MainAppLayout() {
     setActivePage('register-notice');
   }
 
-  const renderContent = () => {
+      const renderContent = () => {
     switch (activePage) {
+      case 'welcome':
+        return <WelcomeView />;
+      case 'help':
+        return <HelpPage />;
+      case 'tutorial':
+        return <TutorialPage />;
+      // ... (o resto continua igualzinho)
       case 'help':
         return <HelpPage />;
       case 'tutorial':

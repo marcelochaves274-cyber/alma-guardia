@@ -6,6 +6,7 @@ import { ProfileProvider } from '@/context/profile-context';
 import { HelpProvider } from '@/context/help-context';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
+import { PushNotifications } from '@/components/push-notifications';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -37,6 +38,7 @@ export default function RootLayout({
           <ProfileProvider>
             <AppSettingsProvider>
               <HelpProvider>
+                <PushNotifications />
                 <div className="flex flex-col lg:flex-row w-full min-h-screen">
                   {children}
                 </div>

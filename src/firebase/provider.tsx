@@ -4,7 +4,7 @@
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
-import { Auth, User, onAuthStateChanged, AuthError, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { Auth, User, onAuthStateChanged, AuthError } from 'firebase/auth';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -46,13 +46,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       setIsUserLoading(false);
       return;
     }
-
-    // Configura a persistência da autenticação para local (localStorage).
-    // Isso garante que o usuário permaneça logado mesmo após fechar o navegador.
-    setPersistence(auth, browserLocalPersistence)
-      .catch((error) => {
-        console.error("Erro ao configurar a persistência de login:", error);
-      });
 
     const unsubscribe = onAuthStateChanged(
       auth,

@@ -29,6 +29,8 @@ import { collection, getDoc, doc, Timestamp, onSnapshot, GeoPoint } from 'fireba
 import { Button } from './ui/button';
 import { Loader2, MapPin, Eye, ZoomIn, ZoomOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useProfile } from '@/context/profile-context';
+import { applyReportAccessQuery, useReportAccess } from '@/utils/report-access';
 import NextImage from 'next/image';
 import { Badge } from './ui/badge';
 import { format } from 'date-fns';
@@ -125,6 +127,8 @@ export function FaunaFloraGeoMapReport() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { profile } = useProfile();
+  const { access, ready: accessReady } = useReportAccess(firestore, user?.uid, profile, 'faunaFloraGeo', 'fauna-flora-geo-map-report');
   
   const [records, setRecords] = useState<FaunaFloraGeoRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -221,12 +225,18 @@ export function FaunaFloraGeoMapReport() {
   
   // Fetch all records with real-time updates
   useEffect(() => {
-    if (!user || !firestore) return;
+    if (!user || !firestore || !accessReady || !access) return;
+    if (profile && profile !== 'admin' && (!access.allowedLocations.length || !access.allowedTypes.length)) {
+      setRecords([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
 
     const recordsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'fauna_flora_geo');
+    const recordsQuery = applyReportAccessQuery(recordsCollectionRef, profile, access, 'locationName', 'speciesType');
     
-    const unsubscribe = onSnapshot(recordsCollectionRef, (querySnapshot) => {
+    const unsubscribe = onSnapshot(recordsQuery, (querySnapshot) => {
       const recordsData = querySnapshot.docs.map(doc => {
         const data = doc.data();
         const recordDate = data.date instanceof Timestamp ? data.date.toDate() : new Date(0);
@@ -272,9 +282,10 @@ export function FaunaFloraGeoMapReport() {
     });
     
     return () => unsubscribe();
-  }, [user, firestore, toast]);
+  }, [user, firestore, toast, profile, access, accessReady]);
 
   const filteredRecords = useMemo(() => {
+    if (profile && profile !== 'admin' && ![filterYear, filterMonths, filterType, filterLocation].some(filter => filter.length > 0)) return [];
     if (!isClient) return [];
     return records.filter(rec => {
       // Se o registro não tiver campos de filtro, consideramos como 'válido' para exibição
@@ -293,7 +304,7 @@ export function FaunaFloraGeoMapReport() {
 
       return yearMatch && monthMatch && typeMatch && locationMatch && hasMarker;
     });
-  }, [records, filterYear, filterMonths, filterType, filterLocation, isClient, mapView]);
+  }, [records, filterYear, filterMonths, filterType, filterLocation, isClient, mapView, profile]);
 
   const clusters = useMemo(() => {
     const points = filteredRecords.filter(rec => rec.location?.ludico);
@@ -761,6 +772,9 @@ export function FaunaFloraGeoMapReport() {
                     onChange={setFilterYear}
                     disabled={isLoading || availableYears.length === 0}
                     buttonText='Filtrar por Ano'
+                    filterKey="years"
+                    menuId="faunaFloraGeo"
+                    subMenuId="fauna-flora-geo-map-report"
                 />
             </div>
             <div className="space-y-2">
@@ -772,6 +786,9 @@ export function FaunaFloraGeoMapReport() {
                     onChange={setFilterType}
                     disabled={!speciesTypes || speciesTypes.length === 0}
                     buttonText='Filtrar por Tipo'
+                    filterKey="types"
+                    menuId="faunaFloraGeo"
+                    subMenuId="fauna-flora-geo-map-report"
                 />
             </div>
             <div className="space-y-2">
@@ -783,6 +800,9 @@ export function FaunaFloraGeoMapReport() {
                     onChange={setFilterLocation}
                     disabled={!locations || locations.length === 0}
                     buttonText='Filtrar por Local'
+                    filterKey="locations"
+                    menuId="faunaFloraGeo"
+                    subMenuId="fauna-flora-geo-map-report"
                 />
             </div>
             <div className="space-y-2">
@@ -793,6 +813,9 @@ export function FaunaFloraGeoMapReport() {
                     selected={filterMonths}
                     onChange={setFilterMonths}
                     buttonText='Filtrar por Mês'
+                    filterKey="months"
+                    menuId="faunaFloraGeo"
+                    subMenuId="fauna-flora-geo-map-report"
                 />
             </div>
             

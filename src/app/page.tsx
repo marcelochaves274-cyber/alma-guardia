@@ -25,7 +25,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import { ConsultancySection } from '@/components/ConsultancySection';
-
+import { WelcomeView } from '@/components/welcome-view';
 function AuthCheckLoader() {
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background">

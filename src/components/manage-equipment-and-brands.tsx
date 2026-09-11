@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Loader2, Pencil, Check, X } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, query, where, writeBatch } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
 import {
   AlertDialog,
@@ -117,6 +117,22 @@ export function ManageEquipmentAndBrands() {
     }
   };
 
+  const updateEquipmentReferences = async (itemType: ItemType, oldValue: string, newValue: string) => {
+    if (!firestore || !user) return;
+
+    const field = itemType === 'equipmentTypes' ? 'equipmentType' : 'brand';
+    const equipmentsRef = collection(firestore, 'sgs_genius', user.uid, 'equipments');
+    const equipmentsSnapshot = await getDocs(query(equipmentsRef, where(field, '==', oldValue)));
+
+    for (let index = 0; index < equipmentsSnapshot.docs.length; index += 500) {
+      const batch = writeBatch(firestore);
+      equipmentsSnapshot.docs.slice(index, index + 500).forEach((equipmentDoc) => {
+        batch.update(equipmentDoc.ref, { [field]: newValue });
+      });
+      await batch.commit();
+    }
+  };
+
   const handleAddItem = async (e: FormEvent, itemType: ItemType) => {
     e.preventDefault();
     const current = state[itemType];
@@ -169,10 +185,16 @@ export function ManageEquipmentAndBrands() {
     }
 
     const newItems = current.items.map(i => (i === current.editingItem ? trimmedValue : i)).sort();
-    const success = await saveItemsToFirestore(itemType, newItems);
-    if(success) {
-        setState(s => ({ ...s, [itemType]: { ...s[itemType], items: newItems, editingItem: null, editingValue: '' } }));
-        toast({ title: 'Sucesso!', description: 'O item foi atualizado.' });
+    try {
+      await updateEquipmentReferences(itemType, current.editingItem, trimmedValue);
+      const success = await saveItemsToFirestore(itemType, newItems);
+      if(success) {
+          setState(s => ({ ...s, [itemType]: { ...s[itemType], items: newItems, editingItem: null, editingValue: '' } }));
+          toast({ title: 'Sucesso!', description: 'O item foi atualizado em todos os equipamentos.' });
+      }
+    } catch (error) {
+      console.error('Error updating equipment references:', error);
+      toast({ variant: 'destructive', title: 'Erro ao atualizar', description: 'Não foi possível refletir a alteração nos equipamentos.' });
     }
   }
 

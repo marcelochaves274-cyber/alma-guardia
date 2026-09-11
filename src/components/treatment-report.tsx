@@ -50,6 +50,8 @@ import { cn } from '@/lib/utils';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import { SheetFilter } from './sheet-filter';
+import { useProfile } from '@/context/profile-context';
+import { applyReportAccessQuery, filterByReportAccess, useReportAccess } from '@/utils/report-access';
 
 interface Treatment {
   id: string;
@@ -128,6 +130,8 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { profile } = useProfile();
+  const { access, ready: accessReady } = useReportAccess(firestore, user?.uid, profile, 'tratamento', 'treatment-report');
   
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
@@ -217,24 +221,36 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
   
   // Fetch all treatments with real-time updates
   useEffect(() => {
-    if (!user || !firestore) return;
+    if (!user || !firestore || !accessReady || !access) return;
+    if (profile && profile !== 'admin' && (!access.allowedLocations.length || !access.allowedTypes.length)) {
+      setTreatments([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
 
     const treatmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'risk_treatments');
+    const treatmentsQuery = applyReportAccessQuery(treatmentsCollectionRef, profile, access, 'treatmentLocation', 'treatmentType');
     
-    const unsubscribe = onSnapshot(treatmentsCollectionRef, (querySnapshot) => {
-      const treatmentsData = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        const treatmentDate = data.treatmentDate instanceof Timestamp 
-          ? data.treatmentDate.toDate() 
-          : new Date(0); 
+    const unsubscribe = onSnapshot(treatmentsQuery, (querySnapshot) => {
+      const treatmentsData = filterByReportAccess(
+        querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          const treatmentDate = data.treatmentDate instanceof Timestamp 
+            ? data.treatmentDate.toDate() 
+            : new Date(0); 
 
-        return {
-          id: doc.id,
-          ...data,
-          treatmentDate,
-        } as Treatment;
-      });
+          return {
+            id: doc.id,
+            ...data,
+            treatmentDate,
+          } as Treatment;
+        }),
+        profile,
+        access,
+        'treatmentLocation',
+        'treatmentType'
+      );
 
       const years = new Set(
         treatmentsData
@@ -257,9 +273,10 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
     });
     
     return () => unsubscribe();
-  }, [user, firestore, toast]);
+  }, [user, firestore, toast, profile, access, accessReady]);
 
   const filteredTreatments = useMemo(() => {
+    if (profile && profile !== 'admin' && ![filterYear, filterMonths, filterType, filterLocation, filterRiskLevel, filterSituation].some(filter => filter.length > 0)) return [];
     return treatments.filter(occ => {
       if (!clientToday) return false;
 
@@ -290,7 +307,7 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
 
       return yearMatch && monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch;
     });
-  }, [treatments, filterYear, filterMonths, filterType, filterLocation, filterRiskLevel, filterSituation, clientToday]);
+  }, [treatments, filterYear, filterMonths, filterType, filterLocation, filterRiskLevel, filterSituation, clientToday, profile]);
 
   const clearFilters = () => {
     setFilterYear([]);
@@ -363,6 +380,9 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
                 selected={filterMonths}
                 onChange={setFilterMonths}
                 buttonText="Filtrar por Mês"
+                filterKey="months"
+                menuId="tratamento"
+                subMenuId="treatment-report"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
@@ -375,6 +395,9 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
                   onChange={setFilterYear}
                   disabled={isLoading || availableYears.length === 0}
                   buttonText='Filtrar por Ano'
+                  filterKey="years"
+                  menuId="tratamento"
+                  subMenuId="treatment-report"
                 />
               </div>
               <div className="space-y-2">
@@ -386,6 +409,9 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
                   onChange={setFilterType}
                   disabled={!treatmentTypes || treatmentTypes.length === 0}
                   buttonText='Filtrar por Tipo'
+                  filterKey="types"
+                  menuId="tratamento"
+                  subMenuId="treatment-report"
                 />
               </div>
               <div className="space-y-2">
@@ -396,6 +422,9 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
                   selected={filterRiskLevel}
                   onChange={setFilterRiskLevel}
                   buttonText='Filtrar por Nível'
+                  filterKey="riskLevels"
+                  menuId="tratamento"
+                  subMenuId="treatment-report"
                 />
               </div>
               <div className="space-y-2">
@@ -407,6 +436,9 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
                   onChange={setFilterLocation}
                   disabled={!locations || locations.length === 0}
                   buttonText='Filtrar por Local'
+                  filterKey="locations"
+                  menuId="tratamento"
+                  subMenuId="treatment-report"
                 />
               </div>
               <div className="space-y-2">
@@ -417,6 +449,9 @@ export function TreatmentReport({ onEdit, preFilter, initialScrollPosition }: Tr
                   selected={filterSituation}
                   onChange={setFilterSituation}
                   buttonText='Filtrar por Situação'
+                  filterKey="situations"
+                  menuId="tratamento"
+                  subMenuId="treatment-report"
                 />
               </div>
 

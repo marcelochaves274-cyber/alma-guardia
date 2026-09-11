@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -33,6 +32,7 @@ import {
 } from '@/components/ui/popover';
 import { useFirestore, useUser } from '@/firebase';
 import { useProfile } from '@/context/profile-context';
+import { applyReportAccessQuery, filterByReportAccess, useReportAccess } from '@/utils/report-access';
 import { collection, getDoc, doc, Timestamp, deleteDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { format, differenceInDays, startOfDay, isBefore, addYears, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -79,6 +79,7 @@ interface Equipment {
   lastInspectionDate?: Timestamp;
   nextInspectionDate?: Timestamp;
   discardReason?: string;
+  history?: string;
   observations?: string;
 }
 
@@ -87,7 +88,6 @@ interface EquipmentReportProps {
   preFilter?: {
     status: 'overdue' | 'due_soon' | 'expired';
   };
-  // New prop to restore scroll position when returning from edit
   initialScrollPosition?: number;
 }
 
@@ -114,7 +114,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
             <div><Label className="font-semibold text-muted-foreground">Tipo</Label><p>{equipment.equipmentType}</p></div>
             <div><Label className="font-semibold text-muted-foreground">Marca</Label><p>{equipment.brand}</p></div>
             <div><Label className="font-semibold text-muted-foreground">Modelo</Label><p>{equipment.model || 'Não informado'}</p></div>
-            <div><Label className="font-semibold text-muted-foreground">Lote/CA/UIAA</Label><p>{equipment.lotCaUiaa || 'Não informado'}</p></div>
+            <div><Label className="font-semibold text-muted-foreground">Nº de Série</Label><p>{equipment.lotCaUiaa || 'Não informado'}</p></div>
             <div><Label className="font-semibold text-muted-foreground">Data de Fabricação</Label><p>{equipment.manufacturingDate ? format(equipment.manufacturingDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p></div>
             <div><Label className="font-semibold text-muted-foreground">Data da Compra</Label><p>{equipment.purchaseDate ? format(equipment.purchaseDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p></div>
             <div><Label className="font-semibold text-muted-foreground">Data 1º Utilização</Label><p>{equipment.firstUseDate ? format(equipment.firstUseDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p></div>
@@ -125,8 +125,9 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
             <div><Label className="font-semibold text-muted-foreground">Local Armazenado</Label><p>{equipment.storageLocation || 'Não informado'}</p></div>
             <div><Label className="font-semibold text-muted-foreground">Detalhes do Local</Label><p>{equipment.storageDetails || 'Não informado'}</p></div>
             <div><Label className="font-semibold text-muted-foreground">Status</Label><div><Badge className={cn(statusMapping[equipment.status]?.className)}>{statusMapping[equipment.status]?.label || 'Desconhecido'}</Badge></div></div>
-            {equipment.status === 'descartado' && equipment.discardReason && (<div className="md:col-span-2"><Label className="font-semibold text-muted-foreground">Motivo do Descarte</Label><p>{equipment.discardReason}</p></div>)}
-            {equipment.observations && (<div className="md:col-span-2"><Label className="font-semibold text-muted-foreground">Observações</Label><p className="whitespace-pre-wrap">{equipment.observations}</p></div>)}
+            {equipment.status === 'descartado' && equipment.discardReason && (<div className="md:col-span-2"><Label className="font-semibold text-muted-foreground">Motivo da Condenação</Label><p>{equipment.discardReason}</p></div>)}
+            {(equipment.history || equipment.observations) && (<div className="md:col-span-2"><Label className="font-semibold text-muted-foreground">Histórico do Equipamento</Label><p className="whitespace-pre-wrap">{equipment.history || equipment.observations}</p></div>)}
+            {equipment.history && equipment.observations && (<div className="md:col-span-2"><Label className="font-semibold text-muted-foreground">Observações</Label><p className="whitespace-pre-wrap">{equipment.observations}</p></div>)}
             {equipment.status !== 'descartado' && (<><div><Label className="font-semibold text-muted-foreground">Última Inspeção</Label><p>{equipment.lastInspectionDate ? format(equipment.lastInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p></div><div><Label className="font-semibold text-muted-foreground">Próxima Inspeção</Label><p>{equipment.nextInspectionDate ? format(equipment.nextInspectionDate.toDate(), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}</p></div></>)}
           </div>
         </div>
@@ -139,14 +140,14 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
 const statusMapping: Record<string, { label: string, className: string }> = {
     operacional: { label: 'Operacional', className: 'bg-green-600 text-white' },
     'em manutencao': { label: 'Em Manutenção', className: 'bg-orange-500 text-white' },
-    descartado: { label: 'Descartado', className: 'bg-muted text-muted-foreground' }
+    descartado: { label: 'Condenado', className: 'bg-muted text-muted-foreground' }
 };
 
 const inspectionStatusOptions = [
     { value: 'overdue', label: 'Vistoria Atrasada' },
     { value: 'due_soon', label: 'À Vencer (próximos 10 dias)' },
     { value: 'expired', label: 'Validade Expirada' },
-    { value: 'descartado', label: 'Descartado' },
+    { value: 'descartado', label: 'Condenado' },
 ];
 
 const getInspectionStatus = (nextInspectionDate: Date | null | undefined, clientToday: Date) => {
@@ -174,13 +175,16 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
   const { user } = useUser();
   const { toast } = useToast();
   const { profile } = useProfile();
+  const { access, ready: accessReady } = useReportAccess(firestore, user?.uid, profile, 'equipamentos', 'equipment-report');
   
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkInspectionDate, setBulkInspectionDate] = useState<Date | undefined>(undefined);
+  const [bulkObservation, setBulkObservation] = useState('');
   const [isUpdatingBulk, setIsUpdatingBulk] = useState(false);
+  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -188,6 +192,7 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
   // Filter states
   const [filterType, setFilterType] = useState<string[]>([]);
   const [filterBrand, setFilterBrand] = useState<string[]>([]);
+  const [filterModel, setFilterModel] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterInspection, setFilterInspection] = useState<string[]>([]);
   const [filterStorageLocation, setFilterStorageLocation] = useState<string[]>([]);
@@ -199,8 +204,13 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
   const [locations, setLocations] = useState<string[]>([]);
   const [clientToday, setClientToday] = useState<Date | null>(null);
 
+  const models = useMemo(() => Array.from(new Set(
+    equipments
+      .map(equipment => equipment.model)
+      .filter((model): model is string => Boolean(model?.trim()))
+  )).sort((a, b) => a.localeCompare(b)), [equipments]);
+
   useEffect(() => {
-    // This will only run on the client, after hydration
     setClientToday(startOfDay(new Date()));
   }, []);
 
@@ -210,7 +220,6 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
     }
   }, [preFilter]);
   
-  // Efeito para garantir que o scroll comece no topo (último lançamento) ao carregar
   useEffect(() => {
     if (!isLoading) {
       const timer = setTimeout(() => {
@@ -226,7 +235,6 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
     }
   }, [isLoading]);
 
-  // Efeito para garantir que o scroll volte ao topo ao fechar o modal ou carregar os dados
   useEffect(() => {
     if (!selectedEquipment && !isLoading) {
       if (scrollContainerRef.current) {
@@ -264,15 +272,27 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
   }, [getSettingsDocRef]);
 
   useEffect(() => {
-    if (!user || !firestore) return;
+    if (!user || !firestore || !accessReady || !access) return;
+    if (profile && profile !== 'admin' && (!access.allowedLocations.length || !access.allowedTypes.length)) {
+      setEquipments([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     const equipmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'equipments');
+    const equipmentsQuery = applyReportAccessQuery(equipmentsCollectionRef, profile, access, 'storageLocation', 'equipmentType');
     
-    const unsubscribe = onSnapshot(equipmentsCollectionRef, (querySnapshot) => {
-      const equipmentsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }) as Equipment);
+    const unsubscribe = onSnapshot(equipmentsQuery, (querySnapshot) => {
+      const equipmentsData = filterByReportAccess(
+        querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          }) as Equipment),
+        profile,
+        access,
+        'storageLocation',
+        'equipmentType'
+      );
       
       setEquipments(equipmentsData);
       setIsLoading(false);
@@ -287,7 +307,7 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
     });
     
     return () => unsubscribe();
-  }, [user, firestore, toast]);
+  }, [user, firestore, toast, profile, access, accessReady]);
 
   const handleUpdateInspectionDate = async (equipmentId: string, newDate: Date) => {
     if (!firestore || !user) return;
@@ -336,9 +356,19 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
     try {
       const updates = Array.from(selectedIds).map(id => {
         const docRef = doc(firestore, 'sgs_genius', user.uid, 'equipments', id);
-        return updateDoc(docRef, {
+        const equipment = equipments.find(item => item.id === id);
+        const observation = bulkObservation.trim();
+        const updateData: { nextInspectionDate: Timestamp; history?: string; observations?: string } = {
           nextInspectionDate: Timestamp.fromDate(bulkInspectionDate)
-        });
+        };
+
+        if (observation) {
+          const historyField = equipment?.history ? 'history' : equipment?.observations ? 'observations' : equipment?.history !== undefined ? 'history' : equipment?.observations !== undefined ? 'observations' : 'history';
+          const previousHistory = equipment?.history || equipment?.observations || '';
+          updateData[historyField] = previousHistory ? `${previousHistory}\n${observation}` : observation;
+        }
+
+        return updateDoc(docRef, updateData);
       });
       
       await Promise.all(updates);
@@ -349,11 +379,42 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
       });
       setSelectedIds(new Set());
       setBulkInspectionDate(undefined);
+      setBulkObservation('');
     } catch (error) {
       console.error("Error bulk updating:", error);
       toast({ variant: 'destructive', title: 'Erro ao atualizar', description: 'Falha na atualização em massa.' });
     } finally {
       setIsUpdatingBulk(false);
+    }
+  };
+
+  // Função para exclusão em massa dos itens selecionados
+  const handleBulkDelete = async () => {
+    if (!firestore || !user || selectedIds.size === 0) return;
+
+    setIsDeletingBulk(true);
+    try {
+      const deletes = Array.from(selectedIds).map(id => {
+        const docRef = doc(firestore, 'sgs_genius', user.uid, 'equipments', id);
+        return deleteDoc(docRef);
+      });
+
+      await Promise.all(deletes);
+
+      toast({
+        title: 'Sucesso!',
+        description: `${selectedIds.size} equipamentos excluídos com sucesso.`,
+      });
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.error("Error bulk deleting:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir',
+        description: 'Não foi possível excluir os equipamentos selecionados.',
+      });
+    } finally {
+      setIsDeletingBulk(false);
     }
   };
 
@@ -382,9 +443,11 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
 
   const filteredEquipments = useMemo(() => {
     if (!clientToday) return [];
+    if (profile && profile !== 'admin' && ![filterType, filterBrand, filterModel, filterStatus, filterInspection, filterStorageLocation].some(filter => filter.length > 0) && !filterLotCaUiaa) return [];
     return equipments.filter(eq => {
       const typeMatch = filterType.length === 0 || filterType.includes(eq.equipmentType);
       const brandMatch = filterBrand.length === 0 || filterBrand.includes(eq.brand);
+      const modelMatch = filterModel.length === 0 || filterModel.includes(eq.model);
       const statusMatch = filterStatus.length === 0 || filterStatus.includes(eq.status);
       const inspectionMatch = filterInspection.length === 0 || filterInspection.some(filter => {
         if (filter === 'overdue') {
@@ -405,14 +468,14 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
           } catch { return false; }
         }
         if (filter === 'descartado') {
-          return eq.status === 'descartado'; // This filter now correctly checks for 'descartado' status
+          return eq.status === 'descartado';
         }
         return false;
       });
       const storageLocationMatch = filterStorageLocation.length === 0 || filterStorageLocation.includes(eq.storageLocation);
       const lotCaUiaaMatch = !filterLotCaUiaa || eq.lotCaUiaa?.toLowerCase().startsWith(filterLotCaUiaa.toLowerCase());
 
-      return typeMatch && brandMatch && statusMatch && inspectionMatch && storageLocationMatch && lotCaUiaaMatch;
+      return typeMatch && brandMatch && modelMatch && statusMatch && inspectionMatch && storageLocationMatch && lotCaUiaaMatch;
     }).sort((a,b) => {
         if (a.status === 'descartado' && b.status !== 'descartado') {
           return 1;
@@ -424,11 +487,12 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
         const dateB = b.nextInspectionDate?.toDate()?.getTime() || Infinity;
         return dateA - dateB;
     });
-  }, [equipments, filterType, filterBrand, filterStatus, filterInspection, filterStorageLocation, clientToday, filterLotCaUiaa]);
+  }, [equipments, filterType, filterBrand, filterModel, filterStatus, filterInspection, filterStorageLocation, clientToday, filterLotCaUiaa, profile]);
 
   const clearFilters = () => {
     setFilterType([]);
     setFilterBrand([]);
+    setFilterModel([]);
     setFilterStatus([]);
     setFilterInspection([]);
     setFilterStorageLocation([]);
@@ -445,7 +509,6 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
       return;
     }
 
-    // Group equipments by type
     const groupedByType = filteredEquipments.reduce((acc, eq) => {
       const type = eq.equipmentType || 'Sem Tipo';
       if (!acc[type]) {
@@ -454,7 +517,6 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
       acc[type].push(eq);
       return acc;
     }, {} as Record<string, Equipment[]>);
-
 
     const equipmentsHtml = Object.entries(groupedByType).map(([type, equipments]) => {
       const itemsHtml = equipments.map(eq => {
@@ -465,7 +527,7 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                         <tr>
                             <td style="padding: 4px; width: 25%;"><strong>Marca:</strong> ${eq.brand || 'N/A'}</td>
                             <td style="padding: 4px; width: 25%;"><strong>Modelo:</strong> ${eq.model || 'N/A'}</td>
-                            <td style="padding: 4px; width: 25%;"><strong>Lote/CA:</strong> ${eq.lotCaUiaa || 'N/A'}</td>
+                            <td style="padding: 4px; width: 25%;"><strong>Nº de Série:</strong> ${eq.lotCaUiaa || 'N/A'}</td>
                             <td style="padding: 4px; width: 25%;"><strong>Status:</strong> ${statusMapping[eq.status]?.label || 'N/A'}</td>
                         </tr>
                         <tr>
@@ -518,7 +580,6 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
     document.body.removeChild(link);
   };
 
-  // When opening view dialog, just set the selected equipment
   const handleOpenViewDialog = (equipment: Equipment) => {
     setSelectedEquipment(equipment);
   };
@@ -526,6 +587,7 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
   const renderSkeletons = () => (
     Array.from({ length: 5 }).map((_, i) => (
       <TableRow key={i}>
+        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
@@ -555,8 +617,11 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                       onChange={setFilterType}
                       disabled={equipmentTypes.length === 0}
                       buttonText='Filtrar por Tipo'
+                      filterKey="types"
+                      menuId="equipamentos"
+                      subMenuId="equipment-report"
                   />
-              </div>
+               </div>
                <div className="space-y-2">
                   <Label>Filtrar por Marca</Label>
                   <SheetFilter
@@ -566,8 +631,25 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                       onChange={setFilterBrand}
                       disabled={brands.length === 0}
                       buttonText='Filtrar por Marca'
+                      filterKey="brands"
+                      menuId="equipamentos"
+                      subMenuId="equipment-report"
                   />
-              </div>
+               </div>
+                     <div className="space-y-2">
+                      <Label>Filtrar por Modelo</Label>
+                      <SheetFilter
+                        title='Filtrar Modelos'
+                        options={models.map(o => ({ value: o, label: o }))}
+                        selected={filterModel}
+                        onChange={setFilterModel}
+                        disabled={models.length === 0}
+                        buttonText='Filtrar por Modelo'
+                        filterKey="models"
+                        menuId="equipamentos"
+                        subMenuId="equipment-report"
+                      />
+                     </div>
               <div className="space-y-2">
                   <Label>Filtrar por Status</Label>
                   <SheetFilter
@@ -576,6 +658,9 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                       selected={filterStatus}
                       onChange={setFilterStatus}
                       buttonText='Filtrar por Status'
+                      filterKey="status"
+                      menuId="equipamentos"
+                      subMenuId="equipment-report"
                   />
               </div>
               <div className="space-y-2">
@@ -586,6 +671,9 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                       selected={filterInspection}
                       onChange={setFilterInspection}
                       buttonText='Filtrar por Situação'
+                      filterKey="inspectionStatus"
+                      menuId="equipamentos"
+                      subMenuId="equipment-report"
                   />
               </div>
               <div className="space-y-2">
@@ -597,10 +685,13 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                       onChange={setFilterStorageLocation}
                       disabled={locations.length === 0}
                       buttonText='Filtrar por Local'
-                  />
+                      filterKey="locations"
+                      menuId="equipamentos"
+                      subMenuId="equipment-report"
+                   />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lot-filter">Lote/CA/UIAA</Label>
+                <Label htmlFor="lot-filter">Nº de Série</Label>
                 <Input
                   id="lot-filter"
                   placeholder="Digite para filtrar..."
@@ -641,9 +732,40 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                                 />
                             </PopoverContent>
                         </Popover>
+                        <Input
+                          value={bulkObservation}
+                          onChange={(event) => setBulkObservation(event.target.value)}
+                          placeholder="Observação da vistoria (opcional)"
+                          aria-label="Observação da vistoria em massa"
+                          className="h-8 w-56 text-xs"
+                        />
                         <Button size="sm" className="h-8 text-xs" disabled={!bulkInspectionDate || isUpdatingBulk} onClick={handleBulkUpdate}>
                             {isUpdatingBulk ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Atualizar Selecionados'}
                         </Button>
+
+                        {/* Botão de Excluir Selecionados com AlertDialog de confirmação */}
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm" className="h-8 text-xs gap-1.5" disabled={isDeletingBulk}>
+                                    {isDeletingBulk ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                                    Excluir Selecionados
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir {selectedIds.size} equipamentos?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação é permanente. Os equipamentos selecionados serão excluídos e não será possível reverter essa ação.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                        Sim, excluir selecionados
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 )}
                 <Button onClick={handleExportToWord} disabled={filteredEquipments.length === 0}>
@@ -666,6 +788,8 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                     </TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Marca</TableHead>
+                    <TableHead>Modelo</TableHead>
+                    <TableHead>Nº de Série</TableHead>
                     <TableHead>Local</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Inspeção</TableHead>
@@ -695,6 +819,8 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                             </TableCell>
                             <TableCell>{eq.equipmentType}</TableCell>
                             <TableCell>{eq.brand}</TableCell>
+                            <TableCell>{eq.model || 'Não informado'}</TableCell>
+                            <TableCell>{eq.lotCaUiaa || 'Não informado'}</TableCell>
                             <TableCell>{eq.storageLocation}</TableCell>
                             <TableCell><Badge className={cn(statusProps.className)}>{statusProps.label}</Badge></TableCell>
                             <TableCell>
@@ -764,7 +890,7 @@ export function EquipmentReport({ onEdit, preFilter, initialScrollPosition }: Eq
                     })
                     ) : (
                     <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
+                        <TableCell colSpan={9} className="h-24 text-center">
                         {equipments.length === 0 ? "Nenhum equipamento registrado ainda." : "Nenhum equipamento encontrado com os filtros selecionados."}
                         </TableCell>
                     </TableRow>

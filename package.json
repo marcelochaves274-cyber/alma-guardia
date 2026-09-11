@@ -11,7 +11,7 @@
     "genkit:dev": "genkit dev --port 9003",
     "genkit:watch": "genkit watch",
     "firebase:init": "npx firebase init hosting firestore --project brave-drive-472322-m2",
-    "deploy": "npx firebase deploy --only hosting,firestore"
+    "deploy": "npx firebase deploy --only hosting,firestore,functions"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.20.0",

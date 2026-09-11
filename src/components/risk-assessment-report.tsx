@@ -43,6 +43,8 @@ import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import { SheetFilter } from './sheet-filter';
 import { Separator } from './ui/separator';
+import { useProfile } from '@/context/profile-context';
+import { applyReportAccessQuery, useReportAccess } from '@/utils/report-access';
 
 
 interface RiskAssessment {
@@ -74,6 +76,8 @@ const getRiskLevelProperties = (score: number) => {
 export function RiskAssessmentReport({ onEdit, initialScrollPosition }: RiskAssessmentReportProps) {
   const firestore = useFirestore();
   const { user } = useUser();
+  const { profile } = useProfile();
+  const { access, ready: accessReady } = useReportAccess(firestore, user?.uid, profile, 'riskAssessment', 'risk-assessment-report');
   const { toast } = useToast();
   
   const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
@@ -121,12 +125,18 @@ export function RiskAssessmentReport({ onEdit, initialScrollPosition }: RiskAsse
   }, [getSettingsDocRef]);
   
   useEffect(() => {
-    if (!user || !firestore) return;
+    if (!user || !firestore || !accessReady || !access) return;
+    if (profile && profile !== 'admin' && !access.allowedLocations.length) {
+      setAssessments([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
 
     const assessmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'risk_assessments');
+    const assessmentsQuery = applyReportAccessQuery(assessmentsCollectionRef, profile, access, 'location');
     
-    const unsubscribe = onSnapshot(assessmentsCollectionRef, (querySnapshot) => {
+    const unsubscribe = onSnapshot(assessmentsQuery, (querySnapshot) => {
       const assessmentsData = querySnapshot.docs.map(doc => {
         const data = doc.data();
         const assessmentDate = data.assessmentDate instanceof Timestamp 
@@ -145,7 +155,6 @@ export function RiskAssessmentReport({ onEdit, initialScrollPosition }: RiskAsse
     }, (error) => {
         console.error("Error fetching real-time assessments:", error);
         toast({
-            variant: "destructive",
             title: "Erro de conexão",
             description: "Não foi possível buscar as avaliações em tempo real."
         });
@@ -153,7 +162,7 @@ export function RiskAssessmentReport({ onEdit, initialScrollPosition }: RiskAsse
     });
     
     return () => unsubscribe();
-  }, [user, firestore, toast]);
+  }, [user, firestore, toast, profile, access, accessReady]);
 
   // Effect to restore scroll position to top when component mounts or initialScrollPosition changes
   useEffect(() => {
@@ -268,6 +277,9 @@ export function RiskAssessmentReport({ onEdit, initialScrollPosition }: RiskAsse
                         onChange={setFilterLocation}
                         disabled={isLoadingLocations || locations.length === 0}
                         buttonText='Filtrar por Local'
+                        filterKey="locations"
+                        menuId="riskAssessment"
+                        subMenuId="risk-assessment-report"
                     />
                 </div>
                 <Button onClick={() => setFilterLocation([])} variant="outline" className="w-full sm:w-auto self-end">

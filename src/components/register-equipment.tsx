@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -26,14 +26,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn, formatValidity } from '@/lib/utils';
-import { Calendar as CalendarIcon, Loader2, AlertTriangle } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, AlertTriangle, Upload } from 'lucide-react';
 import { format, addYears, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { HelpTooltip } from './ui/help-tooltip';
 import { Textarea } from './ui/textarea';
+import Papa from 'papaparse';
 
 interface RegisterEquipmentProps {
   equipmentToEdit: any | null;
@@ -79,13 +80,11 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
       : undefined
   );
   const [discardReason, setDiscardReason] = useState(equipmentToEdit?.discardReason || '');
-  const [observations, setObservations] = useState(equipmentToEdit?.observations || '');
+  const [history, setHistory] = useState(equipmentToEdit?.history || equipmentToEdit?.observations || '');
+  const [observations, setObservations] = useState(equipmentToEdit?.history ? equipmentToEdit?.observations || '' : '');
 
   // UI/Data loading states
-  const [isMfgCalendarOpen, setIsMfgCalendarOpen] = useState(false);
   const [isLastInspCalendarOpen, setIsLastInspCalendarOpen] = useState(false);
-  const [isPurchaseCalendarOpen, setIsPurchaseCalendarOpen] = useState(false);
-  const [isFirstUseCalendarOpen, setIsFirstUseCalendarOpen] = useState(false);
   const [isNextInspCalendarOpen, setIsNextInspCalendarOpen] = useState(false);
   const [isValidityPopoverOpen, setIsValidityPopoverOpen] = useState(false);
 
@@ -98,10 +97,21 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
   
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+
+  const showSuccessToast = useCallback((description: string) => {
+    const successToast = toast({
+      title: 'Sucesso!',
+      description,
+      className: 'fixed left-1/2 top-1/2 z-[110] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 animate-in fade-in-0 duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-300',
+    });
+    window.setTimeout(successToast.dismiss, 1800);
+  }, [toast]);
 
   const yearOptions = Array.from({ length: 31 }, (_, i) => ({
     value: String(i),
@@ -127,6 +137,130 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
     }
   }, [manufacturingDate, validityYears, validityMonths]);
 
+  const parseImportDate = (value: string): Timestamp | null => {
+    const text = value?.trim();
+    if (!text) return null;
+    const parts = text.split(/[\/-]/).map(Number);
+    if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+    const [first, second, third] = parts;
+    const year = first > 31 ? first : third;
+    const month = second;
+    const day = first > 31 ? third : first;
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+    return Timestamp.fromDate(date);
+  };
+
+  const parseValidity = (value: string) => {
+    const text = value?.trim().toLowerCase() || '';
+    const years = text.match(/(\d+)\s*ano/);
+    const months = text.match(/(\d+)\s*m(?:e|ê)s/);
+    if (/^\d+$/.test(text)) return { years: text, months: '' };
+    return { years: years?.[1] || '', months: months?.[1] || '' };
+  };
+
+  const normalizeStatus = (value: string) => {
+    const text = value?.trim().toLowerCase() || '';
+    if (text.includes('descart') || text.includes('condenad')) return 'descartado';
+    if (text.includes('manut')) return 'em manutencao';
+    return 'operacional';
+  };
+
+  const repairMojibake = (value: string) => {
+    if (!/[ÃÂ]/.test(value)) return value;
+    try {
+      const bytes = Uint8Array.from(value, character => character.charCodeAt(0));
+      return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    } catch {
+      return value;
+    }
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !firestore || !user) return;
+    setIsImporting(true);
+
+    let fileContents: string;
+    try {
+      const fileBuffer = await file.arrayBuffer();
+      fileContents = new TextDecoder('utf-8').decode(fileBuffer).replace(/^\uFEFF/, '');
+    } catch (error) {
+      console.error('Error decoding equipment CSV:', error);
+      setIsImporting(false);
+      toast({ variant: 'destructive', title: 'Erro na leitura', description: 'Não foi possível interpretar a codificação do arquivo CSV.' });
+      return;
+    }
+
+    Papa.parse<string[]>(fileContents, {
+      header: false,
+      skipEmptyLines: 'greedy',
+      delimiter: '',
+      quoteChar: '"',
+      transform: (value) => repairMojibake(value.trim()),
+      complete: async (results) => {
+        try {
+          let rows = (results.data as string[][]).filter(row => row.some(cell => cell.trim()));
+          if (rows.length && rows[0][0]?.toLowerCase().includes('tipo de equipamento')) rows = rows.slice(1);
+          if (!rows.length) throw new Error('empty');
+
+          const collectionRef = collection(firestore, 'sgs_genius', user.uid, 'equipments');
+          const validRows = rows.filter(row => row.length >= 16 && row[0] && row[1]);
+          for (let index = 0; index < validRows.length; index += 500) {
+            const batchRows = validRows.slice(index, index + 500);
+            const batch = writeBatch(firestore);
+            batchRows.forEach((row) => {
+              const [type, importedBrand, importedModel, lot, manufacturing, purchase, firstUse, invoice, purchasePlace, validity, storage, details, importedStatus, lastInspection, nextInspection, importedHistory] = row;
+              const parsedValidity = parseValidity(validity);
+              const statusValue = normalizeStatus(importedStatus);
+              const equipmentRef = doc(collectionRef);
+              batch.set(equipmentRef, {
+                userId: user.uid,
+                equipmentType: type,
+                brand: importedBrand,
+                model: importedModel || '',
+                lotCaUiaa: lot || '',
+                manufacturingDate: parseImportDate(manufacturing),
+                purchaseDate: parseImportDate(purchase),
+                invoiceNumber: invoice || '',
+                purchaseLocation: purchasePlace || '',
+                validityYears: parsedValidity.years,
+                validityMonths: parsedValidity.months,
+                firstUseDate: parseImportDate(firstUse),
+                storageLocation: storage || '',
+                storageDetails: details || '',
+                status: statusValue,
+                lastInspectionDate: statusValue === 'descartado' ? null : parseImportDate(lastInspection),
+                nextInspectionDate: statusValue === 'descartado' ? null : parseImportDate(nextInspection),
+                discardReason: null,
+                history: importedHistory || '',
+                observations: '',
+                createdAt: serverTimestamp(),
+              });
+            });
+            await batch.commit();
+          }
+
+          const ignoredCount = rows.length - validRows.length;
+          toast({
+            title: 'Importação concluída!',
+            description: `${validRows.length} equipamento(s) registrado(s).${ignoredCount ? ` ${ignoredCount} linha(s) ignorada(s) por falta de campos ou separação inválida.` : ''}`,
+          });
+        } catch (error) {
+          console.error('Error importing equipment:', error);
+          toast({ variant: 'destructive', title: 'Erro na importação', description: 'Confira se o arquivo CSV contém as 16 colunas na ordem informada.' });
+        } finally {
+          setIsImporting(false);
+          if (importFileInputRef.current) importFileInputRef.current.value = '';
+        }
+      },
+      error: () => {
+        setIsImporting(false);
+        toast({ variant: 'destructive', title: 'Erro na leitura', description: 'Não foi possível ler o arquivo CSV.' });
+      },
+    });
+  };
+
 
   const resetForm = useCallback(() => {
     setEquipmentType('');
@@ -146,6 +280,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
     setLastInspectionDate(undefined);
     setNextInspectionDate(undefined);
     setDiscardReason('');
+    setHistory('');
     setObservations('');
   }, []);
 
@@ -169,7 +304,8 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
       setLastInspectionDate(equipmentToEdit.lastInspectionDate instanceof Timestamp ? equipmentToEdit.lastInspectionDate.toDate() : undefined);
       setNextInspectionDate(equipmentToEdit.nextInspectionDate instanceof Timestamp ? equipmentToEdit.nextInspectionDate.toDate() : undefined);
       setDiscardReason(equipmentToEdit.discardReason || '');
-      setObservations(equipmentToEdit.observations || '');
+      setHistory(equipmentToEdit.history || equipmentToEdit.observations || '');
+      setObservations(equipmentToEdit.history ? equipmentToEdit.observations || '' : '');
     } else {
       resetForm();
     }
@@ -232,6 +368,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
       lastInspectionDate: status === 'descartado' ? null : (lastInspectionDate ? Timestamp.fromDate(lastInspectionDate) : null),
       nextInspectionDate: status === 'descartado' ? null : (nextInspectionDate ? Timestamp.fromDate(nextInspectionDate) : null),
       discardReason: status === 'descartado' ? discardReason : null,
+      history,
       observations,
     };
 
@@ -239,12 +376,12 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
       if (isEditing && equipmentToEdit) {
         const docRef = doc(firestore, 'sgs_genius', user.uid, 'equipments', equipmentToEdit.id);
         await updateDoc(docRef, { ...equipmentData, updatedAt: serverTimestamp() });
-        toast({ title: 'Sucesso!', description: 'Equipamento atualizado com sucesso.' });
+        showSuccessToast('Equipamento atualizado com sucesso.');
         setPage('equipment-report');
       } else {
         const collectionRef = collection(firestore, 'sgs_genius', user.uid, 'equipments');
         await addDoc(collectionRef, { ...equipmentData, createdAt: serverTimestamp() });
-        toast({ title: 'Sucesso!', description: 'Equipamento registrado com sucesso.' });
+        showSuccessToast('Equipamento registrado com sucesso.');
         resetForm();
       }
     } catch (error) {
@@ -293,50 +430,35 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
               <Input id="model" value={model} onChange={(e) => setModel(e.target.value)} placeholder="Ex: Attache" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lot-ca-uiaa" className="flex items-center gap-2">Lote/CA/UIAA <HelpTooltip content="Número de lote de fabricação, Certificado de Aprovação (CA) ou selo UIAA, se aplicável." /></Label>
+              <Label htmlFor="lot-ca-uiaa" className="flex items-center gap-2">Nº de Série <HelpTooltip content="Número de série do equipamento, se aplicável." /></Label>
               <Input id="lot-ca-uiaa" value={lotCaUiaa} onChange={(e) => setLotCaUiaa(e.target.value)} placeholder="Ex: 123456" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="manufacturing-date">Data de Fabricação</Label>
-              <Popover open={isMfgCalendarOpen} onOpenChange={setIsMfgCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !manufacturingDate && 'text-muted-foreground')}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {manufacturingDate ? format(manufacturingDate, 'dd/MM/yyyy') : <span>Selecione a data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={manufacturingDate} onSelect={(d) => { setManufacturingDate(d); setIsMfgCalendarOpen(false); }} locale={ptBR} initialFocus />
-                </PopoverContent>
-              </Popover>
+              <Input
+                id="manufacturing-date"
+                type="date"
+                value={manufacturingDate ? format(manufacturingDate, 'yyyy-MM-dd') : ''}
+                onChange={(e) => setManufacturingDate(e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="purchase-date">Data da Compra</Label>
-              <Popover open={isPurchaseCalendarOpen} onOpenChange={setIsPurchaseCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !purchaseDate && 'text-muted-foreground')}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {purchaseDate ? format(purchaseDate, 'dd/MM/yyyy') : <span>Selecione a data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={purchaseDate} onSelect={(d) => { setPurchaseDate(d); setIsPurchaseCalendarOpen(false); }} locale={ptBR} initialFocus />
-                </PopoverContent>
-              </Popover>
+              <Input
+                id="purchase-date"
+                type="date"
+                value={purchaseDate ? format(purchaseDate, 'yyyy-MM-dd') : ''}
+                onChange={(e) => setPurchaseDate(e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="first-use-date">Data 1º Utilização</Label>
-              <Popover open={isFirstUseCalendarOpen} onOpenChange={setIsFirstUseCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !firstUseDate && 'text-muted-foreground')}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {firstUseDate ? format(firstUseDate, 'dd/MM/yyyy') : <span>Selecione a data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={firstUseDate} onSelect={(d) => { setFirstUseDate(d); setIsFirstUseCalendarOpen(false); }} locale={ptBR} initialFocus />
-                </PopoverContent>
-              </Popover>
+              <Input
+                id="first-use-date"
+                type="date"
+                value={firstUseDate ? format(firstUseDate, 'yyyy-MM-dd') : ''}
+                onChange={(e) => setFirstUseDate(e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="invoice-number">Nota Fiscal</Label>
@@ -401,7 +523,7 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
                   <SelectContent>
                     <SelectItem value="operacional">Operacional</SelectItem>
                     <SelectItem value="em manutencao">Em manutenção</SelectItem>
-                    <SelectItem value="descartado">Descartado</SelectItem>
+                    <SelectItem value="descartado">Condenado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -451,42 +573,68 @@ export function RegisterEquipment({ equipmentToEdit, setPage }: RegisterEquipmen
 
           {status === 'descartado' && (
             <div className="space-y-2">
-                <Label htmlFor="discard-reason">Motivo do Descarte</Label>
+                <Label htmlFor="discard-reason">Motivo da Condenação</Label>
                 <Textarea
                     id="discard-reason"
                     value={discardReason}
                     onChange={(e) => setDiscardReason(e.target.value)}
-                    placeholder="Explique por que o equipamento foi descartado (ex: danificado, fim da vida útil)."
+                    placeholder="Explique por que o equipamento foi condenado (ex: danificado, fim da vida útil)."
                     required={status === 'descartado'}
                 />
             </div>
           )}
 
           <div className="space-y-2">
-                <Label htmlFor="observations">Histórico do Equipamento</Label>
+              <Label htmlFor="history">Histórico do Equipamento</Label>
                 <p className="text-sm text-muted-foreground">
                   Registre aqui todas as inspeções, manutenções e outras alterações relevantes, incluindo datas e considerações.
                 </p>
                 <Textarea
-                    id="observations"
-                    value={observations}
-                    onChange={(e) => setObservations(e.target.value)}
+                id="history"
+                value={history}
+                onChange={(e) => setHistory(e.target.value)}
                     placeholder="Ex: 20/07/2024 - Inspeção realizada por [Nome], sem avarias."
                     className="min-h-[100px]"
                 />
             </div>
 
-          <div className="flex justify-end gap-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="observations">Observações</Label>
+              <Textarea
+                id="observations"
+                value={observations}
+                onChange={(e) => setObservations(e.target.value)}
+                placeholder="Digite observações adicionais sobre o equipamento."
+                className="min-h-[100px]"
+              />
+            </div>
+
+          <div className="flex flex-wrap justify-end gap-4 pt-4">
             {isEditing && (
               <Button variant="outline" type="button" onClick={() => setPage('equipment-report')}>
                 Cancelar
               </Button>
             )}
-            <Button type="submit" disabled={isSubmitting}>
+            {!isEditing && (
+              <>
+                <input ref={importFileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleImport} />
+                <Button type="button" variant="outline" disabled={isSubmitting || isImporting} onClick={() => importFileInputRef.current?.click()}>
+                  {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                  {isImporting ? 'Importando...' : 'Importar CSV'}
+                </Button>
+              </>
+            )}
+            <Button type="submit" disabled={isSubmitting || isImporting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEditing ? 'Salvar Alterações' : 'Salvar Equipamento'}
             </Button>
           </div>
+          {!isEditing && (
+            <p className="text-left text-sm leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">No Excel, salve o arquivo como: CSV UTF-8 (Delimitado por vírgulas) (*.csv).</strong>{' '}
+              O arquivo pode ser importado com ou sem cabeçalho. Use esta sequência de campos: Tipo de Equipamento, Marca, Modelo, Nº de Série, Data de Fabricação, Data da Compra, Data 1º Utilização, Nota Fiscal, Local da Compra, Tempo de Validade, Local Armazenamento, Detalhar Local, Status Equipamento, Data última inspeção, Data próxima inspeção e Histórico do Equipamento. Datas: DD/MM/AAAA ou AAAA-MM-DD. Campos com vírgula ou ponto e vírgula devem ficar entre aspas.
+            </p>
+          )}
         </CardContent>
       </form>
     </Card>

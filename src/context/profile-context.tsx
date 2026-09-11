@@ -36,10 +36,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     return doc(firestore, 'sgs_genius', user.uid, 'settings', 'profiles');
   }, [firestore, user]);
   
-  // This effect runs once on mount to get the profile from sessionStorage
+  // Restore the selected profile after the app or browser is closed.
   useEffect(() => {
     try {
-        const storedProfile = sessionStorage.getItem('sgs-profile') as Profile | null;
+        const storedProfile = localStorage.getItem('sgs-profile') as Profile | null;
         if (storedProfile) {
             setProfileState(storedProfile);
         }
@@ -58,7 +58,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (!user) {
       setProfileState(null);
       try {
-        sessionStorage.removeItem('sgs-profile');
+        localStorage.removeItem('sgs-profile');
       } catch (e) {}
       setIsLoadingPasses(false);
       return;
@@ -105,9 +105,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     setProfileState(profileToSet);
     try {
         if (profileToSet) {
-            sessionStorage.setItem('sgs-profile', profileToSet);
+          localStorage.setItem('sgs-profile', profileToSet);
         } else {
-            sessionStorage.removeItem('sgs-profile');
+          localStorage.removeItem('sgs-profile');
         }
     } catch(e) {
         // sessionStorage not available
@@ -118,7 +118,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     setRedirectPage(page);
     setProfileState(profileToSet);
     try {
-      sessionStorage.setItem('sgs-profile', profileToSet);
+      localStorage.setItem('sgs-profile', profileToSet);
     } catch (e) {}
   };
   

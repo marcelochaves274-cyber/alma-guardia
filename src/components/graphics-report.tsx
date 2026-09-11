@@ -20,6 +20,8 @@ import { Label } from './ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, Timestamp, getDocs, doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useProfile } from '@/context/profile-context';
+import { applyReportAccessQuery, useReportAccess } from '@/utils/report-access';
 import { Bar, BarChart, ResponsiveContainer, XAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { SheetFilter } from './sheet-filter';
 import { Skeleton } from './ui/skeleton';
@@ -126,6 +128,8 @@ export function GraphicsReport() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
+  const { profile } = useProfile();
+  const { access, ready: accessReady } = useReportAccess(firestore, user?.uid, profile, 'graphics-report', '');
 
   const [reportType, setReportType] = useState<ReportType | null>(null);
   
@@ -198,6 +202,19 @@ export function GraphicsReport() {
         }
         setIsLoading(true);
 
+        if (!accessReady || !access) return;
+        const isRestricted = profile && profile !== 'admin';
+        const occurrenceTypesAllowed = access.filters?.occurrenceTypes || [];
+        const treatmentTypesAllowed = access.filters?.treatmentTypes || [];
+        const faunaTypesAllowed = access.filters?.faunaFloraGeoTypes || [];
+        if (isRestricted && (!access.allowedLocations.length || !occurrenceTypesAllowed.length || !treatmentTypesAllowed.length || !faunaTypesAllowed.length)) {
+          setOccurrences([]);
+          setTreatments([]);
+          setFaunaFloraGeo([]);
+          setIsLoading(false);
+          return;
+        }
+
         try {
             // Fetch main data collections
             const [
@@ -205,9 +222,9 @@ export function GraphicsReport() {
                 treatmentsSnap, 
                 faunaFloraGeoSnap
             ] = await Promise.all([
-                getDocs(collection(firestore, 'sgs_genius', user.uid, 'chat_messages')),
-                getDocs(collection(firestore, 'sgs_genius', user.uid, 'risk_treatments')),
-                getDocs(collection(firestore, 'sgs_genius', user.uid, 'fauna_flora_geo')),
+                getDocs(applyReportAccessQuery(collection(firestore, 'sgs_genius', user.uid, 'chat_messages'), profile, { allowedLocations: access.allowedLocations, allowedTypes: occurrenceTypesAllowed }, 'occurrenceLocation', 'occurrenceType')),
+                getDocs(applyReportAccessQuery(collection(firestore, 'sgs_genius', user.uid, 'risk_treatments'), profile, { allowedLocations: access.allowedLocations, allowedTypes: treatmentTypesAllowed }, 'treatmentLocation', 'treatmentType')),
+                getDocs(applyReportAccessQuery(collection(firestore, 'sgs_genius', user.uid, 'fauna_flora_geo'), profile, { allowedLocations: access.allowedLocations, allowedTypes: faunaTypesAllowed }, 'locationName', 'speciesType')),
             ]);
 
             // Fetch settings documents
@@ -276,7 +293,7 @@ export function GraphicsReport() {
       fetchData();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, firestore, toast]);
+  }, [user, firestore, toast, profile, access, accessReady]);
 
 
   const clearFilters = () => {
@@ -287,6 +304,7 @@ export function GraphicsReport() {
 
   const filteredData = useMemo(() => {
     if (!isClient || !reportType) return [];
+    if (profile && profile !== 'admin' && ![filterYear, filterType, filterLocation].some(filter => filter.length > 0)) return [];
     let data: any[] = [];
     switch (reportType) {
       case 'occurrences': data = occurrences; break;
@@ -308,7 +326,7 @@ export function GraphicsReport() {
       return yearMatch && locationMatch && typeMatch;
     });
 
-  }, [reportType, occurrences, treatments, faunaFloraGeo, filterYear, filterLocation, filterType, isClient]);
+  }, [reportType, occurrences, treatments, faunaFloraGeo, filterYear, filterLocation, filterType, isClient, profile]);
 
   const chartData = useMemo(() => {
     if (!isClient || !reportType || filteredData.length === 0) return [];
@@ -379,6 +397,8 @@ export function GraphicsReport() {
               onChange={setFilterYear}
               disabled={isLoading}
               buttonText="Filtrar por Ano"
+              filterKey="years"
+              menuId="graphics-report"
             />
           </div>
           <div className="space-y-2">
@@ -390,6 +410,8 @@ export function GraphicsReport() {
               onChange={setFilterType}
               disabled={isLoading || typeOptions.length === 0}
               buttonText="Filtrar por Tipo"
+              filterKey={reportType === 'occurrences' ? 'occurrenceTypes' : reportType === 'treatments' ? 'treatmentTypes' : 'faunaFloraGeoTypes'}
+              menuId="graphics-report"
             />
           </div>
           <div className="space-y-2">
@@ -401,6 +423,8 @@ export function GraphicsReport() {
               onChange={setFilterLocation}
               disabled={isLoading || locations.length === 0}
               buttonText="Filtrar por Local"
+              filterKey="locations"
+              menuId="graphics-report"
             />
           </div>
           <div className="flex gap-2">

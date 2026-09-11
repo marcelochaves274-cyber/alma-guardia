@@ -51,6 +51,8 @@ import { cn } from '@/lib/utils';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import { SheetFilter } from './sheet-filter';
+import { useProfile } from '@/context/profile-context';
+import { applyReportAccessQuery, filterByReportAccess, getReportAccess } from '@/utils/report-access';
 
 
 interface Occurrence {
@@ -113,6 +115,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { profile } = useProfile();
 
   
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
@@ -167,23 +170,37 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
   // Fetch all occurrences with real-time updates
   useEffect(() => {
     if (!user || !firestore) return;
-    setIsLoading(true);
+    let unsubscribe = () => {};
+    const subscribe = async () => {
+      setIsLoading(true);
+      const access = await getReportAccess(firestore, user.uid, profile, 'acidentes', 'occurrence-report');
+      if (profile && profile !== 'admin' && (!access.allowedLocations.length || !access.allowedTypes.length)) {
+        setOccurrences([]);
+        setIsLoading(false);
+        return;
+      }
 
-    const occurrencesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'chat_messages');
-    
-    const unsubscribe = onSnapshot(occurrencesCollectionRef, (querySnapshot) => {
-      const occurrencesData = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        const occurrenceDate = data.occurrenceDate instanceof Timestamp 
-          ? data.occurrenceDate.toDate() 
-          : new Date(0); 
+      const occurrencesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'chat_messages');
+      const occurrencesQuery = applyReportAccessQuery(occurrencesCollectionRef, profile, access, 'occurrenceLocation', 'occurrenceType');
+      unsubscribe = onSnapshot(occurrencesQuery, (querySnapshot) => {
+      const occurrencesData = filterByReportAccess(
+        querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          const occurrenceDate = data.occurrenceDate instanceof Timestamp 
+            ? data.occurrenceDate.toDate() 
+            : new Date(0); 
 
-        return {
-          id: doc.id,
-          ...data,
-          occurrenceDate: occurrenceDate,
-        } as Occurrence;
-      });
+          return {
+            id: doc.id,
+            ...data,
+            occurrenceDate: occurrenceDate,
+          } as Occurrence;
+        }),
+        profile,
+        access,
+        'occurrenceLocation',
+        'occurrenceType'
+      );
       
       const years = new Set(
         occurrencesData
@@ -195,7 +212,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
 
       setOccurrences(occurrencesData.sort((a, b) => b.occurrenceDate.getTime() - a.occurrenceDate.getTime()));
       setIsLoading(false);
-    }, (error) => {
+      }, (error) => {
         console.error("Error fetching real-time occurrences:", error);
         toast({
             variant: "destructive",
@@ -203,10 +220,16 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
             description: "Não foi possível buscar as ocorrências em tempo real."
         });
         setIsLoading(false);
+      });
+    };
+    subscribe().catch(error => {
+      console.error("Error loading report access:", error);
+      setOccurrences([]);
+      setIsLoading(false);
     });
     
     return () => unsubscribe();
-  }, [user, firestore, toast]);
+  }, [user, firestore, toast, profile]);
 
   // Efeito para garantir que o scroll comece no topo (último lançamento) ao carregar
   useEffect(() => {
@@ -238,6 +261,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
   }, [selectedOccurrence, isLoading]);
 
   const filteredOccurrences = useMemo(() => {
+    if (profile && profile !== 'admin' && ![filterYear, filterMonths, filterType, filterLocation, filterAnalysis, filterAgeGroup].some(filter => filter.length > 0) && !filterName) return [];
     return occurrences.filter(occ => {
       const occDate = occ.occurrenceDate;
       if (!occDate || !isClient) return false;
@@ -252,7 +276,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
 
       return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && nameMatch && ageGroupMatch;
     });
-  }, [occurrences, filterYear, filterMonths, filterType, filterLocation, filterName, filterAnalysis, filterAgeGroup, isClient]);
+  }, [occurrences, filterYear, filterMonths, filterType, filterLocation, filterName, filterAnalysis, filterAgeGroup, isClient, profile]);
 
   const clearFilters = () => {
     setFilterYear([]);
@@ -330,6 +354,9 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
               selected={filterMonths}
               onChange={setFilterMonths}
               buttonText="Filtrar por Mês"
+              filterKey="months"
+              menuId="acidentes"
+              subMenuId="occurrence-report"
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
@@ -342,6 +369,9 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
                   onChange={setFilterLocation}
                   disabled={locations.length === 0}
                   buttonText='Filtrar por Local'
+                  filterKey="locations"
+                  menuId="acidentes"
+                  subMenuId="occurrence-report"
                 />
             </div>
             <div className='space-y-2'>
@@ -353,6 +383,9 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
                     onChange={setFilterYear}
                     disabled={isLoading || availableYears.length === 0}
                     buttonText='Filtrar por Ano'
+                    filterKey="years"
+                    menuId="acidentes"
+                    subMenuId="occurrence-report"
                 />
             </div>
             <div className='space-y-2'>
@@ -364,6 +397,9 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
                     onChange={setFilterType}
                     disabled={!occurrenceTypes || occurrenceTypes.length === 0}
                     buttonText='Filtrar por Tipo'
+                    filterKey="types"
+                    menuId="acidentes"
+                    subMenuId="occurrence-report"
                 />
             </div>
             <div className='space-y-2'>
@@ -374,6 +410,9 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
                     selected={filterAnalysis}
                     onChange={setFilterAnalysis}
                     buttonText='Filtrar por Análise'
+                    filterKey="analysis"
+                    menuId="acidentes"
+                    subMenuId="occurrence-report"
                 />
             </div>
             <div className='space-y-2'>
@@ -384,6 +423,9 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
                     selected={filterAgeGroup}
                     onChange={setFilterAgeGroup}
                     buttonText='Filtrar Faixa Etária'
+                    filterKey="ageGroups"
+                    menuId="acidentes"
+                    subMenuId="occurrence-report"
                 />
             </div>
             

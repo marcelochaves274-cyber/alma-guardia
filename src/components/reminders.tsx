@@ -1,9 +1,10 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useFirestore, useUser } from '@/firebase';
+import { useState, useEffect, useRef } from 'react';
+import { useFirestore, useUser, useFirebaseApp } from '@/firebase';
 import { collection, onSnapshot, Timestamp, query, where } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,6 +38,8 @@ interface RemindersProps {
 export function Reminders({ setPage }: RemindersProps) {
   const firestore = useFirestore();
   const { user } = useUser();
+  const app = useFirebaseApp();
+  const hasCheckedCriticalAlerts = useRef(false);
 
   const [pendingTreatments, setPendingTreatments] = useState<number>(0);
   const [overdueTreatments, setOverdueTreatments] = useState<number>(0);
@@ -53,42 +56,6 @@ export function Reminders({ setPage }: RemindersProps) {
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  // Efeito para lidar com notificações push nativas
-  useEffect(() => {
-    // Não faz nada se estiver carregando ou se não houver itens críticos
-    if (isLoadingEquipments || isLoadingNotices || isLoadingTreatments) return;
-
-    const criticalItemsMessages: string[] = [];
-    if (overdueTreatments > 0) criticalItemsMessages.push(`${overdueTreatments} tratamento(s) atrasado(s)`);
-    if (overdueEquipments > 0) criticalItemsMessages.push(`${overdueEquipments} vistoria(s) de equipamento atrasada(s)`);
-    if (expiredEquipments > 0) criticalItemsMessages.push(`${expiredEquipments} equipamento(s) com validade expirada`);
-    if (pendingNotices > 0) criticalItemsMessages.push(`${pendingNotices} aviso(s) pendente(s)`);
-
-    if (criticalItemsMessages.length === 0) return;
-
-    const showNotification = () => {
-      const notificationBody = "Resumo de pendências: " + criticalItemsMessages.join(', ') + ".";
-      new Notification("ALMA Guardia - Alertas Críticos", {
-        body: notificationBody,
-        icon: "https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d",
-        tag: 'alma-guardia-critical-alerts', // Identificador único para a notificação
-        requireInteraction: true // Mantém a notificação visível até a interação do usuário
-      });
-    };
-
-    if ('Notification' in window) {
-      if (Notification.permission === 'granted') {
-        showNotification();
-      } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            showNotification();
-          }
-        });
-      }
-    }
-  }, [pendingNotices, overdueTreatments, overdueEquipments, expiredEquipments, isLoadingEquipments, isLoadingNotices, isLoadingTreatments]);
 
   useEffect(() => {
     if (!user || !firestore) return;
@@ -171,6 +138,21 @@ export function Reminders({ setPage }: RemindersProps) {
       unsubscribeNotices();
     };
   }, [user, firestore]);
+
+  // Ao abrir Lembretes e encontrar itens críticos (vermelhos), pede ao backend
+  // para notificar o admin (com cooldown no servidor para evitar spam).
+  useEffect(() => {
+    if (!user || isLoadingTreatments || isLoadingEquipments) return;
+    if (hasCheckedCriticalAlerts.current) return;
+    if (overdueTreatments === 0 && overdueEquipments === 0 && expiredEquipments === 0) return;
+
+    hasCheckedCriticalAlerts.current = true;
+    const functions = getFunctions(app);
+    const notifyCriticalOnDemand = httpsCallable(functions, 'notifyCriticalOnDemand');
+    notifyCriticalOnDemand().catch((error) => {
+      console.error('[Lembretes] Falha ao notificar alertas críticos:', error);
+    });
+  }, [user, app, isLoadingTreatments, isLoadingEquipments, overdueTreatments, overdueEquipments, expiredEquipments]);
   
   const handleViewTreatments = () => {
     setPage('treatment-report', {

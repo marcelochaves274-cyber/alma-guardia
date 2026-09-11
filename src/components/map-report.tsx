@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
@@ -39,6 +38,8 @@ import { cn } from '@/lib/utils';
 import { SheetFilter } from './sheet-filter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useProfile } from '@/context/profile-context';
+import { applyReportAccessQuery, filterByReportAccess, getReportAccess } from '@/utils/report-access';
 
 interface Occurrence {
   id: string;
@@ -86,7 +87,7 @@ const YEAR_COLORS = ['fill-red-500', 'fill-blue-500', 'fill-green-500', 'fill-or
 const getYearColor = (year: number, allYears: string[]) => {
   const sortedYears = [...allYears].sort((a,b) => Number(b) - Number(a));
   const index = sortedYears.indexOf(year.toString());
-  if (index === -1) return 'fill-gray-500'; // Fallback color
+  if (index === -1) return 'fill-gray-500';
   return YEAR_COLORS[index % YEAR_COLORS.length];
 };
 
@@ -109,12 +110,13 @@ const MapBoundsUpdater = ({ points, isMobile }: { points: { lat: number; lng: nu
 
     const bounds = new google.maps.LatLngBounds();
     points.forEach(point => bounds.extend(point));
-    const padding = isMobile ? 40 : 100; // Padding menor no mobile para um zoom mais próximo
+    const padding = isMobile ? 40 : 100;
     map.fitBounds(bounds, padding);
   }, [map, points, isMobile]);
 
   return null;
 };
+
 const ageGroupOptions = [
     { value: 'crianca', label: 'Criança (0-12)' },
     { value: 'adolescente', label: 'Adolescente (13-17)' },
@@ -138,11 +140,11 @@ const monthOptions = [
   { value: '11', label: 'Dezembro' },
 ];
 
-
 export function MapReport() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { profile } = useProfile();
   
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -155,12 +157,14 @@ export function MapReport() {
   const [activeGeoPopoverKey, setActiveGeoPopoverKey] = useState<string | null>(null);
   const [modalActivePopoverKey, setModalActivePopoverKey] = useState<string | null>(null);
 
-
   // Filter states
   const [filterYear, setFilterYear] = useState<string[]>([]);
   const [filterMonths, setFilterMonths] = useState<string[]>([]);
   const [filterType, setFilterType] = useState<string[]>([]);
+  
+  // Lógica de restrição automática para Perfis Personalizados (Admin mantém acesso total)
   const [filterLocation, setFilterLocation] = useState<string[]>([]);
+
   const [mapView, setMapView] = useState<'ludico' | 'geo'>('ludico');
 
   // Dynamic options for selects
@@ -183,7 +187,7 @@ export function MapReport() {
   const modalMapContainerRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
   const panState = useRef<{ x: number; y: number, startX: number, startY: number } | null>(null);
-  const touchState = useRef<{ // Renomeado para pinchState, focado apenas no gesto de pinça
+  const touchState = useRef<{
     pan?: { x: number; y: number; startX: number; startY: number };
     pinch?: { distance: number; scale: number; center: { x: number; y: number } };
   } | null>(null);
@@ -241,35 +245,48 @@ export function MapReport() {
   // Fetch all occurrences with real-time updates
   useEffect(() => {
     if (!user || !firestore) return;
-    setIsLoading(true);
+    let unsubscribe = () => {};
+    const subscribe = async () => {
+      setIsLoading(true);
+      const access = await getReportAccess(firestore, user.uid, profile, 'acidentes', 'map-report');
+      if (profile && profile !== 'admin' && (!access.allowedLocations.length || !access.allowedTypes.length)) {
+        setOccurrences([]);
+        setIsLoading(false);
+        return;
+      }
 
-    const occurrencesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'chat_messages');
-    
-    const unsubscribe = onSnapshot(occurrencesCollectionRef, (querySnapshot) => {
-      const occurrencesData = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        const occurrenceDate = data.occurrenceDate instanceof Timestamp 
-          ? data.occurrenceDate.toDate() 
-          : new Date(0);
-        
-        let locationData = data.location;
-        // Backwards compatibility for old mapMarker format
-        if (data.mapMarker && !data.location) {
-          locationData = {
-            mapType: 'ludico',
-            ludico: data.mapMarker,
+      const occurrencesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'chat_messages');
+      const occurrencesQuery = applyReportAccessQuery(occurrencesCollectionRef, profile, access, 'occurrenceLocation', 'occurrenceType');
+      unsubscribe = onSnapshot(occurrencesQuery, (querySnapshot) => {
+      const occurrencesData = filterByReportAccess(
+        querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          const occurrenceDate = data.occurrenceDate instanceof Timestamp 
+            ? data.occurrenceDate.toDate() 
+            : new Date(0);
+          
+          let locationData = data.location;
+          if (data.mapMarker && !data.location) {
+            locationData = {
+              mapType: 'ludico',
+              ludico: data.mapMarker,
+            }
+          } else if (locationData?.geo instanceof GeoPoint) {
+            locationData.geo = { lat: locationData.geo.latitude, lng: locationData.geo.longitude };
           }
-        } else if (locationData?.geo instanceof GeoPoint) {
-          locationData.geo = { lat: locationData.geo.latitude, lng: locationData.geo.longitude };
-        }
 
-        return {
-          id: doc.id,
-          ...data,
-          occurrenceDate: occurrenceDate,
-          location: locationData,
-        } as Occurrence;
-      });
+          return {
+            id: doc.id,
+            ...data,
+            occurrenceDate: occurrenceDate,
+            location: locationData,
+          } as Occurrence;
+        }),
+        profile,
+        access,
+        'occurrenceLocation',
+        'occurrenceType'
+      );
       
       const years = new Set(
         occurrencesData
@@ -281,7 +298,7 @@ export function MapReport() {
       
       setOccurrences(occurrencesData);
       setIsLoading(false);
-    }, (error) => {
+      }, (error) => {
         console.error("Error fetching real-time occurrences:", error);
         toast({
             variant: "destructive",
@@ -289,12 +306,19 @@ export function MapReport() {
             description: "Não foi possível buscar as ocorrências em tempo real."
         });
         setIsLoading(false);
+      });
+    };
+    subscribe().catch(error => {
+      console.error("Error loading report access:", error);
+      setOccurrences([]);
+      setIsLoading(false);
     });
     
     return () => unsubscribe();
-  }, [user, firestore, toast]);
+  }, [user, firestore, toast, profile]);
 
   const filteredOccurrences = useMemo(() => {
+    if (profile && profile !== 'admin' && ![filterYear, filterMonths, filterType, filterLocation].some(filter => filter.length > 0)) return [];
     if (!isClient) return [];
     return occurrences.filter(occ => {
       const occDate = occ.occurrenceDate;
@@ -309,7 +333,7 @@ export function MapReport() {
 
       return yearMatch && monthMatch && typeMatch && locationMatch && hasMarker;
     });
-  }, [occurrences, filterYear, filterMonths, filterType, filterLocation, isClient, mapView]);
+  }, [occurrences, filterYear, filterMonths, filterType, filterLocation, isClient, mapView, profile]);
 
   const clusters = useMemo(() => {
     if (mapView !== 'ludico') return [];
@@ -348,7 +372,7 @@ export function MapReport() {
     if (mapView !== 'geo') return [];
     const points = filteredOccurrences.filter(occ => occ.location?.geo);
     const clusters: GeoCluster[] = [];
-    const distanceThreshold = 0.0001; // Reduced threshold for more precise clustering
+    const distanceThreshold = 0.0001;
 
     points.forEach(point => {
         let foundCluster = false;
@@ -383,12 +407,14 @@ export function MapReport() {
       .filter((geo): geo is { lat: number; lng: number } => !!geo);
   }, [filteredOccurrences, mapView]);
 
-
   const clearFilters = () => {
     setFilterYear([]);
     setFilterMonths([]);
     setFilterType([]);
-    setFilterLocation([]);
+    // Mantém o filtro de local travado se for perfil personalizado, limpa se for admin
+    if (!profile || profile === 'admin') {
+      setFilterLocation([]);
+    }
   }
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -398,7 +424,6 @@ export function MapReport() {
   const calculateMetrics = useCallback((container: HTMLDivElement | null, naturalDims: {width: number, height: number} | null) => {
     if (!container || !naturalDims) return null;
 
-    // Use clientWidth/Height to exclude border dimensions from calculations
     const containerWidth = container.clientWidth;
     const containerHeight = container.clientHeight;
 
@@ -478,7 +503,6 @@ export function MapReport() {
     };
   }, [modalImageRenderMetrics]);
 
-
   const handleZoom = (direction: 'in' | 'out') => {
     if (!modalImageRenderMetrics || !modalMapContainerRef.current) return;
     
@@ -498,7 +522,7 @@ export function MapReport() {
     let target = e.target as HTMLElement;
     while (target && target !== e.currentTarget) {
       if (target.dataset.pin) {
-        return; // It's a pin, don't start panning.
+        return;
       }
       target = target.parentElement as HTMLElement;
     }
@@ -549,14 +573,14 @@ export function MapReport() {
       const touch = currentTouches[0];
       panState.current = { x: touch.clientX, y: touch.clientY, startX: transform.x, startY: transform.y };
       setIsPanning(true);
-      delete state.pinch; // Garante que o estado de pinch seja limpo
+      delete state.pinch;
     } else if (currentTouches.length === 2) {
       const t1 = currentTouches[0];
       const t2 = currentTouches[1];
       const distance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
       const center = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
       state.pinch = { distance, scale: transform.scale, center };
-      panState.current = null; // Limpa o estado de pan ao iniciar pinch
+      panState.current = null;
       setIsPanning(false);
     }
     touchState.current = state;
@@ -572,7 +596,7 @@ export function MapReport() {
         const dy = touch.clientY - panState.current.y;
         
         setTransform(prev => {
-            if (!panState.current) return prev; // Proteção contra referência nula
+            if (!panState.current) return prev;
             const newX = panState.current.startX + dx;
             const newY = panState.current.startY + dy;
             return clampPosition({ ...prev, x: newX, y: newY });
@@ -762,7 +786,7 @@ export function MapReport() {
     });
   };
 
-  const GOOGLE_MAPS_API_KEY = "AIzaSyAHSWMrKodwOLXO7VGTq35r6vFgOJ-AH9I"; // Mantido para consistência
+  const GOOGLE_MAPS_API_KEY = "AIzaSyAHSWMrKodwOLXO7VGTq35r6vFgOJ-AH9I";
 
   return (
     <div className="space-y-6">
@@ -784,6 +808,9 @@ export function MapReport() {
                     onChange={setFilterYear}
                     disabled={isLoading || availableYears.length === 0}
                     buttonText='Filtrar por Ano'
+                    filterKey='years'
+                    menuId="acidentes"
+                    subMenuId="map-report"
                 />
             </div>
             <div className="space-y-2">
@@ -795,6 +822,9 @@ export function MapReport() {
                     onChange={setFilterType}
                     disabled={!occurrenceTypes || occurrenceTypes.length === 0}
                     buttonText='Filtrar por Tipo'
+                    filterKey='types'
+                    menuId="acidentes"
+                    subMenuId="map-report"
                 />
             </div>
             <div className="space-y-2">
@@ -806,6 +836,9 @@ export function MapReport() {
                     onChange={setFilterLocation}
                     disabled={!locations || locations.length === 0}
                     buttonText='Filtrar por Local'
+                    filterKey='locations'
+                    menuId="acidentes"
+                    subMenuId="map-report"
                 />
             </div>
             <div className="space-y-2">
@@ -816,6 +849,9 @@ export function MapReport() {
                     selected={filterMonths}
                     onChange={setFilterMonths}
                     buttonText='Filtrar por Mês'
+                    filterKey='months'
+                    menuId="acidentes"
+                    subMenuId="map-report"
                 />
             </div>
             

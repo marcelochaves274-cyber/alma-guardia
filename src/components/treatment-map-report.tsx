@@ -29,6 +29,8 @@ import { collection, getDoc, doc, Timestamp, onSnapshot, GeoPoint } from 'fireba
 import { Button } from './ui/button';
 import { Loader2, MapPin, Eye, ZoomIn, ZoomOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useProfile } from '@/context/profile-context';
+import { applyReportAccessQuery, filterByReportAccess, useReportAccess } from '@/utils/report-access';
 import NextImage from 'next/image';
 import { Badge } from './ui/badge';
 import { format, isBefore, startOfDay } from 'date-fns';
@@ -158,6 +160,8 @@ export function TreatmentMapReport() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { profile } = useProfile();
+  const { access, ready: accessReady } = useReportAccess(firestore, user?.uid, profile, 'tratamento', 'treatment-map-report');
   
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -261,36 +265,48 @@ export function TreatmentMapReport() {
   
   // Fetch all treatments with real-time updates
   useEffect(() => {
-    if (!user || !firestore) return;
+    if (!user || !firestore || !accessReady || !access) return;
+    if (profile && profile !== 'admin' && (!access.allowedLocations.length || !access.allowedTypes.length)) {
+      setTreatments([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
 
     const treatmentsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'risk_treatments');
+    const treatmentsQuery = applyReportAccessQuery(treatmentsCollectionRef, profile, access, 'treatmentLocation', 'treatmentType');
     
-    const unsubscribe = onSnapshot(treatmentsCollectionRef, (querySnapshot) => {
-      const treatmentsData = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        const treatmentDate = data.treatmentDate instanceof Timestamp 
-          ? data.treatmentDate.toDate() 
-          : new Date(0);
-        
-        let locationData = data.location;
-        // Backwards compatibility for old mapMarker format
-        if (data.mapMarker && !data.location) {
-          locationData = {
-            mapType: 'ludico',
-            ludico: data.mapMarker,
+    const unsubscribe = onSnapshot(treatmentsQuery, (querySnapshot) => {
+      const treatmentsData = filterByReportAccess(
+        querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          const treatmentDate = data.treatmentDate instanceof Timestamp 
+            ? data.treatmentDate.toDate() 
+            : new Date(0);
+          
+          let locationData = data.location;
+          // Backwards compatibility for old mapMarker format
+          if (data.mapMarker && !data.location) {
+            locationData = {
+              mapType: 'ludico',
+              ludico: data.mapMarker,
+            }
+          } else if (locationData?.geo instanceof GeoPoint) {
+            locationData.geo = { lat: locationData.geo.latitude, lng: locationData.geo.longitude };
           }
-        } else if (locationData?.geo instanceof GeoPoint) {
-          locationData.geo = { lat: locationData.geo.latitude, lng: locationData.geo.longitude };
-        }
 
-        return {
-          id: doc.id,
-          ...data,
-          treatmentDate: treatmentDate,
-          location: locationData,
-        } as Treatment;
-      });
+          return {
+            id: doc.id,
+            ...data,
+            treatmentDate: treatmentDate,
+            location: locationData,
+          } as Treatment;
+        }),
+        profile,
+        access,
+        'treatmentLocation',
+        'treatmentType'
+      );
       
       const years = new Set(
         treatmentsData
@@ -313,9 +329,10 @@ export function TreatmentMapReport() {
     });
     
     return () => unsubscribe();
-  }, [user, firestore, toast]);
+  }, [user, firestore, toast, profile, access, accessReady]);
 
   const filteredTreatments = useMemo(() => {
+    if (profile && profile !== 'admin' && ![filterYear, filterMonths, filterType, filterLocation, filterRiskLevel, filterSituation].some(filter => filter.length > 0)) return [];
     if (!isClient || !clientToday) return [];
     return treatments.filter(occ => {
       const occDate = occ.treatmentDate;
@@ -347,7 +364,7 @@ export function TreatmentMapReport() {
 
       return yearMatch && monthMatch && typeMatch && locationMatch && riskLevelMatch && situationMatch && hasMarker;
     });
-  }, [treatments, filterYear, filterMonths, filterType, filterLocation, filterRiskLevel, filterSituation, isClient, clientToday, mapView]);
+  }, [treatments, filterYear, filterMonths, filterType, filterLocation, filterRiskLevel, filterSituation, isClient, clientToday, mapView, profile]);
 
   const clusters = useMemo(() => {
     if (mapView !== 'ludico') return [];
@@ -823,6 +840,9 @@ export function TreatmentMapReport() {
                     onChange={setFilterYear}
                     disabled={isLoading || availableYears.length === 0}
                     buttonText='Filtrar por Ano'
+                    filterKey="years"
+                    menuId="tratamento"
+                    subMenuId="treatment-map-report"
                 />
             </div>
             <div className="space-y-2">
@@ -834,6 +854,9 @@ export function TreatmentMapReport() {
                     onChange={setFilterType}
                     disabled={!treatmentTypes || treatmentTypes.length === 0}
                     buttonText='Filtrar por Tipo'
+                    filterKey="types"
+                    menuId="tratamento"
+                    subMenuId="treatment-map-report"
                 />
             </div>
              <div className="space-y-2">
@@ -844,6 +867,9 @@ export function TreatmentMapReport() {
                     selected={filterRiskLevel}
                     onChange={setFilterRiskLevel}
                     buttonText='Filtrar por Nível'
+                    filterKey="riskLevels"
+                    menuId="tratamento"
+                    subMenuId="treatment-map-report"
                 />
             </div>
             <div className="space-y-2">
@@ -855,6 +881,9 @@ export function TreatmentMapReport() {
                     onChange={setFilterLocation}
                     disabled={!locations || locations.length === 0}
                     buttonText='Filtrar por Local'
+                    filterKey="locations"
+                    menuId="tratamento"
+                    subMenuId="treatment-map-report"
                 />
             </div>
             <div className="space-y-2">
@@ -865,6 +894,9 @@ export function TreatmentMapReport() {
                     selected={filterSituation}
                     onChange={setFilterSituation}
                     buttonText='Filtrar por Situação'
+                    filterKey="situations"
+                    menuId="tratamento"
+                    subMenuId="treatment-map-report"
                 />
             </div>
             <div className="space-y-2">
@@ -875,6 +907,9 @@ export function TreatmentMapReport() {
                     selected={filterMonths}
                     onChange={setFilterMonths}
                     buttonText='Filtrar por Mês'
+                    filterKey="months"
+                    menuId="tratamento"
+                    subMenuId="treatment-map-report"
                 />
             </div>
             <Button onClick={clearFilters} variant="outline" className="w-full">

@@ -25,12 +25,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Pencil } from 'lucide-react';
 import type { TcrDocument } from './manage-tcrs';
 import { useProfile } from '@/context/profile-context';
+import { useReportAccess } from '@/utils/report-access';
 
 export function ViewTcrs() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
   const { profile } = useProfile();
+  const { access, ready: accessReady } = useReportAccess(firestore, user?.uid, profile, 'view-tcrs', '');
 
   const [allDocs, setAllDocs] = useState<TcrDocument[]>([]);
   const [selectedTcrName, setSelectedTcrName] = useState<string>("");
@@ -45,6 +47,7 @@ export function ViewTcrs() {
   }, [firestore, user]);
 
   useEffect(() => {
+    if (!accessReady || !access) return;
     const fetchDocs = async () => {
       setIsLoadingDocs(true);
       const docRef = getSettingsDocRef();
@@ -63,7 +66,8 @@ export function ViewTcrs() {
                       tcrContent: item.tcrContent || 'Seu texto aqui',
                   };
               });
-            setAllDocs(fetchedDocs);
+            const allowedNames = access.filters?.tcrNames || [];
+            setAllDocs(profile && profile !== 'admin' ? fetchedDocs.filter(tcr => allowedNames.includes(tcr.name)) : fetchedDocs);
           }
         }
       } catch (error) {
@@ -80,7 +84,7 @@ export function ViewTcrs() {
     if (user) {
       fetchDocs();
     }
-  }, [getSettingsDocRef, toast, user]);
+  }, [getSettingsDocRef, toast, user, access, accessReady, profile]);
   
 
   const handleSelectTcr = (tcrName: string) => {

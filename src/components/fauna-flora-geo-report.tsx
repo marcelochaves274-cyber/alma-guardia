@@ -52,6 +52,8 @@ import { ScrollArea } from './ui/scroll-area';
 import { MapSelector, type LocationData } from './map-selector';
 import NextImage from 'next/image';
 import { SheetFilter } from './sheet-filter';
+import { useProfile } from '@/context/profile-context';
+import { applyReportAccessQuery, useReportAccess } from '@/utils/report-access';
 
 interface FaunaFloraGeoRecord {
   id: string;
@@ -94,6 +96,8 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { profile } = useProfile();
+  const { access, ready: accessReady } = useReportAccess(firestore, user?.uid, profile, 'faunaFloraGeo', 'fauna-flora-geo-report');
   
   const [records, setRecords] = useState<FaunaFloraGeoRecord[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<FaunaFloraGeoRecord | null>(null);
@@ -169,12 +173,18 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
   
   // Fetch all records with real-time updates
   useEffect(() => {
-    if (!user || !firestore) return;
+    if (!user || !firestore || !accessReady || !access) return;
+    if (profile && profile !== 'admin' && (!access.allowedLocations.length || !access.allowedTypes.length)) {
+      setRecords([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
 
     const recordsCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'fauna_flora_geo');
+    const recordsQuery = applyReportAccessQuery(recordsCollectionRef, profile, access, 'locationName', 'speciesType');
     
-    const unsubscribe = onSnapshot(recordsCollectionRef, (querySnapshot) => {
+    const unsubscribe = onSnapshot(recordsQuery, (querySnapshot) => {
       const recordsData = querySnapshot.docs.map(doc => {
         const data = doc.data();
         const recordDate = data.date instanceof Timestamp 
@@ -219,7 +229,7 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
     });
     
     return () => unsubscribe();
-  }, [user, firestore, toast]);
+  }, [user, firestore, toast, profile, access, accessReady]);
 
   // Efeito para garantir que o scroll comece no topo (último lançamento) ao carregar
   useEffect(() => {
@@ -251,6 +261,7 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
   }, [selectedRecord, isLoading]);
 
   const filteredRecords = useMemo(() => {
+    if (profile && profile !== 'admin' && ![filterYear, filterMonths, filterType, filterLocation, filterAnalysis].some(filter => filter.length > 0)) return [];
     return records.filter(rec => {
       const recDate = rec.date;
       if (!recDate || !isClient) return false;
@@ -263,7 +274,7 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
 
       return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch;
     });
-  }, [records, filterYear, filterMonths, filterType, filterLocation, filterAnalysis, isClient]);
+  }, [records, filterYear, filterMonths, filterType, filterLocation, filterAnalysis, isClient, profile]);
 
   const clearFilters = () => {
     setFilterYear([]);
@@ -333,6 +344,9 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
               selected={filterMonths}
               onChange={setFilterMonths}
               buttonText="Filtrar por Mês"
+              filterKey="months"
+              menuId="faunaFloraGeo"
+              subMenuId="fauna-flora-geo-report"
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
@@ -345,6 +359,9 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                     onChange={setFilterYear}
                     disabled={isLoading || availableYears.length === 0}
                     buttonText='Filtrar por Ano'
+                    filterKey="years"
+                    menuId="faunaFloraGeo"
+                    subMenuId="fauna-flora-geo-report"
                 />
             </div>
              <div className='space-y-2'>
@@ -356,6 +373,9 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                     onChange={setFilterType}
                     disabled={!speciesTypes || speciesTypes.length === 0}
                     buttonText='Filtrar por Tipo'
+                    filterKey="types"
+                    menuId="faunaFloraGeo"
+                    subMenuId="fauna-flora-geo-report"
                 />
             </div>
              <div className='space-y-2'>
@@ -367,6 +387,9 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                     onChange={setFilterLocation}
                     disabled={!locations || locations.length === 0}
                     buttonText='Filtrar por Local'
+                    filterKey="locations"
+                    menuId="faunaFloraGeo"
+                    subMenuId="fauna-flora-geo-report"
                 />
             </div>
             <div className='space-y-2'>
@@ -377,6 +400,9 @@ export function FaunaFloraGeoReport({ onEdit, initialScrollPosition }: FaunaFlor
                     selected={filterAnalysis}
                     onChange={setFilterAnalysis}
                     buttonText='Filtrar por Análise'
+                    filterKey="analysis"
+                    menuId="faunaFloraGeo"
+                    subMenuId="fauna-flora-geo-report"
                 />
             </div>
             

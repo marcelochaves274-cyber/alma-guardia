@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { browserLocalPersistence, getAuth, initializeAuth } from "firebase/auth";
 
 // Configuração direta e segura para o ALMA Guardia
 const firebaseConfig = {
@@ -15,6 +15,11 @@ const firebaseConfig = {
 // Inicializa o Firebase (impede erro de múltiplas instâncias)
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app);
+let auth;
+try {
+  auth = initializeAuth(app, { persistence: browserLocalPersistence });
+} catch {
+  auth = getAuth(app);
+}
 
 export { app, db, auth, firebaseConfig };

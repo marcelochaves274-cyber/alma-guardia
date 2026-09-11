@@ -25,12 +25,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Pencil } from 'lucide-react';
 import type { PopDocument } from './manage-pops';
 import { useProfile } from '@/context/profile-context';
+import { useReportAccess } from '@/utils/report-access';
 
 export function ViewPops() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
   const { profile } = useProfile();
+  const { access, ready: accessReady } = useReportAccess(firestore, user?.uid, profile, 'view-pops', '');
 
   const [allDocs, setAllDocs] = useState<PopDocument[]>([]);
   const [selectedPopName, setSelectedPopName] = useState<string>("");
@@ -45,6 +47,7 @@ export function ViewPops() {
   }, [firestore, user]);
 
   useEffect(() => {
+    if (!accessReady || !access) return;
     const fetchDocs = async () => {
       setIsLoadingDocs(true);
       const docRef = getSettingsDocRef();
@@ -63,7 +66,8 @@ export function ViewPops() {
                     popContent: item.popContent || 'Seu texto aqui',
                 };
             });
-            setAllDocs(fetchedDocs);
+            const allowedNames = access.filters?.popNames || [];
+            setAllDocs(profile && profile !== 'admin' ? fetchedDocs.filter(pop => allowedNames.includes(pop.name)) : fetchedDocs);
           }
         }
       } catch (error) {
@@ -80,7 +84,7 @@ export function ViewPops() {
     if(user) {
       fetchDocs();
     }
-  }, [getSettingsDocRef, toast, user]);
+  }, [getSettingsDocRef, toast, user, access, accessReady, profile]);
 
   const handleSelectPop = (popName: string) => {
     const selected = allDocs.find(p => p.name === popName);
