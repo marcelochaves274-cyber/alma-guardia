@@ -5,3 +5,12 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+
+# NEXT_PUBLIC_* vars must be available at BUILD time to be embedded in the client bundle.
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_VAPID_KEY
+    value: "BIuADYhidT4lC_O70ujXR8tn3o2LM9XCuJvcr0JZrWTeIsdliaWctx1Tc-PIAK82WOvtvABY1qlbjuFbTQxefAg"
+    availability:
+      - BUILD
+      - RUNTIME
+
