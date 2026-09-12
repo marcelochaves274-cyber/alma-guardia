@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
-import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
+import { onRequest } from "firebase-functions/v2/https";
 
 admin.initializeApp();
 
@@ -403,7 +403,7 @@ async function sendCriticalSummaryToUser(userId: string) {
 }
 
 export const sendCriticalReminders = onSchedule(
-  { schedule: "0 8 * * *", timeZone: "America/Sao_Paulo" },
+  { schedule: "0 8,13 * * *", timeZone: "America/Sao_Paulo" },
   async () => {
     const database = admin.firestore();
     console.log("[REMINDERS] Iniciando busca de alertas críticos...");
@@ -418,15 +418,3 @@ export const sendCriticalReminders = onSchedule(
     console.log("[REMINDERS] Conclusão da busca de alertas críticos");
   },
 );
-
-// Verificação sob demanda (chamada pelo app ao abrir a tela de Lembretes),
-// para notificar itens que ficaram críticos apenas pela passagem do tempo.
-export const notifyCriticalOnDemand = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) {
-    throw new HttpsError("unauthenticated", "Faça login para verificar alertas.");
-  }
-
-  await sendCriticalSummaryToUser(uid);
-  return { sent: true };
-});

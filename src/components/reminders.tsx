@@ -1,10 +1,9 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useFirestore, useUser, useFirebaseApp } from '@/firebase';
+import { useState, useEffect } from 'react';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, onSnapshot, Timestamp, query, where } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -38,9 +37,6 @@ interface RemindersProps {
 export function Reminders({ setPage }: RemindersProps) {
   const firestore = useFirestore();
   const { user } = useUser();
-  const app = useFirebaseApp();
-  const hasCheckedCriticalAlerts = useRef(false);
-
   const [pendingTreatments, setPendingTreatments] = useState<number>(0);
   const [overdueTreatments, setOverdueTreatments] = useState<number>(0);
   const [overdueEquipments, setOverdueEquipments] = useState<number>(0);
@@ -139,21 +135,6 @@ export function Reminders({ setPage }: RemindersProps) {
     };
   }, [user, firestore]);
 
-  // Ao abrir Lembretes e encontrar itens críticos (vermelhos), pede ao backend
-  // para notificar o admin (com cooldown no servidor para evitar spam).
-  useEffect(() => {
-    if (!user || isLoadingTreatments || isLoadingEquipments) return;
-    if (hasCheckedCriticalAlerts.current) return;
-    if (overdueTreatments === 0 && overdueEquipments === 0 && expiredEquipments === 0) return;
-
-    hasCheckedCriticalAlerts.current = true;
-    const functions = getFunctions(app);
-    const notifyCriticalOnDemand = httpsCallable(functions, 'notifyCriticalOnDemand');
-    notifyCriticalOnDemand().catch((error) => {
-      console.error('[Lembretes] Falha ao notificar alertas críticos:', error);
-    });
-  }, [user, app, isLoadingTreatments, isLoadingEquipments, overdueTreatments, overdueEquipments, expiredEquipments]);
-  
   const handleViewTreatments = () => {
     setPage('treatment-report', {
         filters: {

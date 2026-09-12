@@ -148,7 +148,7 @@ export function PushNotifications() {
     return subscribeToForegroundMessages(app, (title, body) => {
       if (Notification.permission === 'granted') {
         void navigator.serviceWorker.ready.then((registration) => {
-          return registration.showNotification(title, { body });
+          return registration.showNotification(title, { body, tag: 'alma-guardia-critical-alerts' });
         }).catch((error) => {
           console.error('Não foi possível exibir a notificação:', error);
         });
