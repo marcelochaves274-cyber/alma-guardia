@@ -290,7 +290,7 @@ function MainAppLayout() {
       case 'treatment-map-report':
         return <TreatmentMapReport />;
       case 'register-fauna-flora-geo':
-        return <RegisterFaunaFloraGeo recordToEdit={faunaFloraGeoToEdit} setPage={handlePageChange} />;
+        return <RegisterFaunaFloraGeo recordToEdit={faunaFloraGeoToEdit} setPage={handlePageChange} prefillData={prefillData} />;
       case 'fauna-flora-geo-report':
         return <FaunaFloraGeoReport onEdit={handleEditFaunaFloraGeo} initialScrollPosition={faunaFloraGeoReportScrollPosition} />;
       case 'fauna-flora-geo-map-report':

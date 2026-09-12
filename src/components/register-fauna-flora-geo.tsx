@@ -96,6 +96,13 @@ export function RegisterFaunaFloraGeo({ recordToEdit, setPage, prefillData }: Re
 
   useEffect(() => {
     if (prefillData) {
+      if (prefillData.date) {
+        const dateToSet = prefillData.date;
+        setDate(dateToSet instanceof Timestamp ? dateToSet.toDate() : new Date(dateToSet));
+      }
+      if (prefillData.speciesType) {
+        setSpeciesType(prefillData.speciesType);
+      }
       setDescription(prefillData.description || '');
       setLocationName(prefillData.location || '');
       if (prefillData.mapLocation) {
