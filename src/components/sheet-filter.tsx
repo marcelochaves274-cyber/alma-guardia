@@ -40,10 +40,12 @@ export function SheetFilter({ title, options, selected, onChange, buttonText = "
   const { user } = useUser();
   const firestore = useFirestore();
   const [livePermissions, setLivePermissions] = useState<any>(null);
+  const [monthIndexBase, setMonthIndexBase] = useState<0 | 1>(0);
 
   // Busca as permissões diretamente do Firestore do perfil atual em tempo real
   useEffect(() => {
     setLivePermissions(null);
+    setMonthIndexBase(0);
     if (profile && profile !== 'admin' && user && firestore) {
       const docRef = doc(firestore, 'sgs_genius', user.uid, 'settings', 'profiles');
       getDoc(docRef).then(snap => {
@@ -52,6 +54,7 @@ export function SheetFilter({ title, options, selected, onChange, buttonText = "
           const customProfile = (data.customProfiles || []).find((p: any) => p.name === profile);
           if (customProfile && customProfile.permissions) {
             setLivePermissions(customProfile.permissions);
+            setMonthIndexBase(customProfile.monthIndexBase === 0 ? 0 : 1);
           }
         }
       }).catch(err => {
@@ -78,7 +81,12 @@ export function SheetFilter({ title, options, selected, onChange, buttonText = "
     const filterOwner = subMenuId
       ? menuPermissions.subMenus?.[subMenuId]
       : menuPermissions;
-    const allowedValues = filterOwner?.filters?.[filterKey];
+    const configuredValues = filterOwner?.filters?.[filterKey];
+    const allowedValues = filterKey === 'months' && monthIndexBase === 1 && Array.isArray(configuredValues)
+      ? configuredValues
+          .map(value => String(Number(value) - 1))
+          .filter(value => Number(value) >= 0 && Number(value) <= 11)
+      : configuredValues;
 
     // 3. REGRA DEFINITIVA:
     // - Se o admin configurou itens específicos para este filtro, exibe APENAS eles.
