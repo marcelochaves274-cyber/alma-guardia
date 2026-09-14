@@ -141,6 +141,9 @@ async function sendNotificationToUser(
     const response = await admin.messaging().sendEachForMulticast({
       tokens,
       notification: { title, body },
+      // TTL de 2h: se o dispositivo estiver offline além disso, o FCM descarta a mensagem
+      // em vez de entregá-la atrasada quando o dispositivo reconectar (evita notificações acumuladas).
+      webpush: { headers: { TTL: "7200" } },
     });
     console.log(`[NOTIFY] Resultado: ${response.successCount}✓ ${response.failureCount}✗`);
     
@@ -351,6 +354,7 @@ async function sendCriticalSummaryToUser(userId: string) {
             title: "ALMA Guardia - Alertas Críticos",
             body: adminMessages.join("\n"),
           },
+          webpush: { headers: { TTL: "7200" } },
         }).catch((error) => console.error(`[REMINDERS] Falha ao enviar (admin): ${error}`))
       );
       continue;
@@ -392,6 +396,7 @@ async function sendCriticalSummaryToUser(userId: string) {
           title: "ALMA Guardia - Alertas Críticos",
           body: customMessages.join("\n"),
         },
+        webpush: { headers: { TTL: "7200" } },
       }).catch((error) => console.error(`[REMINDERS] Falha ao enviar (perfil personalizado): ${error}`))
     );
   }
