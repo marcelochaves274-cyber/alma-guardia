@@ -220,6 +220,45 @@ const availableMenus = [
     }
 ];
 
+// Itens exclusivos do Administrador: não podem ser habilitados para perfis personalizados.
+const ADMIN_ONLY_MENU_IDS = new Set(['graphics-report', 'settings']);
+const ADMIN_ONLY_SUBMENU_IDS = new Set([
+  'my-subscription',
+  'pending-notices',
+  'register-occurrence',
+  'register-treatment',
+  'register-fauna-flora-geo',
+  'register-equipment',
+  'register-risk-assessment',
+  'register-activity',
+  'view-rpo',
+]);
+
+function isAdminOnlyMenuItem(menuId: string, subMenuId: string | null): boolean {
+  if (menuId === 'settings') return true;
+  if (subMenuId) return ADMIN_ONLY_SUBMENU_IDS.has(subMenuId);
+  return ADMIN_ONLY_MENU_IDS.has(menuId);
+}
+
+// Garante que nenhum item exclusivo do Administrador seja persistido em um perfil personalizado.
+function sanitizePermissions(permissions: Permissions): Permissions {
+  const sanitized: Permissions = {};
+  for (const [menuId, perm] of Object.entries(permissions)) {
+    if (isAdminOnlyMenuItem(menuId, null)) continue;
+    const cleaned: MenuPermission = { ...perm };
+    if (cleaned.subMenus) {
+      const subMenus: Record<string, MenuPermission> = {};
+      for (const [subMenuId, subPerm] of Object.entries(cleaned.subMenus)) {
+        if (isAdminOnlyMenuItem(menuId, subMenuId)) continue;
+        subMenus[subMenuId] = subPerm;
+      }
+      cleaned.subMenus = subMenus;
+    }
+    sanitized[menuId] = cleaned;
+  }
+  return sanitized;
+}
+
 export function ManageProfile() {
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -456,7 +495,7 @@ export function ManageProfile() {
     const newProfile: CustomProfile = {
       name: newProfileName.trim(),
       pass: newProfilePass,
-      permissions: newProfilePermissions,
+      permissions: sanitizePermissions(newProfilePermissions),
       monthIndexBase: 0,
     };
 
@@ -521,7 +560,7 @@ export function ManageProfile() {
       return;
     }
 
-    const newProfiles = customProfiles.map(p => (p.name === editingProfile.name ? { name: newName, pass: editingPass, permissions: editingPermissions, monthIndexBase: p.monthIndexBase } : p));
+    const newProfiles = customProfiles.map(p => (p.name === editingProfile.name ? { name: newName, pass: editingPass, permissions: sanitizePermissions(editingPermissions), monthIndexBase: p.monthIndexBase } : p));
     const success = await handleSave(newProfiles);
     if (success) {
       setCustomProfiles(newProfiles);
@@ -781,29 +820,37 @@ export function ManageProfile() {
                   </div>
                 </div>
                 <div>
-                  <h5 className="font-medium mb-3">Permissões do Menu</h5>
+                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2 mb-3">
+                    <h5 className="font-medium">Permissões do Menu</h5>
+                    <p className="text-xs text-muted-foreground">As caixinhas apagadas são recursos exclusivos do Administrador e não podem ser atribuídos a perfis personalizados.</p>
+                  </div>
                   <div className="space-y-6 p-4 border rounded-md bg-background/50">
-                    {availableMenus.map(menu => (
+                    {availableMenus.map(menu => {
+                      const menuIsAdminOnly = isAdminOnlyMenuItem(menu.id, null);
+                      return (
                       <div key={menu.id}>
                         {menu.subMenus ? (
                           <div className="space-y-4">
                             <div className="flex items-center space-x-2">
-                              <Checkbox id={`new-${menu.id}`} checked={!!newProfilePermissions[menu.id]?.enabled} onCheckedChange={(checked) => handlePermissionChange(menu.id, null, checked === true, setNewProfilePermissions)} />
-                              <label htmlFor={`new-${menu.id}`} className="text-sm font-semibold">{menu.label}</label>
+                              <Checkbox id={`new-${menu.id}`} checked={!menuIsAdminOnly && !!newProfilePermissions[menu.id]?.enabled} disabled={menuIsAdminOnly} onCheckedChange={(checked) => handlePermissionChange(menu.id, null, checked === true, setNewProfilePermissions)} />
+                              <label htmlFor={`new-${menu.id}`} className={`text-sm font-semibold ${menuIsAdminOnly ? 'text-muted-foreground/60' : ''}`}>{menu.label}</label>
                             </div>
-                            {newProfilePermissions[menu.id]?.enabled && (
+                            {!menuIsAdminOnly && newProfilePermissions[menu.id]?.enabled && (
                               <div className="pl-6 space-y-3 border-l-2 border-muted ml-2">
-                                {menu.subMenus.map(subMenu => (
+                                {menu.subMenus.map(subMenu => {
+                                  const subMenuIsAdminOnly = isAdminOnlyMenuItem(menu.id, subMenu.id);
+                                  return (
                                   <div key={subMenu.id} className="flex items-center space-x-2 relative">
-                                    <Checkbox id={`new-${subMenu.id}`} checked={!!newProfilePermissions[menu.id]?.subMenus?.[subMenu.id]?.enabled} onCheckedChange={(checked) => handlePermissionChange(menu.id, subMenu.id, checked === true, setNewProfilePermissions)} />
-                                    <label htmlFor={`new-${subMenu.id}`} className="text-sm font-medium">{subMenu.label}</label>
+                                    <Checkbox id={`new-${subMenu.id}`} checked={!subMenuIsAdminOnly && !!newProfilePermissions[menu.id]?.subMenus?.[subMenu.id]?.enabled} disabled={subMenuIsAdminOnly} onCheckedChange={(checked) => handlePermissionChange(menu.id, subMenu.id, checked === true, setNewProfilePermissions)} />
+                                    <label htmlFor={`new-${subMenu.id}`} className={`text-sm font-medium ${subMenuIsAdminOnly ? 'text-muted-foreground/60' : ''}`}>{subMenu.label}</label>
                                     {subMenu.hasFilters && newProfilePermissions[menu.id]?.subMenus?.[subMenu.id]?.enabled && (
                                       <Button type="button" variant="ghost" size="icon" className="h-6 w-6 ml-1" onClick={() => openFilterDialog(menu.id, subMenu.id, newProfilePermissions[menu.id]!.subMenus![subMenu.id], true)}>
                                         <Settings className="h-4 w-4 text-muted-foreground" />
                                       </Button>
                                     )}
                                   </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
@@ -812,10 +859,11 @@ export function ManageProfile() {
                             <div className="flex items-center gap-2">
                               <Checkbox
                                 id={`new-${menu.id}`}
-                                checked={!!newProfilePermissions[menu.id]?.enabled}
+                                checked={!menuIsAdminOnly && !!newProfilePermissions[menu.id]?.enabled}
+                                disabled={menuIsAdminOnly}
                                 onCheckedChange={(checked) => handlePermissionChange(menu.id, null, checked === true, setNewProfilePermissions)}
                               />
-                              <label htmlFor={`new-${menu.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{menu.label}</label>
+                              <label htmlFor={`new-${menu.id}`} className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${menuIsAdminOnly ? 'text-muted-foreground/60' : ''}`}>{menu.label}</label>
                             </div>
                             {menu.hasFilters && newProfilePermissions[menu.id]?.enabled && (
                               <Button
@@ -831,7 +879,8 @@ export function ManageProfile() {
                           </div>
                         )}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
                 <Button type="submit" disabled={isSaving || !newProfileName.trim() || newProfilePass.length !== 6}>
@@ -856,37 +905,45 @@ export function ManageProfile() {
                               </div>
                             </div>
                             <div>
-                              <h5 className="font-medium text-sm mb-2">Permissões</h5>
+                              <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2 mb-2">
+                                <h5 className="font-medium text-sm">Permissões</h5>
+                                <p className="text-xs text-muted-foreground">As caixinhas apagadas são recursos exclusivos do Administrador e não podem ser atribuídos a perfis personalizados.</p>
+                              </div>
                               <div className="space-y-4 p-3 border rounded-md bg-background/50">
-                                {availableMenus.map(menu => (
+                                {availableMenus.map(menu => {
+                                  const menuIsAdminOnly = isAdminOnlyMenuItem(menu.id, null);
+                                  return (
                                   <div key={`edit-${menu.id}`}>
                                     {menu.subMenus ? (
                                       <div className="space-y-3">
                                         <div className="flex items-center space-x-2">
-                                          <Checkbox id={`edit-${menu.id}`} checked={!!editingPermissions[menu.id]?.enabled} onCheckedChange={(checked) => handlePermissionChange(menu.id, null, checked === true, setEditingPermissions)} />
-                                          <label htmlFor={`edit-${menu.id}`} className="text-sm font-semibold">{menu.label}</label>
+                                          <Checkbox id={`edit-${menu.id}`} checked={!menuIsAdminOnly && !!editingPermissions[menu.id]?.enabled} disabled={menuIsAdminOnly} onCheckedChange={(checked) => handlePermissionChange(menu.id, null, checked === true, setEditingPermissions)} />
+                                          <label htmlFor={`edit-${menu.id}`} className={`text-sm font-semibold ${menuIsAdminOnly ? 'text-muted-foreground/60' : ''}`}>{menu.label}</label>
                                         </div>
-                                        {editingPermissions[menu.id]?.enabled && (
+                                        {!menuIsAdminOnly && editingPermissions[menu.id]?.enabled && (
                                           <div className="pl-6 space-y-2 border-l-2 border-muted ml-2">
-                                            {menu.subMenus.map(subMenu => (
+                                            {menu.subMenus.map(subMenu => {
+                                              const subMenuIsAdminOnly = isAdminOnlyMenuItem(menu.id, subMenu.id);
+                                              return (
                                               <div key={subMenu.id} className="flex items-center space-x-1 relative">
-                                                <Checkbox id={`edit-${subMenu.id}`} checked={!!editingPermissions[menu.id]?.subMenus?.[subMenu.id]?.enabled} onCheckedChange={(checked) => handlePermissionChange(menu.id, subMenu.id, checked === true, setEditingPermissions)} />
-                                                <label htmlFor={`edit-${subMenu.id}`} className="text-xs font-medium">{subMenu.label}</label>
+                                                <Checkbox id={`edit-${subMenu.id}`} checked={!subMenuIsAdminOnly && !!editingPermissions[menu.id]?.subMenus?.[subMenu.id]?.enabled} disabled={subMenuIsAdminOnly} onCheckedChange={(checked) => handlePermissionChange(menu.id, subMenu.id, checked === true, setEditingPermissions)} />
+                                                <label htmlFor={`edit-${subMenu.id}`} className={`text-xs font-medium ${subMenuIsAdminOnly ? 'text-muted-foreground/60' : ''}`}>{subMenu.label}</label>
                                                 {subMenu.hasFilters && editingPermissions[menu.id]?.subMenus?.[subMenu.id]?.enabled && (
                                                   <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => openFilterDialog(menu.id, subMenu.id, editingPermissions[menu.id]!.subMenus![subMenu.id], false)}>
                                                     <Settings className="h-3 w-3 text-muted-foreground" />
                                                   </Button>
                                                 )}
                                               </div>
-                                            ))}
+                                              );
+                                            })}
                                           </div>
                                         )}
                                       </div>
                                     ) : (
                                       <div className="flex items-center space-x-1 h-full">
                                         <div className="flex items-center gap-2">
-                                          <Checkbox id={`edit-${menu.id}`} checked={!!editingPermissions[menu.id]?.enabled} onCheckedChange={(checked) => handlePermissionChange(menu.id, null, checked === true, setEditingPermissions)} />
-                                          <label htmlFor={`edit-${menu.id}`} className="text-xs font-medium">{menu.label}</label>
+                                          <Checkbox id={`edit-${menu.id}`} checked={!menuIsAdminOnly && !!editingPermissions[menu.id]?.enabled} disabled={menuIsAdminOnly} onCheckedChange={(checked) => handlePermissionChange(menu.id, null, checked === true, setEditingPermissions)} />
+                                          <label htmlFor={`edit-${menu.id}`} className={`text-xs font-medium ${menuIsAdminOnly ? 'text-muted-foreground/60' : ''}`}>{menu.label}</label>
                                         </div>
                                         {menu.hasFilters && editingPermissions[menu.id]?.enabled && (
                                           <Button
@@ -902,7 +959,8 @@ export function ManageProfile() {
                                       </div>
                                     )}
                                   </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </div>
                             <div className="flex items-center justify-end gap-2 mt-2 sm:mt-0">
