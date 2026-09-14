@@ -24,6 +24,12 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#18181b', // Cor da barra de status em dispositivos móveis
+  // Sem isso, navegadores móveis renderizam a página como se fosse desktop (viewport de ~980px)
+  // e depois reduzem tudo, deixando o texto minúsculo. Não afeta a renderização em telas de desktop.
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({
