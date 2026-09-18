@@ -49,7 +49,7 @@ interface FaunaFloraGeoRecord {
   id: string;
   date: Date;
   speciesType: string;
-  location: string;
+  locationName: string;
   analysis: 'alta' | 'media' | 'baixa';
 }
 
@@ -256,7 +256,16 @@ export function GraphicsReport() {
 
             const occurrencesData = occurrencesSnap.docs.map(d => ({ id: d.id, ...d.data(), occurrenceDate: safeToDate(d.data().occurrenceDate) })) as Occurrence[];
             const treatmentsData = treatmentsSnap.docs.map(d => ({ id: d.id, ...d.data(), treatmentDate: safeToDate(d.data().treatmentDate) })) as Treatment[];
-            const faunaFloraGeoData = faunaFloraGeoSnap.docs.map(d => ({ id: d.id, ...d.data(), date: safeToDate(d.data().date) })) as FaunaFloraGeoRecord[];
+            const faunaFloraGeoData = faunaFloraGeoSnap.docs.map(d => {
+              const docData = d.data();
+              return {
+                id: d.id,
+                ...docData,
+                // Compatibilidade com registros antigos que salvaram o local em 'location' em vez de 'locationName'
+                locationName: docData.locationName || docData.location,
+                date: safeToDate(docData.date),
+              };
+            }) as FaunaFloraGeoRecord[];
             
             setOccurrences(occurrencesData);
             setTreatments(treatmentsData);
@@ -313,7 +322,7 @@ export function GraphicsReport() {
     }
 
     const dateField = reportType === 'occurrences' ? 'occurrenceDate' : reportType === 'treatments' ? 'treatmentDate' : 'date';
-    const locationField = reportType === 'occurrences' ? 'occurrenceLocation' : reportType === 'treatments' ? 'treatmentLocation' : 'location';
+    const locationField = reportType === 'occurrences' ? 'occurrenceLocation' : reportType === 'treatments' ? 'treatmentLocation' : 'locationName';
     const typeField = reportType === 'occurrences' ? 'occurrenceType' : reportType === 'treatments' ? 'treatmentType' : 'speciesType';
 
     return data.filter((item: any) => {
@@ -333,7 +342,7 @@ export function GraphicsReport() {
     
     const typeField = reportType === 'occurrences' ? 'occurrenceType' : reportType === 'treatments' ? 'treatmentType' : 'speciesType';
     const dateField = reportType === 'occurrences' ? 'occurrenceDate' : reportType === 'treatments' ? 'treatmentDate' : 'date';
-    const locationField = reportType === 'occurrences' ? 'occurrenceLocation' : reportType === 'treatments' ? 'treatmentLocation' : 'location';
+    const locationField = reportType === 'occurrences' ? 'occurrenceLocation' : reportType === 'treatments' ? 'treatmentLocation' : 'locationName';
     
     const uniqueTypes = Array.from(new Set(filteredData.map((item: any) => item[typeField] || 'Outros'))).sort();
 
