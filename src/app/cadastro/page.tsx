@@ -33,6 +33,7 @@ function CadastroForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [isRegistering, setIsRegistering] = useState(false);
+  const promotionalCode = searchParams.get('codigo')?.trim() ?? '';
 
   // EFEITO: Lê o e-mail vindo da URL (se o usuário digitou no login)
   useEffect(() => {
@@ -70,12 +71,48 @@ function CadastroForm() {
         uid: user.uid,
         status: 'pending_payment', // Usando um status mais claro
         createdAt: new Date().toISOString(),
+        ...(promotionalCode
+          ? {
+              promotionalCode,
+              promotionCheckoutStatus: 'pending_checkout',
+            }
+          : {}),
       });
 
       toast({
         title: "Conta criada com sucesso!",
         description: "Seu perfil foi gerado. Vamos prosseguir para a ativação do seu plano.",
       });
+
+      if (promotionalCode) {
+        try {
+          const response = await fetch('/api/promo-checkout', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${await user.getIdToken()}`,
+            },
+          });
+          const result = await response.json() as { url?: unknown; error?: unknown };
+
+          if (response.ok && typeof result.url === 'string') {
+            window.location.assign(result.url);
+            return;
+          }
+
+          if (response.status !== 503) {
+            throw new Error(
+              typeof result.error === 'string'
+                ? result.error
+                : 'Não foi possível abrir o checkout promocional.'
+            );
+          }
+        } catch (error) {
+          console.error('Não foi possível abrir o checkout promocional:', error);
+        }
+
+        router.replace('/promocao-pendente');
+        return;
+      }
 
       // 3. Empurra o usuário para a próxima etapa (Dashboard)
       router.push('/dashboard');

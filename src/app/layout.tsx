@@ -45,7 +45,7 @@ export default function RootLayout({
             <AppSettingsProvider>
               <HelpProvider>
                 <PushNotifications />
-                <div className="flex flex-col lg:flex-row w-full min-h-screen">
+                <div className="flex min-h-screen w-full flex-col">
                   {children}
                 </div>
                 <Toaster />

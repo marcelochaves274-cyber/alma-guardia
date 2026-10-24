@@ -12,3 +12,18 @@ The browser asks for notification permission after an authenticated user enters 
 ## Mobile development test
 
 `npm run dev` alone does not execute Cloud Functions. To test on a phone, use an HTTPS URL (for example, an HTTPS tunnel to port 9002), configure the VAPID key in `.env.local`, log in with the Firebase account that selects the Administrator profile, and tap `Ativar alertas no celular`. Confirm a document appears in `sgs_genius/{uid}/fcmTokens`; then use Firebase Console > Cloud Messaging > Send test message with that token. HTTP via the computer's LAN IP will be rejected by FCM Web.
+
+## Promotional codes
+
+The promotional button click total is stored in Firestore at
+`public_metrics/promo_button` (`clickCount`). This counts click events, not unique
+people or completed subscriptions.
+
+The promotional registration flow stores the entered code in the user's
+`sgs_genius/{uid}` document. Until the Stripe payment link is configured,
+users with a promotional code are kept out of the standard checkout. To enable
+checkout, create a Stripe Payment Link that allows promotion codes, configure
+the promotion code's redemption limit in Stripe, and set the server-side
+`PROMOTIONAL_STRIPE_PAYMENT_LINK` environment variable to that Payment Link URL.
+The app then prefills the entered code and associates the checkout with the
+user's Firebase UID.

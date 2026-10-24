@@ -13,4 +13,7 @@ env:
     availability:
       - BUILD
       - RUNTIME
-
+  - variable: PROMOTIONAL_STRIPE_PAYMENT_LINK
+    value: "https://buy.stripe.com/dRmeVd8Ud7en06X1vVaZi04"
+    availability:
+      - RUNTIME

@@ -141,9 +141,38 @@ function MainAppLayout() {
         // Consulta obrigatória na coleção sgs_genius usando o UID como ID
         const userDocRef = doc(firestore, 'sgs_genius', user.uid);
         const userDocSnap = await getDoc(userDocRef);
+        const userData = userDocSnap.data();
 
-        if (userDocSnap.exists() && userDocSnap.data()?.status === 'active') {
+        if (userDocSnap.exists() && userData?.status === 'active') {
           setIsAuthorized(true);
+        } else if (userData?.promotionalCode) {
+          try {
+            const response = await fetch('/api/promo-checkout', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${await user.getIdToken()}`,
+              },
+            });
+
+            if (response.ok) {
+              const result = await response.json() as { url?: unknown };
+              if (typeof result.url === 'string') {
+                window.location.assign(result.url);
+                return;
+              }
+            } else if (response.status !== 503) {
+              const result = await response.json() as { error?: unknown };
+              throw new Error(
+                typeof result.error === 'string'
+                  ? result.error
+                  : 'Não foi possível abrir o checkout promocional.'
+              );
+            }
+          } catch (error) {
+            console.error('Não foi possível abrir o checkout promocional:', error);
+          }
+
+          router.replace('/promocao-pendente');
         } else {
           // Trava de segurança: Se o status não for 'active', encerra sessão e redireciona
           const auth = getAuth();

@@ -48,11 +48,32 @@ function AuthCheckLoader() {
 
 export default function HomePage() {
   const { toast } = useToast();
- const handleStartTrial = () => {
+  const handleStartTrial = () => {
     window.location.href = 'https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00';
   };
   const router = useRouter();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isOpeningPromo, setIsOpeningPromo] = useState(false);
+
+  const handlePromoClick = async () => {
+    setIsOpeningPromo(true);
+    let trackingFailed = false;
+
+    try {
+      const response = await fetch('/api/promo-click', { method: 'POST' });
+      if (!response.ok) {
+        throw new Error(`O registro do clique falhou (${response.status}).`);
+      }
+    } catch (error) {
+      console.error('Não foi possível registrar o clique promocional:', error);
+      trackingFailed = true;
+    }
+
+    router.push(trackingFailed
+      ? '/codigo-promocional?clique=nao-registrado'
+      : '/codigo-promocional');
+    setIsOpeningPromo(false);
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -342,11 +363,23 @@ export default function HomePage() {
                   <CardDescription className="text-4xl font-bold text-primary">R$5.280,00</CardDescription>
                 </Card>
               </div>
-            <Button size="lg" className="w-full sm:w-auto mt-4" asChild>
-  <Link href="/cadastro">
-    Crie uma conta e faça um mês de teste gratuito
-  </Link>
-</Button>
+            <div className="flex flex-col items-center gap-3">
+              <Button size="lg" className="w-full sm:w-auto mt-4" asChild>
+                <Link href="/cadastro">
+                  Crie uma conta e faça um mês de teste gratuito
+                </Link>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="w-full sm:w-auto"
+                onClick={handlePromoClick}
+                disabled={isOpeningPromo}
+              >
+                {isOpeningPromo ? 'Abrindo...' : 'Você tem um código promocional? Clique aqui'}
+              </Button>
+            </div>
             </div>
           </div>
         </section>
