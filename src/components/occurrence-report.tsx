@@ -51,6 +51,13 @@ import { cn } from '@/lib/utils';
 import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import { SheetFilter } from './sheet-filter';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useProfile } from '@/context/profile-context';
 import { applyReportAccessQuery, filterByReportAccess, getReportAccess } from '@/utils/report-access';
 
@@ -61,6 +68,7 @@ interface Occurrence {
   occurrenceType: string;
   occurrenceLocation: string;
   involvedPersonName: string;
+  hasVictim?: boolean;
   analysis: 'alta' | 'media' | 'baixa';
   description: string;
   ageGroup: string;
@@ -131,6 +139,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
   const [filterType, setFilterType] = useState<string[]>([]);
   const [filterLocation, setFilterLocation] = useState<string[]>([]);
   const [filterName, setFilterName] = useState<string>('');
+  const [filterVictim, setFilterVictim] = useState<string>('all');
   const [filterAnalysis, setFilterAnalysis] = useState<string[]>([]);
   const [filterAgeGroup, setFilterAgeGroup] = useState<string[]>([]);
   
@@ -261,7 +270,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
   }, [selectedOccurrence, isLoading]);
 
   const filteredOccurrences = useMemo(() => {
-    if (profile && profile !== 'admin' && ![filterYear, filterMonths, filterType, filterLocation, filterAnalysis, filterAgeGroup].some(filter => filter.length > 0) && !filterName) return [];
+    if (profile && profile !== 'admin' && ![filterYear, filterMonths, filterType, filterLocation, filterAnalysis, filterAgeGroup].some(filter => filter.length > 0) && !filterName && filterVictim === 'all') return [];
     return occurrences.filter(occ => {
       const occDate = occ.occurrenceDate;
       if (!occDate || !isClient) return false;
@@ -273,10 +282,11 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
       const analysisMatch = filterAnalysis.length === 0 || filterAnalysis.includes(occ.analysis);
       const nameMatch = !filterName || occ.involvedPersonName?.toLowerCase().includes(filterName.toLowerCase());
       const ageGroupMatch = filterAgeGroup.length === 0 || filterAgeGroup.includes(occ.ageGroup);
+      const victimMatch = filterVictim === 'all' || (filterVictim === 'without' ? occ.hasVictim === false : occ.hasVictim !== false);
 
-      return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && nameMatch && ageGroupMatch;
+      return yearMatch && monthMatch && typeMatch && locationMatch && analysisMatch && nameMatch && ageGroupMatch && victimMatch;
     });
-  }, [occurrences, filterYear, filterMonths, filterType, filterLocation, filterName, filterAnalysis, filterAgeGroup, isClient, profile]);
+  }, [occurrences, filterYear, filterMonths, filterType, filterLocation, filterName, filterVictim, filterAnalysis, filterAgeGroup, isClient, profile]);
 
   const clearFilters = () => {
     setFilterYear([]);
@@ -284,6 +294,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
     setFilterType([]);
     setFilterLocation([]);
     setFilterName('');
+    setFilterVictim('all');
     setFilterAnalysis([]);
     setFilterAgeGroup([]);
   }
@@ -429,12 +440,27 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
                 />
             </div>
             
+            <div className="space-y-2">
+                <Label>Filtrar por Vítima</Label>
+                <Select value={filterVictim} onValueChange={setFilterVictim}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="with">Com pessoa envolvida</SelectItem>
+                        <SelectItem value="without">Sem vítima</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
             <div className="space-y-2 lg:col-span-2">
                 <Label>Filtrar por Nome</Label>
                 <Input
                     placeholder="Nome do envolvido"
                     value={filterName}
                     onChange={(e) => setFilterName(e.target.value)}
+                    disabled={filterVictim === 'without'}
                 />
             </div>
             
@@ -477,7 +503,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
                         <TableCell>{occ.occurrenceDate ? format(occ.occurrenceDate, 'dd/MM/yyyy', { locale: ptBR }) : 'N/A'}</TableCell>
                         <TableCell>{occ.occurrenceLocation}</TableCell>
                         <TableCell>{occ.occurrenceType}</TableCell>
-                        <TableCell>{occ.involvedPersonName}</TableCell>
+                        <TableCell>{occ.hasVictim === false ? 'Sem vítima' : occ.involvedPersonName}</TableCell>
                         <TableCell>
                           {occ.analysis && analysisMapping[occ.analysis] ? (
                               <Badge className={cn(analysisMapping[occ.analysis].className)}>
@@ -510,7 +536,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
                                   <AlertDialogHeader>
                                       <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                      Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro da ocorrência de <span className="font-semibold">{occ.involvedPersonName}</span> do dia <span className="font-semibold">{occ.occurrenceDate ? format(occ.occurrenceDate, 'dd/MM/yyyy') : ''}</span>.
+                                      Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro da ocorrência {occ.hasVictim === false ? <span className="font-semibold">sem vítima</span> : <>de <span className="font-semibold">{occ.involvedPersonName}</span></>} do dia <span className="font-semibold">{occ.occurrenceDate ? format(occ.occurrenceDate, 'dd/MM/yyyy') : ''}</span>.
                                       </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
@@ -601,6 +627,11 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
 
                   <div className="space-y-2">
                     <h4 className="font-semibold text-foreground">Dados do Envolvido</h4>
+                    {selectedOccurrence.hasVictim === false ? (
+                      <div className="rounded-md border p-4">
+                        <p className="text-sm text-muted-foreground">Esta ocorrência foi registrada como <span className="font-semibold text-foreground">sem vítima</span> — não há dados de pessoa envolvida.</p>
+                      </div>
+                    ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md border p-4">
                         <div>
                           <Label className="text-muted-foreground">Nome Completo</Label>
@@ -627,6 +658,7 @@ export function OccurrenceReport({ onEdit, initialScrollPosition }: OccurrenceRe
                           <p>{selectedOccurrence.city || 'Não informado'} / {selectedOccurrence.state || 'N/A'}</p>
                         </div>
                     </div>
+                    )}
                   </div>
 
                 </div>

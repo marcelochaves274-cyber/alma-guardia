@@ -61,6 +61,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
   const [analysis, setAnalysis] = useState(occurrenceToEdit?.analysis || '');
   const [description, setDescription] = useState(occurrenceToEdit?.description || prefillData?.description || '');
   const [involvedPersonName, setInvolvedPersonName] = useState(occurrenceToEdit?.involvedPersonName || prefillData?.collaboratorName || '');
+  const [hasVictim, setHasVictim] = useState<boolean>(occurrenceToEdit?.hasVictim !== undefined ? occurrenceToEdit.hasVictim : true);
   const [birthDate, setBirthDate] = useState(occurrenceToEdit?.birthDate || '');
   const [cpf, setCpf] = useState(occurrenceToEdit?.cpf || '');
   const [city, setCity] = useState(occurrenceToEdit?.city || '');
@@ -124,6 +125,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
       setAnalysis(occurrenceToEdit.analysis || '');
       setDescription(occurrenceToEdit.description || '');
       setInvolvedPersonName(occurrenceToEdit.involvedPersonName || '');
+      setHasVictim(occurrenceToEdit.hasVictim !== false);
       setBirthDate(occurrenceToEdit.birthDate || '');
       setCpf(occurrenceToEdit.cpf || '');
       setCity(occurrenceToEdit.city || '');
@@ -243,6 +245,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
     setAnalysis('');
     setDescription('');
     setInvolvedPersonName('');
+    setHasVictim(true);
     setBirthDate('');
     setCpf('');
     setCity('');
@@ -261,7 +264,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
     }
 
     // Forçar Verificação Prévia: Adiciona a validação do mapa
-    if (!description || !occurrenceDate || !analysis || !occurrenceLocation || !occurrenceType || !ageGroup || !involvedPersonName || (!location?.ludico && !location?.geo)) {
+    if (!description || !occurrenceDate || !analysis || !occurrenceLocation || !occurrenceType || !ageGroup || (hasVictim && !involvedPersonName) || (!location?.ludico && !location?.geo)) {
       setIsErrorOpen(true);
       setIsSubmitting(false);
       return;
@@ -275,12 +278,13 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
         occurrenceType,
         ageGroup,
         description,
-        involvedPersonName,
-        birthDate,
-        cpf,
-        city,
-        state,
-        phone,
+        hasVictim,
+        involvedPersonName: hasVictim ? involvedPersonName : '',
+        birthDate: hasVictim ? birthDate : '',
+        cpf: hasVictim ? cpf : '',
+        city: hasVictim ? city : '',
+        state: hasVictim ? state : '',
+        phone: hasVictim ? phone : '',
         analysis,
         location: location, // 5. Salvar o objeto 'location'
         userId: user.uid,
@@ -450,6 +454,23 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
           </div>
 
           <Separator />
+          <div className="space-y-3">
+              <Label>A ocorrência envolveu alguma pessoa?</Label>
+              <RadioGroup name="hasVictim" className="flex flex-wrap items-center gap-4 pt-2" onValueChange={(value) => setHasVictim(value === 'true')} value={String(hasVictim)}>
+                  <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="true" id="has-victim-yes" />
+                      <Label htmlFor="has-victim-yes">Sim, há pessoa envolvida</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="false" id="has-victim-no" />
+                      <Label htmlFor="has-victim-no">Sem vítima</Label>
+                  </div>
+              </RadioGroup>
+          </div>
+
+          {hasVictim && (
+            <>
+          <Separator />
           <div className="text-center">
               <h3 className="text-lg font-semibold text-foreground">Informação da Pessoa Envolvida</h3>
           </div>
@@ -457,7 +478,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="space-y-2">
                   <Label htmlFor="full-name">Nome Completo</Label>
-                  <Input name="involvedPersonName" id="full-name" placeholder="Nome completo do envolvido" required value={involvedPersonName} onChange={(e) => setInvolvedPersonName(e.target.value)} />
+                  <Input name="involvedPersonName" id="full-name" placeholder="Nome completo do envolvido" required={hasVictim} value={involvedPersonName} onChange={(e) => setInvolvedPersonName(e.target.value)} />
               </div>
               <div className="space-y-2">
                   <Label htmlFor="birth-date">Data de Nascimento</Label>
@@ -487,6 +508,8 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
                   <Input name="phone" id="phone" placeholder="(00) 00000-0000" value={phone} onChange={handlePhoneChange} />
               </div>
           </div>
+            </>
+          )}
 
           <Separator />
           <div className="space-y-3">
