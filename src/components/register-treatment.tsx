@@ -81,7 +81,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
     (prefillData?.date ? (prefillData.date instanceof Timestamp ? prefillData.date.toDate() : prefillData.date) : new Date())
   );
   const [treatmentLocation, setTreatmentLocation] = useState(treatmentToEdit?.treatmentLocation || prefillData?.location || '');
-  const [treatmentType, setTreatmentType] = useState(treatmentToEdit?.treatmentType || '');
+  const [treatmentType, setTreatmentType] = useState(treatmentToEdit?.treatmentType || prefillData?.treatmentType || '');
   const [description, setDescription] = useState(treatmentToEdit?.description || prefillData?.description || '');
   const [proposedTreatment, setProposedTreatment] = useState(treatmentToEdit?.proposedTreatment || '');
   const [actionTaken, setActionTaken] = useState(treatmentToEdit?.actionTaken || '');
@@ -117,6 +117,7 @@ export function RegisterTreatment({ treatmentToEdit, setPage, prefillData }: Reg
     if (prefillData) {
       setDescription(prefillData.description || '');
       setTreatmentLocation(prefillData.location || '');
+      setTreatmentType(prefillData.treatmentType || '');
       // Set map location from prefill
       if (prefillData.mapLocation) {
         setLocation(prefillData.mapLocation);

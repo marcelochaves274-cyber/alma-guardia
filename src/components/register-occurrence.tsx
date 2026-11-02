@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
-import { Calendar as CalendarIcon, Loader2, MapPin, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, MapPin, ShieldCheck, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useFirestore, useUser } from '@/firebase';
@@ -43,7 +43,7 @@ import { ErrorModal } from './ErrorModal';
 
 interface RegisterOccurrenceProps {
   occurrenceToEdit: any | null;
-  setPage: (page: string) => void;
+  setPage: (page: string, options?: { prefill?: any }) => void;
   prefillData?: any | null;
 }
 
@@ -81,6 +81,7 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isErrorOpen, setIsErrorOpen] = useState(false);
+  const submitActionRef = useRef<'save' | 'saveAndCreateTreatment'>('save');
   
   const firestore = useFirestore();
   const { user } = useUser();
@@ -313,8 +314,24 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
           const noticeRef = doc(firestore, 'sgs_genius', user.uid, 'notices', prefillData.noticeId);
           await updateDoc(noticeRef, { status: 'finalizado' });
         }
-        toast({ title: 'Sucesso!', description: 'Ocorrência registrada com sucesso.' });
-        resetForm();
+
+        if (submitActionRef.current === 'saveAndCreateTreatment') {
+          toast({ title: 'Sucesso!', description: 'Ocorrência registrada. Abrindo o tratamento de risco.' });
+          setPage('register-treatment', {
+            prefill: {
+              date: occurrenceDate,
+              description,
+              location: occurrenceLocation,
+              treatmentType: occurrenceType,
+              mapLocation: location,
+              mapMarker: location?.ludico,
+            }
+          });
+        } else {
+          toast({ title: 'Sucesso!', description: 'Ocorrência registrada com sucesso.' });
+          resetForm();
+        }
+        submitActionRef.current = 'save';
       }
 
     } catch (error) {
@@ -551,10 +568,28 @@ export function RegisterOccurrence({ occurrenceToEdit, setPage, prefillData }: R
 
         </CardContent>
         <CardFooter className="flex flex-col gap-2">
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isSubmitting}
+            onClick={() => { submitActionRef.current = 'save'; }}
+          >
+            {isSubmitting && submitActionRef.current === 'save' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isEditing ? 'Salvar Alterações' : 'Salvar Ocorrência'}
           </Button>
+          {!isEditing && (
+            <Button
+              type="submit"
+              variant="secondary"
+              className="w-full"
+              disabled={isSubmitting}
+              onClick={() => { submitActionRef.current = 'saveAndCreateTreatment'; }}
+            >
+              {isSubmitting && submitActionRef.current === 'saveAndCreateTreatment' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {!isSubmitting && <ShieldCheck className="mr-2 h-4 w-4" />}
+              Salvar e criar um tratamento de risco
+            </Button>
+          )}
            {isEditing && (
             <Button variant="outline" className="w-full" onClick={() => setPage('occurrence-report')}>
               Cancelar Edição
