@@ -1,5 +1,11 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import {
+  type Firestore,
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore";
 import { browserLocalPersistence, getAuth, initializeAuth, type Auth } from "firebase/auth";
 
 // Configuração direta e segura para o ALMA Guardia
@@ -14,7 +20,16 @@ const firebaseConfig = {
 
 // Inicializa o Firebase (impede erro de múltiplas instâncias)
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const db = getFirestore(app);
+let db: Firestore;
+try {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+    }),
+  });
+} catch {
+  db = getFirestore(app);
+}
 let auth: Auth;
 try {
   auth = initializeAuth(app, { persistence: browserLocalPersistence });

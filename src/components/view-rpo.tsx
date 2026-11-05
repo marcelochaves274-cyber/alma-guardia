@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, FormEvent } from 'react'; 
+import { useState, useEffect, useCallback, FormEvent } from 'react';
 import {
   Card,
   CardContent,
@@ -21,12 +21,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Copy, RefreshCw, Loader2, Send } from "lucide-react"; 
+import { Copy, RefreshCw, Loader2, Send, Wifi, WifiOff, CloudUpload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, setHours, setMinutes } from 'date-fns';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, collection, Timestamp } from 'firebase/firestore';
-import { hemorrhageOptions, airwayOptions, breathingOptions, circulationOptions, neuroOptions, exposureOptions } from '@/lib/rpo-options';
+import { addRpaToQueue, getRpaQueue, removeRpaFromQueue } from '@/lib/rpo-offline';
 
 interface ViewRpoProps {
   prefillData?: any | null; // Dados para preencher o formulário, se houver
@@ -77,6 +77,10 @@ export function ViewRpo({ prefillData, setPage }: ViewRpoProps) {
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [hasCopied, setHasCopied] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [offlineLocation, setOfflineLocation] = useState('');
+  const [pendingCount, setPendingCount] = useState(0);
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -94,10 +98,18 @@ export function ViewRpo({ prefillData, setPage }: ViewRpoProps) {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setLocations((data.locations || []).sort((a: string, b: string) => a.localeCompare(b)));
+          const sortedLocations = (data.locations || []).sort((a: string, b: string) => a.localeCompare(b));
+          setLocations(sortedLocations);
+          window.localStorage.setItem('sgs-rpa-locations', JSON.stringify(sortedLocations));
         }
       } catch (error) {
         console.error(`Error fetching locations:`, error);
+        try {
+          const cachedLocations = JSON.parse(window.localStorage.getItem('sgs-rpa-locations') || '[]');
+          if (Array.isArray(cachedLocations)) setLocations(cachedLocations);
+        } catch (cacheError) {
+          console.error('Erro ao carregar locais salvos:', cacheError);
+        }
       } finally {
         setIsLoadingLocations(false);
       }
@@ -106,6 +118,143 @@ export function ViewRpo({ prefillData, setPage }: ViewRpoProps) {
       fetchLocations();
     }
   }, [getSettingsDocRef, user]);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    setPendingCount(getRpaQueue().filter(item => !user || item.userId === user.uid).length);
+
+    const updateConnection = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', updateConnection);
+    window.addEventListener('offline', updateConnection);
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/rpa-offline-sw.js').catch(error => {
+        console.error('Erro ao registrar o cache offline do RPA:', error);
+      });
+    }
+
+    return () => {
+      window.removeEventListener('online', updateConnection);
+      window.removeEventListener('offline', updateConnection);
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const draftKey = `sgs-rpa-draft-${user.uid}`;
+    try {
+      const savedDraft = JSON.parse(window.localStorage.getItem(draftKey) || 'null');
+      if (savedDraft) {
+        setDate(savedDraft.date || format(new Date(), 'yyyy-MM-dd'));
+        setTime(savedDraft.time || format(new Date(), 'HH:mm'));
+        setLocation(savedDraft.location || '');
+        setOfflineLocation(savedDraft.offlineLocation || '');
+        setVictimName(savedDraft.victimName || '');
+        setBirthDate(savedDraft.birthDate || '');
+        setCpf(savedDraft.cpf || '');
+        setPhone(savedDraft.phone || '');
+        setCidade(savedDraft.cidade || '');
+        setEstado(savedDraft.estado || '');
+        setRescuerName(savedDraft.rescuerName || '');
+        setX(savedDraft.x || '');
+        setA(savedDraft.a || '');
+        setB(savedDraft.b || '');
+        setC(savedDraft.c || '');
+        setD(savedDraft.d || '');
+        setExposure(savedDraft.exposure || '');
+        setEDetails(savedDraft.eDetails || '');
+        setS(savedDraft.s || '');
+        setAllergies(savedDraft.allergies || '');
+        setMeds(savedDraft.meds || '');
+        setPast(savedDraft.past || '');
+        setLastIntake(savedDraft.lastIntake || '');
+        setEvents(savedDraft.events || '');
+        setConduct(savedDraft.conduct || '');
+        setOutcome(savedDraft.outcome || '');
+        setObservations(savedDraft.observations || '');
+        setHasCopied(savedDraft.hasCopied || false);
+      }
+    } catch (error) {
+      console.error('Erro ao restaurar o rascunho offline do RPA:', error);
+    } finally {
+      setIsDraftLoaded(true);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || !isDraftLoaded) return;
+
+    const draftKey = `sgs-rpa-draft-${user.uid}`;
+    const timer = window.setTimeout(() => {
+      window.localStorage.setItem(draftKey, JSON.stringify({
+        date, time, location, offlineLocation, victimName, birthDate, cpf, phone,
+        cidade, estado, rescuerName, x, a, b, c, d, exposure, eDetails, s,
+        allergies, meds, past, lastIntake, events, conduct, outcome, observations,
+        hasCopied,
+      }));
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    user, isDraftLoaded, date, time, location, offlineLocation, victimName,
+    birthDate, cpf, phone, cidade, estado, rescuerName, x, a, b, c, d,
+    exposure, eDetails, s, allergies, meds, past, lastIntake, events,
+    conduct, outcome, observations, hasCopied,
+  ]);
+
+  useEffect(() => {
+    if (!firestore || !user || !isOnline) return;
+
+    let cancelled = false;
+
+    const syncPending = async () => {
+      const pending = getRpaQueue().filter(item => item.userId === user.uid);
+      if (!pending.length) {
+        setPendingCount(0);
+        return;
+      }
+
+      toast({
+        title: 'Sincronizando RPA',
+        description: `${pending.length} relatório(s) aguardando envio.`,
+      });
+
+      for (const item of pending) {
+        try {
+          const noticeData = {
+            ...item.noticeData,
+            noticeDate: typeof item.noticeData.noticeDate === 'string'
+              ? Timestamp.fromDate(new Date(item.noticeData.noticeDate as string))
+              : Timestamp.now(),
+          };
+          await addDoc(collection(firestore, 'sgs_genius', user.uid, 'notices'), noticeData);
+          if (!cancelled) removeRpaFromQueue(item.id);
+        } catch (error) {
+          console.error('Erro ao sincronizar RPA offline:', error);
+          break;
+        }
+      }
+
+      if (!cancelled) {
+        const remaining = getRpaQueue().filter(queueItem => queueItem.userId === user.uid).length;
+        setPendingCount(remaining);
+        if (!remaining) {
+          toast({
+            title: 'RPA sincronizado',
+            description: 'Os relatórios pendentes foram enviados à Central de Avisos.',
+          });
+        }
+      }
+    };
+
+    void syncPending();
+    window.addEventListener('online', syncPending);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('online', syncPending);
+    };
+  }, [firestore, user, isOnline, toast]);
 
   useEffect(() => {
     // Set current date and time on component mount
@@ -184,42 +333,6 @@ export function ViewRpo({ prefillData, setPage }: ViewRpoProps) {
     setPhone(value);
   };
 
-  const airwayOptions = [
-    { value: 'Pérveas e livres', description: 'Vias aéreas limpas e desimpedidas; paciente respira ou fala sem obstrução.' },
-    { value: 'Obstruídas por secreção/vômito', description: 'Realizada a limpeza e aspiração das vias aéreas no local.' },
-    { value: 'Obstruídas por queda da língua', description: 'Realizada manobra manual de abertura das vias aéreas.' },
-    { value: 'Obstrução total por corpo estranho', description: 'O corpo estranho foi removido com sucesso no local.' }
-  ];
-
-  const breathingOptions = [
-    { value: 'Eupneico e estável', description: 'Respiração normal, sem esforço e pele de cor normal.' },
-    { value: 'Taquipneico sem esforço', description: 'Respiração rápida, mas sem sinais de cansaço ou uso de músculos do pescoço/peito.' },
-    { value: 'Dispneia com esforço', description: 'Respiração visivelmente difícil, rápida, com uso de musculatura acessória (esforço respiratório).' },
-    { value: 'Respiração superficial/fraca', description: 'Expansão do peito muito reduzida, movimentos lentos ou ineficazes.' },
-    { value: 'Apneia / Parada', description: 'Paciente não respira ou apresenta apenas gasping (suspiros agonizantes).' }
-  ];
-
-  const circulationOptions = [
-    { value: 'Pulso presente, cheio e rítmico', description: 'Boa perfusão, pele de coloração normal e estável.' },
-    { value: 'Pulso rápido (taquicardia) e pele pálida/fria', description: 'Sinais de alerta ou princípio de choque; monitorando atentamente.' },
-    { value: 'Pulso fraco / filiforme', description: 'Circulação comprometida, perfusão periférica lentificada, Paciente aquecido, posicionado em decúbito dorsal.' },
-    { value: 'Ausência de pulso / PCR', description: 'Parada cardiorrespiratória confirmada; iniciado protocolo de RCP.' }
-  ];
-
-  const neuroOptions = [
-    { value: 'Alerta e orientado', description: 'Vítima responde prontamente, consciente e orientada no tempo e espaço.' },
-    { value: 'Responde a estímulo verbal', description: 'Vítima sonolenta ou confusa, mas reage ao ser chamada pelo nome.' },
-    { value: 'Responde apenas a estímulo doloroso', description: 'Vítima não responde à voz, reagindo apenas com movimento ou careta ao estímulo de dor.' },
-    { value: 'Inconsciente (sem resposta)', description: 'Vítima irresponsiva a qualquer estímulo (quadro crítico).' }
-  ];
-
-  const exposureOptions = [
-    { value: 'Exposto e protegido', description: 'Paciente totalmente examinado, sem lesões ocultas graves encontradas e aquecido (com manta/cobertor).' },
-    { value: 'Lesões em membros', description: 'Presença de fraturas, deformidades ou ferimentos visíveis em braços/pernas; mantido aquecido.' },
-    { value: 'Trauma em dorso/costas', description: 'Lesões ou dor na região posterior do corpo encontradas após rolamento em bloco.' },
-    { value: 'Risco de Hipotermia', description: 'Paciente com a pele muito fria ou tremores; realizado o aquecimento imediato com mantas.' }
-  ];
-
   const handleCopyReport = () => {
     const formattedDate = date ? format(new Date(date + 'T00:00:00'), 'dd/MM/yyyy') : 'N/A';
 
@@ -229,7 +342,7 @@ Socorrista: ${rescuerName || 'Não informado'}
 
 Data: ${formattedDate}
 Hora: ${time}
-Local: ${location || 'Não informado'}
+Local: ${(!isOnline ? offlineLocation : location) || 'Não informado'}
 Nome Completo: ${victimName || 'Não informado'}
 Nascimento: ${birthDate || 'N/A'}
 CPF: ${cpf || 'N/A'}
@@ -238,17 +351,12 @@ Cidade/UF: ${cidade || 'N/A'}/${estado || 'N/A'}
 
 --- AVALIAÇÃO PRIMÁRIA (XABCDE) ---
 Hemorragias: ${x || 'N/A'}
-   - ${hemorrhageOptions.find(o => o.value === x)?.description || 'Descrição não disponível.'}
 Vias Aéreas: ${a || 'N/A'}
-   - ${airwayOptions.find(o => o.value === a)?.description || 'Descrição não disponível.'}
 Respiração: ${b || 'N/A'}
-   - ${breathingOptions.find(o => o.value === b)?.description || 'Descrição não disponível.'}
 Circulação: ${c || 'N/A'}
-   - ${circulationOptions.find(o => o.value === c)?.description || 'Descrição não disponível.'}
 Neurológico: ${d || 'N/A'}
-   - ${neuroOptions.find(o => o.value === d)?.description || 'Descrição não disponível.'}
 Exposição/Ambiente: ${exposure || 'N/A'}
-   - ${exposureOptions.find(o => o.value === exposure)?.description || 'Descrição não disponível.'}${eDetails ? `\n   - Detalhes: ${eDetails}` : ''}
+Detalhes da exposição: ${eDetails || 'N/A'}
 
 --- AVALIAÇÃO SECUNDÁRIA (SAMPLE) ---
 Sinais e Sintomas: ${s || 'N/A'}
@@ -297,6 +405,8 @@ ${observations || 'Nenhuma.'}`.trim();
     setOutcome('');
     setObservations('');
     setHasCopied(false);
+    if (user) window.localStorage.removeItem(`sgs-rpa-draft-${user.uid}`);
+    setOfflineLocation('');
     toast({ title: "Formulário Limpo", description: "Todos os campos foram redefinidos." });
   };
 
@@ -317,18 +427,20 @@ ${observations || 'Nenhuma.'}`.trim();
   
     try {
       const noticesCollectionRef = collection(firestore, 'sgs_genius', user.uid, 'notices');
+      const effectiveLocation = (!isOnline ? offlineLocation : location) || 'Local não informado';
   
       const noticeData = {
         userId: user.uid,
         collaboratorName: rescuerName || 'Socorrista não informado',
-        noticeDate: Timestamp.now(),
-        location: location || 'Local não informado',
+        noticeDate: isOnline ? Timestamp.now() : new Date().toISOString(),
+        location: effectiveLocation,
         status: 'pendente',
         isRpo: true,
          rpoData: {
           date: typeof date === 'string' ? date : '',
           time: typeof time === 'string' ? time : '',
-          location: typeof location === 'string' ? location : '',
+          location: effectiveLocation,
+          offlineLocation: !isOnline ? effectiveLocation : '',
           victimName: typeof victimName === 'string' ? victimName : '',
           birthDate: typeof birthDate === 'string' ? birthDate : '',
           cpf: typeof cpf === 'string' ? cpf : '',
@@ -342,23 +454,32 @@ ${observations || 'Nenhuma.'}`.trim();
           c: typeof c === 'string' ? c : '',
           d: typeof d === 'string' ? d : '',
           e: typeof exposure === 'string' ? exposure : '',
-          eDetails: (exposure === 'Lesões em membros' || exposure === 'Trauma em dorso/costas') && typeof eDetails === 'string' ? eDetails : '',
+          eDetails: typeof eDetails === 'string' ? eDetails : '',
           s: typeof s === 'string' ? s : '', allergies: typeof allergies === 'string' ? allergies : '', meds: typeof meds === 'string' ? meds : '', past: typeof past === 'string' ? past : '', lastIntake: typeof lastIntake === 'string' ? lastIntake : '', events: typeof events === 'string' ? events : '',
           conduct: typeof conduct === 'string' ? conduct : '',
           observations: typeof observations === 'string' ? observations : ''
         },
       };
   
-      await addDoc(noticesCollectionRef, noticeData);
-      
-      // Exibe o toast de sucesso imediatamente após o salvamento
-      toast({ title: 'Sucesso!', description: 'RPO enviado para a Central de Avisos para análise do administrador.' });
-      
-      // Tenta redirecionar a página de forma segura
-      try {
-        setPage('pending-notices');
-      } catch (navigationError) {
-        console.error("Erro de navegação após envio do RPO:", navigationError);
+      if (!isOnline) {
+        addRpaToQueue(user.uid, noticeData as unknown as Record<string, unknown>);
+        const remaining = getRpaQueue().filter(item => item.userId === user.uid).length;
+        setPendingCount(remaining);
+        window.localStorage.removeItem(`sgs-rpa-draft-${user.uid}`);
+        toast({
+          title: 'RPA salvo offline',
+          description: 'O relatório ficará aguardando e será enviado automaticamente quando houver internet.',
+        });
+      } else {
+        await addDoc(noticesCollectionRef, noticeData);
+        window.localStorage.removeItem(`sgs-rpa-draft-${user.uid}`);
+        toast({ title: 'Sucesso!', description: 'RPO enviado para a Central de Avisos para análise do administrador.' });
+
+        try {
+          setPage('pending-notices');
+        } catch (navigationError) {
+          console.error("Erro de navegação após envio do RPO:", navigationError);
+        }
       }
     } catch (error) {
       console.error("ERRO RPO:", error);
@@ -368,32 +489,24 @@ ${observations || 'Nenhuma.'}`.trim();
     }
   };  
 
-  const selectedAirwayDescription = useMemo(() => {
-    return airwayOptions.find(opt => opt.value === a)?.description;
-  }, [a, airwayOptions]);
-
-  const selectedBreathingDescription = useMemo(() => {
-    return breathingOptions.find(opt => opt.value === b)?.description;
-  }, [b]);
-
-  const selectedCirculationDescription = useMemo(() => {
-    return circulationOptions.find(opt => opt.value === c)?.description;
-  }, [c]);
-
-  const selectedNeuroDescription = useMemo(() => {
-    return neuroOptions.find(opt => opt.value === d)?.description;
-  }, [d]);
-
-  const selectedExposureDescription = useMemo(() => {
-    return exposureOptions.find(opt => opt.value === exposure)?.description;
-  }, [exposure]);
-
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>RPA - Relatório de Pronto Atendimento</CardTitle>
           <CardDescription>Preencha os campos para gerar o relatório do atendimento.</CardDescription>
+          <div className="flex flex-wrap items-center gap-3 pt-2 text-sm">
+            <span className={`inline-flex items-center gap-1.5 font-medium ${isOnline ? 'text-green-700' : 'text-amber-700'}`}>
+              {isOnline ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+              {isOnline ? 'Conectado' : 'Modo offline'}
+            </span>
+            {pendingCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <CloudUpload className="h-4 w-4" />
+                {pendingCount} RPA(s) aguardando envio
+              </span>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-8">
           {/* Cabeçalho da Ocorrência */}
@@ -404,9 +517,9 @@ ${observations || 'Nenhuma.'}`.trim();
               <div className="space-y-2"><Label>Hora</Label><Input type="time" value={time} onChange={e => setTime(e.target.value)} required /></div>
               <div className="space-y-2">
                 <Label>Local da Ocorrência</Label>
-                <Select name="rpoLocation" required disabled={isLoadingLocations || locations.length === 0} onValueChange={setLocation} value={location}>
+                <Select name="rpoLocation" disabled={isLoadingLocations || locations.length === 0 || !isOnline} onValueChange={setLocation} value={location}>
                   <SelectTrigger>
-                    <SelectValue placeholder={isLoadingLocations ? "Carregando..." : "Selecione o local"} />
+                    <SelectValue placeholder={!isOnline ? "Lista indisponível offline" : isLoadingLocations ? "Carregando..." : "Selecione o local"} />
                   </SelectTrigger>
                   <SelectContent>
                     {isLoadingLocations ? (
@@ -416,6 +529,14 @@ ${observations || 'Nenhuma.'}`.trim();
                     )}
                   </SelectContent>
                 </Select>
+                {!isOnline && (
+                  <Input
+                    value={offlineLocation}
+                    onChange={e => setOfflineLocation(e.target.value)}
+                    placeholder="Descreva o local da ocorrência"
+                    className="mt-2"
+                  />
+                )}
               </div>
               <div className="space-y-2"><Label>Socorrista</Label><Input placeholder="Nome do responsável" value={rescuerName} onChange={e => setRescuerName(e.target.value)} required /></div>
               <div className="space-y-2 lg:col-span-3"><Label>Nome Completo</Label><Input placeholder="Nome completo da vítima" value={victimName} onChange={e => setVictimName(e.target.value)} required /></div>
@@ -433,69 +554,28 @@ ${observations || 'Nenhuma.'}`.trim();
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>X - Hemorragias Exsanguinantes</Label>
-                <Select onValueChange={setX} value={x}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a situação da hemorragia" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Sem hemorragias graves aparentes">Sem hemorragias graves aparentes</SelectItem>
-                    <SelectItem value="Contido com curativo compressivo">Contido com curativo compressivo</SelectItem>
-                    <SelectItem value="Contido com torniquete">Contido com torniquete</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Textarea placeholder="Descreva a situação das hemorragias..." value={x} onChange={e => setX(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label>A - Vias Aéreas</Label>
-                <Select onValueChange={setA} value={a}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a situação das vias aéreas" />
-                  </SelectTrigger>
-                  <SelectContent>{airwayOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.value}</SelectItem>)}</SelectContent>
-                </Select>
-                {selectedAirwayDescription && <p className="text-xs text-muted-foreground p-2 bg-muted rounded-md">{selectedAirwayDescription}</p>}
+                <Textarea placeholder="Descreva a situação das vias aéreas..." value={a} onChange={e => setA(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>B - Boa Respiração e Ventilação</Label>
-                <Select onValueChange={setB} value={b}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o padrão respiratório" />
-                  </SelectTrigger>
-                  <SelectContent>{breathingOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.value}</SelectItem>)}</SelectContent>
-                </Select>
-                {selectedBreathingDescription && <p className="text-xs text-muted-foreground p-2 bg-muted rounded-md">{selectedBreathingDescription}</p>}
+                <Label>B - Respiração e Ventilação</Label>
+                <Textarea placeholder="Descreva a respiração e ventilação..." value={b} onChange={e => setB(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label>C - Circulação</Label>
-                <Select onValueChange={setC} value={c}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status circulatório" />
-                  </SelectTrigger>
-                  <SelectContent>{circulationOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.value}</SelectItem>)}</SelectContent>
-                </Select>
-                {selectedCirculationDescription && <p className="text-xs text-muted-foreground p-2 bg-muted rounded-md">{selectedCirculationDescription}</p>}
+                <Textarea placeholder="Descreva o estado circulatório..." value={c} onChange={e => setC(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label>D - Estado Neurológico</Label>
-                <Select onValueChange={setD} value={d}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o estado neurológico" />
-                  </SelectTrigger>
-                  <SelectContent>{neuroOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.value}</SelectItem>)}</SelectContent>
-                </Select>
-                {selectedNeuroDescription && <p className="text-xs text-muted-foreground p-2 bg-muted rounded-md">{selectedNeuroDescription}</p>}
+                <Textarea placeholder="Descreva o estado neurológico..." value={d} onChange={e => setD(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label>E - Exposição</Label>
-                <Select onValueChange={(value) => { setExposure(value); setEDetails(''); }} value={exposure}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a situação de exposição" />
-                  </SelectTrigger>
-                  <SelectContent>{exposureOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.value}</SelectItem>)}</SelectContent>
-                </Select>
-                {selectedExposureDescription && <p className="text-xs text-muted-foreground p-2 bg-muted rounded-md">{selectedExposureDescription}</p>}
-                {(exposure === 'Lesões em membros' || exposure === 'Trauma em dorso/costas') && (
-                  <Textarea placeholder={exposure === 'Lesões em membros' ? "Especifique o membro afetado..." : "Especifique a região do dorso..."} value={eDetails} onChange={(ev) => setEDetails(ev.target.value)} className="mt-2" />
-                )}
+                <Textarea placeholder="Descreva a exposição e o ambiente..." value={exposure} onChange={e => setExposure(e.target.value)} />
+                <Textarea placeholder="Detalhes adicionais da exposição..." value={eDetails} onChange={e => setEDetails(e.target.value)} className="mt-2" />
               </div>
             </div>
           </div>

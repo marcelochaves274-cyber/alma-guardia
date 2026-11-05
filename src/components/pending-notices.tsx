@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import { type LocationData } from './map-selector';
 import Image from 'next/image';
-import { airwayOptions, breathingOptions, circulationOptions, exposureOptions, hemorrhageOptions, neuroOptions } from '@/lib/rpo-options';
 
 interface Notice {
   id: string;
@@ -326,18 +325,12 @@ Local da Ocorrência: ${notice.rpoData?.location || 'Não informado'}
 
 --- AVALIAÇÃO PRIMÁRIA ---
 X (Hemorragia): ${notice.rpoData?.x || 'Não informado'}
-   - ${hemorrhageOptions.find(o => o.value === notice.rpoData?.x)?.description || 'Descrição não disponível.'}
 A (Vias Aéreas): ${notice.rpoData?.a || 'Não informado'}
-   - ${airwayOptions.find(o => o.value === notice.rpoData?.a)?.description || 'Descrição não disponível.'}
 B (Respiração): ${notice.rpoData?.b || 'Não informado'}
-   - ${breathingOptions.find(o => o.value === notice.rpoData?.b)?.description || 'Descrição não disponível.'}
 C (Circulação): ${notice.rpoData?.c || 'Não informado'}
-   - ${circulationOptions.find(o => o.value === notice.rpoData?.c)?.description || 'Descrição não disponível.'}
 D (Neurológico): ${notice.rpoData?.d || 'Não informado'}
-   - ${neuroOptions.find(o => o.value === notice.rpoData?.d)?.description || 'Descrição não disponível.'}
 E (Exposição): ${notice.rpoData?.e || notice.rpoData?.exposure || 'Não informado'}
-   - ${exposureOptions.find(o => o.value === (notice.rpoData?.e || notice.rpoData?.exposure))?.description || 'Descrição não disponível.'}${notice.rpoData?.eDetails ? `
-   - Detalhes: ${notice.rpoData.eDetails}` : ''}
+Detalhes da exposição: ${notice.rpoData?.eDetails || 'Não informado'}
 
 --- AVALIAÇÃO SECUNDÁRIA ---
 S (Sinais/Sintomas): ${notice.rpoData?.s || 'Não informado'}
