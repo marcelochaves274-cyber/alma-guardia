@@ -38,6 +38,7 @@ export function PushNotifications() {
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [error, setError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
   const lastSyncedScopeRef = useRef<string | null>(null);
 
   const getNotificationScope = async (): Promise<NotificationScope> => {
@@ -65,7 +66,23 @@ export function PushNotifications() {
     setPermission(Notification.permission);
   }, [user]);
 
+  useEffect(() => {
+    const updateConnection = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', updateConnection);
+    window.addEventListener('offline', updateConnection);
+    updateConnection();
+
+    return () => {
+      window.removeEventListener('online', updateConnection);
+      window.removeEventListener('offline', updateConnection);
+    };
+  }, []);
+
   const enableNotifications = async () => {
+    if (!navigator.onLine) {
+      setError(null);
+      return;
+    }
     setError(null);
     setIsRegistering(true);
     try {
@@ -100,6 +117,10 @@ export function PushNotifications() {
       setPermission('default');
       return;
     }
+    if (!navigator.onLine) {
+      setError(null);
+      return;
+    }
     if (typeof window === 'undefined' || !('Notification' in window)) return;
     setPermission(Notification.permission);
     if (Notification.permission === 'granted') {
@@ -108,16 +129,18 @@ export function PushNotifications() {
         .then(() => setError(null))
         .catch((syncError) => {
           console.error('[PUSH] Falha ao renovar token existente:', syncError);
+          if (!navigator.onLine) return;
           setError(syncError instanceof Error ? syncError.message : 'Falha ao confirmar as notificações. Toque em "Tentar novamente".');
         });
     }
-  }, [user?.uid, auth, app, firestore, profile]);
+  }, [user?.uid, auth, app, firestore, profile, isOnline]);
 
   // Re-sincroniza o carimbo de local do token sempre que as permissões do perfil ativo
   // são editadas em "Gerenciar Perfis" (ex.: admin muda o filtro de local), sem precisar
   // desativar/reativar as notificações manualmente no aparelho.
   useEffect(() => {
     if (!user || !firestore) return;
+    if (!navigator.onLine) return;
     if (typeof window === 'undefined' || !('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;
     if (!profile || profile === 'admin') return;
@@ -140,11 +163,12 @@ export function PushNotifications() {
     });
 
     return () => unsubscribe();
-  }, [user?.uid, firestore, auth, app, profile]);
+  }, [user?.uid, firestore, auth, app, profile, isOnline]);
 
   // Listener para mensagens em foreground
   useEffect(() => {
     if (!user) return;
+    if (!navigator.onLine) return;
     return subscribeToForegroundMessages(app, (title, body) => {
       if (Notification.permission === 'granted') {
         void navigator.serviceWorker.ready.then((registration) => {
@@ -154,8 +178,9 @@ export function PushNotifications() {
         });
       }
     });
-  }, [app, auth, firestore, user]);
+  }, [app, auth, firestore, user, isOnline]);
 
+  if (!isOnline) return null;
   if (!user || permission === 'unsupported') return null;
   if (permission === 'granted' && !error) return null;
 

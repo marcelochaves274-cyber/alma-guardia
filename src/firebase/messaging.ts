@@ -29,6 +29,10 @@ export async function registerForPushNotifications(
   firestore: Firestore,
   scope: NotificationScope = ADMIN_NOTIFICATION_SCOPE
 ) {
+  if (typeof window !== 'undefined' && !navigator.onLine) {
+    return null;
+  }
+
   console.log('[FCM] 1. Aguardando authStateReady...');
   await auth.authStateReady();
   const currentUser = auth.currentUser;
