@@ -49,6 +49,7 @@ import { GraphicsReport } from './graphics-report';
 import { ManageDataTransfer } from './manage-data-transfer';
 import { MySubscriptionPage } from './my-subscription-page';
 import { WelcomeView } from './welcome-view';
+import { RpaOfflineSync } from './rpa-offline-sync';
 
 import {
   Sidebar,
@@ -370,11 +371,13 @@ function MainAppLayout() {
   }
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <AppSidebar activePage={activePage} setActivePage={handlePageChange} />
-      </Sidebar>
-      <SidebarInset>
+    <>
+      <RpaOfflineSync />
+      <SidebarProvider>
+        <Sidebar>
+          <AppSidebar activePage={activePage} setActivePage={handlePageChange} />
+        </Sidebar>
+        <SidebarInset>
         <div className="flex flex-col h-screen">
           <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b bg-card px-4 shadow-sm md:px-6">
             <div className="flex items-center gap-4">
@@ -411,8 +414,9 @@ function MainAppLayout() {
             </main>
           </ScrollArea>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+        </SidebarInset>
+      </SidebarProvider>
+    </>
   );
 }
 

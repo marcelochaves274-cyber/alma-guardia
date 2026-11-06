@@ -26,7 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, setHours, setMinutes } from 'date-fns';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, addDoc, collection, Timestamp } from 'firebase/firestore';
-import { addRpaToQueue, getRpaQueue, removeRpaFromQueue } from '@/lib/rpo-offline';
+import { addRpaToQueue, getRpaQueue } from '@/lib/rpo-offline';
 
 interface ViewRpoProps {
   prefillData?: any | null; // Dados para preencher o formulário, se houver
@@ -124,8 +124,12 @@ export function ViewRpo({ prefillData, setPage }: ViewRpoProps) {
     setPendingCount(getRpaQueue().filter(item => !user || item.userId === user.uid).length);
 
     const updateConnection = () => setIsOnline(navigator.onLine);
+    const updatePendingCount = () => {
+      setPendingCount(getRpaQueue().filter(item => !user || item.userId === user.uid).length);
+    };
     window.addEventListener('online', updateConnection);
     window.addEventListener('offline', updateConnection);
+    window.addEventListener('rpa-queue-changed', updatePendingCount);
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/rpa-offline-sw.js').catch(error => {
@@ -136,6 +140,7 @@ export function ViewRpo({ prefillData, setPage }: ViewRpoProps) {
     return () => {
       window.removeEventListener('online', updateConnection);
       window.removeEventListener('offline', updateConnection);
+      window.removeEventListener('rpa-queue-changed', updatePendingCount);
     };
   }, [user]);
 
@@ -202,59 +207,6 @@ export function ViewRpo({ prefillData, setPage }: ViewRpoProps) {
     exposure, eDetails, s, allergies, meds, past, lastIntake, events,
     conduct, outcome, observations, hasCopied,
   ]);
-
-  useEffect(() => {
-    if (!firestore || !user || !isOnline) return;
-
-    let cancelled = false;
-
-    const syncPending = async () => {
-      const pending = getRpaQueue().filter(item => item.userId === user.uid);
-      if (!pending.length) {
-        setPendingCount(0);
-        return;
-      }
-
-      toast({
-        title: 'Sincronizando RPA',
-        description: `${pending.length} relatório(s) aguardando envio.`,
-      });
-
-      for (const item of pending) {
-        try {
-          const noticeData = {
-            ...item.noticeData,
-            noticeDate: typeof item.noticeData.noticeDate === 'string'
-              ? Timestamp.fromDate(new Date(item.noticeData.noticeDate as string))
-              : Timestamp.now(),
-          };
-          await addDoc(collection(firestore, 'sgs_genius', user.uid, 'notices'), noticeData);
-          if (!cancelled) removeRpaFromQueue(item.id);
-        } catch (error) {
-          console.error('Erro ao sincronizar RPA offline:', error);
-          break;
-        }
-      }
-
-      if (!cancelled) {
-        const remaining = getRpaQueue().filter(queueItem => queueItem.userId === user.uid).length;
-        setPendingCount(remaining);
-        if (!remaining) {
-          toast({
-            title: 'RPA sincronizado',
-            description: 'Os relatórios pendentes foram enviados à Central de Avisos.',
-          });
-        }
-      }
-    };
-
-    void syncPending();
-    window.addEventListener('online', syncPending);
-    return () => {
-      cancelled = true;
-      window.removeEventListener('online', syncPending);
-    };
-  }, [firestore, user, isOnline, toast]);
 
   useEffect(() => {
     // Set current date and time on component mount
