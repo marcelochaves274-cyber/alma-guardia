@@ -12,6 +12,20 @@ export function RpaOfflineSync() {
   const { toast } = useToast();
   const isSyncingRef = useRef(false);
 
+  const requestBackgroundSync = useCallback(async () => {
+    if (!('serviceWorker' in navigator)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      if (!('sync' in registration)) return;
+      await (registration as ServiceWorkerRegistration & {
+        sync: { register: (tag: string) => Promise<void> };
+      }).sync.register('rpa-offline-sync');
+    } catch (error) {
+      console.debug('[RPA-OFFLINE] Background Sync indisponivel:', error);
+    }
+  }, []);
+
   const syncPending = useCallback(async () => {
     if (!firestore || !user || !navigator.onLine || isSyncingRef.current) return;
 
@@ -65,17 +79,39 @@ export function RpaOfflineSync() {
   useEffect(() => {
     if (!firestore || !user) return;
 
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/rpa-offline-sw.js').catch(error => {
+        console.error('[RPA-OFFLINE] Erro ao registrar service worker:', error);
+      });
+    }
+
     void syncPending();
+    void requestBackgroundSync();
     window.addEventListener('online', syncPending);
     window.addEventListener('focus', syncPending);
     document.addEventListener('visibilitychange', syncPending);
+    navigator.serviceWorker?.addEventListener('message', syncPendingMessage);
+
+    const retryInterval = window.setInterval(() => {
+      if (navigator.onLine && getRpaQueue().some(item => item.userId === user.uid)) {
+        void syncPending();
+      }
+    }, 15000);
+
+    function syncPendingMessage(event: MessageEvent) {
+      if (event.data?.type === 'RPA_SYNC_REQUEST') {
+        void syncPending();
+      }
+    }
 
     return () => {
       window.removeEventListener('online', syncPending);
       window.removeEventListener('focus', syncPending);
       document.removeEventListener('visibilitychange', syncPending);
+      navigator.serviceWorker?.removeEventListener('message', syncPendingMessage);
+      window.clearInterval(retryInterval);
     };
-  }, [syncPending, firestore, user]);
+  }, [syncPending, firestore, user, requestBackgroundSync]);
 
   return null;
 }

@@ -131,12 +131,6 @@ export function ViewRpo({ prefillData, setPage }: ViewRpoProps) {
     window.addEventListener('offline', updateConnection);
     window.addEventListener('rpa-queue-changed', updatePendingCount);
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/rpa-offline-sw.js').catch(error => {
-        console.error('Erro ao registrar o cache offline do RPA:', error);
-      });
-    }
-
     return () => {
       window.removeEventListener('online', updateConnection);
       window.removeEventListener('offline', updateConnection);
@@ -417,6 +411,7 @@ ${observations || 'Nenhuma.'}`.trim();
         addRpaToQueue(user.uid, noticeData as unknown as Record<string, unknown>);
         const remaining = getRpaQueue().filter(item => item.userId === user.uid).length;
         setPendingCount(remaining);
+        window.dispatchEvent(new CustomEvent('rpa-queue-changed'));
         window.localStorage.removeItem(`sgs-rpa-draft-${user.uid}`);
         toast({
           title: 'RPA salvo offline',

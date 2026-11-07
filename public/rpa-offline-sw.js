@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alma-guardi-rpa-v1';
+const CACHE_NAME = 'alma-guardi-rpa-v2';
 const CORE_ASSETS = ['/', '/manifest.json', '/icon-192x192.png'];
 
 self.addEventListener('install', event => {
@@ -16,6 +16,17 @@ self.addEventListener('activate', event => {
   );
 });
 
+self.addEventListener('sync', event => {
+  if (event.tag !== 'rpa-offline-sync') return;
+
+  event.waitUntil((async () => {
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clients) {
+      client.postMessage({ type: 'RPA_SYNC_REQUEST' });
+    }
+  })());
+});
+
 self.addEventListener('fetch', event => {
   const request = event.request;
   const url = new URL(request.url);
@@ -27,12 +38,17 @@ self.addEventListener('fetch', event => {
       fetch(request)
         .then(response => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put('/shell-fallback', copy));
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put('/shell-fallback', copy.clone());
+            cache.put(request.url, copy);
+          });
           return response;
         })
         .catch(async () => {
           const cache = await caches.open(CACHE_NAME);
-          return await cache.match('/shell-fallback') || await cache.match('/');
+          return await cache.match(request.url)
+            || await cache.match('/shell-fallback')
+            || await cache.match('/');
         })
     );
     return;
