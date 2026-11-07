@@ -18,8 +18,17 @@ function Loader() {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const cachedOfflineSession = typeof window !== 'undefined'
+    && !navigator.onLine
+    && (() => {
+      try {
+        return Boolean(JSON.parse(localStorage.getItem('sgs-cached-user') || 'null')?.uid);
+      } catch {
+        return false;
+      }
+    })();
+  const [isLoading, setIsLoading] = useState(!cachedOfflineSession);
+  const [isLoggedIn, setIsLoggedIn] = useState(cachedOfflineSession);
 
   useEffect(() => {
     // onAuthStateChanged é o listener nativo do Firebase.

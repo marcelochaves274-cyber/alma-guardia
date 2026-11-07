@@ -52,7 +52,15 @@ export default function HomePage() {
     window.location.href = 'https://buy.stripe.com/7sY5kDb2ldCL8Dt4I7aZi00';
   };
   const router = useRouter();
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(() => {
+    if (typeof window === 'undefined' || navigator.onLine) return true;
+    try {
+      const cachedUser = JSON.parse(localStorage.getItem('sgs-cached-user') || 'null');
+      return !cachedUser?.uid;
+    } catch {
+      return false;
+    }
+  });
   const [isOpeningPromo, setIsOpeningPromo] = useState(false);
 
   const handlePromoClick = async () => {
@@ -76,6 +84,18 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    if (!navigator.onLine) {
+      try {
+        const cachedUser = JSON.parse(localStorage.getItem('sgs-cached-user') || 'null');
+        if (cachedUser?.uid) {
+          router.replace('/dashboard');
+          return;
+        }
+      } catch {
+        setIsCheckingAuth(false);
+      }
+    }
+
     let authTimeout = 0;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       window.clearTimeout(authTimeout);
