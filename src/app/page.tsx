@@ -82,12 +82,32 @@ export default function HomePage() {
       if (user) {
         router.replace('/dashboard');
       } else {
-        setIsCheckingAuth(false);
+        if (!navigator.onLine) {
+          try {
+            const cachedUser = JSON.parse(localStorage.getItem('sgs-cached-user') || 'null');
+            if (cachedUser?.uid) router.replace('/dashboard');
+            else setIsCheckingAuth(false);
+          } catch {
+            setIsCheckingAuth(false);
+          }
+        } else {
+          setIsCheckingAuth(false);
+        }
       }
     });
 
     authTimeout = window.setTimeout(() => {
-      if (!navigator.onLine && auth.currentUser) {
+      if (!navigator.onLine) {
+        try {
+          const cachedUser = JSON.parse(localStorage.getItem('sgs-cached-user') || 'null');
+          if (!cachedUser?.uid) {
+            setIsCheckingAuth(false);
+            return;
+          }
+        } catch {
+          setIsCheckingAuth(false);
+          return;
+        }
         router.replace('/dashboard');
       } else if (!navigator.onLine) {
         setIsCheckingAuth(false);

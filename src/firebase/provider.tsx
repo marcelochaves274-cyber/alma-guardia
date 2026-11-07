@@ -35,7 +35,26 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === 'undefined' || navigator.onLine) return null;
+
+    try {
+      const cachedUser = JSON.parse(localStorage.getItem('sgs-cached-user') || 'null') as {
+        uid?: string;
+        email?: string | null;
+      } | null;
+      if (!cachedUser?.uid) return null;
+
+      return {
+        uid: cachedUser.uid,
+        email: cachedUser.email || null,
+        emailVerified: true,
+        isAnonymous: false,
+      } as User;
+    } catch {
+      return null;
+    }
+  });
   const [isUserLoading, setIsUserLoading] = useState(true);
   const [userError, setUserError] = useState<AuthError | null>(null);
 
@@ -47,19 +66,77 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
 
+    let authTimeout = 0;
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => { // Auth state determined
+        window.clearTimeout(authTimeout);
+        if (firebaseUser) {
+          try {
+            localStorage.setItem('sgs-cached-user', JSON.stringify({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+            }));
+          } catch (error) {
+            console.debug('[AUTH] Não foi possível salvar sessão offline:', error);
+          }
+        }
+        if (!firebaseUser && typeof navigator !== 'undefined' && !navigator.onLine) {
+          try {
+            const cachedUser = JSON.parse(localStorage.getItem('sgs-cached-user') || 'null') as {
+              uid?: string;
+              email?: string | null;
+            } | null;
+            if (cachedUser?.uid) {
+              setUser({
+                uid: cachedUser.uid,
+                email: cachedUser.email || null,
+                emailVerified: true,
+                isAnonymous: false,
+              } as User);
+              setIsUserLoading(false);
+              return;
+            }
+          } catch (error) {
+            console.debug('[AUTH] Sessão offline indisponível:', error);
+          }
+        }
         setUser(firebaseUser);
         setIsUserLoading(false);
       },
       (error: Error) => { // Auth listener error
+        window.clearTimeout(authTimeout);
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
         setUserError(error as AuthError);
         setIsUserLoading(false);
       }
     );
-    return () => unsubscribe(); // Cleanup
+    authTimeout = window.setTimeout(() => {
+      if (!navigator.onLine) {
+        try {
+          const cachedUser = JSON.parse(localStorage.getItem('sgs-cached-user') || 'null') as {
+            uid?: string;
+            email?: string | null;
+          } | null;
+          if (cachedUser?.uid) {
+            setUser({
+              uid: cachedUser.uid,
+              email: cachedUser.email || null,
+              emailVerified: true,
+              isAnonymous: false,
+            } as User);
+            setIsUserLoading(false);
+          }
+        } catch (error) {
+          console.debug('[AUTH] Sessão offline indisponível:', error);
+        }
+      }
+    }, 1200);
+
+    return () => {
+      window.clearTimeout(authTimeout);
+      unsubscribe();
+    };
   }, [auth]); // This effect MUST depend only on the auth instance.
 
   // Memoize the context value

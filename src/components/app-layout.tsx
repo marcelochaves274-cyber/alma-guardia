@@ -131,6 +131,12 @@ function MainAppLayout() {
         return;
       }
 
+      if (!navigator.onLine) {
+        setIsAuthorized(true);
+        setIsVerifyingStatus(false);
+        return;
+      }
+
       // Chave Mestra de Admin: Acesso total imediato pule a consulta
       if (user.email === 'sgsburacodopadre@gmail.com') {
         setIsAuthorized(true);

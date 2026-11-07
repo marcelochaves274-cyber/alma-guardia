@@ -32,13 +32,32 @@ export default function DashboardPage() {
         setIsLoggedIn(true);
       } else {
         // Usuário não está logado, redireciona para a página de login.
-        router.replace('/login');
+        if (!navigator.onLine) {
+          try {
+            const cachedUser = JSON.parse(localStorage.getItem('sgs-cached-user') || 'null');
+            if (cachedUser?.uid) {
+              setIsLoggedIn(true);
+            } else {
+              router.replace('/login');
+            }
+          } catch {
+            router.replace('/login');
+          }
+        } else {
+          router.replace('/login');
+        }
       }
       setIsLoading(false);
     });
 
     authTimeout = window.setTimeout(() => {
-      if (!navigator.onLine && auth.currentUser) {
+      if (!navigator.onLine) {
+        try {
+          const cachedUser = JSON.parse(localStorage.getItem('sgs-cached-user') || 'null');
+          if (!cachedUser?.uid) return;
+        } catch {
+          return;
+        }
         setIsLoggedIn(true);
         setIsLoading(false);
       }

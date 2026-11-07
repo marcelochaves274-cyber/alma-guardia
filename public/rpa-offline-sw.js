@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alma-guardi-rpa-v3';
+const CACHE_NAME = 'alma-guardi-rpa-v4';
 const CORE_ASSETS = ['/', '/dashboard', '/login', '/manifest.json', '/icon-192x192.png'];
 
 self.addEventListener('install', event => {
