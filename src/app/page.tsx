@@ -31,7 +31,7 @@ function AuthCheckLoader() {
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background">
       <div className="relative flex items-center justify-center">
         <Image
-          src="https://firebasestorage.googleapis.com/v0/b/brave-drive-472322-m2.firebasestorage.app/o/ALMA%20-%20Simbolo_letreiro%20Branco%20%20-%20Grande.png?alt=media&token=674ce95f-b9e9-4212-8895-6753b1af996d"
+          src="/icon-192x192.png"
           alt="ALMA Guardia Logo"
           width={64}
           height={64}
@@ -76,13 +76,24 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    let authTimeout = 0;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      window.clearTimeout(authTimeout);
       if (user) {
         router.replace('/dashboard');
       } else {
         setIsCheckingAuth(false);
       }
     });
+
+    authTimeout = window.setTimeout(() => {
+      if (!navigator.onLine && auth.currentUser) {
+        router.replace('/dashboard');
+      } else if (!navigator.onLine) {
+        setIsCheckingAuth(false);
+      }
+    }, 2500);
+
     return () => unsubscribe();
   }, [router]);
 

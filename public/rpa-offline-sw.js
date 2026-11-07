@@ -1,5 +1,5 @@
-const CACHE_NAME = 'alma-guardi-rpa-v2';
-const CORE_ASSETS = ['/', '/manifest.json', '/icon-192x192.png'];
+const CACHE_NAME = 'alma-guardi-rpa-v3';
+const CORE_ASSETS = ['/', '/dashboard', '/login', '/manifest.json', '/icon-192x192.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil(

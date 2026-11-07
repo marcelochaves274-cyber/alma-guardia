@@ -24,7 +24,9 @@ export default function DashboardPage() {
   useEffect(() => {
     // onAuthStateChanged é o listener nativo do Firebase.
     // Ele verifica o cache do navegador e informa se há um usuário logado.
+    let authTimeout = 0;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      window.clearTimeout(authTimeout);
       if (user) {
         // Usuário está logado, permite o acesso.
         setIsLoggedIn(true);
@@ -35,8 +37,18 @@ export default function DashboardPage() {
       setIsLoading(false);
     });
 
+    authTimeout = window.setTimeout(() => {
+      if (!navigator.onLine && auth.currentUser) {
+        setIsLoggedIn(true);
+        setIsLoading(false);
+      }
+    }, 2500);
+
     // Limpa o listener ao desmontar o componente para evitar vazamentos de memória.
-    return () => unsubscribe();
+    return () => {
+      window.clearTimeout(authTimeout);
+      unsubscribe();
+    };
   }, [router]);
 
   // Exibe um loader enquanto o Firebase verifica o estado de autenticação.
