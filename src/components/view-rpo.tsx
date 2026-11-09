@@ -432,7 +432,7 @@ ${observations || 'Nenhuma.'}`.trim();
         offlineNoticeTimeoutRef.current = setTimeout(() => {
           setShowOfflineSavedNotice(false);
           offlineNoticeTimeoutRef.current = null;
-        }, 3000);
+        }, 5000);
       } else {
         await addDoc(noticesCollectionRef, noticeData);
         window.localStorage.removeItem(`sgs-rpa-draft-${user.uid}`);
