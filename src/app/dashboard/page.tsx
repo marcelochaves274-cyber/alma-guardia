@@ -18,65 +18,21 @@ function Loader() {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const cachedOfflineSession = typeof window !== 'undefined'
-    && !navigator.onLine
-    && (() => {
-      try {
-        return Boolean(JSON.parse(localStorage.getItem('sgs-cached-user') || 'null')?.uid);
-      } catch {
-        return false;
-      }
-    })();
-  const [isLoading, setIsLoading] = useState(!cachedOfflineSession);
-  const [isLoggedIn, setIsLoggedIn] = useState(cachedOfflineSession);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     // onAuthStateChanged é o listener nativo do Firebase.
     // Ele verifica o cache do navegador e informa se há um usuário logado.
-    let authTimeout = 0;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      window.clearTimeout(authTimeout);
       if (user) {
-        // Usuário está logado, permite o acesso.
         setIsLoggedIn(true);
       } else {
-        // Usuário não está logado, redireciona para a página de login.
-        if (!navigator.onLine) {
-          try {
-            const cachedUser = JSON.parse(localStorage.getItem('sgs-cached-user') || 'null');
-            if (cachedUser?.uid) {
-              setIsLoggedIn(true);
-            } else {
-              router.replace('/login');
-            }
-          } catch {
-            router.replace('/login');
-          }
-        } else {
-          router.replace('/login');
-        }
+        router.replace('/login');
       }
       setIsLoading(false);
     });
-
-    authTimeout = window.setTimeout(() => {
-      if (!navigator.onLine) {
-        try {
-          const cachedUser = JSON.parse(localStorage.getItem('sgs-cached-user') || 'null');
-          if (!cachedUser?.uid) return;
-        } catch {
-          return;
-        }
-        setIsLoggedIn(true);
-        setIsLoading(false);
-      }
-    }, 2500);
-
-    // Limpa o listener ao desmontar o componente para evitar vazamentos de memória.
-    return () => {
-      window.clearTimeout(authTimeout);
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [router]);
 
   // Exibe um loader enquanto o Firebase verifica o estado de autenticação.

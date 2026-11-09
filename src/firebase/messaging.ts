@@ -66,7 +66,7 @@ export async function registerForPushNotifications(
   }
 
   console.log('[FCM] 5. Registrando Service Worker...');
-  let registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+  let registration = await navigator.serviceWorker.register('/rpa-offline-sw.js');
   // Garante que o Service Worker esteja ativo (não apenas "installing"/"waiting"),
   // caso contrário o getToken() falha com erro de credencial ausente.
   registration = await navigator.serviceWorker.ready;

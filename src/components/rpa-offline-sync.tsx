@@ -79,12 +79,6 @@ export function RpaOfflineSync() {
   useEffect(() => {
     if (!firestore || !user) return;
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/rpa-offline-sw.js').catch(error => {
-        console.error('[RPA-OFFLINE] Erro ao registrar service worker:', error);
-      });
-    }
-
     void syncPending();
     void requestBackgroundSync();
     window.addEventListener('online', syncPending);

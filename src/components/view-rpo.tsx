@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, FormEvent } from 'react';
+import { useState, useEffect, useCallback, useRef, FormEvent } from 'react';
 import {
   Card,
   CardContent,
@@ -81,6 +81,9 @@ export function ViewRpo({ prefillData, setPage }: ViewRpoProps) {
   const [offlineLocation, setOfflineLocation] = useState('');
   const [pendingCount, setPendingCount] = useState(0);
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [showOfflineSavedNotice, setShowOfflineSavedNotice] = useState(false);
+  const isSendingRef = useRef(false);
+  const offlineNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getSettingsDocRef = useCallback((collectionName: string) => {
     if (!firestore || !user) return null;
@@ -201,6 +204,12 @@ export function ViewRpo({ prefillData, setPage }: ViewRpoProps) {
     exposure, eDetails, s, allergies, meds, past, lastIntake, events,
     conduct, outcome, observations, hasCopied,
   ]);
+
+  useEffect(() => () => {
+    if (offlineNoticeTimeoutRef.current) {
+      clearTimeout(offlineNoticeTimeoutRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     // Set current date and time on component mount
@@ -353,11 +362,12 @@ ${observations || 'Nenhuma.'}`.trim();
     setHasCopied(false);
     if (user) window.localStorage.removeItem(`sgs-rpa-draft-${user.uid}`);
     setOfflineLocation('');
-    toast({ title: "Formulário Limpo", description: "Todos os campos foram redefinidos." });
   };
 
  const handleSendToNotices = async (e: FormEvent) => {
     e.preventDefault();
+    if (isSendingRef.current) return;
+
     if (!firestore || !user) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Você não está autenticado.' });
       return;
@@ -369,6 +379,7 @@ ${observations || 'Nenhuma.'}`.trim();
         return;
     }
   
+    isSendingRef.current = true;
     setIsSending(true);
   
     try {
@@ -413,13 +424,19 @@ ${observations || 'Nenhuma.'}`.trim();
         setPendingCount(remaining);
         window.dispatchEvent(new CustomEvent('rpa-queue-changed'));
         window.localStorage.removeItem(`sgs-rpa-draft-${user.uid}`);
-        toast({
-          title: 'RPA salvo offline',
-          description: 'O relatório ficará aguardando e será enviado automaticamente quando houver internet.',
-        });
+        resetForm();
+        setShowOfflineSavedNotice(true);
+        if (offlineNoticeTimeoutRef.current) {
+          clearTimeout(offlineNoticeTimeoutRef.current);
+        }
+        offlineNoticeTimeoutRef.current = setTimeout(() => {
+          setShowOfflineSavedNotice(false);
+          offlineNoticeTimeoutRef.current = null;
+        }, 3000);
       } else {
         await addDoc(noticesCollectionRef, noticeData);
         window.localStorage.removeItem(`sgs-rpa-draft-${user.uid}`);
+        resetForm();
         toast({ title: 'Sucesso!', description: 'RPO enviado para a Central de Avisos para análise do administrador.' });
 
         try {
@@ -432,12 +449,28 @@ ${observations || 'Nenhuma.'}`.trim();
       console.error("ERRO RPO:", error);
       toast({ variant: 'destructive', title: 'Erro ao Enviar', description: 'Não foi possível enviar o relatório.' });
     } finally {
+      isSendingRef.current = false;
       setIsSending(false);
     }
   };  
 
   return (
     <div className="space-y-6">
+      {showOfflineSavedNotice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-6"
+        >
+          <div className="w-full max-w-sm rounded-lg border bg-background p-6 text-center shadow-xl">
+            <CloudUpload className="mx-auto mb-3 h-10 w-10 text-primary" />
+            <h2 className="text-lg font-semibold">RPA salvo no celular</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Quando houver internet, abra o app para concluir o envio à Central de Avisos.
+            </p>
+          </div>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>RPA - Relatório de Pronto Atendimento</CardTitle>

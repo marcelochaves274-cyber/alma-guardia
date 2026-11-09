@@ -41,6 +41,13 @@ export function PushNotifications() {
   const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
   const lastSyncedScopeRef = useRef<string | null>(null);
 
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.register('/rpa-offline-sw.js').catch(error => {
+      console.error('[RPA-OFFLINE] Erro ao registrar service worker:', error);
+    });
+  }, []);
+
   const getNotificationScope = async (): Promise<NotificationScope> => {
     if (!user || !firestore || !profile || profile === 'admin') return ADMIN_NOTIFICATION_SCOPE;
     try {
