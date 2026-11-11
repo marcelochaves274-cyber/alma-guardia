@@ -231,7 +231,6 @@ const ADMIN_ONLY_SUBMENU_IDS = new Set([
   'register-equipment',
   'register-risk-assessment',
   'register-activity',
-  'view-rpo',
 ]);
 
 function isAdminOnlyMenuItem(menuId: string, subMenuId: string | null): boolean {
